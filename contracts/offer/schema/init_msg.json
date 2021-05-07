@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InitMsg",
+  "type": "object",
+  "required": [
+    "fiat_currency",
+    "max_amount",
+    "min_amount",
+    "order_type"
+  ],
+  "properties": {
+    "fiat_currency": {
+      "$ref": "#/definitions/FiatCurrency"
+    },
+    "max_amount": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "min_amount": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "order_type": {
+      "$ref": "#/definitions/OrderType"
+    }
+  },
+  "definitions": {
+    "FiatCurrency": {
+      "type": "string",
+      "enum": [
+        "cop",
+        "brl"
+      ]
+    },
+    "OrderType": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "sell"
+      ]
+    }
+  }
+}
