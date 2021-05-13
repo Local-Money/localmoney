@@ -1,10 +1,11 @@
 use crate::state::State;
-use cosmwasm_std::CanonicalAddr;
+use cosmwasm_std::{CanonicalAddr, HumanAddr};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
+    pub offer_contract: HumanAddr,
     pub offer: u64,
     pub amount: u64,
 }

@@ -19,10 +19,11 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     let offer_id = msg.offer;
 
     let offer: OfferResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: HumanAddr("terra1uffnkfu6wk9szpgar5ythyxtv0dxpylnxq8ref".to_string()),
+        contract_addr: msg.offer_contract,
         msg: to_binary(&OfferMsg::LoadOffer { id: offer_id })?,
     }))?;
-    let expire_height = env.block.height + 100;
+    //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
+    let expire_height = env.block.height + 100; //Roughly 10 Minutes.
     let recipient: HumanAddr;
     let sender: HumanAddr;
 
@@ -131,13 +132,6 @@ fn try_refund<S: Storage, A: Api, Q: Querier>(
     if env.block.height > state.expire_height {
         return Err(StdError::generic_err("Can't release an unexpired Trade."));
     }
-
-    /*
-    let mut balance = deps.querier.query_all_balances(&env.contract.address)?;
-    let querier = TerraQuerier::new(&deps.querier);
-    let tax_cap: TaxCapResponse = querier.query_tax_cap("uusd")?;
-    balance[0].amount = balance[0].amount.sub(tax_cap.cap)?;
-     */
 
     let mut balance = deps.querier.query_all_balances(&env.contract.address)?;
     let querier = TerraQuerier::new(&deps.querier);
