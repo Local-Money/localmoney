@@ -2,6 +2,9 @@ pub mod contract;
 pub mod msg;
 pub mod state;
 
+#[cfg(test)]
+mod tests;
+
 #[cfg(target_arch = "wasm32")]
 mod wasm {
     use super::contract;
