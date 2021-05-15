@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{CanonicalAddr, Env, HumanAddr, Storage, Uint128};
+use cosmwasm_std::{HumanAddr, Storage, Uint128};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 
 pub static CONFIG_KEY: &[u8] = b"config";
@@ -24,7 +24,7 @@ pub struct OfferResponse {
     pub fiat_currency: FiatCurrency,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
-    pub state: OrderState,
+    pub state: OfferState,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -43,7 +43,7 @@ pub enum FiatCurrency {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum OrderState {
+pub enum OfferState {
     Active,
     Paused,
 }

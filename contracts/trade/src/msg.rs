@@ -1,5 +1,5 @@
 use crate::state::State;
-use cosmwasm_std::{CanonicalAddr, HumanAddr};
+use cosmwasm_std::HumanAddr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

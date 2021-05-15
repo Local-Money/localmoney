@@ -1,7 +1,7 @@
 use cosmwasm_std::{
-    to_binary, Api, BankMsg, Binary, CanonicalAddr, Coin, CosmosMsg, Env, Extern, HandleResponse,
-    HumanAddr, InitResponse, LogAttribute, Querier, QueryRequest, StdError, StdResult, Storage,
-    Uint128, WasmQuery,
+    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, Env, Extern, HandleResponse, HumanAddr,
+    InitResponse, LogAttribute, Querier, QueryRequest, StdError, StdResult, Storage, Uint128,
+    WasmQuery,
 };
 
 use crate::msg::{ConfigResponse, HandleMsg, InitMsg, OfferMsg, QueryMsg};
@@ -22,6 +22,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         contract_addr: msg.offer_contract,
         msg: to_binary(&OfferMsg::LoadOffer { id: offer_id })?,
     }))?;
+
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
     let expire_height = env.block.height + 100; //Roughly 10 Minutes.
     let recipient: HumanAddr;
@@ -95,7 +96,7 @@ fn query_config<S: Storage, A: Api, Q: Querier>(
 fn try_release<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
-    msg: HandleMsg,
+    _msg: HandleMsg,
     state: State,
 ) -> StdResult<HandleResponse> {
     if env.message.sender != state.sender {
@@ -111,13 +112,13 @@ fn try_release<S: Storage, A: Api, Q: Querier>(
     let querier = TerraQuerier::new(&deps.querier);
     let tax_cap: TaxCapResponse = querier.query_tax_cap("uusd")?;
     let tax_rate: TaxRateResponse = querier.query_tax_rate()?;
-    let tax = min((balance[0].amount * tax_rate.rate), tax_cap.cap);
+    let tax = min(balance[0].amount * tax_rate.rate, tax_cap.cap);
     balance[0].amount = balance[0].amount.sub(tax)?;
 
     let mut cfg = config(&mut deps.storage);
     let mut state = cfg.load()?;
     state.state = TradeState::Closed;
-    cfg.save(&state);
+    cfg.save(&state)?;
 
     send_tokens(env.contract.address, state.recipient, balance, "approve")
 }
@@ -125,7 +126,7 @@ fn try_release<S: Storage, A: Api, Q: Querier>(
 fn try_refund<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
-    msg: HandleMsg,
+    _msg: HandleMsg,
     state: State,
 ) -> StdResult<HandleResponse> {
     // anyone can try to refund, as long as the contract is expired
@@ -137,7 +138,7 @@ fn try_refund<S: Storage, A: Api, Q: Querier>(
     let querier = TerraQuerier::new(&deps.querier);
     let tax_cap: TaxCapResponse = querier.query_tax_cap("uusd")?;
     let tax_rate: TaxRateResponse = querier.query_tax_rate()?;
-    let tax = min((balance[0].amount * tax_rate.rate), tax_cap.cap);
+    let tax = min(balance[0].amount * tax_rate.rate, tax_cap.cap);
     balance[0].amount = balance[0].amount.sub(tax)?;
 
     send_tokens(env.contract.address, state.sender, balance, "refund")
