@@ -17,7 +17,6 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     msg: InitMsg,
 ) -> StdResult<InitResponse> {
     let offer_id = msg.offer;
-
     let offer: OfferResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: msg.offer_contract,
         msg: to_binary(&OfferMsg::LoadOffer { id: offer_id })?,

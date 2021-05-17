@@ -88,8 +88,8 @@ pub fn test_offer() -> OfferResponse {
         owner: HumanAddr::from("offer_owner"),
         offer_type: OfferType::Buy,
         fiat_currency: FiatCurrency::Brl,
-        min_amount: Uint128(500),
-        max_amount: Uint128(2000),
+        min_amount: Uint128(500000),
+        max_amount: Uint128(2000000),
         state: OfferState::Active,
     };
 }
