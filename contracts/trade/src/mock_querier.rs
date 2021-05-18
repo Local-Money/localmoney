@@ -96,8 +96,10 @@ pub fn test_offer() -> OfferResponse {
 impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<TerraQueryWrapper>) -> QuerierResult {
         match &request {
-            QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => {
-                println!("{:?} {}", request, msg);
+            QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr,
+                msg: _msg,
+            }) => {
                 return if contract_addr == &HumanAddr::from("offer") {
                     let offer = test_offer();
                     return Ok(to_binary(&offer));
