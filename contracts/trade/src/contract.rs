@@ -8,10 +8,6 @@ use crate::msg::{ConfigResponse, HandleMsg, InitMsg, OfferMsg, QueryMsg};
 use crate::state::{config, config_read, OfferResponse, OfferType, State, TradeState};
 use crate::taxation::deduct_tax;
 
-use std::cmp::min;
-use std::ops::Sub;
-use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuerier};
-
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
@@ -133,17 +129,11 @@ fn try_refund<S: Storage, A: Api, Q: Querier>(
     state: State,
 ) -> StdResult<HandleResponse> {
     // anyone can try to refund, as long as the contract is expired
-    if env.block.height > state.expire_height {
+    if state.expire_height > env.block.height {
         return Err(StdError::generic_err("Can't release an unexpired Trade."));
     }
 
-    let mut balance = deps.querier.query_all_balances(&env.contract.address)?;
-    let querier = TerraQuerier::new(&deps.querier);
-    let tax_cap: TaxCapResponse = querier.query_tax_cap("uusd")?;
-    let tax_rate: TaxRateResponse = querier.query_tax_rate()?;
-    let tax = min(balance[0].amount * tax_rate.rate, tax_cap.cap);
-    balance[0].amount = balance[0].amount.sub(tax)?;
-
+    let balance = deps.querier.query_all_balances(&env.contract.address)?;
     send_tokens(deps, env.contract.address, state.sender, balance, "refund")
 }
 
@@ -157,13 +147,7 @@ fn send_tokens<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     let attributes = vec![attr("action", action), attr("to", to_address.clone())];
     let amount = [deduct_tax(deps, amount[0].clone()).unwrap()].to_vec();
-    println!(
-        "Sending {}{} from {} to {}",
-        amount[0].amount,
-        amount[0].denom,
-        from_address.clone(),
-        to_address.clone()
-    );
+
     let r = HandleResponse {
         messages: vec![CosmosMsg::Bank(BankMsg::Send {
             from_address,
