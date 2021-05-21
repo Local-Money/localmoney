@@ -1,6 +1,7 @@
-use crate::state::{FiatCurrency, OfferType};
+use crate::state::{OfferType};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use crate::currencies::FiatCurrency;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {}

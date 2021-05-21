@@ -1,11 +1,12 @@
 use crate::contract::{handle, init, load_offer_by_id, load_offers, query};
 use crate::msg::{ConfigResponse, CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
-use crate::state::{FiatCurrency, Offer, OfferState, OfferType};
+use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use cosmwasm_std::{
     from_binary, Api, Empty, Env, Extern, HandleResponse, HumanAddr, InitResponse, Querier,
     StdError, Storage, Uint128,
 };
+use crate::currencies::FiatCurrency;
 
 fn do_init<S: Storage, A: Api, Q: Querier>(
     mut deps: &mut Extern<S, A, Q>,
@@ -60,7 +61,7 @@ fn create_offer_test() {
     let env = mock_env(owner.clone(), &[]);
 
     do_init(&mut deps, env.clone());
-    let res = create_offer(&mut deps, env.clone(), OfferType::Buy, FiatCurrency::Brl);
+    let res = create_offer(&mut deps, env.clone(), OfferType::Buy, FiatCurrency::BRL);
 
     assert_eq!(res.messages.len(), 0);
 
@@ -71,13 +72,13 @@ fn create_offer_test() {
     assert_eq!(conf, expected);
 
     let query_cop_offers = QueryMsg::LoadOffers {
-        fiat_currency: FiatCurrency::Cop,
+        fiat_currency: FiatCurrency::COP,
     };
     let cop_offers: Vec<Offer> = from_binary(&query(&deps, query_cop_offers).unwrap()).unwrap();
     assert_eq!(cop_offers.len(), 0);
 
     let query_brl_offers = QueryMsg::LoadOffers {
-        fiat_currency: FiatCurrency::Brl,
+        fiat_currency: FiatCurrency::BRL,
     };
     let brl_offers: Vec<Offer> = from_binary(&query(&deps, query_brl_offers).unwrap()).unwrap();
     assert_eq!(brl_offers.len(), 1);
@@ -87,7 +88,7 @@ fn create_offer_test() {
         id: 1,
         owner,
         offer_type: OfferType::Buy,
-        fiat_currency: FiatCurrency::Brl,
+        fiat_currency: FiatCurrency::BRL,
         min_amount: Uint128(0),
         max_amount: Uint128(0),
         state: OfferState::Active,
@@ -105,11 +106,11 @@ fn pause_offer_test() {
 
     //Create Offer
     do_init(&mut deps, env.clone());
-    let res = create_offer(&mut deps, env.clone(), OfferType::Buy, FiatCurrency::Brl);
+    let res = create_offer(&mut deps, env.clone(), OfferType::Buy, FiatCurrency::BRL);
     assert_eq!(res.messages.len(), 0);
 
     //Load all offers and get the created offer
-    let offers = load_offers(&deps, FiatCurrency::Brl).unwrap();
+    let offers = load_offers(&deps, FiatCurrency::BRL).unwrap();
     let offer = &offers[0];
     assert_eq!(offer.state, OfferState::Active);
 
@@ -143,11 +144,11 @@ fn activate_offer_test() {
 
     //Create Offer
     do_init(&mut deps, env.clone());
-    let res = create_offer(&mut deps, env.clone(), OfferType::Buy, FiatCurrency::Brl);
+    let res = create_offer(&mut deps, env.clone(), OfferType::Buy, FiatCurrency::BRL);
     assert_eq!(res.messages.len(), 0);
 
     //Load all offers and get the created offer
-    let offers = load_offers(&deps, FiatCurrency::Brl).unwrap();
+    let offers = load_offers(&deps, FiatCurrency::BRL).unwrap();
     let offer = &offers[0];
     assert_eq!(offer.state, OfferState::Active);
 

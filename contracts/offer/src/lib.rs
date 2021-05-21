@@ -1,4 +1,5 @@
 pub mod contract;
+mod currencies;
 pub mod msg;
 pub mod state;
 #[cfg(test)]
