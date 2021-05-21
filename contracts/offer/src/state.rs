@@ -1,9 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::currencies::FiatCurrency;
 use cosmwasm_std::{Api, Extern, HumanAddr, Order, Querier, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket_read, singleton, singleton_read, ReadonlySingleton, Singleton};
-use crate::currencies::FiatCurrency;
 
 pub static CONFIG_KEY: &[u8] = b"config";
 pub static OFFERS_KEY: &[u8] = b"offers";
@@ -30,8 +30,6 @@ pub enum OfferType {
     Buy,
     Sell,
 }
-
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

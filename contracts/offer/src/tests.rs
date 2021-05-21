@@ -1,4 +1,5 @@
 use crate::contract::{handle, init, load_offer_by_id, load_offers, query};
+use crate::currencies::FiatCurrency;
 use crate::msg::{ConfigResponse, CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
@@ -6,7 +7,6 @@ use cosmwasm_std::{
     from_binary, Api, Empty, Env, Extern, HandleResponse, HumanAddr, InitResponse, Querier,
     StdError, Storage, Uint128,
 };
-use crate::currencies::FiatCurrency;
 
 fn do_init<S: Storage, A: Api, Q: Querier>(
     mut deps: &mut Extern<S, A, Q>,

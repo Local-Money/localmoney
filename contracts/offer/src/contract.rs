@@ -3,12 +3,10 @@ use cosmwasm_std::{
     StdResult, Storage, Uint128,
 };
 
-use crate::msg::{CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
-use crate::state::{
-    config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY,
-};
-use cosmwasm_storage::{bucket, bucket_read};
 use crate::currencies::FiatCurrency;
+use crate::msg::{CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
+use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
+use cosmwasm_storage::{bucket, bucket_read};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
