@@ -50,7 +50,7 @@ pub fn query_all_offers<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     fiat_currency: FiatCurrency,
 ) -> StdResult<Vec<Offer>> {
-    let offers: Vec<Offer> = bucket_read(OFFERS_KEY, &deps.storage)
+    let offers: Vec<Offer> = bucket_read(&deps.storage, OFFERS_KEY)
         .range(None, None, Order::Descending)
         .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
         .collect();
