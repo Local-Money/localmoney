@@ -1,7 +1,7 @@
 use cosmwasm_std::{
-    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, Env, Extern, HandleResponse, HumanAddr,
-    InitResponse, LogAttribute, Querier, QueryRequest, StdError, StdResult, Storage, Uint128,
-    WasmQuery,
+    to_binary, Api, Attribute, BankMsg, Binary, Coin, CosmosMsg, Env, Extern, HandleResponse,
+    HumanAddr, InitResponse, MessageInfo, Querier, QueryRequest, StdError, StdResult, Storage,
+    Uint128, WasmQuery,
 };
 
 use crate::msg::{ConfigResponse, HandleMsg, InitMsg, OfferMsg, QueryMsg};
@@ -11,6 +11,7 @@ use crate::taxation::deduct_tax;
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
+    info: MessageInfo,
     msg: InitMsg,
 ) -> StdResult<InitResponse> {
     let offer_id = msg.offer;
@@ -26,9 +27,9 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
 
     if offer.offer_type == OfferType::Buy {
         recipient = offer.owner;
-        sender = env.message.sender.clone();
+        sender = info.sender.clone();
     } else {
-        recipient = env.message.sender.clone();
+        recipient = info.sender.clone();
         sender = offer.owner;
     }
 
@@ -54,11 +55,12 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
 pub fn handle<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
+    info: MessageInfo,
     msg: HandleMsg,
 ) -> StdResult<HandleResponse> {
     let mut cfg = config(&mut deps.storage);
     let mut state = cfg.load()?;
-    if !env.message.sent_funds.is_empty() {
+    if !info.sent_funds.is_empty() {
         let balance = deps.querier.query_balance(&env.contract.address, "uusd")?;
         if balance.amount >= state.amount {
             state.state = TradeState::EscrowFunded;
@@ -68,8 +70,8 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     // let mut cfg = config(&mut deps.storage);
     // let state = cfg.load()?;
     match msg {
-        HandleMsg::Refund {} => try_refund(deps, env, msg, state),
-        HandleMsg::Release {} => try_release(deps, env, msg, state),
+        HandleMsg::Refund {} => try_refund(deps, env, info, msg, state),
+        HandleMsg::Release {} => try_release(deps, env, info, msg, state),
     }
 }
 
@@ -92,10 +94,11 @@ fn query_config<S: Storage, A: Api, Q: Querier>(
 fn try_release<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
+    info: MessageInfo,
     _msg: HandleMsg,
     state: State,
 ) -> StdResult<HandleResponse> {
-    if env.message.sender != state.sender {
+    if info.sender != state.sender {
         return Err(StdError::unauthorized());
     }
 
@@ -125,6 +128,7 @@ fn try_release<S: Storage, A: Api, Q: Querier>(
 fn try_refund<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
+    info: MessageInfo,
     _msg: HandleMsg,
     state: State,
 ) -> StdResult<HandleResponse> {
@@ -155,13 +159,13 @@ fn send_tokens<S: Storage, A: Api, Q: Querier>(
             amount,
         })],
         data: None,
-        log: attributes,
+        attributes,
     };
     Ok(r)
 }
 
-pub fn attr<K: ToString, V: ToString>(key: K, value: V) -> LogAttribute {
-    LogAttribute {
+pub fn attr<K: ToString, V: ToString>(key: K, value: V) -> Attribute {
+    Attribute {
         key: key.to_string(),
         value: value.to_string(),
     }

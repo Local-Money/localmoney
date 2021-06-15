@@ -1,4 +1,7 @@
-use cosmwasm_std::{to_binary, Api, Binary, Empty, Env, Extern, HandleResponse, InitResponse, Querier, StdError, StdResult, Storage, Uint128, MessageInfo};
+use cosmwasm_std::{
+    to_binary, Api, Binary, Empty, Env, Extern, HandleResponse, InitResponse, MessageInfo, Querier,
+    StdError, StdResult, Storage, Uint128,
+};
 
 use crate::currencies::FiatCurrency;
 use crate::msg::{CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
@@ -38,7 +41,6 @@ pub fn try_create_offer<S: Storage, A: Api, Q: Querier>(
     let mut state = config(&mut deps.storage).load().unwrap();
     let offer_id = state.offers_count + 1;
     state.offers_count = offer_id;
-
 
     let offer = Offer {
         id: offer_id,

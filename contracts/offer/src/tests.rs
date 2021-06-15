@@ -3,7 +3,10 @@ use crate::currencies::FiatCurrency;
 use crate::msg::{ConfigResponse, CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
-use cosmwasm_std::{from_binary, Api, Empty, Env, Extern, HandleResponse, HumanAddr, InitResponse, Querier, StdError, Storage, Uint128, MessageInfo};
+use cosmwasm_std::{
+    from_binary, Api, Empty, Env, Extern, HandleResponse, HumanAddr, InitResponse, MessageInfo,
+    Querier, StdError, Storage, Uint128,
+};
 use cosmwasm_vm::testing::mock_info;
 
 fn do_init<S: Storage, A: Api, Q: Querier>(
@@ -63,8 +66,13 @@ fn create_offer_test() {
     let info = mock_info(owner.clone(), &[]);
 
     do_init(&mut deps, env.clone(), info.clone());
-    let res = create_offer(&mut deps, env.clone(), info.clone(),
-                           OfferType::Buy, FiatCurrency::BRL);
+    let res = create_offer(
+        &mut deps,
+        env.clone(),
+        info.clone(),
+        OfferType::Buy,
+        FiatCurrency::BRL,
+    );
 
     assert_eq!(res.messages.len(), 0);
 
@@ -110,8 +118,13 @@ fn pause_offer_test() {
 
     //Create Offer
     do_init(&mut deps, env.clone(), info.clone());
-    let res = create_offer(&mut deps, env.clone(), info.clone(),
-                           OfferType::Buy, FiatCurrency::BRL);
+    let res = create_offer(
+        &mut deps,
+        env.clone(),
+        info.clone(),
+        OfferType::Buy,
+        FiatCurrency::BRL,
+    );
     assert_eq!(res.messages.len(), 0);
 
     //Load all offers and get the created offer
@@ -125,8 +138,12 @@ fn pause_offer_test() {
     let other_info = mock_info(other.clone(), &[]);
 
     //Try to change the State with another address.
-    let res = handle(&mut deps, other_env.clone(), other_info.clone(),
-                     msg.clone());
+    let res = handle(
+        &mut deps,
+        other_env.clone(),
+        other_info.clone(),
+        msg.clone(),
+    );
     //TODO: Implement Custom Errors
     //assert_eq!(res.err().unwrap(), StdError::unauthorized());
     let offer = &load_offer_by_id(&deps, offer.id).unwrap();
@@ -153,8 +170,13 @@ fn activate_offer_test() {
 
     //Create Offer
     do_init(&mut deps, env.clone(), info.clone());
-    let res = create_offer(&mut deps, env.clone(), info.clone(),
-                           OfferType::Buy, FiatCurrency::BRL);
+    let res = create_offer(
+        &mut deps,
+        env.clone(),
+        info.clone(),
+        OfferType::Buy,
+        FiatCurrency::BRL,
+    );
     assert_eq!(res.messages.len(), 0);
 
     //Load all offers and get the created offer
@@ -169,23 +191,25 @@ fn activate_offer_test() {
     let other_info = mock_info(other.clone(), &[]);
 
     //Try to change state to Paused with the Owner
-    let res = handle(&mut deps, env.clone(), info.clone(),
-                     pause_msg.clone()).unwrap();
+    let res = handle(&mut deps, env.clone(), info.clone(), pause_msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
     let offer = &load_offer_by_id(&deps, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to change the State to Active with another address.
-    let res = handle(&mut deps, other_env.clone(), other_info.clone(),
-                     activate_msg.clone());
+    let res = handle(
+        &mut deps,
+        other_env.clone(),
+        other_info.clone(),
+        activate_msg.clone(),
+    );
     //TODO: Implement Custom Errors
     //assert_eq!(res.err().unwrap(), StdError::unauthorized());
     let offer = &load_offer_by_id(&deps, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to change state to Active with the Owner
-    let res = handle(&mut deps, env.clone(), info.clone(),
-                     activate_msg.clone()).unwrap();
+    let res = handle(&mut deps, env.clone(), info.clone(), activate_msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
     let offer = &load_offer_by_id(&deps, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Active);

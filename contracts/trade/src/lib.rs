@@ -1,6 +1,4 @@
 pub mod contract;
-#[cfg(test)]
-mod mock_querier;
 pub mod msg;
 pub mod state;
 mod taxation;
