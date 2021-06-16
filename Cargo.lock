@@ -144,6 +144,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "clru"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44e10ee132778350b0390b347b47e4bbb098e23f0ee34ded4a03b078cae19024"
+
+[[package]]
 name = "const-oid"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -188,6 +194,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmwasm-schema"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb5e44706f0bebf7316d73a01a08a8b1a8d58d346265f0a2c5b119f54194c89b"
+dependencies = [
+ "schemars 0.7.6",
+ "serde_json",
+]
+
+[[package]]
 name = "cosmwasm-std"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -198,6 +214,19 @@ dependencies = [
  "serde",
  "serde-json-wasm 0.2.3",
  "snafu",
+]
+
+[[package]]
+name = "cosmwasm-std"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b176378aa26b13d2785afc37d0d92407a1a93fecf8006e49368173c91239a70"
+dependencies = [
+ "base64 0.11.0",
+ "schemars 0.7.6",
+ "serde",
+ "serde-json-wasm 0.2.3",
+ "thiserror",
 ]
 
 [[package]]
@@ -227,6 +256,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmwasm-storage"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d18fb0e51649e4f2d96469504499294afba1a747b62739027f3e357048821de2"
+dependencies = [
+ "cosmwasm-std 0.12.2",
+ "serde",
+]
+
+[[package]]
 name = "cosmwasm-vm"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -241,6 +280,27 @@ dependencies = [
  "serde_json",
  "sha2",
  "snafu",
+ "wasmer-middleware-common",
+ "wasmer-runtime-core",
+ "wasmer-singlepass-backend",
+]
+
+[[package]]
+name = "cosmwasm-vm"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52abb53309ff9d7dd786516806363f00d8b6c6ee03693b6916ea8852a76f8df1"
+dependencies = [
+ "clru",
+ "cosmwasm-std 0.12.2",
+ "hex",
+ "memmap",
+ "parity-wasm",
+ "schemars 0.7.6",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
  "wasmer-middleware-common",
  "wasmer-runtime-core",
  "wasmer-singlepass-backend",
@@ -607,10 +667,10 @@ checksum = "a9a7ab5d64814df0fe4a4b5ead45ed6c5f181ee3ff04ba344313a6c80446c5d4"
 name = "offer"
 version = "0.1.0"
 dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std 0.11.2",
- "cosmwasm-storage",
- "cosmwasm-vm",
+ "cosmwasm-schema 0.12.2",
+ "cosmwasm-std 0.12.2",
+ "cosmwasm-storage 0.12.2",
+ "cosmwasm-vm 0.12.2",
  "schemars 0.7.6",
  "serde",
  "snafu",
@@ -1009,10 +1069,10 @@ dependencies = [
 name = "trade"
 version = "0.1.0"
 dependencies = [
- "cosmwasm-schema",
+ "cosmwasm-schema 0.11.2",
  "cosmwasm-std 0.11.2",
- "cosmwasm-storage",
- "cosmwasm-vm",
+ "cosmwasm-storage 0.11.2",
+ "cosmwasm-vm 0.11.2",
  "schemars 0.7.6",
  "serde",
  "snafu",

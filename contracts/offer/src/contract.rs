@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Api, Binary, Empty, Env, Extern, HandleResponse, InitResponse, MessageInfo, Querier,
-    StdResult, Storage, Uint128,
+    to_binary, Binary, Deps, DepsMut, Empty, Env, HandleResponse, InitResponse, MessageInfo,
+    StdResult, Uint128,
 };
 
 use crate::currencies::FiatCurrency;
@@ -9,19 +9,19 @@ use crate::msg::{CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
 use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
 use cosmwasm_storage::{bucket, bucket_read};
 
-pub fn init<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+pub fn init(
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InitMsg,
 ) -> StdResult<InitResponse> {
     let state = State { offers_count: 0 };
-    config(&mut deps.storage).save(&state)?;
+    config(deps.storage).save(&state)?;
     Ok(InitResponse::default())
 }
 
-pub fn handle<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+pub fn handle(
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: HandleMsg,
@@ -33,13 +33,13 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     }
 }
 
-pub fn try_create_offer<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+pub fn try_create_offer(
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     msg: CreateOfferMsg,
 ) -> Result<HandleResponse, OfferError> {
-    let mut state = config(&mut deps.storage).load().unwrap();
+    let mut state = config(deps.storage).load().unwrap();
     let offer_id = state.offers_count + 1;
     state.offers_count = offer_id;
 
@@ -53,23 +53,23 @@ pub fn try_create_offer<S: Storage, A: Api, Q: Querier>(
         state: OfferState::Active,
     };
 
-    bucket(&mut deps.storage, OFFERS_KEY).save(&offer_id.to_be_bytes(), &offer)?;
-    config(&mut deps.storage).save(&state)?;
+    bucket(deps.storage, OFFERS_KEY).save(&offer_id.to_be_bytes(), &offer)?;
+    config(deps.storage).save(&state)?;
 
     Ok(HandleResponse::default())
 }
 
-pub fn try_activate<S: Storage, A: Api, Q: Querier>(
-    mut deps: &mut Extern<S, A, Q>,
+pub fn try_activate(
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     id: u64,
 ) -> Result<HandleResponse, OfferError> {
-    let mut offer = load_offer_by_id(&deps, id)?;
+    let mut offer = load_offer_by_id(deps.as_ref(), id)?;
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Paused {
             offer.state = OfferState::Active;
-            Ok(save_offer(&mut deps, offer)?)
+            Ok(save_offer(deps, offer)?)
         } else {
             Err(OfferError::InvalidStateChange {
                 from: offer.state,
@@ -84,17 +84,17 @@ pub fn try_activate<S: Storage, A: Api, Q: Querier>(
     };
 }
 
-pub fn try_pause<S: Storage, A: Api, Q: Querier>(
-    mut deps: &mut Extern<S, A, Q>,
+pub fn try_pause(
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     id: u64,
 ) -> Result<HandleResponse, OfferError> {
-    let mut offer = load_offer_by_id(&deps, id)?;
+    let mut offer = load_offer_by_id(deps.as_ref(), id)?;
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Active {
             offer.state = OfferState::Paused;
-            Ok(save_offer(&mut deps, offer)?)
+            Ok(save_offer(deps, offer)?)
         } else {
             Err(OfferError::InvalidStateChange {
                 from: offer.state,
@@ -109,10 +109,7 @@ pub fn try_pause<S: Storage, A: Api, Q: Querier>(
     };
 }
 
-pub fn query<S: Storage, A: Api, Q: Querier>(
-    deps: &Extern<S, A, Q>,
-    msg: QueryMsg,
-) -> StdResult<Binary> {
+pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::LoadOffers { fiat_currency } => to_binary(&load_offers(deps, fiat_currency)?),
@@ -120,32 +117,23 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     }
 }
 
-fn query_config<S: Storage, A: Api, Q: Querier>(deps: &Extern<S, A, Q>) -> StdResult<State> {
-    let state = config_read(&deps.storage).load().unwrap();
+fn query_config(deps: Deps) -> StdResult<State> {
+    let state = config_read(deps.storage).load().unwrap();
     Ok(state)
 }
 
-pub fn load_offers<S: Storage, A: Api, Q: Querier>(
-    deps: &Extern<S, A, Q>,
-    fiat_currency: FiatCurrency,
-) -> StdResult<Vec<Offer>> {
+pub fn load_offers(deps: Deps, fiat_currency: FiatCurrency) -> StdResult<Vec<Offer>> {
     let offers = query_all_offers(deps, fiat_currency)?;
     Ok(offers)
 }
 
-fn save_offer<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
-    offer: Offer,
-) -> StdResult<HandleResponse<Empty>> {
-    bucket(&mut deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
+fn save_offer(deps: DepsMut, offer: Offer) -> StdResult<HandleResponse<Empty>> {
+    bucket(deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
     Ok(HandleResponse::default())
 }
 
-pub fn load_offer_by_id<S: Storage, A: Api, Q: Querier>(
-    deps: &Extern<S, A, Q>,
-    id: u64,
-) -> StdResult<Offer> {
-    let offer: Offer = bucket_read(&deps.storage, OFFERS_KEY)
+pub fn load_offer_by_id(deps: Deps, id: u64) -> StdResult<Offer> {
+    let offer: Offer = bucket_read(deps.storage, OFFERS_KEY)
         .load(&id.to_be_bytes())
         .unwrap();
     Ok(offer)
