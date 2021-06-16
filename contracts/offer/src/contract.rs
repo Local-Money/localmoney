@@ -1,9 +1,10 @@
 use cosmwasm_std::{
     to_binary, Api, Binary, Empty, Env, Extern, HandleResponse, InitResponse, MessageInfo, Querier,
-    StdError, StdResult, Storage, Uint128,
+    StdResult, Storage, Uint128,
 };
 
 use crate::currencies::FiatCurrency;
+use crate::errors::OfferError;
 use crate::msg::{CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
 use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
 use cosmwasm_storage::{bucket, bucket_read};
@@ -24,7 +25,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     env: Env,
     info: MessageInfo,
     msg: HandleMsg,
-) -> StdResult<HandleResponse> {
+) -> Result<HandleResponse, OfferError> {
     match msg {
         HandleMsg::Create { offer } => try_create_offer(deps, env, info, offer),
         HandleMsg::Activate { id } => try_activate(deps, env, info, id),
@@ -37,7 +38,7 @@ pub fn try_create_offer<S: Storage, A: Api, Q: Querier>(
     _env: Env,
     info: MessageInfo,
     msg: CreateOfferMsg,
-) -> StdResult<HandleResponse> {
+) -> Result<HandleResponse, OfferError> {
     let mut state = config(&mut deps.storage).load().unwrap();
     let offer_id = state.offers_count + 1;
     state.offers_count = offer_id;
@@ -63,17 +64,23 @@ pub fn try_activate<S: Storage, A: Api, Q: Querier>(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> StdResult<HandleResponse> {
+) -> Result<HandleResponse, OfferError> {
     let mut offer = load_offer_by_id(&deps, id)?;
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Paused {
             offer.state = OfferState::Active;
-            save_offer(&mut deps, offer)
+            Ok(save_offer(&mut deps, offer)?)
         } else {
-            Err(StdError::generic_err("Offer is Active already."))
+            Err(OfferError::InvalidStateChange {
+                from: offer.state,
+                to: OfferState::Active,
+            })
         }
     } else {
-        Err(StdError::unauthorized())
+        Err(OfferError::Unauthorized {
+            owner: offer.owner,
+            caller: info.sender,
+        })
     };
 }
 
@@ -82,17 +89,23 @@ pub fn try_pause<S: Storage, A: Api, Q: Querier>(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> StdResult<HandleResponse> {
+) -> Result<HandleResponse, OfferError> {
     let mut offer = load_offer_by_id(&deps, id)?;
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Active {
             offer.state = OfferState::Paused;
-            save_offer(&mut deps, offer)
+            Ok(save_offer(&mut deps, offer)?)
         } else {
-            Err(StdError::generic_err("Offer is not Active."))
+            Err(OfferError::InvalidStateChange {
+                from: offer.state,
+                to: OfferState::Paused,
+            })
         }
     } else {
-        Err(StdError::unauthorized())
+        Err(OfferError::Unauthorized {
+            owner: offer.owner,
+            caller: info.sender,
+        })
     };
 }
 

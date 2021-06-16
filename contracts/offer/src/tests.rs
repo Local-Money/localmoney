@@ -1,11 +1,12 @@
 use crate::contract::{handle, init, load_offer_by_id, load_offers, query};
 use crate::currencies::FiatCurrency;
+use crate::errors::OfferError;
 use crate::msg::{ConfigResponse, CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use cosmwasm_std::{
     from_binary, Api, Empty, Env, Extern, HandleResponse, HumanAddr, InitResponse, MessageInfo,
-    Querier, StdError, Storage, Uint128,
+    Querier, Storage, Uint128,
 };
 use cosmwasm_vm::testing::mock_info;
 
@@ -144,8 +145,10 @@ fn pause_offer_test() {
         other_info.clone(),
         msg.clone(),
     );
-    //TODO: Implement Custom Errors
-    //assert_eq!(res.err().unwrap(), StdError::unauthorized());
+    assert!(matches!(
+        res.err().unwrap(),
+        OfferError::Unauthorized { .. }
+    ));
     let offer = &load_offer_by_id(&deps, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Active);
 
@@ -203,8 +206,11 @@ fn activate_offer_test() {
         other_info.clone(),
         activate_msg.clone(),
     );
-    //TODO: Implement Custom Errors
-    //assert_eq!(res.err().unwrap(), StdError::unauthorized());
+
+    assert!(matches!(
+        res.err().unwrap(),
+        OfferError::Unauthorized { .. }
+    ));
     let offer = &load_offer_by_id(&deps, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
