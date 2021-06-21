@@ -1,3 +1,5 @@
+//TODO: Will probably get deleted and replaced by the integration test
+/*
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use cosmwasm_std::{
     from_binary, Api, Coin, Empty, Env, Extern, HumanAddr, InitResponse, MessageInfo, Querier,
@@ -9,8 +11,6 @@ use crate::msg::{ConfigResponse, HandleMsg, InitMsg, QueryMsg};
 use crate::state::TradeState;
 use cosmwasm_vm::testing::mock_info;
 use StdError::Unauthorized;
-//TODO: Will probably get deleted and replaced by the integration test
-/*
 fn do_init<S: Storage, A: Api, Q: Querier>(
     mut deps: &mut Extern<S, A, Q>,
     env: Env,
