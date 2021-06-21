@@ -25,7 +25,7 @@ mod wasm {
     #[no_mangle]
     extern "C" fn handle(env_ptr: u32, msg_ptr: u32) -> u32 {
         do_handle(
-            &contract::handle::<ExternalStorage, ExternalApi, ExternalQuerier>,
+            &contract::execute::<ExternalStorage, ExternalApi, ExternalQuerier>,
             env_ptr,
             msg_ptr,
         )

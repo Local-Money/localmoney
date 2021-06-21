@@ -1,17 +1,15 @@
-use crate::contract::{handle, init, load_offer_by_id, load_offers, query};
+use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{ConfigResponse, CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
+use crate::msg::{ConfigResponse, CreateOfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
-use cosmwasm_std::{
-    from_binary, DepsMut, Empty, Env, HandleResponse, HumanAddr, InitResponse, MessageInfo, Uint128,
-};
+use cosmwasm_std::{from_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response, Uint128};
 use cosmwasm_vm::testing::mock_info;
 
-fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> InitResponse<Empty> {
-    let init_msg = InitMsg {};
-    let res = init(deps, env, info, init_msg).unwrap();
+fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
+    let init_msg = InstantiateMsg {};
+    let res = instantiate(deps, env, info, init_msg).unwrap();
 
     assert_eq!(res.messages.len(), 0);
     return res;
@@ -20,12 +18,11 @@ fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> InitResponse<Empty> {
 #[test]
 fn proper_init() {
     let mut deps = mock_dependencies(&[]);
-    let owner = HumanAddr::from("owner");
     let env = mock_env();
-    let info = mock_info(owner, &[]);
+    let info = mock_info("owner", &[]);
 
     let res = do_init(deps.as_mut(), env.clone(), info);
-    assert_eq!(res, InitResponse::default());
+    assert_eq!(res, Response::default());
 
     let query_config = QueryMsg::Config {};
     let conf: ConfigResponse = from_binary(&query(deps.as_ref(), query_config).unwrap()).unwrap();
@@ -39,8 +36,8 @@ fn create_offer(
     info: MessageInfo,
     offer_type: OfferType,
     fiat_currency: FiatCurrency,
-) -> HandleResponse<Empty> {
-    let msg = HandleMsg::Create {
+) -> Response<Empty> {
+    let msg = ExecuteMsg::Create {
         offer: CreateOfferMsg {
             offer_type,
             fiat_currency,
@@ -49,15 +46,15 @@ fn create_offer(
         },
     };
 
-    return handle(deps, env, info, msg.clone()).unwrap();
+    return execute(deps, env, info, msg.clone()).unwrap();
 }
 
 #[test]
 fn create_offer_test() {
     let mut deps = mock_dependencies(&[]);
-    let owner = HumanAddr::from("owner");
     let env = mock_env();
-    let info = mock_info(owner.clone(), &[]);
+    let owner = Addr::unchecked("owner");
+    let info = mock_info(owner.clone().as_str(), &[]);
 
     do_init(deps.as_mut(), env.clone(), info.clone());
     let res = create_offer(
@@ -108,10 +105,10 @@ fn create_offer_test() {
 #[test]
 fn pause_offer_test() {
     let mut deps = mock_dependencies(&[]);
-    let owner = HumanAddr::from("owner");
-    let other = HumanAddr::from("other");
+    let owner = Addr::unchecked("owner");
+    let other = Addr::unchecked("other");
     let env = mock_env();
-    let info = mock_info(owner.clone(), &[]);
+    let info = mock_info(owner.clone().as_str(), &[]);
 
     //Create Offer
     do_init(deps.as_mut(), env.clone(), info.clone());
@@ -130,12 +127,12 @@ fn pause_offer_test() {
     assert_eq!(offer.state, OfferState::Active);
 
     //Pause Message
-    let msg = HandleMsg::Pause { id: offer.id };
+    let msg = ExecuteMsg::Pause { id: offer.id };
     let other_env = mock_env();
-    let other_info = mock_info(other.clone(), &[]);
+    let other_info = mock_info(other.clone().as_str(), &[]);
 
     //Try to change the State with another address.
-    let res = handle(
+    let res = execute(
         deps.as_mut(),
         other_env.clone(),
         other_info.clone(),
@@ -149,23 +146,23 @@ fn pause_offer_test() {
     assert_eq!(offer.state, OfferState::Active);
 
     //Try to change state with the Owner
-    let res = handle(deps.as_mut(), env.clone(), info.clone(), msg.clone()).unwrap();
+    let res = execute(deps.as_mut(), env.clone(), info.clone(), msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
     let offer = &load_offer_by_id(deps.as_ref(), offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to pause Paused offer
-    let res = handle(deps.as_mut(), env.clone(), info.clone(), msg.clone());
+    let res = execute(deps.as_mut(), env.clone(), info.clone(), msg.clone());
     assert_eq!(res.is_err(), true);
 }
 
 #[test]
 fn activate_offer_test() {
     let mut deps = mock_dependencies(&[]);
-    let owner = HumanAddr::from("owner");
-    let other = HumanAddr::from("other");
+    let owner = Addr::unchecked("owner");
+    let other = Addr::unchecked("other");
     let env = mock_env();
-    let info = mock_info(owner.clone(), &[]);
+    let info = mock_info(owner.clone().as_str(), &[]);
 
     //Create Offer
     do_init(deps.as_mut(), env.clone(), info.clone());
@@ -184,19 +181,19 @@ fn activate_offer_test() {
     assert_eq!(offer.state, OfferState::Active);
 
     //Pause Message
-    let pause_msg = HandleMsg::Pause { id: offer.id };
-    let activate_msg = HandleMsg::Activate { id: offer.id };
+    let pause_msg = ExecuteMsg::Pause { id: offer.id };
+    let activate_msg = ExecuteMsg::Activate { id: offer.id };
     let other_env = mock_env();
-    let other_info = mock_info(other.clone(), &[]);
+    let other_info = mock_info(other.clone().as_str(), &[]);
 
     //Try to change state to Paused with the Owner
-    let res = handle(deps.as_mut(), env.clone(), info.clone(), pause_msg.clone()).unwrap();
+    let res = execute(deps.as_mut(), env.clone(), info.clone(), pause_msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
     let offer = &load_offer_by_id(deps.as_ref(), offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to change the State to Active with another address.
-    let res = handle(
+    let res = execute(
         deps.as_mut(),
         other_env.clone(),
         other_info.clone(),
@@ -211,7 +208,7 @@ fn activate_offer_test() {
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to change state to Active with the Owner
-    let res = handle(
+    let res = execute(
         deps.as_mut(),
         env.clone(),
         info.clone(),

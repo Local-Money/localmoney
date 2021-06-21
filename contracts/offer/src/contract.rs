@@ -1,35 +1,37 @@
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Empty, Env, HandleResponse, InitResponse, MessageInfo,
-    StdResult, Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
+    Uint128,
 };
 
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{CreateOfferMsg, HandleMsg, InitMsg, QueryMsg};
+use crate::msg::{CreateOfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
 use cosmwasm_storage::{bucket, bucket_read};
 
-pub fn init(
+#[entry_point]
+pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InitMsg,
-) -> StdResult<InitResponse> {
+    _msg: InstantiateMsg,
+) -> StdResult<Response> {
     let state = State { offers_count: 0 };
     config(deps.storage).save(&state)?;
-    Ok(InitResponse::default())
+    Ok(Response::default())
 }
 
-pub fn handle(
+#[entry_point]
+pub fn execute(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: HandleMsg,
-) -> Result<HandleResponse, OfferError> {
+    msg: ExecuteMsg,
+) -> Result<Response, OfferError> {
     match msg {
-        HandleMsg::Create { offer } => try_create_offer(deps, env, info, offer),
-        HandleMsg::Activate { id } => try_activate(deps, env, info, id),
-        HandleMsg::Pause { id } => try_pause(deps, env, info, id),
+        ExecuteMsg::Create { offer } => try_create_offer(deps, env, info, offer),
+        ExecuteMsg::Activate { id } => try_activate(deps, env, info, id),
+        ExecuteMsg::Pause { id } => try_pause(deps, env, info, id),
     }
 }
 
@@ -38,7 +40,7 @@ pub fn try_create_offer(
     _env: Env,
     info: MessageInfo,
     msg: CreateOfferMsg,
-) -> Result<HandleResponse, OfferError> {
+) -> Result<Response, OfferError> {
     let mut state = config(deps.storage).load().unwrap();
     let offer_id = state.offers_count + 1;
     state.offers_count = offer_id;
@@ -56,7 +58,7 @@ pub fn try_create_offer(
     bucket(deps.storage, OFFERS_KEY).save(&offer_id.to_be_bytes(), &offer)?;
     config(deps.storage).save(&state)?;
 
-    Ok(HandleResponse::default())
+    Ok(Response::default())
 }
 
 pub fn try_activate(
@@ -64,7 +66,7 @@ pub fn try_activate(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> Result<HandleResponse, OfferError> {
+) -> Result<Response, OfferError> {
     let mut offer = load_offer_by_id(deps.as_ref(), id)?;
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Paused {
@@ -89,7 +91,7 @@ pub fn try_pause(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> Result<HandleResponse, OfferError> {
+) -> Result<Response, OfferError> {
     let mut offer = load_offer_by_id(deps.as_ref(), id)?;
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Active {
@@ -109,6 +111,7 @@ pub fn try_pause(
     };
 }
 
+#[entry_point]
 pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
@@ -127,9 +130,9 @@ pub fn load_offers(deps: Deps, fiat_currency: FiatCurrency) -> StdResult<Vec<Off
     Ok(offers)
 }
 
-fn save_offer(deps: DepsMut, offer: Offer) -> StdResult<HandleResponse<Empty>> {
+fn save_offer(deps: DepsMut, offer: Offer) -> StdResult<Response<Empty>> {
     bucket(deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
-    Ok(HandleResponse::default())
+    Ok(Response::default())
 }
 
 pub fn load_offer_by_id(deps: Deps, id: u64) -> StdResult<Offer> {
