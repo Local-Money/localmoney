@@ -35,6 +35,15 @@ pub fn execute(
     }
 }
 
+#[entry_point]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::LoadOffers { fiat_currency } => to_binary(&load_offers(deps, fiat_currency)?),
+        QueryMsg::LoadOffer { id } => to_binary(&load_offer_by_id(deps, id)?),
+    }
+}
+
 pub fn try_create_offer(
     deps: DepsMut,
     _env: Env,
@@ -109,15 +118,6 @@ pub fn try_pause(
             caller: info.sender,
         })
     };
-}
-
-#[entry_point]
-pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::LoadOffers { fiat_currency } => to_binary(&load_offers(deps, fiat_currency)?),
-        QueryMsg::LoadOffer { id } => to_binary(&load_offer_by_id(deps, id)?),
-    }
 }
 
 fn query_config(deps: Deps) -> StdResult<State> {
