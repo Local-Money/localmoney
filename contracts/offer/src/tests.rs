@@ -29,9 +29,7 @@ fn proper_init() {
 
     let query_config = QueryMsg::Config {};
     let conf: ConfigResponse = from_binary(&query(deps.as_ref(), query_config).unwrap()).unwrap();
-
     let expected = ConfigResponse { offers_count: 0 };
-
     assert_eq!(conf, expected);
 }
 
@@ -219,7 +217,7 @@ fn activate_offer_test() {
         info.clone(),
         activate_msg.clone(),
     )
-        .unwrap();
+    .unwrap();
     assert_eq!(res.messages.len(), 0);
     let offer = &load_offer_by_id(deps.as_ref(), offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Active);
