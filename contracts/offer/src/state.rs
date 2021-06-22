@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::currencies::FiatCurrency;
-use cosmwasm_std::{Api, Extern, HumanAddr, Order, Querier, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket_read, singleton, singleton_read, ReadonlySingleton, Singleton};
 
 pub static CONFIG_KEY: &[u8] = b"config";
@@ -16,7 +16,7 @@ pub struct State {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Offer {
     pub id: u64,
-    pub owner: HumanAddr,
+    pub owner: Addr,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub min_amount: Uint128,
@@ -38,19 +38,16 @@ pub enum OfferState {
     Paused,
 }
 
-pub fn config<S: Storage>(storage: &mut S) -> Singleton<S, State> {
+pub fn config(storage: &mut dyn Storage) -> Singleton<State> {
     singleton(storage, CONFIG_KEY)
 }
 
-pub fn config_read<S: Storage>(storage: &S) -> ReadonlySingleton<S, State> {
+pub fn config_read(storage: &dyn Storage) -> ReadonlySingleton<State> {
     singleton_read(storage, CONFIG_KEY)
 }
 
-pub fn query_all_offers<S: Storage, A: Api, Q: Querier>(
-    deps: &Extern<S, A, Q>,
-    fiat_currency: FiatCurrency,
-) -> StdResult<Vec<Offer>> {
-    let offers: Vec<Offer> = bucket_read(OFFERS_KEY, &deps.storage)
+pub fn query_all_offers(deps: Deps, fiat_currency: FiatCurrency) -> StdResult<Vec<Offer>> {
+    let offers: Vec<Offer> = bucket_read(deps.storage, OFFERS_KEY)
         .range(None, None, Order::Descending)
         .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
         .collect();

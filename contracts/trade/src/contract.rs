@@ -1,34 +1,35 @@
 use cosmwasm_std::{
-    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, Env, Extern, HandleResponse, HumanAddr,
-    InitResponse, LogAttribute, Querier, QueryRequest, StdError, StdResult, Storage, Uint128,
-    WasmQuery,
+    entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmQuery,
 };
 
-use crate::msg::{ConfigResponse, HandleMsg, InitMsg, OfferMsg, QueryMsg};
+use crate::errors::TradeError;
+use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
 use crate::state::{config, config_read, OfferResponse, OfferType, State, TradeState};
-use crate::taxation::deduct_tax;
 
-pub fn init<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+#[entry_point]
+pub fn instantiate(
+    deps: DepsMut,
     env: Env,
-    msg: InitMsg,
-) -> StdResult<InitResponse> {
+    info: MessageInfo,
+    msg: InstantiateMsg,
+) -> Result<Response, TradeError> {
     let offer_id = msg.offer;
     let offer: OfferResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: msg.offer_contract,
+        contract_addr: msg.offer_contract.to_string(),
         msg: to_binary(&OfferMsg::LoadOffer { id: offer_id })?,
     }))?;
 
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
     let expire_height = env.block.height + 100; //Roughly 10 Minutes.
-    let recipient: HumanAddr;
-    let sender: HumanAddr;
+    let recipient: Addr;
+    let sender: Addr;
 
     if offer.offer_type == OfferType::Buy {
         recipient = offer.owner;
-        sender = env.message.sender.clone();
+        sender = info.sender.clone();
     } else {
-        recipient = env.message.sender.clone();
+        recipient = info.sender.clone();
         sender = offer.owner;
     }
 
@@ -46,19 +47,21 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         state.state = TradeState::EscrowFunded
     }
 
-    config(&mut deps.storage).save(&state)?;
+    config(deps.storage).save(&state)?;
 
-    Ok(InitResponse::default())
+    Ok(Response::default())
 }
 
-pub fn handle<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+#[entry_point]
+pub fn execute(
+    deps: DepsMut,
     env: Env,
-    msg: HandleMsg,
-) -> StdResult<HandleResponse> {
-    let mut cfg = config(&mut deps.storage);
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> Result<Response, TradeError> {
+    let mut cfg = config(deps.storage);
     let mut state = cfg.load()?;
-    if !env.message.sent_funds.is_empty() {
+    if !info.funds.is_empty() {
         let balance = deps.querier.query_balance(&env.contract.address, "uusd")?;
         if balance.amount >= state.amount {
             state.state = TradeState::EscrowFunded;
@@ -68,100 +71,101 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     // let mut cfg = config(&mut deps.storage);
     // let state = cfg.load()?;
     match msg {
-        HandleMsg::Refund {} => try_refund(deps, env, msg, state),
-        HandleMsg::Release {} => try_release(deps, env, msg, state),
+        ExecuteMsg::Refund {} => try_refund(deps, env, info, msg, state),
+        ExecuteMsg::Release {} => try_release(deps, env, info, msg, state),
     }
 }
 
-pub fn query<S: Storage, A: Api, Q: Querier>(
-    deps: &Extern<S, A, Q>,
-    msg: QueryMsg,
-) -> StdResult<Binary> {
+#[entry_point]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
 }
 
-fn query_config<S: Storage, A: Api, Q: Querier>(
-    deps: &Extern<S, A, Q>,
-) -> StdResult<ConfigResponse> {
-    let state = config_read(&deps.storage).load()?;
+fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
+    let state = config_read(deps.storage).load()?;
     Ok(state)
 }
 
-fn try_release<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+fn try_release(
+    deps: DepsMut,
     env: Env,
-    _msg: HandleMsg,
+    info: MessageInfo,
+    _msg: ExecuteMsg,
     state: State,
-) -> StdResult<HandleResponse> {
-    if env.message.sender != state.sender {
-        return Err(StdError::unauthorized());
+) -> Result<Response, TradeError> {
+    if info.sender != state.sender {
+        return Err(TradeError::Std(StdError::generic_err("Unauthorized")));
     }
 
     // throws error if state is expired
     if env.block.height > state.expire_height {
-        return Err(StdError::generic_err("This trade has expired"));
+        return Err(TradeError::Std(StdError::generic_err(
+            "This trade has expired",
+        )));
     }
 
     let mut balance = deps.querier.query_all_balances(&env.contract.address)?;
+    //TODO: Deduct Tax
+    //balance[0].amount = deduct_tax(&deps, balance[0].clone()).unwrap().amount;
 
-    balance[0].amount = deduct_tax(&deps, balance[0].clone()).unwrap().amount;
-
-    let mut cfg = config(&mut deps.storage);
+    let mut cfg = config(deps.storage);
     let mut state = cfg.load()?;
     state.state = TradeState::Closed;
     cfg.save(&state)?;
 
     send_tokens(
         deps,
-        env.contract.address,
         state.recipient,
         balance,
         "approve",
     )
 }
 
-fn try_refund<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
+fn try_refund(
+    deps: DepsMut,
     env: Env,
-    _msg: HandleMsg,
+    _info: MessageInfo,
+    _msg: ExecuteMsg,
     state: State,
-) -> StdResult<HandleResponse> {
+) -> Result<Response, TradeError> {
     // anyone can try to refund, as long as the contract is expired
     if state.expire_height > env.block.height {
-        return Err(StdError::generic_err("Can't release an unexpired Trade."));
+        return Err(TradeError::Std(StdError::generic_err(
+            "Can't release an unexpired Trade.",
+        )));
     }
 
     let balance = deps.querier.query_all_balances(&env.contract.address)?;
-    send_tokens(deps, env.contract.address, state.sender, balance, "refund")
+    send_tokens(deps, state.sender, balance, "refund")
 }
 
 // this is a helper to move the tokens, so the business logic is easy to read
-fn send_tokens<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
-    from_address: HumanAddr,
-    to_address: HumanAddr,
+fn send_tokens(
+    _deps: DepsMut,
+    to_address: Addr,
     amount: Vec<Coin>,
     action: &str,
-) -> StdResult<HandleResponse> {
+) -> Result<Response, TradeError> {
     let attributes = vec![attr("action", action), attr("to", to_address.clone())];
-    let amount = [deduct_tax(deps, amount[0].clone()).unwrap()].to_vec();
+    //TODO
+    //let amount = [deduct_tax(deps, amount[0].clone()).unwrap()].to_vec();
 
-    let r = HandleResponse {
+    let r = Response {
         messages: vec![CosmosMsg::Bank(BankMsg::Send {
-            from_address,
-            to_address,
+            to_address: to_address.to_string(),
             amount,
         })],
+        submessages: vec![],
         data: None,
-        log: attributes,
+        attributes,
     };
     Ok(r)
 }
 
-pub fn attr<K: ToString, V: ToString>(key: K, value: V) -> LogAttribute {
-    LogAttribute {
+pub fn attr<K: ToString, V: ToString>(key: K, value: V) -> Attribute {
+    Attribute {
         key: key.to_string(),
         value: value.to_string(),
     }
