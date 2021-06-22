@@ -1,15 +1,15 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{HumanAddr, Storage, Uint128};
+use cosmwasm_std::{Addr, Storage, Uint128};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 
 pub static CONFIG_KEY: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub recipient: HumanAddr,
-    pub sender: HumanAddr,
+    pub recipient: Addr,
+    pub sender: Addr,
     pub offer_id: u64,
     pub state: TradeState,
     pub expire_height: u64,
@@ -19,7 +19,7 @@ pub struct State {
 //TODO: How to query offer data without copying all the types.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferResponse {
-    pub owner: HumanAddr,
+    pub owner: Addr,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub min_amount: Uint128,

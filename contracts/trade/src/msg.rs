@@ -1,18 +1,18 @@
 use crate::state::State;
-use cosmwasm_std::HumanAddr;
+use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InitMsg {
-    pub offer_contract: HumanAddr,
+pub struct InstantiateMsg {
+    pub offer_contract: Addr,
     pub offer: u64,
     pub amount: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum HandleMsg {
+pub enum ExecuteMsg {
     Refund {},
     Release {},
 }
