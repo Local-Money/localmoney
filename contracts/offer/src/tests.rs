@@ -25,7 +25,8 @@ fn proper_init() {
     assert_eq!(res, Response::default());
 
     let query_config = QueryMsg::Config {};
-    let conf: ConfigResponse = from_binary(&query(deps.as_ref(), query_config).unwrap()).unwrap();
+    let conf: ConfigResponse =
+        from_binary(&query(deps.as_ref(), env.clone(), query_config).unwrap()).unwrap();
     let expected = ConfigResponse { offers_count: 0 };
     assert_eq!(conf, expected);
 }
@@ -68,7 +69,8 @@ fn create_offer_test() {
     assert_eq!(res.messages.len(), 0);
 
     let query_config = QueryMsg::Config {};
-    let conf: ConfigResponse = from_binary(&query(deps.as_ref(), query_config).unwrap()).unwrap();
+    let conf: ConfigResponse =
+        from_binary(&query(deps.as_ref(), env.clone(), query_config).unwrap()).unwrap();
 
     let expected = ConfigResponse { offers_count: 1 };
     assert_eq!(conf, expected);
@@ -77,14 +79,14 @@ fn create_offer_test() {
         fiat_currency: FiatCurrency::COP,
     };
     let cop_offers: Vec<Offer> =
-        from_binary(&query(deps.as_ref(), query_cop_offers).unwrap()).unwrap();
+        from_binary(&query(deps.as_ref(), env.clone(), query_cop_offers).unwrap()).unwrap();
     assert_eq!(cop_offers.len(), 0);
 
     let query_brl_offers = QueryMsg::LoadOffers {
         fiat_currency: FiatCurrency::BRL,
     };
     let brl_offers: Vec<Offer> =
-        from_binary(&query(deps.as_ref(), query_brl_offers).unwrap()).unwrap();
+        from_binary(&query(deps.as_ref(), env.clone(), query_brl_offers).unwrap()).unwrap();
     assert_eq!(brl_offers.len(), 1);
 
     let query_order_by_id = QueryMsg::LoadOffer { id: 1 };
@@ -98,7 +100,7 @@ fn create_offer_test() {
         state: OfferState::Active,
     };
     let queried_offer: Offer =
-        from_binary(&query(deps.as_ref(), query_order_by_id).unwrap()).unwrap();
+        from_binary(&query(deps.as_ref(), env.clone(), query_order_by_id).unwrap()).unwrap();
     assert_eq!(queried_offer, created_offer);
 }
 

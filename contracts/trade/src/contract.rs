@@ -115,12 +115,7 @@ fn try_release(
     state.state = TradeState::Closed;
     cfg.save(&state)?;
 
-    send_tokens(
-        deps,
-        state.recipient,
-        balance,
-        "approve",
-    )
+    send_tokens(deps, state.recipient, balance, "approve")
 }
 
 fn try_refund(
