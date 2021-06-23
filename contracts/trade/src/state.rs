@@ -16,38 +16,6 @@ pub struct State {
     pub amount: Uint128,
 }
 
-//TODO: How to query offer data without copying all the types.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct OfferResponse {
-    pub owner: Addr,
-    pub offer_type: OfferType,
-    pub fiat_currency: FiatCurrency,
-    pub min_amount: Uint128,
-    pub max_amount: Uint128,
-    pub state: OfferState,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum OfferType {
-    Buy,
-    Sell,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum FiatCurrency {
-    Cop,
-    Brl,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum OfferState {
-    Active,
-    Paused,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {

@@ -5,7 +5,8 @@ use cosmwasm_std::{
 
 use crate::errors::TradeError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
-use crate::state::{config, config_read, OfferResponse, OfferType, State, TradeState};
+use crate::state::{config, config_read, State, TradeState};
+use offer::state::OfferType;
 
 #[entry_point]
 pub fn instantiate(
@@ -15,7 +16,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
     let offer_id = msg.offer;
-    let offer: OfferResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+    let offer: offer::state::Offer = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: msg.offer_contract.to_string(),
         msg: to_binary(&OfferMsg::LoadOffer { id: offer_id })?,
     }))?;
@@ -24,6 +25,15 @@ pub fn instantiate(
     let expire_height = env.block.height + 100; //Roughly 10 Minutes.
     let recipient: Addr;
     let sender: Addr;
+
+    let amount = Uint128::from(msg.amount);
+    if amount > offer.max_amount || amount < offer.min_amount {
+        return Err(TradeError::AmountError {
+            amount,
+            min_amount: offer.min_amount,
+            max_amount: offer.max_amount,
+        });
+    }
 
     if offer.offer_type == OfferType::Buy {
         recipient = offer.owner;
@@ -42,7 +52,10 @@ pub fn instantiate(
         amount: Uint128::from(msg.amount),
     };
 
-    let amount_sent = deps.querier.query_balance(&env.contract.address, "uusd")?;
+    let amount_sent = deps
+        .querier
+        .query_balance(&env.contract.address, "uusd".to_string())?;
+
     if amount_sent.amount >= Uint128::from(msg.amount) {
         state.state = TradeState::EscrowFunded
     }
@@ -106,7 +119,7 @@ fn try_release(
         )));
     }
 
-    let mut balance = deps.querier.query_all_balances(&env.contract.address)?;
+    let balance = deps.querier.query_all_balances(&env.contract.address)?;
     //TODO: Deduct Tax
     //balance[0].amount = deduct_tax(&deps, balance[0].clone()).unwrap().amount;
 

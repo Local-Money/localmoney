@@ -1,4 +1,4 @@
-//TODO: Will probably get deleted and replaced by the integration test
+#![cfg(test)]
 /*
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use cosmwasm_std::{

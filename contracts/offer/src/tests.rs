@@ -1,3 +1,4 @@
+#![cfg(test)]
 use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
