@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use crate::msg::{InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, TradeState};
 use cosmwasm_std::testing::{mock_env, MockApi, MockStorage};
 use cosmwasm_std::{coin, Addr, Coin, Empty, Uint128};
@@ -35,7 +35,6 @@ pub fn trade_contract() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-//TODO: use MockQuerier with cw-multi-test to send ust balance changes and side effects/state updates by balance changes.
 #[test]
 fn trade_happy_path() {
     let mut router = mock_app();
@@ -46,7 +45,11 @@ fn trade_happy_path() {
     let trade_owner = Addr::unchecked("trade_owner");
     let offer_owner = Addr::unchecked("offer_owner");
 
-    let init_funds = [coin(2_000_000, "uusd")].to_vec();
+    let ust_denom = "uusd";
+    let initial_trade_owner_balance = Uint128(2_000_000);
+    let trade_amount = Uint128(1_000_000);
+
+    let init_funds = [coin(*&initial_trade_owner_balance.u128(), "uusd")].to_vec();
     router.set_bank_balance(&trade_owner, init_funds).unwrap();
 
     //Instantiate Offer contract
@@ -69,31 +72,19 @@ fn trade_happy_path() {
                 offer_type: OfferType::Buy,
                 fiat_currency: offer::currencies::FiatCurrency::COP,
                 min_amount: 1_000,
-                max_amount: 1_000_000,
+                max_amount: trade_amount.u128() as u64,
             },
         },
         &[],
     );
     assert!(create_offer_result.is_ok());
 
-    let mut instantiate_trade_msg = InstantiateMsg {
+    let instantiate_trade_msg = InstantiateMsg {
         offer_contract: offer_contract_addr.clone(),
         offer: 1,
-        amount: 1_500_000,
+        amount: trade_amount.u128() as u64,
     };
 
-    //Create trade with an amount bigger than allowed
-    let create_trade_response = router.instantiate_contract(
-        trade_code_id,
-        trade_owner.clone(),
-        &instantiate_trade_msg,
-        &[],
-        "TRADE",
-    );
-    assert!(create_trade_response.is_err());
-
-    //Fix the amount and try to create it again
-    instantiate_trade_msg.amount = 1_000_000;
     //Create Trade
     let trade_contract_addr = router
         .instantiate_contract(
@@ -101,65 +92,68 @@ fn trade_happy_path() {
             trade_owner.clone(),
             &instantiate_trade_msg,
             &[Coin {
-                denom: "uusd".to_string(),
-                amount: Uint128(1_000_000),
+                denom: ust_denom.to_string(),
+                amount: trade_amount,
             }],
             "TRADE",
         )
         .unwrap();
 
     //Query Trade contract balance (escrow)
-    let _trade_contract_balance = router
+    let trade_contract_balance = router
         .wrap()
-        .query_balance(trade_contract_addr.clone(), "uusd")
+        .query_balance(trade_contract_addr.clone(), ust_denom)
         .unwrap();
     assert_eq!(
-        _trade_contract_balance,
+        trade_contract_balance,
         Coin {
-            denom: "uusd".to_string(),
-            amount: Uint128(1_000_000)
+            denom: ust_denom.to_string(),
+            amount: trade_amount
         }
     );
+
+    //Query Trade state and Verify if it's "funded".
+    let trade_state: State = router
+        .wrap()
+        .query_wasm_smart(trade_contract_addr.clone(), &QueryMsg::Config {})
+        .unwrap();
+    assert_eq!(trade_state.state, TradeState::EscrowFunded);
+
+    let release_response = router.execute_contract(
+        trade_owner.clone(),
+        trade_contract_addr.clone(),
+        &ExecuteMsg::Release {},
+        &[],
+    );
+    assert!(release_response.is_ok());
 
     //Query Trade state
     let trade_state: State = router
         .wrap()
         .query_wasm_smart(trade_contract_addr.clone(), &QueryMsg::Config {})
         .unwrap();
-    assert_eq!(trade_state.state, TradeState::EscrowFunded);
-    
-    /*
-    //Release funds
-    let _release_response = router
-        .execute_contract(
-            trade_owner.clone(),
-            trade_contract_addr.clone(),
-            &ExecuteMsg::Release {},
-            &[Coin {
-                denom: "uusd".to_string(),
-                amount: Uint128(1_000_000),
-            }],
-        )
-        .unwrap();
 
     //Query Trade contract balance (escrow)
-    let _trade_contract_balance = router
+    let trade_contract_balance = router
         .wrap()
-        .query_balance(trade_contract_addr.clone(), "uusd")
+        .query_balance(trade_contract_addr.clone(), ust_denom)
         .unwrap();
 
     //Query trade owner balance
-    let _trade_owner_balance = router
+    let trade_owner_balance = router
         .wrap()
-        .query_balance(trade_owner.clone(), "uusd")
+        .query_balance(trade_owner.clone(), ust_denom)
         .unwrap();
 
     //Query trade owner balance
-    let _offer_owner_balance = router
+    let offer_owner_balance = router
         .wrap()
-        .query_balance(offer_owner.clone(), "uusd")
+        .query_balance(offer_owner.clone(), ust_denom)
         .unwrap();
 
     assert_eq!(trade_state.state, TradeState::Closed);
-     */
+    assert_eq!(trade_contract_balance.amount, Uint128::zero());
+    assert_eq!(trade_owner_balance.amount, trade_amount);
+    assert_eq!(offer_owner_balance.amount, trade_amount);
+    assert_eq!(offer_owner_balance.denom, ust_denom);
 }

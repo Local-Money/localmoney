@@ -52,13 +52,17 @@ pub fn instantiate(
         amount: Uint128::from(msg.amount),
     };
 
-    let amount_sent = deps
-        .querier
-        .query_balance(&env.contract.address, "uusd".to_string())?;
-    println!("Amount sent {}", amount_sent);
+    if !info.funds.is_empty() {
+        let mut ust_amount = Uint128::zero();
+        let ust_index: &Option<usize> = &info.funds.iter().position(|coin| coin.denom.eq("uusd"));
 
-    if amount_sent.amount >= Uint128::from(msg.amount) {
-        state.state = TradeState::EscrowFunded
+        if Into::<usize>::into(ust_index.unwrap()) >= usize::MIN {
+            let ust_coin: &Coin = &info.funds[ust_index.unwrap()];
+            ust_amount = ust_coin.amount;
+        }
+        if ust_amount >= Uint128::from(msg.amount) {
+            state.state = TradeState::EscrowFunded
+        }
     }
 
     config(deps.storage).save(&state)?;
