@@ -162,7 +162,7 @@ fn send_tokens(
     action: &str,
 ) -> Result<Response, TradeError> {
     let attributes = vec![attr("action", action), attr("to", to_address.clone())];
-    //TODO
+    //TODO: Implement Terra's tax deduction
     //let amount = [deduct_tax(deps, amount[0].clone()).unwrap()].to_vec();
 
     let r = Response {
