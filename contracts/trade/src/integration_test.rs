@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{InstantiateMsg, QueryMsg};
 use crate::state::{State, TradeState};
 use cosmwasm_std::testing::{mock_env, MockApi, MockStorage};
 use cosmwasm_std::{coin, Addr, Coin, Empty, Uint128};
@@ -100,11 +100,35 @@ fn trade_happy_path() {
             trade_code_id,
             trade_owner.clone(),
             &instantiate_trade_msg,
-            &[],
+            &[Coin {
+                denom: "uusd".to_string(),
+                amount: Uint128(1_000_000),
+            }],
             "TRADE",
         )
         .unwrap();
 
+    //Query Trade contract balance (escrow)
+    let _trade_contract_balance = router
+        .wrap()
+        .query_balance(trade_contract_addr.clone(), "uusd")
+        .unwrap();
+    assert_eq!(
+        _trade_contract_balance,
+        Coin {
+            denom: "uusd".to_string(),
+            amount: Uint128(1_000_000)
+        }
+    );
+
+    //Query Trade state
+    let trade_state: State = router
+        .wrap()
+        .query_wasm_smart(trade_contract_addr.clone(), &QueryMsg::Config {})
+        .unwrap();
+    assert_eq!(trade_state.state, TradeState::EscrowFunded);
+    
+    /*
     //Release funds
     let _release_response = router
         .execute_contract(
@@ -116,12 +140,6 @@ fn trade_happy_path() {
                 amount: Uint128(1_000_000),
             }],
         )
-        .unwrap();
-
-    //Query Trade state
-    let trade_state: State = router
-        .wrap()
-        .query_wasm_smart(trade_contract_addr.clone(), &QueryMsg::Config {})
         .unwrap();
 
     //Query Trade contract balance (escrow)
@@ -143,4 +161,5 @@ fn trade_happy_path() {
         .unwrap();
 
     assert_eq!(trade_state.state, TradeState::Closed);
+     */
 }

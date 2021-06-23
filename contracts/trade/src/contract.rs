@@ -55,6 +55,7 @@ pub fn instantiate(
     let amount_sent = deps
         .querier
         .query_balance(&env.contract.address, "uusd".to_string())?;
+    println!("Amount sent {}", amount_sent);
 
     if amount_sent.amount >= Uint128::from(msg.amount) {
         state.state = TradeState::EscrowFunded
