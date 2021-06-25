@@ -90,6 +90,14 @@ fn init() -> Vars {
 }
 
 fn create_trade(vars: &mut Vars, trade_amount: Uint128) -> Result<Addr, String> {
+    return create_trade_with_funds(vars, trade_amount, true);
+}
+
+fn create_trade_with_funds(
+    vars: &mut Vars,
+    trade_amount: Uint128,
+    send_funds: bool,
+) -> Result<Addr, String> {
     let router = &mut vars.router;
 
     let instantiate_trade_msg = InstantiateMsg {
@@ -98,17 +106,26 @@ fn create_trade(vars: &mut Vars, trade_amount: Uint128) -> Result<Addr, String> 
         amount: trade_amount.u128() as u64,
     };
 
-    let create_trade_result = router.instantiate_contract(
-        vars.trade_code_id,
-        vars.trade_owner.clone(),
-        &instantiate_trade_msg,
-        &[Coin {
-            denom: vars.ust_denom.to_string(),
-            amount: trade_amount,
-        }],
-        "TRADE",
-    );
-    return create_trade_result;
+    return if send_funds {
+        router.instantiate_contract(
+            vars.trade_code_id,
+            vars.trade_owner.clone(),
+            &instantiate_trade_msg,
+            &[Coin {
+                denom: vars.ust_denom.to_string(),
+                amount: trade_amount,
+            }],
+            "TRADE",
+        )
+    } else {
+        router.instantiate_contract(
+            vars.trade_code_id,
+            vars.trade_owner.clone(),
+            &instantiate_trade_msg,
+            &[],
+            "TRADE",
+        )
+    };
 }
 
 fn query_offer_contract<T: DeserializeOwned>(
@@ -300,4 +317,78 @@ fn test_trade_expiration() {
         new_trader_owner_balance,
         old_trade_contract_balance + old_trade_owner_balance,
     );
+}
+
+#[test]
+fn test_errors() {
+    let vars = &mut init();
+    let initial_trade_owner_balance = Uint128(2_000_000);
+
+    let offer_state: Offer = query_offer_contract(vars, &offer::msg::QueryMsg::LoadOffer { id: 1 });
+    let trade_amount = Uint128::from(offer_state.max_amount);
+
+    let init_funds = [coin(*&initial_trade_owner_balance.u128(), vars.ust_denom)].to_vec();
+    vars.router
+        .set_bank_balance(&vars.trade_owner, init_funds)
+        .unwrap();
+
+    //Create Trade
+    let create_trade_result = create_trade(vars, trade_amount);
+    assert!(create_trade_result.is_ok());
+
+    //Assert that the state is EscrowFunded
+    let trade_contract_addr = create_trade_result.unwrap();
+    let trade_state: State =
+        query_trade_contract(vars, trade_contract_addr.clone(), &QueryMsg::Config {});
+    assert_eq!(trade_state.state, TradeState::EscrowFunded);
+
+    //Try to release as the offer (and not the trade) owner.
+    let release_response = vars.router.execute_contract(
+        vars.offer_owner.clone(),
+        trade_contract_addr.clone(),
+        &ExecuteMsg::Release {},
+        &[],
+    );
+    assert!(release_response.is_err());
+    assert_eq!(release_response.err().unwrap(), "Unauthorized.");
+}
+
+#[test]
+fn test_fund_escrow_msg() {
+    let vars = &mut init();
+    let initial_trade_owner_balance = Uint128(2_000_000);
+
+    let offer_state: Offer = query_offer_contract(vars, &offer::msg::QueryMsg::LoadOffer { id: 1 });
+    let trade_amount = Uint128::from(offer_state.max_amount);
+
+    let init_funds = [coin(*&initial_trade_owner_balance.u128(), vars.ust_denom)].to_vec();
+    vars.router
+        .set_bank_balance(&vars.trade_owner, init_funds)
+        .unwrap();
+
+    //Create Trade
+    let create_trade_result = create_trade_with_funds(vars, trade_amount, false);
+    assert!(create_trade_result.is_ok());
+
+    //Assert that the Trade state is Created
+    let trade_contract_addr = create_trade_result.unwrap();
+    let trade_state: State =
+        query_trade_contract(vars, trade_contract_addr.clone(), &QueryMsg::Config {});
+    assert_eq!(trade_state.state, TradeState::Created);
+
+    let send_result = vars.router.execute_contract(
+        vars.trade_owner.clone(),
+        trade_contract_addr.clone(),
+        &ExecuteMsg::FundEscrow {},
+        &[Coin {
+            denom: vars.ust_denom.to_string(),
+            amount: offer_state.max_amount,
+        }],
+    );
+    assert!(send_result.is_ok());
+
+    //Assert that the Trade state is EscrowFunded
+    let trade_state: State =
+        query_trade_contract(vars, trade_contract_addr.clone(), &QueryMsg::Config {});
+    assert_eq!(trade_state.state, TradeState::EscrowFunded);
 }

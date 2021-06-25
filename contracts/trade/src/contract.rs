@@ -1,12 +1,13 @@
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmQuery,
+    MessageInfo, QueryRequest, Response, StdResult, Uint128, WasmQuery,
 };
 
 use crate::errors::TradeError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
 use crate::state::{config, config_read, State, TradeState};
-use offer::state::OfferType;
+use cosmwasm_storage::Singleton;
+use offer::state::{Offer, OfferType};
 
 #[entry_point]
 pub fn instantiate(
@@ -16,10 +17,15 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
     let offer_id = msg.offer;
-    let offer: offer::state::Offer = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: msg.offer_contract.to_string(),
-        msg: to_binary(&OfferMsg::LoadOffer { id: offer_id })?,
-    }))?;
+    let load_offer_result: StdResult<Offer> =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.offer_contract.to_string(),
+            msg: to_binary(&OfferMsg::LoadOffer { id: offer_id }).unwrap(),
+        }));
+    if load_offer_result.is_err() {
+        return Err(TradeError::OfferNotFound { offer_id });
+    }
+    let offer = load_offer_result.unwrap();
 
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
     let expire_height = env.block.height + 100; //Roughly 10 Minutes.
@@ -53,21 +59,30 @@ pub fn instantiate(
     };
 
     if !info.funds.is_empty() {
-        let mut ust_amount = Uint128::zero();
-        let ust_index: &Option<usize> = &info.funds.iter().position(|coin| coin.denom.eq("uusd"));
-
-        if Into::<usize>::into(ust_index.unwrap()) >= usize::MIN {
-            let ust_coin: &Coin = &info.funds[ust_index.unwrap()];
-            ust_amount = ust_coin.amount;
-        }
+        let ust_amount = get_ust_amount(info.clone());
         if ust_amount >= Uint128::from(msg.amount) {
             state.state = TradeState::EscrowFunded
         }
     }
 
-    config(deps.storage).save(&state)?;
+    let save_state_result = config(deps.storage).save(&state);
+    if save_state_result.is_err() {
+        return Err(TradeError::InstantiationError {
+            message: "Couldn't save state.".to_string(),
+        });
+    }
 
     Ok(Response::default())
+}
+
+fn get_ust_amount(info: MessageInfo) -> Uint128 {
+    let mut ust_amount = Uint128::zero();
+    let ust_index: &Option<usize> = &info.funds.iter().position(|coin| coin.denom.eq("uusd"));
+    if Into::<usize>::into(ust_index.unwrap()) >= usize::MIN {
+        let ust_coin: &Coin = &info.funds[ust_index.unwrap()];
+        ust_amount = ust_coin.amount;
+    }
+    return ust_amount;
 }
 
 #[entry_point]
@@ -77,20 +92,12 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, TradeError> {
-    let mut cfg = config(deps.storage);
-    let mut state = cfg.load()?;
-    if !info.funds.is_empty() {
-        let balance = deps.querier.query_balance(&env.contract.address, "uusd")?;
-        if balance.amount >= state.amount {
-            state.state = TradeState::EscrowFunded;
-        }
-        cfg.save(&state)?;
-    }
-    // let mut cfg = config(&mut deps.storage);
-    // let state = cfg.load()?;
+    let cfg = config(deps.storage);
+    let state = cfg.load().unwrap();
     match msg {
-        ExecuteMsg::Refund {} => try_refund(deps, env, info, msg, state),
-        ExecuteMsg::Release {} => try_release(deps, env, info, msg, state),
+        ExecuteMsg::FundEscrow {} => try_fund_escrow(info, cfg, state),
+        ExecuteMsg::Refund {} => try_refund(deps, env, state),
+        ExecuteMsg::Release {} => try_release(deps, env, info, state),
     }
 }
 
@@ -106,52 +113,87 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(state)
 }
 
+fn try_fund_escrow(
+    info: MessageInfo,
+    mut cfg: Singleton<State>,
+    mut state: State,
+) -> Result<Response, TradeError> {
+    if !info.funds.is_empty() {
+        let ust_amount = get_ust_amount(info.clone());
+        if ust_amount >= state.amount {
+            state.state = TradeState::EscrowFunded;
+        }
+        let save_result = cfg.save(&state);
+        if save_result.is_err() {
+            return Err(TradeError::ExecutionError {
+                message: "Failed to save state.".to_string(),
+            });
+        }
+    }
+    Ok(Response::default())
+}
+
 fn try_release(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    _msg: ExecuteMsg,
     state: State,
 ) -> Result<Response, TradeError> {
     if info.sender != state.sender {
-        return Err(TradeError::Std(StdError::generic_err("Unauthorized")));
+        return Err(TradeError::Unauthorized {
+            owner: state.sender,
+            caller: info.sender,
+        });
     }
 
     // throws error if state is expired
     if env.block.height > state.expire_height {
-        return Err(TradeError::Std(StdError::generic_err(
-            "This trade has expired",
-        )));
+        return Err(TradeError::Expired {
+            expire_height: state.expire_height,
+            current_height: env.block.height,
+        });
     }
 
-    let balance = deps.querier.query_all_balances(&env.contract.address)?;
+    let balance_result = deps.querier.query_all_balances(&env.contract.address);
+    if balance_result.is_err() {
+        return Err(TradeError::ReleaseError {
+            message: "Contract has no funds.".to_string(),
+        });
+    }
+    let balance = balance_result.unwrap();
     //TODO: Deduct Tax
     //balance[0].amount = deduct_tax(&deps, balance[0].clone()).unwrap().amount;
 
     let mut cfg = config(deps.storage);
-    let mut state = cfg.load()?;
+    let mut state = cfg.load().unwrap();
     state.state = TradeState::Closed;
-    cfg.save(&state)?;
+    let save_result = cfg.save(&state);
+    if save_result.is_err() {
+        return Err(TradeError::ExecutionError {
+            message: "Failed to save state.".to_string(),
+        });
+    }
 
     send_tokens(deps, state.recipient, balance, "approve")
 }
 
-fn try_refund(
-    deps: DepsMut,
-    env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
-    state: State,
-) -> Result<Response, TradeError> {
+fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeError> {
     // anyone can try to refund, as long as the contract is expired
     if state.expire_height > env.block.height {
-        return Err(TradeError::Std(StdError::generic_err(
-            "Can't release an unexpired Trade.",
-        )));
+        return Err(TradeError::RefundError {
+            message: "Only expired trades can be refunded.".to_string(),
+        });
     }
 
-    let balance = deps.querier.query_all_balances(&env.contract.address)?;
-    send_tokens(deps, state.sender, balance, "refund")
+    let balance_result = deps.querier.query_all_balances(&env.contract.address);
+    return if balance_result.is_ok() {
+        let balance = balance_result.unwrap();
+        send_tokens(deps, state.sender, balance, "refund")
+    } else {
+        Err(TradeError::RefundError {
+            message: "Contract has no funds.".to_string(),
+        })
+    };
 }
 
 // this is a helper to move the tokens, so the business logic is easy to read
