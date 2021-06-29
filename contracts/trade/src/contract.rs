@@ -6,6 +6,7 @@ use cosmwasm_std::{
 use crate::errors::TradeError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
 use crate::state::{config, config_read, State, TradeState};
+use crate::taxation::deduct_tax;
 use cosmwasm_storage::Singleton;
 use offer::state::{Offer, OfferType};
 
@@ -198,14 +199,13 @@ fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeEr
 
 // this is a helper to move the tokens, so the business logic is easy to read
 fn send_tokens(
-    _deps: DepsMut,
+    deps: DepsMut,
     to_address: Addr,
     amount: Vec<Coin>,
     action: &str,
 ) -> Result<Response, TradeError> {
     let attributes = vec![attr("action", action), attr("to", to_address.clone())];
-    //TODO: Implement Terra's tax deduction
-    //let amount = [deduct_tax(deps, amount[0].clone()).unwrap()].to_vec();
+    let amount = [deduct_tax(&deps.querier, amount[0].clone()).unwrap()].to_vec();
 
     let r = Response {
         messages: vec![CosmosMsg::Bank(BankMsg::Send {

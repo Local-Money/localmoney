@@ -2,6 +2,7 @@
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, TradeState};
+use crate::taxation::compute_tax;
 use cosmwasm_std::testing::{mock_env, MockApi, MockStorage};
 use cosmwasm_std::{coin, Addr, BlockInfo, Coin, Empty, Uint128};
 use cw_multi_test::{App, Contract, ContractWrapper, SimpleBank};
@@ -179,19 +180,19 @@ fn trade_happy_path() {
     assert!(create_trade_result.is_ok());
     let trade_contract_addr = create_trade_result.unwrap();
 
+    let trade_amount_coin = Coin {
+        denom: vars.ust_denom.to_string(),
+        amount: trade_amount,
+    };
     //Query Trade contract balance (escrow)
     let trade_contract_balance = vars
         .router
         .wrap()
         .query_balance(trade_contract_addr.clone(), vars.ust_denom.clone())
         .unwrap();
-    assert_eq!(
-        trade_contract_balance,
-        Coin {
-            denom: vars.ust_denom.to_string(),
-            amount: trade_amount
-        }
-    );
+    assert_eq!(trade_contract_balance, trade_amount_coin);
+
+    let terra_tax = &compute_tax(&vars.router.wrap(), &trade_amount_coin).unwrap();
 
     //Query Trade state and Verify if it's "funded".
     let trade_state: State =
@@ -215,14 +216,17 @@ fn trade_happy_path() {
     let offer_owner_balance = query_ust_balance(vars, vars.offer_owner.clone());
 
     assert_eq!(trade_state.state, TradeState::Closed);
-    assert_eq!(trade_contract_balance, Uint128::zero());
+    assert_eq!(&trade_contract_balance, terra_tax);
     assert_eq!(
         trade_owner_balance,
         initial_trade_owner_balance
             .checked_sub(trade_amount)
             .unwrap()
     );
-    assert_eq!(offer_owner_balance, trade_amount);
+    assert_eq!(
+        offer_owner_balance,
+        trade_amount.checked_sub(terra_tax.clone()).unwrap()
+    );
 }
 
 #[test]
@@ -275,6 +279,8 @@ fn test_trade_expiration() {
         .unwrap();
 
     //Create Trade
+    let ust_trade_amount = coin(trade_amount.clone().u128(), vars.ust_denom);
+    let terra_tax = compute_tax(&vars.router.wrap(), &ust_trade_amount).unwrap();
     let create_trade_result = create_trade(vars, trade_amount);
     assert!(create_trade_result.is_ok());
     let trade_contract_addr = create_trade_result.unwrap();
@@ -310,12 +316,14 @@ fn test_trade_expiration() {
     assert!(refund_response.is_ok());
 
     let trade_contract_balance = query_ust_balance(vars, trade_contract_addr.clone());
-    assert_eq!(trade_contract_balance, Uint128::zero());
+    assert_eq!(trade_contract_balance, terra_tax);
 
     let new_trader_owner_balance = query_ust_balance(vars, vars.trade_owner.clone());
     assert_eq!(
         new_trader_owner_balance,
-        old_trade_contract_balance + old_trade_owner_balance,
+        (old_trade_contract_balance + old_trade_owner_balance)
+            .checked_sub(terra_tax)
+            .unwrap(),
     );
 }
 
