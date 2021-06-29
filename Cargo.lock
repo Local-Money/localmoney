@@ -352,6 +352,7 @@ dependencies = [
 [[package]]
 name = "cw-multi-test"
 version = "0.6.2"
+source = "git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier#b2ad2491e9515e659aebf873140e5c824e0f382c"
 dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
@@ -364,6 +365,7 @@ dependencies = [
 [[package]]
 name = "cw-storage-plus"
 version = "0.6.2"
+source = "git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier#b2ad2491e9515e659aebf873140e5c824e0f382c"
 dependencies = [
  "cosmwasm-std",
  "schemars",
@@ -373,6 +375,7 @@ dependencies = [
 [[package]]
 name = "cw0"
 version = "0.6.2"
+source = "git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier#b2ad2491e9515e659aebf873140e5c824e0f382c"
 dependencies = [
  "cosmwasm-std",
  "schemars",
