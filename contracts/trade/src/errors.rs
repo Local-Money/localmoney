@@ -24,6 +24,11 @@ pub enum TradeError {
     RefundError { message: String },
     #[error("Release error.")]
     ReleaseError { message: String },
+    #[error("Swap error.")]
+    SwapError {
+        required_amount: Uint128,
+        returned_amount: Uint128,
+    },
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
 }

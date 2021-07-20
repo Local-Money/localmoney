@@ -96,8 +96,8 @@ fn create_offer_test() {
         owner,
         offer_type: OfferType::Buy,
         fiat_currency: FiatCurrency::BRL,
-        min_amount: Uint128(0),
-        max_amount: Uint128(0),
+        min_amount: Uint128::new(0),
+        max_amount: Uint128::new(0),
         state: OfferState::Active,
     };
     let queried_offer: Offer =

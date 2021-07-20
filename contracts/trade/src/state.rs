@@ -13,7 +13,9 @@ pub struct State {
     pub offer_id: u64,
     pub state: TradeState,
     pub expire_height: u64,
-    pub amount: Uint128,
+    pub ust_amount: Uint128,
+    pub final_asset: Option<String>,
+    pub terraswap_factory: Option<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
