@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct CreateOfferMsg {
+pub struct OfferMsg {
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub min_amount: u64,
@@ -17,9 +17,10 @@ pub struct CreateOfferMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    Create { offer: CreateOfferMsg },
+    Create { offer: OfferMsg },
     Pause { id: u64 },
     Activate { id: u64 },
+    Update { id: u64, offer: OfferMsg }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

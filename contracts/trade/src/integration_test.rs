@@ -6,7 +6,7 @@ use cosmwasm_std::testing::{mock_env, MockApi, MockStorage};
 use cosmwasm_std::{coin, to_binary, Addr, BlockInfo, Coin, Empty, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use cw_multi_test::{App, Contract, ContractWrapper, SimpleBank};
-use offer::msg::CreateOfferMsg;
+use offer::msg::OfferMsg;
 use offer::state::{Offer, OfferType};
 use serde::de::DeserializeOwned;
 use terraswap::asset::{AssetInfo, AssetInfo::Token as AssetInfoToken};
@@ -146,7 +146,7 @@ fn init(offer_type: OfferType) -> Vars {
         offer_owner.clone(),
         offer_contract_addr.clone(),
         &offer::msg::ExecuteMsg::Create {
-            offer: CreateOfferMsg {
+            offer: OfferMsg {
                 offer_type,
                 fiat_currency: offer::currencies::FiatCurrency::COP,
                 min_amount: 1_000,

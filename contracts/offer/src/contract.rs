@@ -1,11 +1,8 @@
-use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
-    Uint128,
-};
+use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult, Uint128, StdError};
 
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{CreateOfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{OfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
 use cosmwasm_storage::{bucket, bucket_read};
 
@@ -32,6 +29,7 @@ pub fn execute(
         ExecuteMsg::Create { offer } => try_create_offer(deps, env, info, offer),
         ExecuteMsg::Activate { id } => try_activate(deps, env, info, id),
         ExecuteMsg::Pause { id } => try_pause(deps, env, info, id),
+        ExecuteMsg::Update { id, offer } => try_update_offer(deps, env, info, id, offer),
     }
 }
 
@@ -48,7 +46,7 @@ pub fn try_create_offer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: CreateOfferMsg,
+    msg: OfferMsg,
 ) -> Result<Response, OfferError> {
     let mut state = config(deps.storage).load().unwrap();
     let offer_id = state.offers_count + 1;
@@ -63,6 +61,11 @@ pub fn try_create_offer(
         max_amount: Uint128::from(msg.max_amount),
         state: OfferState::Active,
     };
+
+    if msg.min_amount >= msg.max_amount {
+        let err = OfferError::Std(StdError::generic_err("Min amount must be greater than Max amount."));
+        return Err(err)
+    }
 
     bucket(deps.storage, OFFERS_KEY).save(&offer_id.to_be_bytes(), &offer)?;
     config(deps.storage).save(&state)?;
@@ -112,6 +115,34 @@ pub fn try_pause(
                 to: OfferState::Paused,
             })
         }
+    } else {
+        Err(OfferError::Unauthorized {
+            owner: offer.owner,
+            caller: info.sender,
+        })
+    };
+}
+
+pub fn try_update_offer(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u64,
+    msg: OfferMsg,
+) -> Result<Response, OfferError> {
+    let mut offer = load_offer_by_id(deps.as_ref(), id)?;
+
+    if msg.min_amount >= msg.max_amount {
+        let err = OfferError::Std(StdError::generic_err("Min amount must be greater than Max amount."));
+        return Err(err)
+    }
+
+    return if offer.owner.eq(&info.sender) {
+        offer.offer_type = msg.offer_type;
+        offer.fiat_currency = msg.fiat_currency;
+        offer.min_amount = Uint128::from(msg.min_amount);
+        offer.max_amount = Uint128::from(msg.max_amount);
+        Ok(save_offer(deps, offer)?)
     } else {
         Err(OfferError::Unauthorized {
             owner: offer.owner,

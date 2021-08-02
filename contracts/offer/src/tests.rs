@@ -2,7 +2,7 @@
 use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{ConfigResponse, CreateOfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, OfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use cosmwasm_std::{from_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response, Uint128};
@@ -40,11 +40,11 @@ fn create_offer(
     fiat_currency: FiatCurrency,
 ) -> Response<Empty> {
     let msg = ExecuteMsg::Create {
-        offer: CreateOfferMsg {
+        offer: OfferMsg {
             offer_type,
             fiat_currency,
-            min_amount: 0,
-            max_amount: 0,
+            min_amount: 1,
+            max_amount: 2,
         },
     };
 
@@ -96,8 +96,8 @@ fn create_offer_test() {
         owner,
         offer_type: OfferType::Buy,
         fiat_currency: FiatCurrency::BRL,
-        min_amount: Uint128::new(0),
-        max_amount: Uint128::new(0),
+        min_amount: Uint128::new(1),
+        max_amount: Uint128::new(2),
         state: OfferState::Active,
     };
     let queried_offer: Offer =
@@ -221,4 +221,49 @@ fn activate_offer_test() {
     assert_eq!(res.messages.len(), 0);
     let offer = &load_offer_by_id(deps.as_ref(), offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Active);
+}
+
+#[test]
+fn update_offer_test() {
+    let mut deps = mock_dependencies(&[]);
+    let owner = Addr::unchecked("owner");
+    let env = mock_env();
+    let info = mock_info(owner.clone().as_str(), &[]);
+
+    //Create Offer
+    do_init(deps.as_mut(), env.clone(), info.clone());
+    let res = create_offer(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        OfferType::Buy,
+        FiatCurrency::BRL,
+    );
+    assert_eq!(res.messages.len(), 0);
+
+    //Load Created message
+    let offer = load_offer_by_id(deps.as_ref(), 1).unwrap();
+    assert_eq!(offer.fiat_currency, FiatCurrency::BRL);
+    assert_eq!(offer.offer_type, OfferType::Buy);
+
+    //Prepare Update message
+    let offer_msg = OfferMsg {
+        offer_type: OfferType::Sell,
+        fiat_currency: FiatCurrency::COP,
+        min_amount: 1000000,
+        max_amount: 5000000
+    };
+    let update_offer_msg = ExecuteMsg::Update {
+        id: 1,
+        offer: offer_msg.clone()
+    };
+    let res = execute(deps.as_mut(), env.clone(), info.clone(), update_offer_msg).unwrap();
+    assert_eq!(res.messages.len(), 0);
+
+    //Load offer and check that it was updated
+    let offer = load_offer_by_id(deps.as_ref(), 1).unwrap();
+    assert_eq!(offer.offer_type, offer_msg.offer_type);
+    assert_eq!(offer.fiat_currency, offer_msg.fiat_currency);
+    assert_eq!(offer.min_amount, Uint128::from(offer_msg.min_amount));
+    assert_eq!(offer.max_amount, Uint128::from(offer_msg.max_amount));
 }
