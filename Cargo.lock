@@ -100,9 +100,9 @@ checksum = "9f6b64db6932c7e49332728e3a6bd82c6b7e16016607d20923b537c3bc4c0d5f"
 
 [[package]]
 name = "cosmwasm-crypto"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf6ae19e862fefda01c0747fb67ce5b454646f71574e24e15732f0250ca73ee2"
+checksum = "c0bda54a90e2c523ca4b714c285adb54c326253db88f044862a03d049b569fda"
 dependencies = [
  "digest",
  "ed25519-zebra",
@@ -113,18 +113,18 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-derive"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5e2d4aa77ba390c517ef0ae98b5fbf78007b3c2ba672707eab8f5165eaee522"
+checksum = "72a75b12aee6d4b38c5da26bdcdccc22d7730e6ac7edf194ecfde1f782b9d568"
 dependencies = [
  "syn",
 ]
 
 [[package]]
 name = "cosmwasm-schema"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d66ae8ed0319a9ae48a18cb00eda7f6b4b5c2d2e1c05b194f9a4eefbb07b3a43"
+checksum = "8b1ac8b1e0204459985886f034cbf241d2f9e6d5d1cb8c8d8ef3e082a147d0e5"
 dependencies = [
  "schemars",
  "serde_json",
@@ -132,9 +132,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-std"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4654fd56ea9d24d595de9cb54e0c9837223cb3b8f3462974e51e2741489b59d8"
+checksum = "b234bd12486326fef39a2d7bce098cf8a26c96c4f17181d937c131b84892a013"
 dependencies = [
  "base64",
  "cosmwasm-crypto",
@@ -148,9 +148,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-storage"
-version = "0.15.0"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f297f4fc4434b6d95f56e93eaa6a818a5f6e3f8e1578ccc2f453d8ffcbe85d76"
+checksum = "a256b40efc34769435e328b531e2440327305090a19f4bd2194d374b0986db6f"
 dependencies = [
  "cosmwasm-std",
  "serde",
@@ -579,6 +579,26 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "factory"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cosmwasm-vm",
+ "cw-multi-test",
+ "cw20",
+ "cw20-base",
+ "offer",
+ "schemars",
+ "serde",
+ "snafu",
+ "terra-cosmwasm",
+ "terraswap",
+ "thiserror",
 ]
 
 [[package]]
