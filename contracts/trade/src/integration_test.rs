@@ -157,7 +157,7 @@ fn init(offer_type: OfferType) -> Vars {
     );
     assert!(create_offer_result.is_ok());
 
-    return Vars {
+    Vars {
         router,
         trade_code_id,
         trade_owner,
@@ -166,7 +166,7 @@ fn init(offer_type: OfferType) -> Vars {
         terraswap_factory_addr: None,
         terraswap_pair_addr: None,
         ust_denom,
-    };
+    }
 }
 
 fn create_trade(vars: &mut Vars, trade_amount: Uint128) -> Result<Addr, String> {

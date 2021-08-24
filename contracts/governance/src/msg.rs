@@ -6,33 +6,29 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub offer_contract: Addr,
-    pub offer_id: u64,
-    pub ust_amount: Uint128,
-    pub final_asset: Option<String>,
-    //TODO: Move to Offer contract.
-    pub terraswap_factory: Option<Addr>,
+    pub gov_token_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    FundEscrow,
-    Refund,
-    Release,
     Receive(Cw20ReceiveMsg),
+    Withdraw { shares: Uint128 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum OfferMsg {
-    LoadOffer { id: u64 },
+    State {},
+    Staker { address: String },
 }
 
 pub type ConfigResponse = State;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Cw20HookMsg {
+    StakeTokens {},
+    DepositRewards {},
+}
