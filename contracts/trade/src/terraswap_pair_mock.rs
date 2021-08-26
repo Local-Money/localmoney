@@ -1,11 +1,7 @@
 #![cfg(test)]
-use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, Storage, SubMsg, Uint128, WasmMsg,
-};
+use cosmwasm_std::{entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage, SubMsg, Uint128, WasmMsg, StdError};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 use cw20::Cw20ExecuteMsg;
-use serde::de::StdError;
 use serde::{Deserialize, Serialize};
 use terraswap::asset::{Asset, AssetInfo, AssetInfo::Token as AssetInfoToken};
 use thiserror::Error;
@@ -40,10 +36,10 @@ pub struct SimulationResponse {
     pub commission_amount: Uint128,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
-    Std(#[from] Box<dyn StdError>),
+    Std(#[from] StdError),
 }
 
 #[entry_point]
@@ -77,7 +73,7 @@ pub fn execute(
                 let mut token_contract: Option<Addr> = None;
                 match asset_info {
                     AssetInfoToken { contract_addr } => {
-                        token_contract = Some(contract_addr.clone());
+                        token_contract = Some(Addr::unchecked(contract_addr));
                     }
                     AssetInfo::NativeToken { .. } => {}
                 }
@@ -91,26 +87,18 @@ pub fn execute(
                     .unwrap(),
                     funds: vec![],
                 });
-                Ok(Response {
-                    messages: vec![SubMsg::new(sub_msg)],
-                    attributes: vec![],
-                    events: vec![],
-                    data: None,
-                })
+                let r = Response::new().add_submessage(SubMsg::new(sub_msg));
+                Ok(r)
             } else {
                 let coin = Coin {
                     denom: "uusd".to_string(),
                     amount: offer_asset.amount,
                 };
-                Ok(Response {
-                    messages: vec![SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                        to_address: to.unwrap_or(info.sender.to_string()),
-                        amount: vec![coin],
-                    }))],
-                    attributes: vec![],
-                    events: vec![],
-                    data: None,
-                })
+                let r = Response::new().add_submessage(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: to.unwrap_or(info.sender.to_string()),
+                    amount: vec![coin],
+                })));
+                Ok(r)
             }
         }
     }

@@ -5,7 +5,7 @@ use crate::taxation::compute_tax;
 use cosmwasm_std::testing::{mock_env, MockApi, MockStorage};
 use cosmwasm_std::{coin, to_binary, Addr, BlockInfo, Coin, Empty, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
-use cw_multi_test::{App, Contract, ContractWrapper, SimpleBank};
+use cw_multi_test::{App, Contract, ContractWrapper, BankKeeper, Executor};
 use offer::msg::OfferMsg;
 use offer::state::{Offer, OfferType};
 use serde::de::DeserializeOwned;
@@ -13,10 +13,10 @@ use terraswap::asset::{AssetInfo, AssetInfo::Token as AssetInfoToken};
 
 fn mock_app() -> App {
     let env = mock_env();
-    let api = Box::new(MockApi::default());
-    let bank = SimpleBank {};
+    let api = MockApi::default();
+    let bank = BankKeeper::new();
 
-    App::new(api, env.block, bank, || Box::new(MockStorage::new()))
+    App::new(api, env.block, bank, MockStorage::new())
 }
 
 pub fn offer_contract() -> Box<dyn Contract<Empty>> {
@@ -81,26 +81,24 @@ impl Vars {
         let terraswap_pair_mock_id = self.router.store_code(terraswap_pair_mock());
 
         //Instantiate TerraswapPairMock
-        self.terraswap_pair_addr = Some(
-            self.router
-                .instantiate_contract(
-                    terraswap_pair_mock_id,
-                    self.trade_owner.clone(),
-                    &crate::terraswap_pair_mock::InstantiateMsg {
-                        pair: [
-                            AssetInfoToken {
-                                contract_addr: token_contract_addr.clone(),
-                            },
-                            AssetInfo::NativeToken {
-                                denom: "uusd".to_string(),
-                            },
-                        ],
+        let pair_addr = self.router.instantiate_contract(
+            terraswap_pair_mock_id,
+            self.trade_owner.clone(),
+            &crate::terraswap_pair_mock::InstantiateMsg {
+                pair: [
+                    AssetInfoToken {
+                        contract_addr: token_contract_addr.to_string(),
                     },
-                    &[],
-                    "TERRASWAP_PAIR",
-                )
-                .unwrap(),
-        );
+                    AssetInfo::NativeToken {
+                        denom: "uusd".to_string(),
+                    },
+                ],
+            },
+            &[],
+            "TERRASWAP_PAIR",
+            None
+        ).unwrap();
+        self.terraswap_pair_addr = Some(pair_addr);
 
         //Instantiate TerraswapFactoryMock
         self.terraswap_factory_addr = Some(
@@ -115,6 +113,7 @@ impl Vars {
                     },
                     &[],
                     "TERRASWAP_FACTORY",
+                    None
                 )
                 .unwrap(),
         );
@@ -139,6 +138,7 @@ fn init(offer_type: OfferType) -> Vars {
             &offer::msg::InstantiateMsg {},
             &[],
             "OFFER",
+            None
         )
         .unwrap();
 
@@ -191,7 +191,7 @@ fn create_trade_with_funds(
     };
 
     return if send_funds {
-        router.instantiate_contract(
+        Ok(router.instantiate_contract(
             vars.trade_code_id,
             vars.trade_owner.clone(),
             &instantiate_trade_msg,
@@ -200,15 +200,17 @@ fn create_trade_with_funds(
                 amount: trade_amount,
             }],
             "TRADE",
-        )
+            None
+        ).unwrap())
     } else {
-        router.instantiate_contract(
+        Ok(router.instantiate_contract(
             vars.trade_code_id,
             vars.trade_owner.clone(),
             &instantiate_trade_msg,
             &[],
             "TRADE",
-        )
+            None
+        ).unwrap())
     };
 }
 
@@ -255,7 +257,7 @@ fn trade_happy_path() {
 
     let init_funds = [coin(*&initial_trade_owner_balance.u128(), vars.ust_denom)].to_vec();
     vars.router
-        .set_bank_balance(&vars.trade_owner, init_funds)
+        .init_bank_balance(&vars.trade_owner, init_funds)
         .unwrap();
 
     //Create Trade
@@ -319,7 +321,7 @@ fn test_trade_amount() {
     let initial_trade_owner_balance = Uint128::new(2_000_000);
     let init_funds = [coin(*&initial_trade_owner_balance.u128(), vars.ust_denom)].to_vec();
     vars.router
-        .set_bank_balance(&vars.trade_owner, init_funds)
+        .init_bank_balance(&vars.trade_owner, init_funds)
         .unwrap();
 
     let offer_state: Offer = query_offer_contract(vars, &offer::msg::QueryMsg::LoadOffer { id: 1 });
@@ -358,7 +360,7 @@ fn test_trade_expiration() {
 
     let init_funds = [coin(*&initial_trade_owner_balance.u128(), vars.ust_denom)].to_vec();
     vars.router
-        .set_bank_balance(&vars.trade_owner, init_funds)
+        .init_bank_balance(&vars.trade_owner, init_funds)
         .unwrap();
 
     //Create Trade
@@ -420,7 +422,7 @@ fn test_errors() {
 
     let init_funds = [coin(*&initial_trade_owner_balance.u128(), vars.ust_denom)].to_vec();
     vars.router
-        .set_bank_balance(&vars.trade_owner, init_funds)
+        .init_bank_balance(&vars.trade_owner, init_funds)
         .unwrap();
 
     //Create Trade
@@ -441,7 +443,7 @@ fn test_errors() {
         &[],
     );
     assert!(release_response.is_err());
-    assert_eq!(release_response.err().unwrap(), "Unauthorized.");
+    assert_eq!(release_response.err().unwrap().to_string(), "Unauthorized.");
 }
 
 #[test]
@@ -451,7 +453,7 @@ fn test_sell_cw20_token() {
     let offer_state: Offer = query_offer_contract(vars, &offer::msg::QueryMsg::LoadOffer { id: 1 });
     let trade_amount = Uint128::from(offer_state.max_amount);
     vars.router
-        .set_bank_balance(&vars.trade_owner, vec![])
+        .init_bank_balance(&vars.trade_owner, vec![])
         .unwrap();
 
     // set up cw20 contract with some tokens
@@ -465,6 +467,7 @@ fn test_sell_cw20_token() {
             amount: Uint128::new(500000),
         }],
         mint: None,
+        marketing: None
     };
     let mcoin_addr = vars
         .router
@@ -474,6 +477,7 @@ fn test_sell_cw20_token() {
             &cw20_instantiate_msg,
             &[],
             "CASH",
+            None
         )
         .unwrap();
     let mcoin = Cw20Contract(mcoin_addr.clone());
@@ -483,7 +487,7 @@ fn test_sell_cw20_token() {
     assert_eq!(owner_balance, Uint128::new(500000));
     vars.init_terraswap_mock(mcoin_addr.clone());
     vars.router
-        .set_bank_balance(
+        .init_bank_balance(
             &vars.terraswap_pair_addr.clone().unwrap(),
             vec![Coin {
                 denom: "uusd".to_string(),
@@ -512,7 +516,7 @@ fn test_sell_cw20_token() {
     let send_mcoin_msg = Cw20ExecuteMsg::Send {
         contract: trade_contract_addr.to_string(),
         amount: Uint128::new(500000),
-        msg: Some(to_binary("").unwrap()),
+        msg: to_binary("").unwrap(),
     };
     vars.router
         .execute_contract(
@@ -555,7 +559,7 @@ fn test_buy_cw20_token() {
     let trade_amount = Uint128::from(offer_state.max_amount);
 
     vars.router
-        .set_bank_balance(&vars.offer_owner, init_funds)
+        .init_bank_balance(&vars.offer_owner, init_funds)
         .unwrap();
 
     // set up cw20 contract with some tokens
@@ -569,6 +573,7 @@ fn test_buy_cw20_token() {
             minter: vars.offer_owner.to_string(),
             cap: None,
         }),
+        marketing: None
     };
     let mcoin_addr = vars
         .router
@@ -578,6 +583,7 @@ fn test_buy_cw20_token() {
             &cw20_instantiate_msg,
             &[],
             "CASH",
+            None
         )
         .unwrap();
     let mcoin = Cw20Contract(mcoin_addr.clone());

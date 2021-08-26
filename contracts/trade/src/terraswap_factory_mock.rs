@@ -1,10 +1,6 @@
 #![cfg(test)]
-use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Storage,
-};
+use cosmwasm_std::{entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage, StdError};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
-use serde::de::StdError;
 use serde::{Deserialize, Serialize};
 use terraswap::asset::{AssetInfo, AssetInfo::Token as AssetInfoToken, PairInfo};
 use thiserror::Error;
@@ -30,10 +26,10 @@ pub enum QueryMsg {
     },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
-    Std(#[from] Box<dyn StdError>),
+    Std(#[from] StdError),
 }
 
 #[entry_point]
@@ -69,14 +65,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Pair { .. } => Ok(to_binary(&PairInfo {
             asset_infos: [
                 AssetInfoToken {
-                    contract_addr: Addr::unchecked("token"),
+                    contract_addr: "token".to_string(),
                 },
                 AssetInfo::NativeToken {
                     denom: "uusd".to_string(),
                 },
             ],
-            contract_addr: state.pair_address.clone(),
-            liquidity_token: Addr::unchecked("lptoken".to_string()),
+            contract_addr: state.pair_address.to_string(),
+            liquidity_token: "lptoken".to_string(),
         })
         .unwrap()),
         QueryMsg::Pairs { .. } => Ok(to_binary("").unwrap()),

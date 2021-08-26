@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Uint128};
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum TradeError {
     #[error("Amount is outside of offer amount range.")]
     AmountError {

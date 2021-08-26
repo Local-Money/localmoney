@@ -271,15 +271,12 @@ fn send_tokens(
     let attributes = vec![attr("action", action), attr("to", to_address.clone())];
     let amount = [deduct_tax(&deps.querier, amount[0].clone()).unwrap()].to_vec();
 
-    let r = Response {
-        messages: vec![SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+    let r = Response::new().add_submessage(
+        SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: to_address.to_string(),
             amount,
-        }))],
-        data: None,
-        attributes,
-        events: vec![],
-    };
+        }))
+    ).add_attributes(attributes);
     Ok(r)
 }
 
@@ -294,7 +291,7 @@ fn convert_to_ust(
     //Check if Pair exists
     let assets_infos = &[
         TokenInfo {
-            contract_addr: token_address.clone(),
+            contract_addr: token_address.to_string(),
         },
         AssetInfo::NativeToken {
             denom: "uusd".to_string(),
@@ -318,12 +315,13 @@ fn convert_to_ust(
     //Simulate Swap for UST, if UST amount is >= than the ust_amount, proceed with the swap.
     let asset = Asset {
         info: AssetInfo::Token {
-            contract_addr: token_address.clone(),
+            contract_addr: token_address.to_string(),
         },
         amount: cw20_msg.amount.clone(),
     };
     let swap_simulation: SimulationResponse;
-    let swap_simulation_res = simulate(&deps.querier, pair_info.contract_addr.clone(), &asset);
+    let pair_contract_addr = deps.api.addr_validate(pair_info.contract_addr.as_str()).unwrap();
+    let swap_simulation_res = simulate(&deps.querier, pair_contract_addr,&asset);
     match swap_simulation_res {
         Ok(res) => {
             swap_simulation = res;
@@ -359,12 +357,8 @@ fn convert_to_ust(
         });
 
         let swap_sub_msg = SubMsg::new(swap_msg);
-        Ok(Response {
-            messages: vec![swap_sub_msg],
-            attributes: vec![],
-            events: vec![],
-            data: None,
-        })
+        let r = Response::new().add_submessage(swap_sub_msg);
+        Ok(r)
     } else {
         Err(TradeError::SwapError {
             required_amount: state.ust_amount.clone(),
@@ -382,7 +376,7 @@ fn convert_to_cw20(
     //Check if Pair exists
     let assets_infos = &[
         TokenInfo {
-            contract_addr: token_address.clone(),
+            contract_addr: token_address.to_string(),
         },
         AssetInfo::NativeToken {
             denom: "uusd".to_string(),
@@ -422,7 +416,8 @@ fn convert_to_cw20(
         amount: state.ust_amount,
     };
     let swap_simulation: SimulationResponse;
-    let swap_simulation_res = simulate(&deps.querier, pair_info.contract_addr.clone(), &asset);
+    let pair_contract_addr = deps.api.addr_validate(pair_info.contract_addr.as_str()).unwrap();
+    let swap_simulation_res = simulate(&deps.querier, pair_contract_addr, &asset);
     match swap_simulation_res {
         Ok(res) => {
             swap_simulation = res;
@@ -462,13 +457,8 @@ fn convert_to_cw20(
     });
 
     let swap_sub_msg = SubMsg::new(swap_msg);
-    let swap_msg_response = Response {
-        messages: vec![swap_sub_msg],
-        data: None,
-        attributes: vec![],
-        events: vec![],
-    };
-    Ok(swap_msg_response)
+    let r = Response::new().add_submessage(swap_sub_msg);
+    Ok(r)
 }
 
 pub fn attr<K: ToString, V: ToString>(key: K, value: V) -> Attribute {

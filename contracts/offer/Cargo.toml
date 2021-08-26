@@ -1,6 +1,6 @@
 [package]
 name = "offer"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Samuel Barbosa <sambarbosaa@gmail.com>"]
 edition = "2018"
 
@@ -20,13 +20,13 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = { version = "0.15.0", features = ["iterator"]  }
-cosmwasm-storage = { version = "0.15.0", features = ["iterator"]}
+cosmwasm-std = { version = "0.16.0" }
+cosmwasm-storage = { version = "0.16.0" }
 thiserror = "1.0.25"
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
 
 [dev-dependencies]
-cosmwasm-schema = { version = "0.15.0" }
-cosmwasm-vm = { version = "0.15.0" }
+cosmwasm-schema = { version = "0.16.0" }
+cosmwasm-vm = { version = "0.16.0" }
