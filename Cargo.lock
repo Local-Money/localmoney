@@ -16,12 +16,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
-name = "anyhow"
-version = "1.0.43"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28ae2b3dec75a406790005a200b1bd89785afc02517a00ca99ecfe093ee9e6cf"
-
-[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -68,12 +62,6 @@ name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
-
-[[package]]
-name = "bytes"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b700ce4376041dcd0a327fd0097c41095743c4c8af8887265942faf1100bd040"
 
 [[package]]
 name = "cc"
@@ -342,34 +330,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw-multi-test"
-version = "0.8.0"
-source = "git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier#bdb6a294ce95b76d80cfab478a1f76dd8a456db3"
-dependencies = [
- "anyhow",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-storage-plus 0.8.0 (git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier)",
- "cw0 0.8.0 (git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier)",
- "itertools",
- "prost",
- "schemars",
- "serde",
- "terra-cosmwasm",
- "thiserror",
-]
-
-[[package]]
-name = "cw-storage-plus"
-version = "0.8.0"
-source = "git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier#bdb6a294ce95b76d80cfab478a1f76dd8a456db3"
-dependencies = [
- "cosmwasm-std",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "cw-storage-plus"
 version = "0.8.0"
 source = "git+https://github.com/CosmWasm/cosmwasm-plus?branch=main#6084e551901798237b99d88f1f8c8af6f89e5de4"
@@ -394,17 +354,6 @@ dependencies = [
 [[package]]
 name = "cw0"
 version = "0.8.0"
-source = "git+https://github.com/Local-Terra/cosmwasm-plus?branch=custom-querier#bdb6a294ce95b76d80cfab478a1f76dd8a456db3"
-dependencies = [
- "cosmwasm-std",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw0"
-version = "0.8.0"
 source = "git+https://github.com/CosmWasm/cosmwasm-plus?branch=main#6084e551901798237b99d88f1f8c8af6f89e5de4"
 dependencies = [
  "cosmwasm-std",
@@ -419,7 +368,7 @@ version = "0.8.0"
 source = "git+https://github.com/CosmWasm/cosmwasm-plus?branch=main#6084e551901798237b99d88f1f8c8af6f89e5de4"
 dependencies = [
  "cosmwasm-std",
- "cw-storage-plus 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
+ "cw-storage-plus",
  "schemars",
  "serde",
 ]
@@ -453,7 +402,7 @@ version = "0.8.0"
 source = "git+https://github.com/CosmWasm/cosmwasm-plus?branch=main#6084e551901798237b99d88f1f8c8af6f89e5de4"
 dependencies = [
  "cosmwasm-std",
- "cw-storage-plus 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
+ "cw-storage-plus",
  "cw0 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
  "cw2",
  "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
@@ -630,7 +579,6 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
- "cw-multi-test",
  "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "offer",
  "schemars",
@@ -720,7 +668,6 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
- "cw-multi-test",
  "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
  "cw20-base",
  "offer",
@@ -789,15 +736,6 @@ dependencies = [
  "autocfg",
  "hashbrown",
  "serde",
-]
-
-[[package]]
-name = "itertools"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69ddb889f9d0d08a67338271fa9b62996bc788c7796a5c18cf057420aaed5eaf"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -1034,29 +972,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c7ed8b8c7b886ea3ed7dde405212185f423ab44682667c8c6dd14aa1d9f6612"
 dependencies = [
  "unicode-xid",
-]
-
-[[package]]
-name = "prost"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de5e2533f59d08fcf364fd374ebda0692a70bd6d7e66ef97f306f45c6c5d8020"
-dependencies = [
- "bytes",
- "prost-derive",
-]
-
-[[package]]
-name = "prost-derive"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "600d2f334aa05acb02a755e217ef1ab6dea4d51b58b7846588b747edec04efba"
-dependencies = [
- "anyhow",
- "itertools",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1538,13 +1453,12 @@ dependencies = [
 
 [[package]]
 name = "trade"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
- "cw-multi-test",
  "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
  "cw20-base",
  "offer",

@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
     Create { offer: OfferMsg },
     Pause { id: u64 },
     Activate { id: u64 },
-    Update { id: u64, offer: OfferMsg }
+    Update { id: u64, offer: OfferMsg },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

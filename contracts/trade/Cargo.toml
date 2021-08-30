@@ -1,6 +1,6 @@
 [package]
 name = "trade"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Samuel Barbosa <sambarbosaa@gmail.com>"]
 edition = "2018"
 
@@ -35,4 +35,3 @@ cw20-base = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main"
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }
 cosmwasm-vm = { version = "0.16.0" }
-cw-multi-test = { git = "https://github.com/Local-Terra/cosmwasm-plus", branch = "custom-querier" }

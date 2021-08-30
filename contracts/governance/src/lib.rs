@@ -1,6 +1,8 @@
 pub mod contract;
 pub mod errors;
-mod integration_test;
+#[allow(dead_code)]
+mod mock_querier;
 pub mod msg;
 mod querier;
 pub mod state;
+mod tests;

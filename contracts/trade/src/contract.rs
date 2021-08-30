@@ -3,16 +3,10 @@ use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg}
 use crate::state::{config, config_read, State, TradeState};
 use crate::taxation::deduct_tax;
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps,
-    DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg,
-    WasmQuery,
+    entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmQuery,
 };
-use cw20::Cw20ReceiveMsg;
 use offer::state::{Offer, OfferType};
-use terraswap::asset::{Asset, AssetInfo, AssetInfo::Token as TokenInfo, PairInfo};
-use terraswap::pair::ExecuteMsg::Swap;
-use terraswap::pair::SimulationResponse;
-use terraswap::querier::{query_pair_info, simulate};
 
 #[entry_point]
 pub fn instantiate(
@@ -49,6 +43,7 @@ pub fn instantiate(
     //Instantiate recipient and sender addresses according to Offer type (buy, sell)
     let recipient: Addr;
     let sender: Addr;
+    let fee_collector: Addr = msg.fee_collector;
     let _taker_is_buying: bool;
 
     if offer.offer_type == OfferType::Buy {
@@ -65,6 +60,7 @@ pub fn instantiate(
     let mut state = State {
         recipient,
         sender,
+        fee_collector,
         offer_id,
         state: TradeState::Created,
         expire_height,
@@ -101,12 +97,11 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, TradeError> {
     let cfg = config(deps.storage);
-    let mut state = cfg.load().unwrap();
+    let state = cfg.load().unwrap();
     match msg {
         ExecuteMsg::FundEscrow {} => try_fund_escrow(deps, env, info, state),
         ExecuteMsg::Refund {} => try_refund(deps, env, state),
         ExecuteMsg::Release {} => try_release(deps, env, info, state),
-        ExecuteMsg::Receive(msg) => try_receive_cw20(deps, &mut state, env, msg),
     }
 }
 
@@ -148,12 +143,7 @@ fn try_fund_escrow(
             message: "UST amount is less than required to fund the escrow.".to_string(),
         });
     }
-    let save_result = config(deps.storage).save(&state);
-    if save_result.is_err() {
-        return Err(TradeError::ExecutionError {
-            message: "Failed to save state.".to_string(),
-        });
-    }
+    config(deps.storage).save(&state).unwrap();
     Ok(Response::default())
 }
 
@@ -163,6 +153,7 @@ fn try_release(
     info: MessageInfo,
     state: State,
 ) -> Result<Response, TradeError> {
+    //Check if sender can release
     if info.sender != state.sender {
         return Err(TradeError::Unauthorized {
             owner: state.sender,
@@ -178,6 +169,7 @@ fn try_release(
         });
     }
 
+    //Load and check balance
     let balance_result = deps.querier.query_all_balances(&env.contract.address);
     if balance_result.is_err() {
         return Err(TradeError::ReleaseError {
@@ -185,7 +177,7 @@ fn try_release(
         });
     }
 
-    //Update trade State to TradeState::Closed.
+    //Update trade State to TradeState::Closed
     let balance = balance_result.unwrap();
     let mut cfg = config(deps.storage);
     let mut state = cfg.load().unwrap();
@@ -198,17 +190,30 @@ fn try_release(
     }
 
     if None == state.final_asset || "uusd" == state.final_asset.clone().unwrap() {
-        send_tokens(deps, state.recipient.clone(), balance, "approve")
+        let local_terra_fee = calculate_local_terra_fee(&balance).unwrap();
+        let fee_response = send_tokens(
+            &deps,
+            state.fee_collector.clone(),
+            local_terra_fee.clone(),
+            "approve"
+        ).unwrap();
+
+        let final_balance = deduct_local_terra_fee(balance, local_terra_fee).unwrap();
+        let amount_response = send_tokens(
+            &deps,
+            state.recipient.clone(),
+            final_balance.clone(),
+            "approve"
+        ).unwrap();
+
+        let r = Response::new()
+            .add_submessage(fee_response.messages[0].clone())
+            .add_submessage(amount_response.messages[0].clone());
+        Ok(r)
     } else {
-        match deps
-            .api
-            .addr_validate(state.final_asset.clone().unwrap().as_str())
-        {
-            Ok(cw20addr) => convert_to_cw20(deps, &mut state, env, cw20addr),
-            Err(_) => Err(TradeError::ExecutionError {
-                message: "Invalid cw20 addr or unsupported asset.".to_string(),
-            }),
-        }
+        Err(TradeError::ExecutionError {
+            message: "Unsupported asset.".to_string(),
+        })
     }
 }
 
@@ -223,32 +228,12 @@ fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeEr
     let balance_result = deps.querier.query_all_balances(&env.contract.address);
     return if balance_result.is_ok() {
         let balance = balance_result.unwrap();
-        send_tokens(deps, state.sender, balance, "refund")
+        send_tokens(&deps, state.sender, balance, "refund")
     } else {
         Err(TradeError::RefundError {
             message: "Contract has no funds.".to_string(),
         })
     };
-}
-
-fn try_receive_cw20(
-    deps: DepsMut,
-    state: &mut State,
-    env: Env,
-    msg: Cw20ReceiveMsg,
-) -> Result<Response, TradeError> {
-    let final_asset = state
-        .final_asset
-        .clone()
-        .unwrap_or("uusd".to_string())
-        .clone();
-    match final_asset.as_str() {
-        //TODO: Use array of supported stablecoins instead.
-        "uusd" => convert_to_ust(deps, state, env, &msg),
-        _asset_address => Err(TradeError::ExecutionError {
-            message: "Final asset must be UST (uusd) when sending CW20 Tokens.".to_string(),
-        }),
-    }
 }
 
 fn get_ust_amount(info: MessageInfo) -> Uint128 {
@@ -261,9 +246,25 @@ fn get_ust_amount(info: MessageInfo) -> Uint128 {
     return ust_amount;
 }
 
+fn calculate_local_terra_fee(balance: &Vec<Coin>) -> StdResult<Vec<Coin>> {
+    let fee_amount = balance[0].clone().amount.checked_div(Uint128::new(1000)).unwrap();
+    Ok([Coin {
+        amount: fee_amount,
+        denom: balance[0].clone().denom
+    }].to_vec())
+}
+
+fn deduct_local_terra_fee(balance: Vec<Coin>, local_terra_fee: Vec<Coin>) -> StdResult<Vec<Coin>> {
+    Ok([Coin {
+        amount: (balance[0].amount.checked_sub(local_terra_fee[0].amount)).unwrap(),
+        denom: balance[0].clone().denom
+    }].to_vec())
+}
+
+//Help to send native coins.
 // this is a helper to move the tokens, so the business logic is easy to read
 fn send_tokens(
-    deps: DepsMut,
+    deps: &DepsMut,
     to_address: Addr,
     amount: Vec<Coin>,
     action: &str,
@@ -271,193 +272,12 @@ fn send_tokens(
     let attributes = vec![attr("action", action), attr("to", to_address.clone())];
     let amount = [deduct_tax(&deps.querier, amount[0].clone()).unwrap()].to_vec();
 
-    let r = Response::new().add_submessage(
-        SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+    let r = Response::new()
+        .add_submessage(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: to_address.to_string(),
             amount,
-        }))
-    ).add_attributes(attributes);
-    Ok(r)
-}
-
-fn convert_to_ust(
-    deps: DepsMut,
-    state: &mut State,
-    _env: Env,
-    cw20_msg: &Cw20ReceiveMsg,
-) -> Result<Response, TradeError> {
-    let token_address = deps.api.addr_validate(&cw20_msg.sender).unwrap();
-
-    //Check if Pair exists
-    let assets_infos = &[
-        TokenInfo {
-            contract_addr: token_address.to_string(),
-        },
-        AssetInfo::NativeToken {
-            denom: "uusd".to_string(),
-        },
-    ];
-    let terraswap_factory_addr = &state.terraswap_factory.clone().unwrap();
-    let pair_info_res =
-        query_pair_info(&deps.querier, terraswap_factory_addr.clone(), assets_infos);
-    let pair_info: PairInfo;
-    match pair_info_res {
-        Ok(info) => {
-            pair_info = info;
-        }
-        Err(_) => {
-            return Err(TradeError::ExecutionError {
-                message: "Failed to query TerraSwap pair info.".to_string(),
-            });
-        }
-    };
-
-    //Simulate Swap for UST, if UST amount is >= than the ust_amount, proceed with the swap.
-    let asset = Asset {
-        info: AssetInfo::Token {
-            contract_addr: token_address.to_string(),
-        },
-        amount: cw20_msg.amount.clone(),
-    };
-    let swap_simulation: SimulationResponse;
-    let pair_contract_addr = deps.api.addr_validate(pair_info.contract_addr.as_str()).unwrap();
-    let swap_simulation_res = simulate(&deps.querier, pair_contract_addr,&asset);
-    match swap_simulation_res {
-        Ok(res) => {
-            swap_simulation = res;
-            if swap_simulation.return_amount < state.ust_amount {
-                return Err(TradeError::SwapError {
-                    required_amount: state.ust_amount,
-                    returned_amount: swap_simulation.return_amount.clone(),
-                });
-            }
-        }
-        Err(_) => {
-            return Err(TradeError::ExecutionError {
-                message: "Failed to simulate swap.".to_string(),
-            })
-        }
-    }
-
-    if swap_simulation.return_amount.clone() >= state.ust_amount {
-        //Send CW20 to Pair contract to convert it to UST
-        let swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: pair_info.contract_addr.clone().to_string(),
-            msg: to_binary(&Swap {
-                offer_asset: Asset {
-                    info: asset.info.clone(),
-                    amount: cw20_msg.amount,
-                },
-                belief_price: None,
-                max_spread: Some(Decimal::percent(1u64)),
-                to: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        });
-
-        let swap_sub_msg = SubMsg::new(swap_msg);
-        let r = Response::new().add_submessage(swap_sub_msg);
-        Ok(r)
-    } else {
-        Err(TradeError::SwapError {
-            required_amount: state.ust_amount.clone(),
-            returned_amount: swap_simulation.return_amount.clone(),
-        })
-    }
-}
-
-fn convert_to_cw20(
-    deps: DepsMut,
-    state: &mut State,
-    env: Env,
-    token_address: Addr,
-) -> Result<Response, TradeError> {
-    //Check if Pair exists
-    let assets_infos = &[
-        TokenInfo {
-            contract_addr: token_address.to_string(),
-        },
-        AssetInfo::NativeToken {
-            denom: "uusd".to_string(),
-        },
-    ];
-    let terraswap_factory_addr = &state.terraswap_factory.clone().unwrap();
-    let pair_info_res =
-        query_pair_info(&deps.querier, terraswap_factory_addr.clone(), assets_infos);
-    let pair_info: PairInfo;
-    match pair_info_res {
-        Ok(info) => {
-            pair_info = info;
-        }
-        Err(_) => {
-            return Err(TradeError::ExecutionError {
-                message: "Failed to query TerraSwap pair info.".to_string(),
-            });
-        }
-    };
-
-    //Simulate Swap for cw20.
-    //Query UST Balance
-    let ust_balance = deps
-        .querier
-        .query_balance(env.contract.address.clone(), "uusd".to_string());
-    if ust_balance.is_err() {
-        return Err(TradeError::ReleaseError {
-            message: "Not enough UST to convert".to_string(),
-        });
-    }
-    let ust_balance = ust_balance.unwrap();
-    //Swap Simulation
-    let asset = Asset {
-        info: AssetInfo::NativeToken {
-            denom: "uusd".to_string(),
-        },
-        amount: state.ust_amount,
-    };
-    let swap_simulation: SimulationResponse;
-    let pair_contract_addr = deps.api.addr_validate(pair_info.contract_addr.as_str()).unwrap();
-    let swap_simulation_res = simulate(&deps.querier, pair_contract_addr, &asset);
-    match swap_simulation_res {
-        Ok(res) => {
-            swap_simulation = res;
-            if swap_simulation.return_amount < ust_balance.amount {
-                return Err(TradeError::SwapError {
-                    required_amount: state.ust_amount,
-                    returned_amount: swap_simulation.return_amount.clone(),
-                });
-            }
-        }
-        Err(_) => {
-            return Err(TradeError::ExecutionError {
-                message: "Failed to simulate swap.".to_string(),
-            })
-        }
-    }
-
-    let amount = [deduct_tax(&deps.querier, ust_balance.clone()).unwrap()].to_vec();
-    let release_msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::Release).unwrap(),
-        funds: vec![],
-    });
-    let release_sub_msg = SubMsg::new(release_msg);
-    let _release_sub_msg_id = &release_sub_msg.id.clone();
-
-    let swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: pair_info.contract_addr.clone().to_string(),
-        msg: to_binary(&Swap {
-            offer_asset: asset.clone(),
-            belief_price: None,
-            max_spread: Some(Decimal::percent(1u64)),
-            to: Some(state.recipient.to_string()),
-        })
-        .unwrap(),
-        funds: amount,
-    });
-
-    let swap_sub_msg = SubMsg::new(swap_msg);
-    let r = Response::new().add_submessage(swap_sub_msg);
+        })))
+        .add_attributes(attributes);
     Ok(r)
 }
 

@@ -2,7 +2,7 @@
 use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{ConfigResponse, OfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use cosmwasm_std::{from_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response, Uint128};
@@ -251,11 +251,11 @@ fn update_offer_test() {
         offer_type: OfferType::Sell,
         fiat_currency: FiatCurrency::COP,
         min_amount: 1000000,
-        max_amount: 5000000
+        max_amount: 5000000,
     };
     let update_offer_msg = ExecuteMsg::Update {
         id: 1,
-        offer: offer_msg.clone()
+        offer: offer_msg.clone(),
     };
     let res = execute(deps.as_mut(), env.clone(), info.clone(), update_offer_msg).unwrap();
     assert_eq!(res.messages.len(), 0);

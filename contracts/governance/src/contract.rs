@@ -220,13 +220,14 @@ fn send_tokens(
     ];
 
     let mut r = Response::new();
+    let cw20msg = &Cw20ExecuteMsg::Transfer {
+        recipient: recipient.to_string(),
+        amount: Uint128::from(amount),
+    };
     r.attributes = attributes;
     r.messages = vec![SubMsg::new(WasmMsg::Execute {
         contract_addr: asset_token.to_string(),
-        msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: recipient.to_string(),
-            amount: Uint128::from(amount),
-        })
+        msg: to_binary(cw20msg)
         .unwrap(),
         funds: vec![],
     })];

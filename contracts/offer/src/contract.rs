@@ -1,8 +1,11 @@
-use cosmwasm_std::{entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult, Uint128, StdError};
+use cosmwasm_std::{
+    entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128,
+};
 
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{OfferMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
 use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
 use cosmwasm_storage::{bucket, bucket_read};
 
@@ -63,8 +66,10 @@ pub fn try_create_offer(
     };
 
     if msg.min_amount >= msg.max_amount {
-        let err = OfferError::Std(StdError::generic_err("Min amount must be greater than Max amount."));
-        return Err(err)
+        let err = OfferError::Std(StdError::generic_err(
+            "Min amount must be greater than Max amount.",
+        ));
+        return Err(err);
     }
 
     bucket(deps.storage, OFFERS_KEY).save(&offer_id.to_be_bytes(), &offer)?;
@@ -133,8 +138,10 @@ pub fn try_update_offer(
     let mut offer = load_offer_by_id(deps.as_ref(), id)?;
 
     if msg.min_amount >= msg.max_amount {
-        let err = OfferError::Std(StdError::generic_err("Min amount must be greater than Max amount."));
-        return Err(err)
+        let err = OfferError::Std(StdError::generic_err(
+            "Min amount must be greater than Max amount.",
+        ));
+        return Err(err);
     }
 
     return if offer.owner.eq(&info.sender) {

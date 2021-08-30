@@ -16,7 +16,7 @@ pub fn instantiate(
 ) -> Result<Response, FactoryError> {
     let cw20coin = Cw20Coin {
         address: msg.gov_contract_addr.clone(),
-        amount: Uint128::from(400_000_000 * 1_000_000u128)
+        amount: Uint128::from(400_000_000 * 1_000_000u128),
     };
     let r = Response::new().add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Instantiate {
         admin: None,
@@ -26,7 +26,7 @@ pub fn instantiate(
             symbol: "LOCAL".to_string(),
             decimals: 6u8,
             initial_balances: vec![cw20coin],
-            mint: None
+            mint: None,
         })?,
         funds: vec![],
         label: "create token".to_string(),

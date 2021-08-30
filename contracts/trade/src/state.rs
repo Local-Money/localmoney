@@ -10,6 +10,7 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct State {
     pub recipient: Addr,
     pub sender: Addr,
+    pub fee_collector: Addr,
     pub offer_id: u64,
     pub state: TradeState,
     pub expire_height: u64,
