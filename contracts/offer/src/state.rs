@@ -9,8 +9,10 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub static OFFERS_KEY: &[u8] = b"offers";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct State {
+pub struct Config {
     pub offers_count: u64,
+    pub gov_addr: Addr,
+    pub fee_collector_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -38,11 +40,11 @@ pub enum OfferState {
     Paused,
 }
 
-pub fn config(storage: &mut dyn Storage) -> Singleton<State> {
+pub fn config(storage: &mut dyn Storage) -> Singleton<Config> {
     singleton(storage, CONFIG_KEY)
 }
 
-pub fn config_read(storage: &dyn Storage) -> ReadonlySingleton<State> {
+pub fn config_read(storage: &dyn Storage) -> ReadonlySingleton<Config> {
     singleton_read(storage, CONFIG_KEY)
 }
 

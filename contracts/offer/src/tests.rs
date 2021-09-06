@@ -2,14 +2,17 @@
 use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
+use crate::mock_querier::mock_dependencies;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
 use crate::state::{Offer, OfferState, OfferType};
-use cosmwasm_std::testing::{mock_dependencies, mock_env};
+use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{from_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response, Uint128};
 use cosmwasm_vm::testing::mock_info;
 
 fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
-    let init_msg = InstantiateMsg {};
+    let init_msg = InstantiateMsg {
+        gov_addr: Addr::unchecked("gov-contract"),
+    };
     let res = instantiate(deps, env, info, init_msg).unwrap();
 
     assert_eq!(res.messages.len(), 0);
@@ -18,7 +21,7 @@ fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
 
 #[test]
 fn proper_init() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies(&[], None);
     let env = mock_env();
     let info = mock_info("owner", &[]);
 
@@ -53,7 +56,7 @@ fn create_offer(
 
 #[test]
 fn create_offer_test() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies(&[], None);
     let env = mock_env();
     let owner = Addr::unchecked("owner");
     let info = mock_info(owner.clone().as_str(), &[]);
@@ -107,7 +110,7 @@ fn create_offer_test() {
 
 #[test]
 fn pause_offer_test() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies(&[], None);
     let owner = Addr::unchecked("owner");
     let other = Addr::unchecked("other");
     let env = mock_env();
@@ -161,7 +164,7 @@ fn pause_offer_test() {
 
 #[test]
 fn activate_offer_test() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies(&[], None);
     let owner = Addr::unchecked("owner");
     let other = Addr::unchecked("other");
     let env = mock_env();
@@ -225,7 +228,7 @@ fn activate_offer_test() {
 
 #[test]
 fn update_offer_test() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies(&[], None);
     let owner = Addr::unchecked("owner");
     let env = mock_env();
     let info = mock_info(owner.clone().as_str(), &[]);

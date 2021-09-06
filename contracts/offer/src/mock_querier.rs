@@ -3,14 +3,15 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::currencies::FiatCurrency;
+use crate::msg::GovernanceConfigResponse;
+use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
-use offer::currencies::FiatCurrency;
-use offer::state::{Offer, OfferState, OfferType};
 use std::collections::HashMap;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
 use terraswap::asset::{AssetInfo, PairInfo};
@@ -206,6 +207,7 @@ impl WasmMockQuerier {
                                 })
                             }
                         };
+                    println!("Balances: {:?}", balances);
 
                     let balance = match balances.get(&address) {
                         Some(v) => *v,
@@ -236,12 +238,17 @@ impl WasmMockQuerier {
                     SystemResult::Ok(ContractResult::from(to_binary(&offer)))
                 }
                 QueryMsg::Config {} => {
-                    let offer_config = offer::state::Config {
-                        offers_count: 0,
-                        gov_addr: Addr::unchecked("gov-owner"),
-                        fee_collector_addr: Addr::unchecked("fee-collector"),
-                    };
-                    SystemResult::Ok(ContractResult::from(to_binary(&offer_config)))
+                    if contract_addr.contains("gov-contract") {
+                        SystemResult::Ok(ContractResult::from(to_binary(
+                            &GovernanceConfigResponse {
+                                gov_token_addr: Addr::unchecked("gov-token"),
+                                offers_addr: Addr::unchecked("offers-contract"),
+                                fee_collector_addr: Addr::unchecked("fee-collector"),
+                            },
+                        )))
+                    } else {
+                        unimplemented!()
+                    }
                 }
             },
             _ => self.base.handle_query(request),

@@ -13,6 +13,8 @@ pub static STATE_KEY: &[u8] = b"state";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub gov_token_addr: Addr,
+    pub offers_addr: Addr,
+    pub fee_collector_addr: Addr,
 }
 
 pub fn config_store(storage: &mut dyn Storage) -> Singleton<Config> {

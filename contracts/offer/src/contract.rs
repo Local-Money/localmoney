@@ -1,12 +1,14 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdError,
-    StdResult, Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, QueryRequest, Response,
+    StdError, StdResult, Uint128, WasmQuery,
 };
 
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
-use crate::state::{config, config_read, query_all_offers, Offer, OfferState, State, OFFERS_KEY};
+use crate::msg::{
+    ExecuteMsg, GovernanceConfigResponse, GovernanceQueryMsg, InstantiateMsg, OfferMsg, QueryMsg,
+};
+use crate::state::{config, config_read, query_all_offers, Config, Offer, OfferState, OFFERS_KEY};
 use cosmwasm_storage::{bucket, bucket_read};
 
 #[entry_point]
@@ -14,10 +16,26 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
-) -> StdResult<Response> {
-    let state = State { offers_count: 0 };
-    config(deps.storage).save(&state)?;
+    msg: InstantiateMsg,
+) -> Result<Response, OfferError> {
+    let load_gov_config: StdResult<GovernanceConfigResponse> =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.gov_addr.to_string(),
+            msg: to_binary(&GovernanceQueryMsg::Config {}).unwrap(),
+        }));
+
+    if load_gov_config.is_err() {
+        return Err(OfferError::GovernanceNotFound {
+            gov_addr: msg.gov_addr,
+        });
+    }
+    let gov_config = load_gov_config.unwrap();
+
+    config(deps.storage).save(&Config {
+        offers_count: 0,
+        gov_addr: msg.gov_addr,
+        fee_collector_addr: gov_config.fee_collector_addr,
+    })?;
     Ok(Response::default())
 }
 
@@ -158,7 +176,7 @@ pub fn try_update_offer(
     };
 }
 
-fn query_config(deps: Deps) -> StdResult<State> {
+fn query_config(deps: Deps) -> StdResult<Config> {
     let state = config_read(deps.storage).load().unwrap();
     Ok(state)
 }

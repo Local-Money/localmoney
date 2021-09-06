@@ -1,10 +1,13 @@
 use crate::currencies::FiatCurrency;
 use crate::state::OfferType;
+use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub gov_addr: Addr,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferMsg {
@@ -35,4 +38,19 @@ pub enum QueryMsg {
 #[serde(rename_all = "snake_case")]
 pub struct ConfigResponse {
     pub offers_count: u64,
+}
+
+/// Governance models
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceQueryMsg {
+    Config {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct GovernanceConfigResponse {
+    pub gov_token_addr: Addr,
+    pub offers_addr: Addr,
+    pub fee_collector_addr: Addr,
 }

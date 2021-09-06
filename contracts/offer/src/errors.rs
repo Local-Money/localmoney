@@ -10,4 +10,6 @@ pub enum OfferError {
     InvalidStateChange { from: OfferState, to: OfferState },
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
+    #[error("Governance not found.")]
+    GovernanceNotFound { gov_addr: Addr },
 }

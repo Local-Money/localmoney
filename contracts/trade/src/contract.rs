@@ -27,6 +27,19 @@ pub fn instantiate(
     }
     let offer = load_offer_result.unwrap();
 
+    //Load offer config
+    let load_offer_config_result: StdResult<offer::state::Config> =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.offer_contract.to_string(),
+            msg: to_binary(&OfferMsg::Config {}).unwrap(),
+        }));
+
+    if load_offer_config_result.is_err() {
+        return Err(TradeError::OfferNotFound { offer_id });
+    }
+
+    let offer_config = load_offer_config_result.unwrap();
+
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
     let expire_height = env.block.height + 600; //Roughly 1h.
 
@@ -43,7 +56,7 @@ pub fn instantiate(
     //Instantiate recipient and sender addresses according to Offer type (buy, sell)
     let recipient: Addr;
     let sender: Addr;
-    let fee_collector: Addr = msg.fee_collector;
+    let fee_collector: Addr = offer_config.fee_collector_addr;
     let _taker_is_buying: bool;
 
     if offer.offer_type == OfferType::Buy {
@@ -195,16 +208,18 @@ fn try_release(
             &deps,
             state.fee_collector.clone(),
             local_terra_fee.clone(),
-            "approve"
-        ).unwrap();
+            "approve",
+        )
+        .unwrap();
 
         let final_balance = deduct_local_terra_fee(balance, local_terra_fee).unwrap();
         let amount_response = send_tokens(
             &deps,
             state.recipient.clone(),
             final_balance.clone(),
-            "approve"
-        ).unwrap();
+            "approve",
+        )
+        .unwrap();
 
         let r = Response::new()
             .add_submessage(fee_response.messages[0].clone())
@@ -247,18 +262,24 @@ fn get_ust_amount(info: MessageInfo) -> Uint128 {
 }
 
 fn calculate_local_terra_fee(balance: &Vec<Coin>) -> StdResult<Vec<Coin>> {
-    let fee_amount = balance[0].clone().amount.checked_div(Uint128::new(1000)).unwrap();
+    let fee_amount = balance[0]
+        .clone()
+        .amount
+        .checked_div(Uint128::new(1000))
+        .unwrap();
     Ok([Coin {
         amount: fee_amount,
-        denom: balance[0].clone().denom
-    }].to_vec())
+        denom: balance[0].clone().denom,
+    }]
+    .to_vec())
 }
 
 fn deduct_local_terra_fee(balance: Vec<Coin>, local_terra_fee: Vec<Coin>) -> StdResult<Vec<Coin>> {
     Ok([Coin {
         amount: (balance[0].amount.checked_sub(local_terra_fee[0].amount)).unwrap(),
-        denom: balance[0].clone().denom
-    }].to_vec())
+        denom: balance[0].clone().denom,
+    }]
+    .to_vec())
 }
 
 //Help to send native coins.

@@ -22,7 +22,10 @@ pub fn instantiate(
 ) -> Result<Response, GovernanceError> {
     let config = Config {
         gov_token_addr: msg.gov_token_addr,
+        offers_addr: msg.offers_addr,
+        fee_collector_addr: msg.fee_collector_addr,
     };
+
     let state = State {
         total_shares: Uint128::zero(),
     };
@@ -227,8 +230,7 @@ fn send_tokens(
     r.attributes = attributes;
     r.messages = vec![SubMsg::new(WasmMsg::Execute {
         contract_addr: asset_token.to_string(),
-        msg: to_binary(cw20msg)
-        .unwrap(),
+        msg: to_binary(cw20msg).unwrap(),
         funds: vec![],
     })];
     Ok(r)

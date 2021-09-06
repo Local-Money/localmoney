@@ -22,7 +22,6 @@ fn test_init() {
 
     let instantiate_trade_msg = InstantiateMsg {
         offer_contract: Addr::unchecked("offer"),
-        fee_collector: Addr::unchecked("fee_collector"),
         offer_id: 1,
         ust_amount: trade_amount.clone(),
         final_asset: None,
@@ -52,7 +51,6 @@ fn create_trade(
     //Init trade
     let instantiate_trade_msg = InstantiateMsg {
         offer_contract: Addr::unchecked("offer"),
-        fee_collector: Addr::unchecked("fee_collector"),
         offer_id: 1,
         ust_amount: trade_amount.clone(),
         final_asset: None,
@@ -110,27 +108,30 @@ fn test_trade_happy_path() {
     assert_eq!(trade_state.state, TradeState::Closed);
 
     //Verify that the correct messages were sent after trade completion
-    assert_eq!(res.unwrap().messages, vec![
-        // Fee collector subMessage
-        SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            // TODO change the local terra fee collector address
-            to_address: "fee_collector".to_string(),
-            amount: vec![Coin {
-                denom: "uusd".to_string(),
-                // 1% fee amount
-                amount: local_terra_fee
-            }]
-        })),
-        // Offer owner message
-        SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: "offer-owner".to_string(),
-            amount: vec![Coin {
-                denom: "uusd".to_string(),
-                // The amount sent has a 1% discount
-                amount: received_amount
-            }]
-        }))
-    ])
+    assert_eq!(
+        res.unwrap().messages,
+        vec![
+            // Fee collector subMessage
+            SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                // TODO change the local terra fee collector address
+                to_address: "fee-collector".to_string(),
+                amount: vec![Coin {
+                    denom: "uusd".to_string(),
+                    // 1% fee amount
+                    amount: local_terra_fee
+                }]
+            })),
+            // Offer owner message
+            SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                to_address: "offer-owner".to_string(),
+                amount: vec![Coin {
+                    denom: "uusd".to_string(),
+                    // The amount sent has a 1% discount
+                    amount: received_amount
+                }]
+            }))
+        ]
+    )
 }
 
 fn create_offer_struct(
@@ -291,7 +292,12 @@ fn test_fund_escrow() {
 
     //Send FundEscrow message with UST and check that trade is in EscrowFunded state.
     info.funds[0].amount = trade_amount.clone();
-    let res = execute(deps.as_mut(), mock_env(), info.clone(), ExecuteMsg::FundEscrow);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        ExecuteMsg::FundEscrow,
+    );
     assert!(res.is_ok());
     let trade_state: State =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap()).unwrap();

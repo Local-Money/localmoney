@@ -8,7 +8,7 @@ use crate::state::{Staker, State};
 use cosmwasm_std::testing::mock_info;
 use cosmwasm_std::{from_binary, to_binary, Addr, DepsMut, Empty, Response, Uint128};
 use cosmwasm_vm::testing::mock_env;
-use cw20::{Cw20ReceiveMsg};
+use cw20::Cw20ReceiveMsg;
 use std::ops::Add;
 
 fn cw20_send(
@@ -33,22 +33,39 @@ fn test_stake_and_withdraw() {
 
     let gov_owner = mock_info("gov-owner", &[]);
     let staker = mock_info("staker", &[]);
+
     let token_addr = Addr::unchecked("local-token");
+    let offers_addr = Addr::unchecked("offers-address");
+    let fee_collector_addr = Addr::unchecked("local-token");
 
     //Instantiate Gov Contract.
     let gov_init_msg = crate::msg::InstantiateMsg {
         gov_token_addr: token_addr.clone(),
+        offers_addr: offers_addr.clone(),
+        fee_collector_addr: fee_collector_addr.clone(),
     };
+
     let gov_env = mock_env();
-    let res = instantiate(deps.as_mut(), gov_env.clone(), gov_owner.clone(), gov_init_msg);
+    let res = instantiate(
+        deps.as_mut(),
+        gov_env.clone(),
+        gov_owner.clone(),
+        gov_init_msg,
+    );
     assert!(res.is_ok());
-    deps.querier.with_token_balances(&[(
-        &token_addr.to_string(),
-        &[(&staker.sender.to_string(), &staker_balance.clone())],
-    ), (
-        &token_addr.to_string(),
-        &[(&gov_env.contract.address.to_string(), &staker_balance.clone())],
-    )], );
+    deps.querier.with_token_balances(&[
+        (
+            &token_addr.to_string(),
+            &[(&staker.sender.to_string(), &staker_balance.clone())],
+        ),
+        (
+            &token_addr.to_string(),
+            &[(
+                &gov_env.contract.address.to_string(),
+                &staker_balance.clone(),
+            )],
+        ),
+    ]);
 
     //Send Tokens from Staker to the Governance contract and assert that it's ok.
     let res = cw20_send(
@@ -78,9 +95,14 @@ fn test_stake_and_withdraw() {
     assert_eq!(staker_info.shares, state.total_shares);
 
     //Withdraw shares.
-    let res = execute(deps.as_mut(), mock_env(), staker.clone(), ExecuteMsg::Withdraw {
-        shares: staker_info.shares
-    });
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        staker.clone(),
+        ExecuteMsg::Withdraw {
+            shares: staker_info.shares,
+        },
+    );
     assert!(res.is_ok());
 
     //Check that Staker's and Total shares were reduced.
@@ -94,9 +116,9 @@ fn test_stake_and_withdraw() {
                 address: staker.sender.to_string(),
             },
         )
-            .unwrap(),
+        .unwrap(),
     )
-        .unwrap();
+    .unwrap();
     assert_eq!(staker_info.shares, Uint128::zero());
     assert_eq!(staker_info.shares, state.total_shares);
 }
@@ -111,6 +133,8 @@ fn test_deposit_rewards() {
     let factory = mock_info("factory", &[]);
     let gov_owner = mock_info("gov-owner", &[]);
     let token_addr = Addr::unchecked("local-token");
+    let offers_addr = Addr::unchecked("offers-address");
+    let fee_collector_addr = Addr::unchecked("local-token");
 
     deps.querier.with_token_balances(&[
         (
@@ -130,6 +154,8 @@ fn test_deposit_rewards() {
     //Instantiate Gov Contract.
     let gov_init_msg = crate::msg::InstantiateMsg {
         gov_token_addr: token_addr.clone(),
+        offers_addr: offers_addr.clone(),
+        fee_collector_addr: fee_collector_addr.clone(),
     };
     let _res = instantiate(deps.as_mut(), mock_env(), gov_owner.clone(), gov_init_msg);
 
