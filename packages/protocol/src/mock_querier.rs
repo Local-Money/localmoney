@@ -1,11 +1,8 @@
-#![cfg(test)]
+#[allow(dead_code)]
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::currencies::FiatCurrency;
-use crate::msg::GovernanceConfigResponse;
-use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
@@ -15,6 +12,9 @@ use cw20::BalanceResponse;
 use std::collections::HashMap;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
 use terraswap::asset::{AssetInfo, PairInfo};
+use crate::offer::{Offer, OfferType, OfferState, Config as OfferConfig};
+use crate::currencies::FiatCurrency;
+use crate::governance::{Config as GovConfig};
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
 /// this uses our CustomQuerier.
@@ -207,7 +207,6 @@ impl WasmMockQuerier {
                                 })
                             }
                         };
-                    println!("Balances: {:?}", balances);
 
                     let balance = match balances.get(&address) {
                         Some(v) => *v,
@@ -237,17 +236,22 @@ impl WasmMockQuerier {
                     });
                     SystemResult::Ok(ContractResult::from(to_binary(&offer)))
                 }
+                //TODO: This will fail if other Config query is made from tests,
+                // we need a reliable way to check which config is being queried.
                 QueryMsg::Config {} => {
                     if contract_addr.contains("gov-contract") {
-                        SystemResult::Ok(ContractResult::from(to_binary(
-                            &GovernanceConfigResponse {
-                                gov_token_addr: Addr::unchecked("gov-token"),
-                                offers_addr: Addr::unchecked("offers-contract"),
-                                fee_collector_addr: Addr::unchecked("fee-collector"),
-                            },
-                        )))
+                        SystemResult::Ok(ContractResult::from(to_binary(&GovConfig {
+                            gov_token_addr: Addr::unchecked("gov-token"),
+                            offers_addr: Addr::unchecked("offers-contract"),
+                            fee_collector_addr: Addr::unchecked("fee-collector"),
+                        })))
                     } else {
-                        unimplemented!()
+                        let offer_config = OfferConfig {
+                            offers_count: 0,
+                            gov_addr: Addr::unchecked("gov-owner"),
+                            fee_collector_addr: Addr::unchecked("fee-collector"),
+                        };
+                        SystemResult::Ok(ContractResult::from(to_binary(&offer_config)))
                     }
                 }
             },

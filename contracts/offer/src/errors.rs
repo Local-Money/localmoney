@@ -1,5 +1,5 @@
-use crate::state::OfferState;
 use cosmwasm_std::{Addr, StdError};
+use localterra_protocol::offer::OfferState;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -1,12 +1,12 @@
 use crate::errors::TradeError;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
-use crate::state::{config, config_read, State, TradeState};
+use crate::state::{config, config_read};
 use crate::taxation::deduct_tax;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmQuery,
 };
-use offer::state::{Offer, OfferType};
+use localterra_protocol::trade::{TradeState, State, InstantiateMsg, OfferMsg, ExecuteMsg, QueryMsg};
+use localterra_protocol::offer::{Offer, OfferType, Config as OfferConfig};
 
 #[entry_point]
 pub fn instantiate(
@@ -28,7 +28,7 @@ pub fn instantiate(
     let offer = load_offer_result.unwrap();
 
     //Load offer config
-    let load_offer_config_result: StdResult<offer::state::Config> =
+    let load_offer_config_result: StdResult<OfferConfig> =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: msg.offer_contract.to_string(),
             msg: to_binary(&OfferMsg::Config {}).unwrap(),
@@ -125,7 +125,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
+fn query_config(deps: Deps) -> StdResult<State> {
     let state = config_read(deps.storage).load()?;
     Ok(state)
 }

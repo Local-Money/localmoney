@@ -3,13 +3,14 @@ use cosmwasm_std::{
     StdError, StdResult, Uint128, WasmQuery,
 };
 
-use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::msg::{
-    ExecuteMsg, GovernanceConfigResponse, GovernanceQueryMsg, InstantiateMsg, OfferMsg, QueryMsg,
-};
-use crate::state::{config, config_read, query_all_offers, Config, Offer, OfferState, OFFERS_KEY};
+use crate::state::{config, config_read, query_all_offers};
 use cosmwasm_storage::{bucket, bucket_read};
+use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::governance::{Config as GovConfig, QueryMsg as GovQueryMsg};
+use localterra_protocol::offer::{
+    Config, ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, QueryMsg, OFFERS_KEY,
+};
 
 #[entry_point]
 pub fn instantiate(
@@ -18,10 +19,10 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, OfferError> {
-    let load_gov_config: StdResult<GovernanceConfigResponse> =
+    let load_gov_config: StdResult<GovConfig> =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: msg.gov_addr.to_string(),
-            msg: to_binary(&GovernanceQueryMsg::Config {}).unwrap(),
+            msg: to_binary(&GovQueryMsg::Config {}).unwrap(),
         }));
 
     if load_gov_config.is_err() {

@@ -1,9 +1,12 @@
-use crate::currencies::FiatCurrency;
-use crate::state::OfferType;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use crate::currencies::FiatCurrency;
 
+pub static CONFIG_KEY: &[u8] = b"config";
+pub static OFFERS_KEY: &[u8] = b"offers";
+
+///Messages
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub gov_addr: Addr,
@@ -40,17 +43,35 @@ pub struct ConfigResponse {
     pub offers_count: u64,
 }
 
-/// Governance models
+///Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum GovernanceQueryMsg {
-    Config {},
+pub struct Config {
+    pub offers_count: u64,
+    pub gov_addr: Addr,
+    pub fee_collector_addr: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Offer {
+    pub id: u64,
+    pub owner: Addr,
+    pub offer_type: OfferType,
+    pub fiat_currency: FiatCurrency,
+    pub min_amount: Uint128,
+    pub max_amount: Uint128,
+    pub state: OfferState,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct GovernanceConfigResponse {
-    pub gov_token_addr: Addr,
-    pub offers_addr: Addr,
-    pub fee_collector_addr: Addr,
+pub enum OfferType {
+    Buy,
+    Sell,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum OfferState {
+    Active,
+    Paused,
 }

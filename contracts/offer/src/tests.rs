@@ -1,13 +1,15 @@
 #![cfg(test)]
 use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
-use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::mock_querier::mock_dependencies;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg};
-use crate::state::{Offer, OfferState, OfferType};
 use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{from_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response, Uint128};
 use cosmwasm_vm::testing::mock_info;
+use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::offer::{
+    Config, ConfigResponse, ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, OfferType,
+    QueryMsg,
+};
+use localterra_protocol::mock_querier::mock_dependencies;
 
 fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
     let init_msg = InstantiateMsg {
@@ -29,9 +31,13 @@ fn proper_init() {
     assert_eq!(res, Response::default());
 
     let query_config = QueryMsg::Config {};
-    let conf: ConfigResponse =
+    let conf: Config =
         from_binary(&query(deps.as_ref(), env.clone(), query_config).unwrap()).unwrap();
-    let expected = ConfigResponse { offers_count: 0 };
+    let expected = Config {
+        offers_count: 0,
+        gov_addr: Addr::unchecked("gov-contract"),
+        fee_collector_addr: Addr::unchecked("fee-collector"),
+    };
     assert_eq!(conf, expected);
 }
 

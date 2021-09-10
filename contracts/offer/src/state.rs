@@ -1,44 +1,7 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
-use crate::currencies::FiatCurrency;
-use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{Deps, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket_read, singleton, singleton_read, ReadonlySingleton, Singleton};
-
-pub static CONFIG_KEY: &[u8] = b"config";
-pub static OFFERS_KEY: &[u8] = b"offers";
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Config {
-    pub offers_count: u64,
-    pub gov_addr: Addr,
-    pub fee_collector_addr: Addr,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Offer {
-    pub id: u64,
-    pub owner: Addr,
-    pub offer_type: OfferType,
-    pub fiat_currency: FiatCurrency,
-    pub min_amount: Uint128,
-    pub max_amount: Uint128,
-    pub state: OfferState,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum OfferType {
-    Buy,
-    Sell,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum OfferState {
-    Active,
-    Paused,
-}
+use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::offer::{Config, Offer, CONFIG_KEY, OFFERS_KEY};
 
 pub fn config(storage: &mut dyn Storage) -> Singleton<Config> {
     singleton(storage, CONFIG_KEY)

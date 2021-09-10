@@ -2,13 +2,14 @@
 
 use crate::contract::{execute, instantiate, query};
 use crate::errors::GovernanceError;
-use crate::mock_querier::mock_dependencies;
-use crate::msg::{Cw20HookMsg, ExecuteMsg, QueryMsg};
-use crate::state::{Staker, State};
 use cosmwasm_std::testing::mock_info;
 use cosmwasm_std::{from_binary, to_binary, Addr, DepsMut, Empty, Response, Uint128};
 use cosmwasm_vm::testing::mock_env;
 use cw20::Cw20ReceiveMsg;
+use localterra_protocol::governance::{
+    Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Staker, State,
+};
+use localterra_protocol::mock_querier::mock_dependencies;
 use std::ops::Add;
 
 fn cw20_send(
@@ -39,7 +40,7 @@ fn test_stake_and_withdraw() {
     let fee_collector_addr = Addr::unchecked("local-token");
 
     //Instantiate Gov Contract.
-    let gov_init_msg = crate::msg::InstantiateMsg {
+    let gov_init_msg = InstantiateMsg {
         gov_token_addr: token_addr.clone(),
         offers_addr: offers_addr.clone(),
         fee_collector_addr: fee_collector_addr.clone(),
@@ -152,7 +153,7 @@ fn test_deposit_rewards() {
     ]);
 
     //Instantiate Gov Contract.
-    let gov_init_msg = crate::msg::InstantiateMsg {
+    let gov_init_msg = InstantiateMsg {
         gov_token_addr: token_addr.clone(),
         offers_addr: offers_addr.clone(),
         fee_collector_addr: fee_collector_addr.clone(),

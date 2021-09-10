@@ -1,15 +1,16 @@
 use crate::errors::GovernanceError;
-use crate::msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::querier::load_token_balance;
 use crate::state::{
-    config_read, config_store, stakers_read, stakers_store, state_read, state_store, Config,
-    Staker, State,
+    config_read, config_store, stakers_read, stakers_store, state_read, state_store,
 };
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo,
     Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use localterra_protocol::governance::{
+    Config, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Staker, State,
+};
 
 //TODO: Although this contract is named Governance, it doesn't contain any governance function.
 // Governance features will be added to this contract on a future upgrade.

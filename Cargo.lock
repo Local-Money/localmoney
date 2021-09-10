@@ -580,12 +580,13 @@ dependencies = [
  "cosmwasm-storage",
  "cosmwasm-vm",
  "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "localterra-protocol",
  "offer",
  "schemars",
  "serde",
  "snafu",
  "terra-cosmwasm",
- "terraswap",
+ "terraswap 2.4.1",
  "thiserror",
 ]
 
@@ -668,14 +669,14 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
- "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
- "cw20-base",
+ "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "localterra-protocol",
  "offer",
  "schemars",
  "serde",
  "snafu",
  "terra-cosmwasm",
- "terraswap",
+ "terraswap 2.4.1",
  "thiserror",
 ]
 
@@ -782,6 +783,22 @@ checksum = "6f84d96438c15fcd6c3f244c8fce01d1e2b9c6b5623e9c711dc9286d8fc92d6a"
 dependencies = [
  "cfg-if",
  "winapi",
+]
+
+[[package]]
+name = "localterra-protocol"
+version = "1.0.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cosmwasm-vm",
+ "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "schemars",
+ "serde",
+ "terra-cosmwasm",
+ "terraswap 2.4.0",
+ "thiserror",
 ]
 
 [[package]]
@@ -903,11 +920,12 @@ dependencies = [
  "cosmwasm-vm",
  "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
  "cw20-base",
+ "localterra-protocol",
  "schemars",
  "serde",
  "snafu",
  "terra-cosmwasm",
- "terraswap",
+ "terraswap 2.4.1",
  "thiserror",
 ]
 
@@ -1392,6 +1410,20 @@ dependencies = [
 
 [[package]]
 name = "terraswap"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96f2c2a6371e9ddf2c942368e64645cc3e8fc2855da70c8c6bed238dcdd5522f"
+dependencies = [
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "schemars",
+ "serde",
+ "terra-cosmwasm",
+]
+
+[[package]]
+name = "terraswap"
 version = "2.4.1"
 source = "git+https://github.com/terraswap/terraswap?branch=main#27abf249675e2db3076369f9740357277bea17ba"
 dependencies = [
@@ -1465,12 +1497,12 @@ dependencies = [
  "cosmwasm-vm",
  "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
  "cw20-base",
- "offer",
+ "localterra-protocol",
  "schemars",
  "serde",
  "snafu",
  "terra-cosmwasm",
- "terraswap",
+ "terraswap 2.4.1",
  "thiserror",
 ]
 

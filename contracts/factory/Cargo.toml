@@ -31,9 +31,8 @@ snafu = { version = "0.6.3" }
 terra-cosmwasm = { version = "2.1.0" }
 offer = { path = "../offer" }
 terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
-#cw20 = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
 cw20 = { version = "0.8.0" }
-#cw20-base = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
+localterra-protocol = { path = "../../packages/protocol" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }

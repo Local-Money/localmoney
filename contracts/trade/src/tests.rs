@@ -1,18 +1,17 @@
 #![cfg(test)]
 use crate::contract::{execute, instantiate, query};
 use crate::errors::TradeError;
-use crate::mock_querier::{mock_dependencies, WasmMockQuerier};
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{State, TradeState};
 use cosmwasm_std::testing::{MockApi, MockStorage};
 use cosmwasm_std::{
     from_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Empty, MessageInfo, OwnedDeps, Response,
     SubMsg, Uint128,
 };
 use cosmwasm_vm::testing::{mock_env, mock_info};
-use offer::currencies::FiatCurrency;
-use offer::state::{Offer, OfferState, OfferType};
 use std::ops::Add;
+use localterra_protocol::trade::{State, TradeState, InstantiateMsg, ExecuteMsg, QueryMsg};
+use localterra_protocol::offer::{OfferType, OfferState, Offer};
+use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::mock_querier::{mock_dependencies, WasmMockQuerier};
 
 #[test]
 fn test_init() {
