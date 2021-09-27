@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "gov_addr",
+    "local_ust_pool_addr",
+    "ust_conversion_threshold"
+  ],
+  "properties": {
+    "gov_addr": {
+      "type": "string"
+    },
+    "local_ust_pool_addr": {
+      "type": "string"
+    },
+    "ust_conversion_threshold": {
+      "type": "integer",
+      "format": "uint128",
+      "minimum": 0.0
+    }
+  }
+}

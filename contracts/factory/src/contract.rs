@@ -3,9 +3,9 @@ use cosmwasm_std::{
     to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, Uint128, WasmMsg,
 };
 
+use crate::errors::FactoryError;
 use cw20::Cw20Coin;
 use localterra_protocol::factory::{ExecuteMsg, InstantiateMsg};
-use crate::errors::FactoryError;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

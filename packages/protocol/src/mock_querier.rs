@@ -1,8 +1,10 @@
 #[allow(dead_code)]
-
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::currencies::FiatCurrency;
+use crate::governance::Config as GovConfig;
+use crate::offer::{Config as OfferConfig, Offer, OfferState, OfferType};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
@@ -12,9 +14,6 @@ use cw20::BalanceResponse;
 use std::collections::HashMap;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
 use terraswap::asset::{AssetInfo, PairInfo};
-use crate::offer::{Offer, OfferType, OfferState, Config as OfferConfig};
-use crate::currencies::FiatCurrency;
-use crate::governance::{Config as GovConfig};
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
 /// this uses our CustomQuerier.

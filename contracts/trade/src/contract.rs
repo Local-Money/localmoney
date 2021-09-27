@@ -5,8 +5,10 @@ use cosmwasm_std::{
     entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmQuery,
 };
-use localterra_protocol::trade::{TradeState, State, InstantiateMsg, OfferMsg, ExecuteMsg, QueryMsg};
-use localterra_protocol::offer::{Offer, OfferType, Config as OfferConfig};
+use localterra_protocol::offer::{Config as OfferConfig, Offer, OfferType};
+use localterra_protocol::trade::{
+    ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg, State, TradeState,
+};
 
 #[entry_point]
 pub fn instantiate(

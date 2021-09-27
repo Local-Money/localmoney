@@ -1,7 +1,7 @@
+use crate::currencies::FiatCurrency;
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::currencies::FiatCurrency;
 
 pub static CONFIG_KEY: &[u8] = b"config";
 pub static OFFERS_KEY: &[u8] = b"offers";

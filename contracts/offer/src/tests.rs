@@ -5,11 +5,11 @@ use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{from_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response, Uint128};
 use cosmwasm_vm::testing::mock_info;
 use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::mock_querier::mock_dependencies;
 use localterra_protocol::offer::{
     Config, ConfigResponse, ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, OfferType,
     QueryMsg,
 };
-use localterra_protocol::mock_querier::mock_dependencies;
 
 fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
     let init_msg = InstantiateMsg {

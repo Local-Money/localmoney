@@ -7,11 +7,11 @@ use cosmwasm_std::{
     SubMsg, Uint128,
 };
 use cosmwasm_vm::testing::{mock_env, mock_info};
-use std::ops::Add;
-use localterra_protocol::trade::{State, TradeState, InstantiateMsg, ExecuteMsg, QueryMsg};
-use localterra_protocol::offer::{OfferType, OfferState, Offer};
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::mock_querier::{mock_dependencies, WasmMockQuerier};
+use localterra_protocol::offer::{Offer, OfferState, OfferType};
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
+use std::ops::Add;
 
 #[test]
 fn test_init() {
