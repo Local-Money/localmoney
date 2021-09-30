@@ -136,11 +136,11 @@ fn send_local_token_to_gov(
         msg: to_binary(&deposit_rewards_msg).unwrap(),
     };
 
-    let msg = SubMsg::new(WasmMsg::Execute {
+    let msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cfg.gov_addr.to_string(),
         msg: to_binary(&cw20msg).unwrap(),
         funds: vec![],
-    });
+    }));
 
     let res = Response::default().add_submessage(msg);
 

@@ -1,10 +1,9 @@
-use crate::contract::{execute, instantiate, query};
 #[cfg(test)]
+use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Uint128};
-use localterra_protocol::fee_collector::{
-    Config, ExecuteMsg, ExecuteMsg::UpdateConfig, InstantiateMsg, QueryMsg,
-};
+use localterra_protocol::fee_collector::ExecuteMsg::UpdateConfig;
+use localterra_protocol::fee_collector::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[test]
 fn proper_initialization() {

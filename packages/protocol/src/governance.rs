@@ -20,17 +20,17 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {
-    Config {},
-    State {},
-    Staker { address: String },
+pub enum Cw20HookMsg {
+    StakeTokens {},
+    DepositRewards {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum Cw20HookMsg {
-    StakeTokens {},
-    DepositRewards {},
+pub enum QueryMsg {
+    Config {},
+    State {},
+    Staker { address: String },
 }
 
 ///Data

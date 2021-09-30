@@ -12,4 +12,6 @@ pub enum OfferError {
     Unauthorized { owner: Addr, caller: Addr },
     #[error("Governance not found.")]
     GovernanceNotFound { gov_addr: Addr },
+    #[error("Invalid reply message id.")]
+    InvalidReply {},
 }

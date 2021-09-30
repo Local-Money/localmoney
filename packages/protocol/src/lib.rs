@@ -5,3 +5,4 @@ pub mod governance;
 pub mod mock_querier;
 pub mod offer;
 pub mod trade;
+pub mod trading_incentives;

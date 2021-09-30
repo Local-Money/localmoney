@@ -1536,6 +1536,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "trading-incentives"
+version = "0.0.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cosmwasm-vm",
+ "cw-storage-plus 0.8.1",
+ "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "localterra-protocol",
+ "offer",
+ "schemars",
+ "serde",
+ "snafu",
+ "terra-cosmwasm",
+ "terraswap 2.4.1",
+ "thiserror",
+]
+
+[[package]]
 name = "typenum"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

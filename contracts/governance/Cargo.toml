@@ -32,6 +32,7 @@ terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
 localterra-protocol = { path = "../../packages/protocol" }
 cw20 = { version = "0.8.0" }
 
+
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }
 cosmwasm-vm = { version = "0.16.0" }

@@ -1,14 +1,15 @@
 use crate::errors::TradeError;
-use crate::state::{config, config_read};
+use crate::state::{state as state_storage, state_read};
 use crate::taxation::deduct_tax;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmQuery,
+    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use localterra_protocol::offer::{Config as OfferConfig, Offer, OfferType};
-use localterra_protocol::trade::{
-    ExecuteMsg, InstantiateMsg, OfferMsg, QueryMsg, State, TradeState,
+use localterra_protocol::offer::{
+    Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
+use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 #[entry_point]
 pub fn instantiate(
@@ -18,28 +19,24 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
     //Load Offer
+    let offer_contract = info.sender.clone();
     let offer_id = msg.offer_id;
     let load_offer_result: StdResult<Offer> =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.offer_contract.to_string(),
-            msg: to_binary(&OfferMsg::LoadOffer { id: offer_id }).unwrap(),
+            contract_addr: offer_contract.clone().into_string(),
+            msg: to_binary(&OfferQueryMsg::Offer { id: offer_id }).unwrap(),
         }));
     if load_offer_result.is_err() {
         return Err(TradeError::OfferNotFound { offer_id });
     }
     let offer = load_offer_result.unwrap();
 
-    //Load offer config
+    //Load Offer Contract Config
     let load_offer_config_result: StdResult<OfferConfig> =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.offer_contract.to_string(),
-            msg: to_binary(&OfferMsg::Config {}).unwrap(),
+            contract_addr: offer_contract.clone().into_string(),
+            msg: to_binary(&OfferQueryMsg::Config {}).unwrap(),
         }));
-
-    if load_offer_config_result.is_err() {
-        return Err(TradeError::OfferNotFound { offer_id });
-    }
-
     let offer_config = load_offer_config_result.unwrap();
 
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
@@ -58,16 +55,17 @@ pub fn instantiate(
     //Instantiate recipient and sender addresses according to Offer type (buy, sell)
     let recipient: Addr;
     let sender: Addr;
+    let counterparty = deps.api.addr_validate(msg.counterparty.as_str()).unwrap();
     let fee_collector: Addr = offer_config.fee_collector_addr;
     let _taker_is_buying: bool;
 
     if offer.offer_type == OfferType::Buy {
         _taker_is_buying = false;
         recipient = offer.owner;
-        sender = info.sender.clone();
+        sender = counterparty.clone();
     } else {
         _taker_is_buying = true;
-        recipient = info.sender.clone();
+        recipient = counterparty.clone();
         sender = offer.owner;
     }
 
@@ -76,12 +74,11 @@ pub fn instantiate(
         recipient,
         sender,
         fee_collector,
+        offer_contract: offer_contract.clone(),
         offer_id,
         state: TradeState::Created,
         expire_height,
         ust_amount: Uint128::from(msg.ust_amount),
-        final_asset: msg.final_asset,
-        terraswap_factory: msg.terraswap_factory,
     };
 
     //Set state to EscrowFunded if enough UST was sent in the message.
@@ -94,7 +91,7 @@ pub fn instantiate(
     }
 
     //Save state.
-    let save_state_result = config(deps.storage).save(&state);
+    let save_state_result = state_storage(deps.storage).save(&state);
     if save_state_result.is_err() {
         return Err(TradeError::InstantiationError {
             message: "Couldn't save state.".to_string(),
@@ -111,8 +108,7 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, TradeError> {
-    let cfg = config(deps.storage);
-    let state = cfg.load().unwrap();
+    let state = state_storage(deps.storage).load().unwrap();
     match msg {
         ExecuteMsg::FundEscrow {} => try_fund_escrow(deps, env, info, state),
         ExecuteMsg::Refund {} => try_refund(deps, env, state),
@@ -123,12 +119,12 @@ pub fn execute(
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::State {} => to_binary(&query_config(deps)?),
     }
 }
 
 fn query_config(deps: Deps) -> StdResult<State> {
-    let state = config_read(deps.storage).load()?;
+    let state = state_read(deps.storage).load()?;
     Ok(state)
 }
 
@@ -158,7 +154,7 @@ fn try_fund_escrow(
             message: "UST amount is less than required to fund the escrow.".to_string(),
         });
     }
-    config(deps.storage).save(&state).unwrap();
+    state_storage(deps.storage).save(&state).unwrap();
     Ok(Response::default())
 }
 
@@ -194,44 +190,63 @@ fn try_release(
 
     //Update trade State to TradeState::Closed
     let balance = balance_result.unwrap();
-    let mut cfg = config(deps.storage);
-    let mut state = cfg.load().unwrap();
+    let mut state_storage = state_storage(deps.storage);
+    let mut state = state_storage.load().unwrap();
     state.state = TradeState::Closed;
-    let save_result = cfg.save(&state);
+    let save_result = state_storage.save(&state);
     if save_result.is_err() {
         return Err(TradeError::ExecutionError {
             message: "Failed to save state.".to_string(),
         });
     }
 
-    if None == state.final_asset || "uusd" == state.final_asset.clone().unwrap() {
-        let local_terra_fee = calculate_local_terra_fee(&balance).unwrap();
-        let fee_response = send_tokens(
-            &deps,
-            state.fee_collector.clone(),
-            local_terra_fee.clone(),
-            "approve",
-        )
-        .unwrap();
+    let local_terra_fee = calculate_local_terra_fee(&balance).unwrap();
+    let fee_response = send_tokens(
+        &deps,
+        state.fee_collector.clone(),
+        local_terra_fee.clone(),
+        "localterra_fee_deduction",
+    )
+    .unwrap();
 
-        let final_balance = deduct_local_terra_fee(balance, local_terra_fee).unwrap();
-        let amount_response = send_tokens(
-            &deps,
-            state.recipient.clone(),
-            final_balance.clone(),
-            "approve",
-        )
-        .unwrap();
+    let final_balance = deduct_local_terra_fee(balance, local_terra_fee).unwrap();
+    let amount_response = send_tokens(
+        &deps,
+        state.recipient.clone(),
+        final_balance.clone(),
+        "release",
+    )
+    .unwrap();
 
-        let r = Response::new()
-            .add_submessage(fee_response.messages[0].clone())
-            .add_submessage(amount_response.messages[0].clone());
-        Ok(r)
-    } else {
-        Err(TradeError::ExecutionError {
-            message: "Unsupported asset.".to_string(),
+    //Query maker to send to the incentives contract
+    let offer: Offer = deps
+        .querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: "".to_string(),
+            msg: to_binary(&OfferQueryMsg::Offer {
+                id: state.offer_id.clone(),
+            })
+            .unwrap(),
+        }))
+        .unwrap();
+    let maker = offer.owner.to_string();
+
+    //Create Trade Registration message to be sent to the Trading Incentives contract.
+    let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
+            trade: env.contract.address.to_string(),
+            maker,
         })
-    }
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    let r = Response::new()
+        .add_submessage(fee_response.messages[0].clone())
+        .add_submessage(amount_response.messages[0].clone())
+        .add_submessage(register_trade_msg);
+    Ok(r)
 }
 
 fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeError> {

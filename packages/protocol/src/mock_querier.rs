@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::currencies::FiatCurrency;
 use crate::governance::Config as GovConfig;
-use crate::offer::{Config as OfferConfig, Offer, OfferState, OfferType};
+use crate::offer::{Config as OfferConfig, Offer, OfferState, OfferType, TradeInfo};
+use crate::trade::{State as TradeState, TradeState as TradeTradeState};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
@@ -136,8 +137,10 @@ impl Querier for WasmMockQuerier {
 pub enum QueryMsg {
     Pair { asset_infos: [AssetInfo; 2] },
     Balance { address: String },
-    LoadOffer { id: u64 },
+    Offer { id: u64 },
     Config {},
+    LoadTrades { maker: String },
+    TradeInfo { maker: String, trade: String },
 }
 
 impl WasmMockQuerier {
@@ -223,7 +226,7 @@ impl WasmMockQuerier {
                         to_binary(&BalanceResponse { balance }).unwrap(),
                     ))
                 }
-                QueryMsg::LoadOffer { id } => {
+                QueryMsg::Offer { id } => {
                     let offer = self.offer.clone().unwrap_or(Offer {
                         id,
                         owner: Addr::unchecked("offer-owner"),
@@ -246,12 +249,38 @@ impl WasmMockQuerier {
                         })))
                     } else {
                         let offer_config = OfferConfig {
-                            offers_count: 0,
+                            trade_code_id: 0,
                             gov_addr: Addr::unchecked("gov-owner"),
                             fee_collector_addr: Addr::unchecked("fee-collector"),
                         };
                         SystemResult::Ok(ContractResult::from(to_binary(&offer_config)))
                     }
+                }
+                QueryMsg::LoadTrades { .. } => {
+                    SystemResult::Ok(ContractResult::from(to_binary(&vec!["trade0000"])))
+                }
+                QueryMsg::TradeInfo { trade: _, maker } => {
+                    SystemResult::Ok(ContractResult::from(to_binary(&TradeInfo {
+                        trade: TradeState {
+                            recipient: Addr::unchecked("taker"),
+                            sender: Addr::unchecked(maker),
+                            fee_collector: Addr::unchecked("fee_collector"),
+                            offer_id: 1,
+                            offer_contract: Addr::unchecked("offer"),
+                            state: TradeTradeState::Closed,
+                            expire_height: 0,
+                            ust_amount: Uint128::new(1_000_000u128),
+                        },
+                        offer: Offer {
+                            id: 1,
+                            owner: Addr::unchecked("offer-owner"),
+                            offer_type: OfferType::Buy,
+                            fiat_currency: FiatCurrency::COP,
+                            min_amount: Uint128::new(1_000_000u128),
+                            max_amount: Uint128::new(500_000_000u128),
+                            state: OfferState::Active,
+                        },
+                    })))
                 }
             },
             _ => self.base.handle_query(request),
