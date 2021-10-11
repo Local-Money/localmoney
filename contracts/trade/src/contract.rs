@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use crate::errors::TradeError;
 use crate::state::{state as state_storage, state_read};
 use crate::taxation::deduct_tax;
@@ -20,7 +21,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
     //Load Offer
-    let offer_contract = info.sender.clone();
+    let offer_contract = deps.api.addr_validate(msg.offers_addr.as_str()).unwrap();
     let offer_id = msg.offer_id;
     let load_offer_result: StdResult<Offer> =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -44,7 +45,7 @@ pub fn instantiate(
     let expire_height = env.block.height + 600; //Roughly 1h.
 
     //Check that ust_amount is inside Offer limits
-    let amount = Uint128::from(msg.ust_amount);
+    let amount = Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap());
     if amount > offer.max_amount || amount < offer.min_amount {
         return Err(TradeError::AmountError {
             amount,
@@ -78,14 +79,14 @@ pub fn instantiate(
         offer_id,
         state: TradeState::Created,
         expire_height,
-        ust_amount: Uint128::from(msg.ust_amount),
+        ust_amount: amount,
     };
 
     //Set state to EscrowFunded if enough UST was sent in the message.
     if !info.funds.is_empty() {
         //TODO: Check for Luna or other Terra native tokens.
         let ust_amount = get_ust_amount(info.clone());
-        if ust_amount >= Uint128::from(msg.ust_amount) {
+        if ust_amount >= amount {
             state.state = TradeState::EscrowFunded
         }
     }

@@ -79,7 +79,7 @@ fn trade_instance_reply(
     result: ContractResult<SubMsgExecutionResponse>,
 ) -> Result<Response, OfferError> {
     if result.is_err() {
-        return Err(OfferError::InvalidReply {});
+        return Err(OfferError::InvalidReply {})
     }
 
     let trade_addr: Addr = result
@@ -122,7 +122,7 @@ pub fn create_offer(
 
     let offer = Offer {
         id: offer_id,
-        owner: info.sender,
+        owner: info.sender.clone(),
         offer_type: msg.offer_type,
         fiat_currency: msg.fiat_currency.clone(),
         min_amount: Uint128::from(msg.min_amount),
@@ -140,7 +140,11 @@ pub fn create_offer(
     bucket(deps.storage, OFFERS_KEY).save(&offer_id.to_be_bytes(), &offer)?;
     state_storage(deps.storage).save(&state)?;
 
-    Ok(Response::default())
+    let res = Response::new()
+        .add_attribute("action", "create_offer")
+        .add_attribute("offer_id", offer_id.to_string())
+        .add_attribute("owner", &info.sender);
+    Ok(res)
 }
 
 pub fn activate_offer(
@@ -225,10 +229,10 @@ pub fn update_offer(
 
 fn create_trade(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     offer_id: u64,
-    ust_amount: Uint128,
+    ust_amount: String,
     counterparty: String,
 ) -> Result<Response, OfferError> {
     let cfg = config_read(deps.storage).load().unwrap();
@@ -250,12 +254,12 @@ fn create_trade(
             offer_id,
             ust_amount,
             counterparty,
+            offers_addr: env.contract.address.to_string()
         })
         .unwrap(),
         funds: vec![],
         label: "new-trade".to_string(),
     };
-
     let sub_message = SubMsg {
         id: 0,
         msg: CosmosMsg::Wasm(instantiate_msg),

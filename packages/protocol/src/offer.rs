@@ -37,7 +37,7 @@ pub enum ExecuteMsg {
     },
     NewTrade {
         offer_id: u64,
-        ust_amount: Uint128,
+        ust_amount: String,
         counterparty: String,
     },
 }

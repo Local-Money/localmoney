@@ -22,8 +22,9 @@ fn test_init() {
 
     let instantiate_trade_msg = InstantiateMsg {
         offer_id: 1,
-        ust_amount: trade_amount.clone(),
+        ust_amount: trade_amount.clone().to_string(),
         counterparty: "other".to_string(),
+        offers_addr: "offers".to_string()
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_trade_msg);
@@ -49,8 +50,9 @@ fn create_trade(
     //Init trade
     let instantiate_trade_msg = InstantiateMsg {
         offer_id: 1,
-        ust_amount: trade_amount.clone(),
+        ust_amount: trade_amount.clone().to_string(),
         counterparty: info.sender.clone().into_string(),
+        offers_addr: "offers".to_string()
     };
     let res = instantiate(
         deps.as_mut(),
