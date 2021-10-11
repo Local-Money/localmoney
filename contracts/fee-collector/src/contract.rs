@@ -10,6 +10,8 @@ use cw20::Cw20ExecuteMsg;
 use terraswap::asset::{Asset, AssetInfo};
 use terraswap::pair::ExecuteMsg::Swap;
 
+use localterra_protocol::factory::Config as FactoryConfig;
+use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::fee_collector::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
 use localterra_protocol::governance::Cw20HookMsg;
 
@@ -17,17 +19,12 @@ use localterra_protocol::governance::Cw20HookMsg;
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let local_ust_pool_addr = deps.api.addr_validate(&msg.local_ust_pool_addr).unwrap();
-    let gov_addr = deps.api.addr_validate(&msg.gov_addr).unwrap();
-    let ust_conversion_threshold = Uint128::new(msg.ust_conversion_threshold);
-
     let cfg = Config {
-        ust_conversion_threshold,
-        local_ust_pool_addr,
-        gov_addr,
+        factory_addr: info.sender,
+        ust_conversion_threshold: msg.ust_conversion_threshold,
     };
     config_storage(deps.storage).save(&cfg).unwrap();
 
@@ -45,8 +42,7 @@ pub fn execute(
         ExecuteMsg::Distribute {} => distribute_fee(deps, env),
         ExecuteMsg::UpdateConfig {
             ust_conversion_threshold,
-            local_ust_pool_addr,
-        } => update_config(deps, ust_conversion_threshold, local_ust_pool_addr),
+        } => update_config(deps, ust_conversion_threshold),
     }
 }
 
@@ -88,10 +84,13 @@ fn distribute_fee(deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         to: None,
     };
 
+    let factory_cfg: FactoryConfig =
+        get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+
     let msg = SubMsg {
         id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: cfg.local_ust_pool_addr.to_string(),
+            contract_addr: factory_cfg.local_ust_pool_addr.to_string(),
             msg: to_binary(&swap_msg).unwrap(),
             funds: vec![Coin {
                 denom: "uusd".to_string(),
@@ -130,14 +129,15 @@ fn send_local_token_to_gov(
 
     let deposit_rewards_msg = Cw20HookMsg::DepositRewards {};
 
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
     let cw20msg = Cw20ExecuteMsg::Send {
-        contract: cfg.gov_addr.to_string(),
+        contract: factory_cfg.gov_addr.to_string(),
         amount: Uint128::new(total_local_token),
         msg: to_binary(&deposit_rewards_msg).unwrap(),
     };
 
     let msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cfg.gov_addr.to_string(),
+        contract_addr: factory_cfg.token_addr.to_string(),
         msg: to_binary(&cw20msg).unwrap(),
         funds: vec![],
     }));
@@ -147,21 +147,11 @@ fn send_local_token_to_gov(
     Ok(res)
 }
 
-fn update_config(
-    deps: DepsMut,
-    conversion_threshold: u128,
-    pool_addr: String,
-) -> Result<Response, ContractError> {
-    let config = config_read(deps.storage).load().unwrap();
-
-    let local_ust_pool_addr = deps.api.addr_validate(&pool_addr).unwrap();
-    let ust_conversion_threshold = Uint128::new(conversion_threshold);
-    let gov_addr = config.gov_addr;
-
+fn update_config(deps: DepsMut, conversion_threshold: Uint128) -> Result<Response, ContractError> {
+    let cfg = config_read(deps.storage).load().unwrap();
     let cfg = Config {
-        ust_conversion_threshold,
-        local_ust_pool_addr,
-        gov_addr,
+        factory_addr: cfg.factory_addr,
+        ust_conversion_threshold: conversion_threshold,
     };
     config_storage(deps.storage).save(&cfg).unwrap();
 
@@ -171,7 +161,7 @@ fn update_config(
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps).unwrap()),
     }
 }
 

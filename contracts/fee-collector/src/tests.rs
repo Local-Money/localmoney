@@ -1,19 +1,18 @@
 #[cfg(test)]
 use crate::contract::{execute, instantiate, query};
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Uint128};
 use localterra_protocol::fee_collector::ExecuteMsg::UpdateConfig;
 use localterra_protocol::fee_collector::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
+use localterra_protocol::mock_querier::mock_dependencies;
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
-    let info = mock_info("creator", &coins(1000, "uusd"));
+    let mut deps = mock_dependencies(&[], None);
+    let info = mock_info("factory", &coins(1000, "uusd"));
 
     let msg = InstantiateMsg {
-        ust_conversion_threshold: 100000,
-        local_ust_pool_addr: "local-ust-poll-addr".to_string(),
-        gov_addr: "gov-addr".to_string(),
+        ust_conversion_threshold: Uint128::new(100000),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -23,32 +22,26 @@ fn proper_initialization() {
     let config: Config = from_binary(&res).unwrap();
 
     assert_eq!(Uint128::new(100000), config.ust_conversion_threshold);
-    assert_eq!(
-        "local-ust-poll-addr".to_string(),
-        config.local_ust_pool_addr
-    );
-    assert_eq!("gov-addr".to_string(), config.gov_addr);
+    assert_eq!("factory".to_string(), config.factory_addr);
+    //assert_eq!("gov-addr".to_string(), config.gov_addr);
 }
 
 #[test]
 fn execute_update_config() {
-    let mut deps = mock_dependencies(&[]);
-    let info = mock_info("creator", &coins(1000, "uusd"));
+    let mut deps = mock_dependencies(&[], None);
+    let info = mock_info("factory", &coins(1000, "uusd"));
 
     let msg = InstantiateMsg {
-        ust_conversion_threshold: 100000,
-        local_ust_pool_addr: "local-ust-poll-addr".to_string(),
-        gov_addr: "gov-addr".to_string(),
+        ust_conversion_threshold: Uint128::new(100000),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let info = mock_info("creator", &coins(1000, "uusd"));
+    let info = mock_info("factory", &coins(1000, "uusd"));
 
     let msg = UpdateConfig {
-        ust_conversion_threshold: 500000,
-        local_ust_pool_addr: "another-local-ust-poll-addr".to_string(),
+        ust_conversion_threshold: Uint128::new(500000),
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -58,24 +51,18 @@ fn execute_update_config() {
     let config: Config = from_binary(&res).unwrap();
 
     assert_eq!(Uint128::new(500000), config.ust_conversion_threshold);
-    assert_eq!(
-        "another-local-ust-poll-addr".to_string(),
-        config.local_ust_pool_addr
-    );
-    assert_eq!("gov-addr".to_string(), config.gov_addr);
+    assert_eq!("factory".to_string(), config.factory_addr);
 }
 
 #[test]
 fn execute_distribute_fee() {
     let env = mock_env();
-    let mut deps = mock_dependencies(&coins(1000, "uusd"));
-    let info = mock_info("creator", &coins(1000, "uusd"));
+    let mut deps = mock_dependencies(&coins(1000, "uusd"), None);
+    let info = mock_info("factory", &coins(1000, "uusd"));
 
     // Instantiate contract with 100000 as conversion threshold
     let msg = InstantiateMsg {
-        ust_conversion_threshold: 100000,
-        local_ust_pool_addr: "local-ust-poll-addr".to_string(),
-        gov_addr: "gov-addr".to_string(),
+        ust_conversion_threshold: Uint128::new(100000),
     };
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len());

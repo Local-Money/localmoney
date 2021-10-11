@@ -3,6 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::currencies::FiatCurrency;
+use crate::factory::Config as FactoryConfig;
 use crate::governance::Config as GovConfig;
 use crate::offer::{Config as OfferConfig, Offer, OfferState, OfferType, TradeInfo};
 use crate::trade::{State as TradeState, TradeState as TradeTradeState};
@@ -241,17 +242,23 @@ impl WasmMockQuerier {
                 //TODO: This will fail if other Config query is made from tests,
                 // we need a reliable way to check which config is being queried.
                 QueryMsg::Config {} => {
-                    if contract_addr.contains("gov-contract") {
-                        SystemResult::Ok(ContractResult::from(to_binary(&GovConfig {
-                            gov_token_addr: Addr::unchecked("gov-token"),
-                            offers_addr: Addr::unchecked("offers-contract"),
+                    if contract_addr.contains("factory") {
+                        SystemResult::Ok(ContractResult::from(to_binary(&FactoryConfig {
+                            trade_code_id: 0,
+                            token_addr: Addr::unchecked("local"),
+                            local_ust_pool_addr: Addr::unchecked("local-ust"),
+                            gov_addr: Addr::unchecked("gov"),
+                            offers_addr: Addr::unchecked("offers"),
                             fee_collector_addr: Addr::unchecked("fee-collector"),
+                            trading_incentives_addr: Addr::unchecked("trading-incentives"),
+                        })))
+                    } else if contract_addr.contains("gov") {
+                        SystemResult::Ok(ContractResult::from(to_binary(&GovConfig {
+                            factory_addr: Addr::unchecked("factory"),
                         })))
                     } else {
                         let offer_config = OfferConfig {
-                            trade_code_id: 0,
-                            gov_addr: Addr::unchecked("gov-owner"),
-                            fee_collector_addr: Addr::unchecked("fee-collector"),
+                            factory_addr: Addr::unchecked("factory"),
                         };
                         SystemResult::Ok(ContractResult::from(to_binary(&offer_config)))
                     }
@@ -262,9 +269,9 @@ impl WasmMockQuerier {
                 QueryMsg::TradeInfo { trade: _, maker } => {
                     SystemResult::Ok(ContractResult::from(to_binary(&TradeInfo {
                         trade: TradeState {
+                            factory_addr: Addr::unchecked("factory"),
                             recipient: Addr::unchecked("taker"),
                             sender: Addr::unchecked(maker),
-                            fee_collector: Addr::unchecked("fee_collector"),
                             offer_id: 1,
                             offer_contract: Addr::unchecked("offer"),
                             state: TradeTradeState::Closed,
@@ -312,5 +319,13 @@ impl WasmMockQuerier {
     // configure the terraswap pair
     pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
         self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
+    }
+
+    pub fn update_balance(
+        &mut self,
+        addr: impl Into<String>,
+        balance: Vec<Coin>,
+    ) -> Option<Vec<Coin>> {
+        self.base.update_balance(addr, balance)
     }
 }

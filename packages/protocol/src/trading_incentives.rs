@@ -5,10 +5,7 @@ use serde::{Deserialize, Serialize};
 
 ///Messages
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub token_contract: String,
-    pub offers_contract: String,
-}
+pub struct InstantiateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -34,8 +31,7 @@ pub enum QueryMsg {
 ///Data
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Config {
-    pub token_contract: Addr,
-    pub offers_contract: Addr,
+    pub factory_addr: Addr,
     pub distribution_start: u64,
     pub distribution_period_duration: u64,
     pub distribution_periods: u8,

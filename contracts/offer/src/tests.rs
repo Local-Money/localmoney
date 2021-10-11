@@ -15,10 +15,7 @@ use localterra_protocol::offer::{
 use localterra_protocol::trade::InstantiateMsg as TradeInstantiateMsg;
 
 fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
-    let init_msg = InstantiateMsg {
-        trade_code_id: 0,
-        gov_addr: Addr::unchecked("gov-contract"),
-    };
+    let init_msg = InstantiateMsg {};
     let res = instantiate(deps, env, info, init_msg).unwrap();
 
     assert_eq!(res.messages.len(), 0);
@@ -29,7 +26,7 @@ fn do_init(deps: DepsMut, env: Env, info: MessageInfo) -> Response<Empty> {
 fn proper_init() {
     let mut deps = mock_dependencies(&[], None);
     let env = mock_env();
-    let info = mock_info("owner", &[]);
+    let info = mock_info("factory", &[]);
 
     let res = do_init(deps.as_mut(), env.clone(), info);
     assert_eq!(res, Response::default());
@@ -38,9 +35,7 @@ fn proper_init() {
     let conf: Config =
         from_binary(&query(deps.as_ref(), env.clone(), query_config).unwrap()).unwrap();
     let expected = Config {
-        trade_code_id: 0,
-        gov_addr: Addr::unchecked("gov-contract"),
-        fee_collector_addr: Addr::unchecked("fee-collector"),
+        factory_addr: Addr::unchecked("factory"),
     };
     assert_eq!(conf, expected);
 }
@@ -68,8 +63,8 @@ fn create_offer(
 fn create_offer_test() {
     let mut deps = mock_dependencies(&[], None);
     let env = mock_env();
-    let owner = Addr::unchecked("owner");
-    let info = mock_info(owner.clone().as_str(), &[]);
+    let factory = Addr::unchecked("factory");
+    let info = mock_info(factory.clone().as_str(), &[]);
 
     do_init(deps.as_mut(), env.clone(), info.clone());
     let res = create_offer(
@@ -106,7 +101,7 @@ fn create_offer_test() {
     let query_order_by_id = QueryMsg::Offer { id: 1 };
     let created_offer = Offer {
         id: 1,
-        owner,
+        owner: factory,
         offer_type: OfferType::Buy,
         fiat_currency: FiatCurrency::BRL,
         min_amount: Uint128::new(1),
@@ -121,10 +116,10 @@ fn create_offer_test() {
 #[test]
 fn pause_offer_test() {
     let mut deps = mock_dependencies(&[], None);
-    let owner = Addr::unchecked("owner");
+    let factory = Addr::unchecked("factory");
     let other = Addr::unchecked("other");
     let env = mock_env();
-    let info = mock_info(owner.clone().as_str(), &[]);
+    let info = mock_info(factory.clone().as_str(), &[]);
 
     //Create Offer
     do_init(deps.as_mut(), env.clone(), info.clone());
@@ -175,10 +170,10 @@ fn pause_offer_test() {
 #[test]
 fn activate_offer_test() {
     let mut deps = mock_dependencies(&[], None);
-    let owner = Addr::unchecked("owner");
+    let factory = Addr::unchecked("factory");
     let other = Addr::unchecked("other");
     let env = mock_env();
-    let info = mock_info(owner.clone().as_str(), &[]);
+    let info = mock_info(factory.clone().as_str(), &[]);
 
     //Create Offer
     do_init(deps.as_mut(), env.clone(), info.clone());
@@ -239,9 +234,9 @@ fn activate_offer_test() {
 #[test]
 fn update_offer_test() {
     let mut deps = mock_dependencies(&[], None);
-    let owner = Addr::unchecked("owner");
+    let factory = Addr::unchecked("factory");
     let env = mock_env();
-    let info = mock_info(owner.clone().as_str(), &[]);
+    let info = mock_info(factory.clone().as_str(), &[]);
 
     //Create Offer
     do_init(deps.as_mut(), env.clone(), info.clone());
@@ -284,9 +279,9 @@ fn update_offer_test() {
 #[test]
 fn instantiate_trade() {
     let mut deps = mock_dependencies(&[], None);
-    let owner = Addr::unchecked("owner");
+    let factory = Addr::unchecked("factory");
     let env = mock_env();
-    let info = mock_info(owner.clone().as_str(), &[]);
+    let info = mock_info(factory.clone().as_str(), &[]);
 
     //Create Offer
     do_init(deps.as_mut(), env.clone(), info.clone());

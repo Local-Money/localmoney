@@ -32,19 +32,13 @@ fn test_stake_and_withdraw() {
     let staker_balance = Uint128::new(1000u128);
     let mut deps = mock_dependencies(&[], None);
 
-    let gov_owner = mock_info("gov-owner", &[]);
+    let gov_owner = mock_info("factory", &[]);
     let staker = mock_info("staker", &[]);
 
-    let token_addr = Addr::unchecked("local-token");
-    let offers_addr = Addr::unchecked("offers-address");
-    let fee_collector_addr = Addr::unchecked("local-token");
+    let token_addr = Addr::unchecked("local");
 
     //Instantiate Gov Contract.
-    let gov_init_msg = InstantiateMsg {
-        gov_token_addr: token_addr.clone(),
-        offers_addr: offers_addr.clone(),
-        fee_collector_addr: fee_collector_addr.clone(),
-    };
+    let gov_init_msg = InstantiateMsg {};
 
     let gov_env = mock_env();
     let res = instantiate(
@@ -132,10 +126,7 @@ fn test_deposit_rewards() {
     let staker_a = mock_info("staker_a", &[]);
     let staker_b = mock_info("staker_b", &[]);
     let factory = mock_info("factory", &[]);
-    let gov_owner = mock_info("gov-owner", &[]);
-    let token_addr = Addr::unchecked("local-token");
-    let offers_addr = Addr::unchecked("offers-address");
-    let fee_collector_addr = Addr::unchecked("local-token");
+    let token_addr = Addr::unchecked("local");
 
     deps.querier.with_token_balances(&[
         (
@@ -153,12 +144,8 @@ fn test_deposit_rewards() {
     ]);
 
     //Instantiate Gov Contract.
-    let gov_init_msg = InstantiateMsg {
-        gov_token_addr: token_addr.clone(),
-        offers_addr: offers_addr.clone(),
-        fee_collector_addr: fee_collector_addr.clone(),
-    };
-    let _res = instantiate(deps.as_mut(), mock_env(), gov_owner.clone(), gov_init_msg);
+    let gov_init_msg = InstantiateMsg {};
+    let _res = instantiate(deps.as_mut(), mock_env(), factory.clone(), gov_init_msg);
 
     //Send tokens from Staker A to the Gov contract and assert that it's ok.
     let res = cw20_send(

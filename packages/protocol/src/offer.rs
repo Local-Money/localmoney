@@ -9,10 +9,7 @@ pub static OFFERS_KEY: &[u8] = b"offers";
 
 ///Messages
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub trade_code_id: u64,
-    pub gov_addr: Addr,
-}
+pub struct InstantiateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferMsg {
@@ -59,9 +56,7 @@ pub enum QueryMsg {
 ///Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub trade_code_id: u64,
-    pub gov_addr: Addr,
-    pub fee_collector_addr: Addr,
+    pub factory_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -1,5 +1,6 @@
 pub mod contract;
 mod error;
-pub mod state;
-pub mod tests;
-pub use crate::error::ContractError;
+mod state;
+#[allow(unused_imports)]
+#[cfg(test)]
+mod tests;

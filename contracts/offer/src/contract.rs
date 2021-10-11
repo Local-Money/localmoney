@@ -11,7 +11,7 @@ use crate::state::{
 };
 use cosmwasm_storage::{bucket, bucket_read};
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::governance::{Config as GovConfig, QueryMsg as GovQueryMsg};
+use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config, ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, QueryMsg, State, TradeInfo,
 };
@@ -23,26 +23,11 @@ use localterra_protocol::trade::{
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    msg: InstantiateMsg,
+    info: MessageInfo,
+    _msg: InstantiateMsg,
 ) -> Result<Response, OfferError> {
-    let load_gov_config: StdResult<GovConfig> =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.gov_addr.to_string(),
-            msg: to_binary(&GovQueryMsg::Config {}).unwrap(),
-        }));
-
-    if load_gov_config.is_err() {
-        return Err(OfferError::GovernanceNotFound {
-            gov_addr: msg.gov_addr,
-        });
-    }
-    let gov_config = load_gov_config.unwrap();
-
     config_storage(deps.storage).save(&Config {
-        trade_code_id: msg.trade_code_id,
-        gov_addr: msg.gov_addr,
-        fee_collector_addr: gov_config.fee_collector_addr,
+        factory_addr: info.sender,
     })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
     Ok(Response::default())
@@ -256,9 +241,11 @@ fn create_trade(
         });
     }
 
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+
     let instantiate_msg = WasmMsg::Instantiate {
         admin: None,
-        code_id: cfg.trade_code_id,
+        code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
             ust_amount,
@@ -268,6 +255,7 @@ fn create_trade(
         funds: vec![],
         label: "new-trade".to_string(),
     };
+
     let sub_message = SubMsg {
         id: 0,
         msg: CosmosMsg::Wasm(instantiate_msg),

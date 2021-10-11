@@ -16,10 +16,7 @@ fn distribution_happy_path() {
     let mut env = mock_env();
     let info = mock_info("factory", &[]);
 
-    let instantiate_msg = InstantiateMsg {
-        token_contract: "local".to_string(),
-        offers_contract: "offer".to_string(),
-    };
+    let instantiate_msg = InstantiateMsg {};
 
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg);
     assert!(res.is_ok());
@@ -80,10 +77,7 @@ fn test_claim() {
     let info = mock_info("factory", &[]);
     let local_info = mock_info("local", &[]);
 
-    let instantiate_msg = InstantiateMsg {
-        token_contract: "local".to_string(),
-        offers_contract: "offer".to_string(),
-    };
+    let instantiate_msg = InstantiateMsg {};
 
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg);
     assert!(res.is_ok());

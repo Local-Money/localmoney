@@ -8,6 +8,7 @@ use cosmwasm_std::{
     Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::governance::{
     Config, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Staker, State,
 };
@@ -18,19 +19,15 @@ use localterra_protocol::governance::{
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    msg: InstantiateMsg,
+    info: MessageInfo,
+    _msg: InstantiateMsg,
 ) -> Result<Response, GovernanceError> {
     let config = Config {
-        gov_token_addr: msg.gov_token_addr,
-        offers_addr: msg.offers_addr,
-        fee_collector_addr: msg.fee_collector_addr,
+        factory_addr: info.sender.clone(),
     };
-
     let state = State {
         total_shares: Uint128::zero(),
     };
-
     config_store(deps.storage).save(&config).unwrap();
     state_store(deps.storage).save(&state).unwrap();
 
@@ -87,9 +84,11 @@ fn withdraw_tokens(
     }
     state_store(deps.storage).save(&state).unwrap();
 
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+
     //Send Tokens
     send_tokens(
-        &cfg.gov_token_addr,
+        &factory_cfg.token_addr,
         &info.sender,
         withdraw_token_amount.u128(),
         "withdraw",
@@ -137,7 +136,9 @@ pub fn receive_cw20(
 ) -> Result<Response, GovernanceError> {
     //Only our own token can call this contract
     let cfg: Config = config_read(deps.storage).load().unwrap();
-    if cfg.gov_token_addr != info.sender {
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+
+    if factory_cfg.token_addr != info.sender {
         return Err(GovernanceError::ExecutionError {
             message: "unauthorized".to_string(),
         });
@@ -145,7 +146,7 @@ pub fn receive_cw20(
 
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::StakeTokens {}) => stake_tokens(deps, env, cw20_msg, cfg),
-        Ok(Cw20HookMsg::DepositRewards {}) => deposit_rewards(info, cfg),
+        Ok(Cw20HookMsg::DepositRewards {}) => deposit_rewards(deps.as_ref(), info, cfg),
         Err(_) => Err(GovernanceError::ExecutionError {
             message: "invalid message".to_string(),
         }),
@@ -153,9 +154,10 @@ pub fn receive_cw20(
 }
 
 fn get_token_balance(deps: &Deps, cfg: &Config, env: &Env) -> Uint128 {
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
     load_token_balance(
         &deps.querier,
-        cfg.gov_token_addr.to_string(),
+        factory_cfg.token_addr.to_string(),
         &env.contract.address,
     )
     .unwrap()
@@ -201,8 +203,13 @@ pub fn stake_tokens(
     Ok(Response::default())
 }
 
-pub fn deposit_rewards(info: MessageInfo, cfg: Config) -> Result<Response, GovernanceError> {
-    if info.sender.eq(&cfg.gov_token_addr) {
+pub fn deposit_rewards(
+    deps: Deps,
+    info: MessageInfo,
+    cfg: Config,
+) -> Result<Response, GovernanceError> {
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+    if info.sender.eq(&factory_cfg.token_addr) {
         Ok(Response::default())
     } else {
         Err(GovernanceError::ExecutionError {

@@ -7,6 +7,7 @@ use cosmwasm_std::{
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{QueryMsg as OfferQueryMsg, TradeInfo};
 use localterra_protocol::trade::TradeState as TradeTradeState;
 use localterra_protocol::trading_incentives::{
@@ -19,12 +20,9 @@ use std::ops::{Add, Mul};
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    msg: InstantiateMsg,
+    info: MessageInfo,
+    _msg: InstantiateMsg,
 ) -> Result<Response, TradingIncentivesError> {
-    let offers_contract = deps.api.addr_validate(&msg.offers_contract).unwrap();
-    let token_contract = deps.api.addr_validate(&msg.token_contract).unwrap();
-
     let period_duration = 604800u64; //1 week in seconds
     let distribution_periods = 51u8;
     let total_duration = period_duration * distribution_periods as u64;
@@ -36,8 +34,7 @@ pub fn instantiate(
         .save(
             deps.storage,
             &Config {
-                token_contract,
-                offers_contract,
+                factory_addr: info.sender.clone(),
                 distribution_start,
                 distribution_period_duration: total_duration,
                 distribution_periods,
@@ -121,10 +118,11 @@ fn register_trade(
         .unwrap()
         .into_string();
 
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.into_string());
     let trade_info: TradeInfo = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: cfg.offers_contract.into_string(),
+            contract_addr: factory_cfg.offers_addr.into_string(),
             msg: to_binary(&OfferQueryMsg::TradeInfo {
                 maker: maker.clone(),
                 trade,
@@ -191,8 +189,9 @@ fn claim(
         amount,
     };
 
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
     let res = Response::new().add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cfg.token_contract.into_string(),
+        contract_addr: factory_cfg.token_addr.to_string(),
         msg: to_binary(&transfer_tokens_msg).unwrap(),
         funds: vec![],
     })));
@@ -207,7 +206,12 @@ fn start_distribution(
     cw20: Cw20ReceiveMsg,
 ) -> Result<Response, TradingIncentivesError> {
     let mut cfg = CONFIG.load(deps.storage).unwrap();
-    if !info.sender.to_string().eq(&cfg.token_contract.to_string()) {
+    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+    if !info
+        .sender
+        .to_string()
+        .eq(&factory_cfg.token_addr.to_string())
+    {
         return Err(TradingIncentivesError::Unauthorized {});
     }
 

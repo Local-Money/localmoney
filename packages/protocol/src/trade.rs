@@ -25,14 +25,14 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
+    pub factory_addr: Addr,
     pub recipient: Addr,
     pub sender: Addr,
-    pub fee_collector: Addr,
-    pub offer_id: u64,
     pub offer_contract: Addr,
-    pub state: TradeState,
+    pub offer_id: u64,
     pub expire_height: u64,
     pub ust_amount: Uint128,
+    pub state: TradeState,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

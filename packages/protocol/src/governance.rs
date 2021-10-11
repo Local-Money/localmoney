@@ -5,11 +5,7 @@ use serde::{Deserialize, Serialize};
 
 ///Messages
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub gov_token_addr: Addr,
-    pub offers_addr: Addr,
-    pub fee_collector_addr: Addr,
-}
+pub struct InstantiateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -37,9 +33,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub gov_token_addr: Addr,
-    pub offers_addr: Addr,
-    pub fee_collector_addr: Addr,
+    pub factory_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

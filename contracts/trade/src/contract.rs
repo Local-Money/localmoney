@@ -5,6 +5,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
+use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
@@ -37,7 +38,7 @@ pub fn instantiate(
             contract_addr: offer_contract.clone().into_string(),
             msg: to_binary(&OfferQueryMsg::Config {}).unwrap(),
         }));
-    let offer_config = load_offer_config_result.unwrap();
+    let _offer_config = load_offer_config_result.unwrap();
 
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
     let expire_height = env.block.height + 600; //Roughly 1h.
@@ -56,7 +57,6 @@ pub fn instantiate(
     let recipient: Addr;
     let sender: Addr;
     let counterparty = deps.api.addr_validate(msg.counterparty.as_str()).unwrap();
-    let fee_collector: Addr = offer_config.fee_collector_addr;
     let _taker_is_buying: bool;
 
     if offer.offer_type == OfferType::Buy {
@@ -71,9 +71,9 @@ pub fn instantiate(
 
     //Instantiate Trade state
     let mut state = State {
+        factory_addr: info.sender.clone(),
         recipient,
         sender,
-        fee_collector,
         offer_contract: offer_contract.clone(),
         offer_id,
         state: TradeState::Created,
@@ -200,10 +200,11 @@ fn try_release(
         });
     }
 
+    let factory_cfg = get_factory_config(&deps.querier, state.factory_addr.to_string());
     let local_terra_fee = calculate_local_terra_fee(&balance).unwrap();
     let fee_response = send_tokens(
         &deps,
-        state.fee_collector.clone(),
+        factory_cfg.fee_collector_addr.clone(),
         local_terra_fee.clone(),
         "localterra_fee_deduction",
     )
