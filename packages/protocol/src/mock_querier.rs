@@ -1,3 +1,4 @@
+#![cfg(test)]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
