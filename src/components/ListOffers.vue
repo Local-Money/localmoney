@@ -1,8 +1,6 @@
 <template>
   <section>
     <div class="separator"></div>
-    <CreateOffer />
-    <div class="separator"></div>
     <section class="offers-filter">
       <div class="buy-sell">
         <button class="buy">buy</button>
@@ -35,17 +33,25 @@
       <!-- Offers for -->
       <ul>
         <!-- Collapsed Offer -->
-        <li class="collapsed" v-for="offer in collapsedOffers" :key="`${offer.id}-collapsed`">
+        <li
+          class="collapsed"
+          v-for="offer in collapsedOffers"
+          :key="`${offer.id}-collapsed`"
+        >
           <div class="owner">
             <p class="wallet">{{ formatAddress(offer.owner) }}</p>
             <p class="n-trades">352 trades</p>
           </div>
 
           <div class="info">
-            <p class="note">Nubank, Itaú, C6, Mercado Pago, Inter, Caixa, Bradesco</p>
+            <p class="note">
+              Nubank, Itaú, C6, Mercado Pago, Inter, Caixa, Bradesco
+            </p>
             <div class="divider"></div>
             <p class="min-max">
-              Min ${{ formatAmount(offer.min_amount) }} - Max ${{ formatAmount(offer.max_amount) }}
+              Min ${{ formatAmount(offer.min_amount) }} - Max ${{
+                formatAmount(offer.max_amount)
+              }}
             </p>
           </div>
 
@@ -130,52 +136,50 @@
 </template>
 
 <script>
-import { defineComponent } from 'vue'
-import { mapActions, mapGetters } from 'vuex'
-import { formatAddress, formatAmount } from '@/shared'
-import CreateOffer from '@/components/CreateOffer.vue'
-import ExpandedOffer from '@/components/ExpandedOffer.vue'
+import { defineComponent } from "vue";
+import { mapActions, mapGetters } from "vuex";
+import { formatAddress, formatAmount } from "@/shared";
+import ExpandedOffer from "@/components/ExpandedOffer.vue";
 
 export default defineComponent({
-  name: 'Offers',
+  name: "Offers",
   components: {
     ExpandedOffer,
-    CreateOffer,
   },
   data() {
     return {
-      offerTypeLabels: { buy: 'Sell', sell: 'Buy' },
+      offerTypeLabels: { buy: "Sell", sell: "Buy" },
       expandedOffer: null,
-    }
+    };
   },
   methods: {
-    ...mapActions(['fetchOffers', 'fetchUsdRates', 'openTrade']),
+    ...mapActions(["fetchOffers", "fetchUsdRates", "openTrade"]),
     formatAmount,
     formatAddress,
-    expandOfferItem: function (offer) {
-      console.log('offer', offer)
-      this.$data.expandedOffer = offer
+    expandOfferItem: function(offer) {
+      console.log("offer", offer);
+      this.$data.expandedOffer = offer;
       this.$nextTick(() => {
         //this.$refs.expandedOffer.focus()
-      })
+      });
     },
   },
   computed: {
-    ...mapGetters(['allOffers', 'getUsdRate']),
-    collapsedOffers: function () {
-      return this.allOffers.filter((offer) => offer.id != this.expandedOffer)
+    ...mapGetters(["allOffers", "getUsdRate"]),
+    collapsedOffers: function() {
+      return this.allOffers.filter((offer) => offer.id != this.expandedOffer);
     },
-    expandedOffers: function () {
-      return this.allOffers.filter((offer) => offer.id == this.expandedOffer)
+    expandedOffers: function() {
+      return this.allOffers.filter((offer) => offer.id == this.expandedOffer);
     },
   },
   created() {
-    this.fetchOffers()
-    this.fetchUsdRates()
+    this.fetchOffers();
+    this.fetchUsdRates();
   },
-})
+});
 </script>
 
 <style lang="scss">
-@import '../style/offers.scss';
+@import "../style/offers.scss";
 </style>

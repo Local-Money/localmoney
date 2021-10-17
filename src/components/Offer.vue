@@ -6,8 +6,14 @@
     <h1 v-if="offer.offer_type == 'buy'">
       You are selling to <span>{{ formatAddress(offer.owner) }}</span>
     </h1>
-    <h2>1 UST = COP$ {{ formatAmount(getUsdRate(offer.fiat_currency), false) }}</h2>
-    <h2>Min ${{ formatAmount(offer.min_amount) }} Max ${{ formatAmount(offer.max_amount) }}</h2>
+    <h2>
+      1 UST = COP$ {{ formatAmount(getUsdRate(offer.fiat_currency), false) }}
+    </h2>
+    <h2>
+      Min ${{ formatAmount(offer.min_amount) }} Max ${{
+        formatAmount(offer.max_amount)
+      }}
+    </h2>
 
     <div className="input-wrap">
       <img src="@/assets/ic_ust.svg" alt="UST" />
@@ -40,56 +46,62 @@
     </div>
 
     <button v-if="loading" disabled>opening trade...</button>
-    <button v-else @click="openTrade({ offerId: offer.id, ustAmount })" :disabled="!valid">
+    <button
+      v-else
+      @click="openTrade({ offerId: offer.id, ustAmount })"
+      :disabled="!valid"
+    >
       open trade
     </button>
   </section>
 </template>
 
 <script>
-import { defineComponent } from 'vue'
-import { mapActions, mapGetters } from 'vuex'
-import { formatAddress, formatAmount } from '@/shared'
+import { defineComponent } from "vue";
+import { mapActions, mapGetters } from "vuex";
+import { formatAddress, formatAmount } from "@/shared";
 
 export default defineComponent({
-  name: 'Offer',
+  name: "Offer",
   data() {
     return {
       ustAmount: 0,
       copAmount: 0,
       loading: false,
       offer: {},
-    }
+    };
   },
   methods: {
-    ...mapActions(['openTrade']),
+    ...mapActions(["openTrade"]),
     formatAddress,
     formatAmount,
     ustAmountChanged() {
-      this.copAmount = this.ustAmount * this.getUsdRate(this.offer.fiat_currency)
+      this.copAmount =
+        this.ustAmount * this.getUsdRate(this.offer.fiat_currency);
     },
     copAmountChanged() {
-      this.ustAmount = this.copAmount / this.getUsdRate(this.offer.fiat_currency)
+      this.ustAmount =
+        this.copAmount / this.getUsdRate(this.offer.fiat_currency);
     },
   },
   created() {
-    this.offer = this.getOfferById(this.$route.params.id)
+    this.offer = this.getOfferById(this.$route.params.id);
   },
   computed: {
-    ...mapGetters(['getOfferById', 'getUsdRate']),
+    ...mapGetters(["getOfferById", "getUsdRate"]),
     valid() {
-      const minAmount = this.offer.min_amount / 1000000
-      const maxAmount = this.offer.max_amount / 1000000
+      const minAmount = this.offer.min_amount / 1000000;
+      const maxAmount = this.offer.max_amount / 1000000;
 
-      const valid = this.ustAmount >= minAmount && this.ustAmount <= maxAmount
-      return valid
+      const valid = this.ustAmount >= minAmount && this.ustAmount <= maxAmount;
+      return valid;
     },
     tradingFee() {
-      return this.copAmount * 0.01
+      return this.copAmount * 0.01;
     },
     finalAmount() {
-      return this.ustAmount * 0.99
+      return this.ustAmount * 0.99;
     },
   },
-})
+});
 </script>

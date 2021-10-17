@@ -2,7 +2,7 @@
   <nav>
     <ul>
       <li class="item">
-        <a href="#">
+        <router-link to="/">
           <svg class="icon-24" viewBox="0 0 24 24" fill="none">
             <path
               d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
@@ -17,12 +17,30 @@
               stroke-linejoin="round"
             />
           </svg>
-          <p>Explore</p>
-        </a>
+        </router-link>
       </li>
 
       <li class="item">
-        <a href="#">
+        <router-link to="/explore">
+          <svg class="icon-24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M16.24 7.76L14.12 14.12L7.76 16.24L9.88 9.88L16.24 7.76Z"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </router-link>
+      </li>
+
+      <li class="item">
+        <router-link to="/offers">
           <svg class="icon-24" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 2L2 7L12 12L22 7L12 2Z"
@@ -43,12 +61,11 @@
               stroke-linejoin="round"
             />
           </svg>
-          <p>My Offers</p>
-        </a>
+        </router-link>
       </li>
 
       <li class="item">
-        <a href="#">
+        <router-link to="/trades">
           <svg class="icon-24" viewBox="0 0 24 24" fill="none">
             <path
               d="M2 3H8C9.06087 3 10.0783 3.42143 10.8284 4.17157C11.5786 4.92172 12 5.93913 12 7V21C12 20.2044 11.6839 19.4413 11.1213 18.8787C10.5587 18.3161 9.79565 18 9 18H2V3Z"
@@ -63,52 +80,56 @@
               stroke-linejoin="round"
             />
           </svg>
-          <p>My Trades</p>
-        </a>
+        </router-link>
       </li>
     </ul>
   </nav>
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'Nav',
-})
+  name: "NavMobile",
+});
 </script>
 
 <style lang="scss" scoped>
-@import '../style/tokens.scss';
+@import "../style/tokens.scss";
 
 nav {
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  padding: 8px;
+  z-index: 9999;
   display: flex;
   justify-content: space-between;
   margin-left: auto;
+  background-color: $surface;
+  border-top: 1px solid $border;
 
   ul {
+    width: 100%;
     display: flex;
-    margin-right: 32px;
+    justify-content: space-around;
 
     li {
-      padding: 0 20px;
+      padding: 16px;
     }
 
     a {
       display: inline-block;
-      height: 40px;
-      font-size: 14px;
-      color: $base-text;
+
+      &:hover {
+        color: $gray900;
+        .icon-24 {
+          stroke: $primary;
+        }
+      }
 
       .icon-24 {
         vertical-align: middle;
-      }
-
-      p {
-        display: inline-block;
-        vertical-align: middle;
-        line-height: 40px;
-        margin-left: 16px;
       }
     }
   }
