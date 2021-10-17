@@ -1,9 +1,7 @@
 import {
-  Extension,
   LCDClient,
   MnemonicKey,
   MsgExecuteContract,
-  MsgInstantiateContract,
   StdSignature,
   StdSignMsg,
   StdTx,
@@ -30,6 +28,7 @@ const state = {
   trades: [],
 }
 
+// eslint-disable-next-line no-unused-vars
 function prepareTransaction(signedMsg) {
   const { public_key, signature, stdSignMsgData } = signedMsg
   const sig = StdSignature.fromData({
@@ -107,6 +106,7 @@ const actions = {
    * @param {*} offerId Id of the Offer provided by the Offers Smart Contract.
    * @param {*} amount Amount of UST to be traded.
    */
+  // eslint-disable-next-line no-unused-vars
   async openTrade({ getters, dispatch }, { offerId, ustAmount }) {
     console.log('open trade', offerId, ustAmount)
 
