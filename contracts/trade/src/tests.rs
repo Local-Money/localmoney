@@ -86,8 +86,8 @@ fn release_trade(deps: DepsMut, info: MessageInfo) -> Result<Response<Empty>, Tr
 #[test]
 fn test_trade_happy_path() {
     let trade_amount = Uint128::from(500_000_000u128);
-    let local_terra_fee = trade_amount.checked_div(Uint128::new(1000)).unwrap();
-    let received_amount = trade_amount.clone() - local_terra_fee.clone();
+    //let local_terra_fee = trade_amount.checked_div(Uint128::new(1000)).unwrap();
+    //let received_amount = trade_amount.clone() - local_terra_fee.clone();
 
     let info = mock_info_with_ust("taker", trade_amount);
     let (_, mut deps) = create_trade(trade_amount.clone(), info.clone(), None);
@@ -127,7 +127,7 @@ fn test_trade_happy_path() {
                 amount: vec![Coin {
                     denom: "uusd".to_string(),
                     // The amount sent has a 1% discount
-                    amount: received_amount
+                    amount: trade_amount.clone()
                 }]
             })),
             /*

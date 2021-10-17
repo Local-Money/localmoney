@@ -44,9 +44,9 @@ pub fn instantiate(
         .unwrap();
     let res = Response::new()
         .add_attribute("action", "instantiate_gov")
-        .add_attribute("period_duration", period_duration)
-        .add_attribute("distribution_periods", distribution_periods)
-        .add_attribute("total_duration", total_duration);
+        .add_attribute("period_duration", period_duration.to_string())
+        .add_attribute("distribution_periods", distribution_periods.to_string())
+        .add_attribute("total_duration", total_duration.to_string());
 
     Ok(res)
 }
