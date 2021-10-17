@@ -3,6 +3,7 @@ use crate::trade::State as TradeState;
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::fmt::{self};
 
 pub static CONFIG_KEY: &[u8] = b"config";
 pub static OFFERS_KEY: &[u8] = b"offers";
@@ -86,6 +87,11 @@ pub struct TradeInfo {
 pub enum OfferType {
     Buy,
     Sell,
+}
+impl fmt::Display for OfferType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

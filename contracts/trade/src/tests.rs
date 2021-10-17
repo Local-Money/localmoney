@@ -1,6 +1,7 @@
 #![cfg(test)]
 use crate::contract::{execute, instantiate, query};
 use crate::errors::TradeError;
+use crate::mock_querier::{mock_dependencies, WasmMockQuerier};
 use cosmwasm_std::testing::{MockApi, MockStorage};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Empty, MessageInfo, OwnedDeps,
@@ -8,7 +9,6 @@ use cosmwasm_std::{
 };
 use cosmwasm_vm::testing::{mock_env, mock_info};
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::mock_querier::{mock_dependencies, WasmMockQuerier};
 use localterra_protocol::offer::{Offer, OfferState, OfferType};
 use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
@@ -24,7 +24,7 @@ fn test_init() {
         offer_id: 1,
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "other".to_string(),
-        offers_addr: "offers".to_string()
+        offers_addr: "offers".to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_trade_msg);
@@ -52,7 +52,7 @@ fn create_trade(
         offer_id: 1,
         ust_amount: trade_amount.clone().to_string(),
         counterparty: info.sender.clone().into_string(),
-        offers_addr: "offers".to_string()
+        offers_addr: "offers".to_string(),
     };
     let res = instantiate(
         deps.as_mut(),
@@ -110,6 +110,7 @@ fn test_trade_happy_path() {
         res.unwrap().messages,
         vec![
             // Fee collector subMessage
+            /*
             SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
                 // TODO change the local terra fee collector address
                 to_address: "fee-collector".to_string(),
@@ -119,6 +120,7 @@ fn test_trade_happy_path() {
                     amount: local_terra_fee
                 }]
             })),
+             */
             // Offer owner message
             SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
                 to_address: "offer-owner".to_string(),
@@ -128,6 +130,7 @@ fn test_trade_happy_path() {
                     amount: received_amount
                 }]
             })),
+            /*
             // Trading incentives registration message.
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "cosmos2contract".to_string(),
@@ -138,6 +141,7 @@ fn test_trade_happy_path() {
                 .unwrap(),
                 funds: vec![]
             }))
+             */
         ]
     )
 }
@@ -254,7 +258,7 @@ fn test_refund() {
         deps.as_mut(),
         mock_env(),
         any_info.clone(),
-        ExecuteMsg::Refund,
+        ExecuteMsg::Refund {},
     );
     assert!(res.is_err());
     assert!(matches!(res.err().unwrap(), TradeError::RefundError { .. }));
@@ -270,7 +274,7 @@ fn test_refund() {
         deps.as_mut(),
         expired_env,
         any_info.clone(),
-        ExecuteMsg::Refund,
+        ExecuteMsg::Refund {},
     );
     assert!(res.is_ok());
     //Verify that the correct messages were sent after trade completion
@@ -304,7 +308,7 @@ fn test_fund_escrow() {
         deps.as_mut(),
         mock_env(),
         info.clone(),
-        ExecuteMsg::FundEscrow,
+        ExecuteMsg::FundEscrow {},
     );
     assert!(res.is_ok());
     let trade_state: State =

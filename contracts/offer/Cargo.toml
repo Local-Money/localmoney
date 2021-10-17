@@ -26,12 +26,12 @@ thiserror = "1.0.25"
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
+terra-cosmwasm = { version = "2.2.0" }
 localterra-protocol = { path = "../../packages/protocol" }
+terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
+cw20 = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
+cw20-base = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }
 cosmwasm-vm = { version = "0.16.0" }
-cw20 = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
-cw20-base = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
-terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
-terra-cosmwasm = { version = "2.2.0" }

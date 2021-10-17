@@ -107,7 +107,8 @@ fn instantiate_gov_reply(
     let mut cfg = CONFIG.load(deps.storage).unwrap();
     cfg.gov_addr = gov_contract_addr.clone();
     CONFIG.save(deps.storage, &cfg).unwrap();
-    Ok(Response::default())
+    let res = Response::new().add_attribute("instantiate_contract", "gov");
+    Ok(res)
 }
 
 fn instantiate_fee_collector_msg(code_id: u64, ust_conversion_threshold: Uint128) -> SubMsg {
@@ -136,7 +137,8 @@ fn instantiate_fee_collector_reply(
     let mut cfg = CONFIG.load(deps.storage).unwrap();
     cfg.fee_collector_addr = fee_collector_addr;
     CONFIG.save(deps.storage, &cfg).unwrap();
-    Ok(Response::default())
+    let res = Response::new().add_attribute("instantiate_contract", "fee_collector");
+    Ok(res)
 }
 
 fn instantiate_offer_msg(code_id: u64) -> SubMsg {
@@ -162,7 +164,8 @@ fn instantiate_offer_reply(
     let mut cfg = CONFIG.load(deps.storage).unwrap();
     cfg.offers_addr = offer_addr;
     CONFIG.save(deps.storage, &cfg).unwrap();
-    Ok(Response::default())
+    let res = Response::new().add_attribute("instantiate_contract", "offers");
+    Ok(res)
 }
 
 fn instantiate_token_msg(cw20_code_id: u64) -> SubMsg {
@@ -194,7 +197,8 @@ fn instantiate_token_reply(
     let mut cfg = CONFIG.load(deps.storage).unwrap();
     cfg.token_addr = get_contract_address_from_reply(deps.as_ref(), result);
     CONFIG.save(deps.storage, &cfg).unwrap();
-    Ok(Response::default())
+    let res = Response::new().add_attribute("instantiate_contract", "token");
+    Ok(res)
 }
 
 fn instantiate_trading_incentives_msg(trading_incentives_code_id: u64) -> SubMsg {
@@ -219,7 +223,8 @@ fn instantiate_trading_incentives_reply(
     let mut cfg = CONFIG.load(deps.storage).unwrap();
     cfg.trading_incentives_addr = get_contract_address_from_reply(deps.as_ref(), result);
     CONFIG.save(deps.storage, &cfg).unwrap();
-    Ok(Response::default())
+    let res = Response::new().add_attribute("instantiate_contract", "incentives");
+    Ok(res)
 }
 
 fn get_contract_address_from_reply(

@@ -42,7 +42,13 @@ pub fn instantiate(
             },
         )
         .unwrap();
-    Ok(Response::default())
+    let res = Response::new()
+        .add_attribute("action", "instantiate_gov")
+        .add_attribute("period_duration", period_duration)
+        .add_attribute("distribution_periods", distribution_periods)
+        .add_attribute("total_duration", total_duration);
+
+    Ok(res)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -125,7 +131,7 @@ fn register_trade(
             contract_addr: factory_cfg.offers_addr.into_string(),
             msg: to_binary(&OfferQueryMsg::TradeInfo {
                 maker: maker.clone(),
-                trade,
+                trade: trade.clone(),
             })
             .unwrap(),
         }))
@@ -156,7 +162,13 @@ fn register_trade(
         .save(deps.storage, &trader_volume.add(ust_amount.clone()))
         .unwrap();
 
-    Ok(Response::default())
+    let res = Response::new()
+        .add_attribute("action", "register_trade")
+        .add_attribute("trade", trade)
+        .add_attribute("maker", maker)
+        .add_attribute("ust_amount", ust_amount);
+
+    Ok(res)
 }
 
 fn claim(
@@ -190,11 +202,16 @@ fn claim(
     };
 
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
-    let res = Response::new().add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: factory_cfg.token_addr.to_string(),
-        msg: to_binary(&transfer_tokens_msg).unwrap(),
-        funds: vec![],
-    })));
+    let res = Response::new()
+        .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: factory_cfg.token_addr.to_string(),
+            msg: to_binary(&transfer_tokens_msg).unwrap(),
+            funds: vec![],
+        })))
+        .add_attribute("action", "claim")
+        .add_attribute("maker", info.sender)
+        .add_attribute("amount", amount)
+        .add_attribute("period", period.to_string());
 
     Ok(res)
 }

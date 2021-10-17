@@ -1,10 +1,10 @@
 #![cfg(test)]
 
 use crate::contract::{execute, instantiate, query};
+use crate::mock_querier::mock_dependencies;
 use cosmwasm_std::{from_binary, to_binary, Uint128};
 use cosmwasm_vm::testing::{mock_env, mock_info};
 use cw20::Cw20ReceiveMsg;
-use localterra_protocol::mock_querier::mock_dependencies;
 use localterra_protocol::trading_incentives::{
     Cw20HookMsg, Distribution, ExecuteMsg as TradingIncentivesMsg, ExecuteMsg, InstantiateMsg,
     QueryMsg,

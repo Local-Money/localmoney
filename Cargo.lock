@@ -622,6 +622,7 @@ dependencies = [
  "localterra-protocol",
  "schemars",
  "serde",
+ "terra-cosmwasm",
  "terraswap 2.4.1",
  "thiserror",
 ]

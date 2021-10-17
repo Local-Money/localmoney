@@ -1,17 +1,20 @@
 use std::str::FromStr;
-use crate::errors::TradeError;
-use crate::state::{state as state_storage, state_read};
-use crate::taxation::deduct_tax;
+
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    coin, entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
+
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
 use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
+
+use crate::errors::TradeError;
+use crate::state::{state as state_storage, state_read};
+use crate::taxation::deduct_tax;
 
 #[entry_point]
 pub fn instantiate(
@@ -156,7 +159,12 @@ fn try_fund_escrow(
         });
     }
     state_storage(deps.storage).save(&state).unwrap();
-    Ok(Response::default())
+    let res = Response::new()
+        .add_attribute("action", "fund_escrow")
+        .add_attribute("ust_amount", ust_amount.to_string())
+        .add_attribute("sender", info.sender);
+
+    Ok(res)
 }
 
 fn try_release(
@@ -190,17 +198,18 @@ fn try_release(
     }
 
     //Update trade State to TradeState::Closed
-    let balance = balance_result.unwrap();
-    let mut state_storage = state_storage(deps.storage);
-    let mut state = state_storage.load().unwrap();
+    let mut state: State = state_storage(deps.storage).load().unwrap();
     state.state = TradeState::Closed;
-    let save_result = state_storage.save(&state);
-    if save_result.is_err() {
-        return Err(TradeError::ExecutionError {
-            message: "Failed to save state.".to_string(),
-        });
-    }
+    state_storage(deps.storage).save(&state).unwrap();
 
+    //Send Coins
+    let res = Response::new().add_submessage(SubMsg::new(create_send_msg(
+        &deps,
+        state.recipient.clone(),
+        balance_result.unwrap(),
+    )));
+    Ok(res)
+    /*
     let factory_cfg = get_factory_config(&deps.querier, state.factory_addr.to_string());
     let local_terra_fee = calculate_local_terra_fee(&balance).unwrap();
     let fee_response = send_tokens(
@@ -211,14 +220,7 @@ fn try_release(
     )
     .unwrap();
 
-    let final_balance = deduct_local_terra_fee(balance, local_terra_fee).unwrap();
-    let amount_response = send_tokens(
-        &deps,
-        state.recipient.clone(),
-        final_balance.clone(),
-        "release",
-    )
-    .unwrap();
+    let final_balance = balance.clone();
 
     //Query maker to send to the incentives contract
     let offer: Offer = deps
@@ -244,11 +246,12 @@ fn try_release(
         funds: vec![],
     }));
 
-    let r = Response::new()
+    let res = Response::new()
         .add_submessage(fee_response.messages[0].clone())
-        .add_submessage(amount_response.messages[0].clone())
+        .add_submessage(amount_response.messages[0].clone());
         .add_submessage(register_trade_msg);
     Ok(r)
+     */
 }
 
 fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeError> {
@@ -262,7 +265,9 @@ fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeEr
     let balance_result = deps.querier.query_all_balances(&env.contract.address);
     return if balance_result.is_ok() {
         let balance = balance_result.unwrap();
-        send_tokens(&deps, state.sender, balance, "refund")
+        let send_msg = create_send_msg(&deps, state.sender, balance);
+        let res = Response::new().add_submessage(SubMsg::new(send_msg));
+        Ok(res)
     } else {
         Err(TradeError::RefundError {
             message: "Contract has no funds.".to_string(),
@@ -271,13 +276,11 @@ fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeEr
 }
 
 fn get_ust_amount(info: MessageInfo) -> Uint128 {
-    let mut ust_amount = Uint128::zero();
-    let ust_index: &Option<usize> = &info.funds.iter().position(|coin| coin.denom.eq("uusd"));
-    if Into::<usize>::into(ust_index.unwrap()) >= usize::MIN {
-        let ust_coin: &Coin = &info.funds[ust_index.unwrap()];
-        ust_amount = ust_coin.amount;
-    }
-    return ust_amount;
+    let ust = &info.funds.iter().find(|c| c.denom.eq("uusd"));
+    return match ust {
+        None => Uint128::zero(),
+        Some(c) => c.amount,
+    };
 }
 
 fn calculate_local_terra_fee(balance: &Vec<Coin>) -> StdResult<Vec<Coin>> {
@@ -301,29 +304,13 @@ fn deduct_local_terra_fee(balance: Vec<Coin>, local_terra_fee: Vec<Coin>) -> Std
     .to_vec())
 }
 
-//Help to send native coins.
-// this is a helper to move the tokens, so the business logic is easy to read
-fn send_tokens(
-    deps: &DepsMut,
-    to_address: Addr,
-    amount: Vec<Coin>,
-    action: &str,
-) -> Result<Response, TradeError> {
-    let attributes = vec![attr("action", action), attr("to", to_address.clone())];
-    let amount = [deduct_tax(&deps.querier, amount[0].clone()).unwrap()].to_vec();
-
-    let r = Response::new()
-        .add_submessage(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: to_address.to_string(),
-            amount,
-        })))
-        .add_attributes(attributes);
-    Ok(r)
-}
-
-pub fn attr<K: ToString, V: ToString>(key: K, value: V) -> Attribute {
-    Attribute {
-        key: key.to_string(),
-        value: value.to_string(),
-    }
+fn create_send_msg(deps: &DepsMut, to_address: Addr, coins: Vec<Coin>) -> CosmosMsg {
+    let mut coins_without_tax: Vec<Coin> = Vec::new();
+    coins
+        .iter()
+        .for_each(|c| coins_without_tax.push(deduct_tax(&deps.querier, c.clone()).unwrap()));
+    CosmosMsg::Bank(BankMsg::Send {
+        to_address: to_address.to_string(),
+        amount: coins_without_tax,
+    })
 }

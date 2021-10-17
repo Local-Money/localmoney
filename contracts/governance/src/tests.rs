@@ -2,6 +2,7 @@
 
 use crate::contract::{execute, instantiate, query};
 use crate::errors::GovernanceError;
+use crate::mock_querier::mock_dependencies;
 use cosmwasm_std::testing::mock_info;
 use cosmwasm_std::{from_binary, to_binary, Addr, DepsMut, Empty, Response, Uint128};
 use cosmwasm_vm::testing::mock_env;
@@ -9,7 +10,6 @@ use cw20::Cw20ReceiveMsg;
 use localterra_protocol::governance::{
     Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Staker, State,
 };
-use localterra_protocol::mock_querier::mock_dependencies;
 use std::ops::Add;
 
 fn cw20_send(

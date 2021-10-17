@@ -7,15 +7,15 @@ pub struct InstantiateMsg {
     pub offer_id: u64,
     pub ust_amount: String,
     pub counterparty: String,
-    pub offers_addr: String
+    pub offers_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    FundEscrow,
-    Refund,
-    Release,
+    FundEscrow {},
+    Refund {},
+    Release {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

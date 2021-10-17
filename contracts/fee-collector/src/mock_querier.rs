@@ -1,18 +1,19 @@
+#![allow(dead_code)]
 #![cfg(test)]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::currencies::FiatCurrency;
-use crate::factory::Config as FactoryConfig;
-use crate::governance::Config as GovConfig;
-use crate::offer::{Config as OfferConfig, Offer, OfferState, OfferType, TradeInfo};
-use crate::trade::{State as TradeState, TradeState as TradeTradeState};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
+use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::factory::Config as FactoryConfig;
+use localterra_protocol::governance::Config as GovConfig;
+use localterra_protocol::offer::{Config as OfferConfig, Offer, OfferState, OfferType, TradeInfo};
+use localterra_protocol::trade::{State as TradeState, TradeState as TradeTradeState};
 use std::collections::HashMap;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
 use terraswap::asset::{AssetInfo, PairInfo};

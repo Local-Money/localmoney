@@ -199,7 +199,7 @@ pub fn stake_tokens(
         .save(sender.as_bytes(), &staker_shares)
         .unwrap();
     state_store(deps.storage).save(&state).unwrap();
-
+    //@Revo add amount / sender / shares
     Ok(Response::default())
 }
 
@@ -230,16 +230,17 @@ fn send_tokens(
         attr("amount", &amount.to_string()),
     ];
 
-    let mut r = Response::new();
+    let mut res = Response::new();
     let cw20msg = &Cw20ExecuteMsg::Transfer {
         recipient: recipient.to_string(),
         amount: Uint128::from(amount),
     };
-    r.attributes = attributes;
-    r.messages = vec![SubMsg::new(WasmMsg::Execute {
+    res.attributes = attributes;
+    res.messages = vec![SubMsg::new(WasmMsg::Execute {
         contract_addr: asset_token.to_string(),
         msg: to_binary(cw20msg).unwrap(),
         funds: vec![],
     })];
-    Ok(r)
+
+    Ok(res)
 }

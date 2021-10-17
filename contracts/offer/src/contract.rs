@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut,
-    Empty, Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, Storage,
-    SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, Storage, SubMsg,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 
 use crate::errors::OfferError;
@@ -79,7 +79,7 @@ fn trade_instance_reply(
     result: ContractResult<SubMsgExecutionResponse>,
 ) -> Result<Response, OfferError> {
     if result.is_err() {
-        return Err(OfferError::InvalidReply {})
+        return Err(OfferError::InvalidReply {});
     }
 
     let trade_addr: Addr = result
@@ -107,7 +107,14 @@ fn trade_instance_reply(
         .save(trade_addr.as_bytes(), &"".to_string())
         .unwrap();
 
-    Ok(Response::default())
+    //trade_state, offer_id, trade_amount,owner
+    let res = Response::new()
+        .add_attribute("action", "create_trade_reply")
+        .add_attribute("addr", trade_addr)
+        .add_attribute("offer_id", offer.id.to_string())
+        .add_attribute("amount", trade_state.ust_amount)
+        .add_attribute("owner", offer.owner);
+    Ok(res)
 }
 
 pub fn create_offer(
@@ -142,8 +149,11 @@ pub fn create_offer(
 
     let res = Response::new()
         .add_attribute("action", "create_offer")
-        .add_attribute("offer_id", offer_id.to_string())
-        .add_attribute("owner", &info.sender);
+        .add_attribute("type", offer.offer_type.to_string())
+        .add_attribute("id", offer.id.to_string())
+        .add_attribute("min_amount", offer.min_amount.to_string())
+        .add_attribute("max_amount", offer.max_amount.to_string())
+        .add_attribute("owner", offer.owner);
     Ok(res)
 }
 
@@ -157,7 +167,12 @@ pub fn activate_offer(
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Paused {
             offer.state = OfferState::Active;
-            Ok(save_offer(deps, offer)?)
+            bucket(deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
+            let res = Response::new()
+                .add_attribute("action", "active_offer")
+                .add_attribute("id", offer.id.to_string())
+                .add_attribute("owner", offer.owner.to_string());
+            Ok(res)
         } else {
             Err(OfferError::InvalidStateChange {
                 from: offer.state,
@@ -182,7 +197,12 @@ pub fn pause_offer(
     return if offer.owner.eq(&info.sender) {
         if offer.state == OfferState::Active {
             offer.state = OfferState::Paused;
-            Ok(save_offer(deps, offer)?)
+            bucket(deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
+            let res = Response::new()
+                .add_attribute("action", "pause_offer")
+                .add_attribute("id", offer.id.to_string())
+                .add_attribute("owner", offer.owner.to_string());
+            Ok(res)
         } else {
             Err(OfferError::InvalidStateChange {
                 from: offer.state,
@@ -218,7 +238,13 @@ pub fn update_offer(
         offer.fiat_currency = msg.fiat_currency;
         offer.min_amount = Uint128::from(msg.min_amount);
         offer.max_amount = Uint128::from(msg.max_amount);
-        Ok(save_offer(deps, offer)?)
+
+        bucket(deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
+        let res = Response::new()
+            .add_attribute("action", "pause_offer")
+            .add_attribute("id", offer.id.to_string())
+            .add_attribute("owner", offer.owner.to_string());
+        Ok(res)
     } else {
         Err(OfferError::Unauthorized {
             owner: offer.owner,
@@ -252,12 +278,12 @@ fn create_trade(
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            ust_amount,
-            counterparty,
-            offers_addr: env.contract.address.to_string()
+            ust_amount: ust_amount.clone(),
+            counterparty: counterparty.clone(),
+            offers_addr: env.contract.address.to_string(),
         })
         .unwrap(),
-        funds: vec![],
+        funds: info.funds,
         label: "new-trade".to_string(),
     };
     let sub_message = SubMsg {
@@ -267,7 +293,13 @@ fn create_trade(
         reply_on: ReplyOn::Success,
     };
 
-    let res = Response::new().add_submessage(sub_message);
+    let res = Response::new()
+        .add_submessage(sub_message)
+        .add_attribute("action", "create_trade")
+        .add_attribute("id", offer.id.to_string())
+        .add_attribute("owner", offer.owner.to_string())
+        .add_attribute("ust_amount", ust_amount)
+        .add_attribute("counterparty", counterparty);
     Ok(res)
 }
 
@@ -284,11 +316,6 @@ fn query_state(deps: Deps) -> StdResult<State> {
 pub fn load_offers(storage: &dyn Storage, fiat_currency: FiatCurrency) -> StdResult<Vec<Offer>> {
     let offers = query_all_offers(storage, fiat_currency)?;
     Ok(offers)
-}
-
-fn save_offer(deps: DepsMut, offer: Offer) -> StdResult<Response<Empty>> {
-    bucket(deps.storage, OFFERS_KEY).save(&offer.id.to_be_bytes(), &offer)?;
-    Ok(Response::default())
 }
 
 pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {

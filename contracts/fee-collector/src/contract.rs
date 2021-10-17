@@ -100,7 +100,8 @@ fn distribute_fee(deps: DepsMut, env: Env) -> Result<Response, ContractError> {
         gas_limit: None,
         reply_on: ReplyOn::Success,
     };
-    Ok(Response::new().add_submessage(msg))
+    let res = Response::new().add_submessage(msg);
+    Ok(res)
 }
 
 fn send_local_token_to_gov(
