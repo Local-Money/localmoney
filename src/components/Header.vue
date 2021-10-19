@@ -49,5 +49,66 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "../style/header.scss";
+@import "../style/tokens.scss";
+
+header {
+  background-color: $background;
+  width: 100%;
+
+  .wrap {
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
+    margin: 0 auto;
+    max-width: 1280px;
+    padding: 16px 32px;
+
+    .logo {
+      width: 191px;
+      height: 40px;
+      background-size: cover;
+      background-image: $logo-horizontal-dark;
+    }
+
+    @media only screen and (max-width: 550px) {
+      padding: 0;
+      .logo {
+        width: 32px;
+        height: 32px;
+        margin-top: 24px;
+        margin-left: 24px;
+        background-size: cover;
+        background-image: $logo-horizontal-dark;
+      }
+    }
+
+    button {
+      background-color: $surface;
+      //border: 2px solid $base-text;
+
+      padding: 0 16px;
+      cursor: pointer;
+
+      p {
+        font-size: 16px;
+        color: $base-text;
+        margin-right: 16px;
+      }
+
+      p,
+      img {
+        vertical-align: middle;
+        display: inline-block;
+      }
+      @media only screen and (max-width: 550px) {
+        margin-top: 24px;
+        margin-right: 24px;
+      }
+
+      &:active {
+        background-color: $border;
+      }
+    }
+  }
+}
 </style>

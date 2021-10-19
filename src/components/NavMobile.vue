@@ -101,7 +101,8 @@ nav {
   position: fixed;
   width: 100%;
   bottom: 0;
-  padding: 8px;
+  padding: 16px 16px;
+  height: 64px;
   z-index: 9999;
   display: flex;
   justify-content: space-between;
@@ -111,16 +112,14 @@ nav {
 
   ul {
     width: 100%;
+    height: 24px;
     display: flex;
     justify-content: space-around;
 
     li {
-      padding: 16px;
     }
 
     a {
-      display: inline-block;
-
       &:hover {
         color: $gray900;
         .icon-24 {
