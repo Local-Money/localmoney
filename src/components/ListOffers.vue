@@ -11,11 +11,9 @@
         <label for="crypto">Crypto</label>
         <select name="crypto" id="crypto">
           <option value="UST">UST</option>
-          <option value="UST">mCOIN</option>
-          <option value="UST">mTSLA</option>
           <option value="UST">LUNA</option>
           <option value="UST">LOTA</option>
-          <option value="UST">LTT</option>
+          <option value="UST">LOCAL</option>
         </select>
       </div>
       <div class="filter">
