@@ -18,6 +18,13 @@ $surface: $gray200;
 
 $anchor: #5fce5f;
 
+/*Typography */
+
+$regular: 400;
+$semi-bold: 600;
+$bold: 700;
+$extra-bold: 800;
+
 /*Assets */
 
 $logo-horizontal-dark: url(../assets/logo-horizontal-dark.svg);
@@ -26,6 +33,14 @@ $logo-horizontal-dark: url(../assets/logo-horizontal-dark.svg);
   width: 24px;
   height: 24px;
   stroke: #ffffff;
+}
+
+.card {
+  padding: 24px;
+  background-color: $surface;
+  border-radius: 8px;
+  box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
+  min-width: 256px;
 }
 
 /* LIGHT MODE
