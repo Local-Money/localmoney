@@ -16,6 +16,7 @@ export default defineComponent({
     HomeHero,
     ListOffers,
   },
+
 });
 </script>
 

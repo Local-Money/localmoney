@@ -6,12 +6,19 @@
 <script>
 import { defineComponent } from "vue";
 import Header from "./components/Header.vue";
+import { mapActions } from "vuex";
 
 export default defineComponent({
   name: "App",
   components: {
     Header,
   },
+  methods: {
+    ...mapActions(['fetchFactoryConfig'])
+  },
+  created() {
+    this.fetchFactoryConfig()
+  }
 });
 </script>
 

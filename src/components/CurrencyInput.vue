@@ -8,20 +8,7 @@ import { scrollToElement } from '@/shared'
 
 export default {
   name: 'CurrencyInput',
-  props: {
-    modelValue: {
-      type: Number,
-      required: true,
-    },
-    options: {
-      type: Object,
-      required: true,
-    },
-    placeholder: {
-      type: String,
-      required: true,
-    },
-  },
+  props: ['modelValue', 'options', 'placeholder'],
   methods: {
     scrollToElement: scrollToElement.bind(this),
     focus: function () {

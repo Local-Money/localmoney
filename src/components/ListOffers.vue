@@ -153,23 +153,25 @@ export default defineComponent({
     formatAddress,
     expandOfferItem: function(offer) {
       console.log("offer", offer);
-      this.$data.expandedOffer = offer;
+      this.expandedOffer = offer
+      //this.$data.expandedOffer = offer;
+      /*
       this.$nextTick(() => {
-        //this.$refs.expandedOffer.focus()
+        this.$refs.expandedOffer.focus()
       });
+       */
     },
   },
   computed: {
-    ...mapGetters(["allOffers", "getUsdRate"]),
+    ...mapGetters(["offers", "getUsdRate"]),
     collapsedOffers: function() {
-      return this.allOffers.filter((offer) => offer.id != this.expandedOffer);
+      return this.offers.filter((offer) => offer.id != this.expandedOffer);
     },
     expandedOffers: function() {
-      return this.allOffers.filter((offer) => offer.id == this.expandedOffer);
+      return this.offers.filter((offer) => offer.id == this.expandedOffer);
     },
   },
   created() {
-    this.fetchOffers();
     this.fetchUsdRates();
   },
 });

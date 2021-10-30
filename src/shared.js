@@ -14,6 +14,15 @@ export function formatAmount(amount, ustAmount = true) {
 
 export function scrollToElement(el) {
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth' })
+    el.scrollIntoView({behavior: 'smooth'})
   }
+}
+
+export function formatTradeState(state) {
+  return {
+    'created': 'Created',
+    'escrow_funded': 'Escrow Funded',
+    'closed': 'Closed',
+    'canceled': 'Canceled'
+  }[state]
 }

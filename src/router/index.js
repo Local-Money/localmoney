@@ -33,7 +33,7 @@ const routes = [
     component: Offer,
   },
   {
-    path: "/trade/:id",
+    path: "/trade/:addr",
     name: "Trade",
     component: Trade,
   },

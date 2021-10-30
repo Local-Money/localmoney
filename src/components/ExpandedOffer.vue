@@ -25,7 +25,7 @@
         <label for="buy">I want to pay</label>
         <CurrencyInput
           v-model="fiatAmount"
-          @focus="watchingReceive == false && watchingBuy == true"
+          @focus="watchingReceive === false && watchingBuy === true"
           :placeholder="this.fiatPlaceholder"
           :options="{
             currency: offer.fiat_currency.toUpperCase(),
@@ -42,7 +42,7 @@
         <CurrencyInput
           v-model="cryptoAmount"
           :placeholder="this.cryptoPlaceholder"
-          @focus="watchingReceive == true && watchingBuy == false"
+          @focus="watchingReceive === true && watchingBuy === false"
           :options="{
             currency: 'UST',
             currencyDisplay: 'code',
@@ -63,8 +63,8 @@
           <p class="ticker">Will refresh in {{ this.secondsUntilRateRefresh }}s</p>
           <p class="margin">0% above market</p>
           <p class="value">
-            1 UST = {{ this.offer.fiat_currency.toUpperCase() }}
-            {{ this.cryptoFiatPrice.toFixed(2) }}
+            1 UST = {{ offer.fiat_currency.toUpperCase() }}
+            {{ cryptoFiatPrice.toFixed(2) }}
           </p>
         </div>
       </div>
@@ -74,7 +74,7 @@
           <div class="item">
             <p class="label">Transaction summary</p>
             <p class="info">Trading Fee</p>
-            <p>UST {{ this.tradingFee.toFixed(2) }}</p>
+            <p>UST {{ tradingFee.toFixed(2) }}</p>
           </div>
         </div>
       </div>
@@ -99,9 +99,6 @@ export default defineComponent({
   components: {
     CurrencyInput,
   },
-  created: function () {
-    this.startExchangeRateRefreshTimer()
-  },
   data() {
     return {
       cryptoAmount: NaN,
@@ -114,7 +111,7 @@ export default defineComponent({
     }
   },
   mounted() {
-    console.log('hello', this.offer)
+    this.startExchangeRateRefreshTimer()
   },
   unmounted: function () {
     clearInterval(this.refreshRateInterval)
@@ -135,7 +132,7 @@ export default defineComponent({
       let countdownInterval = 1000
       this.refreshRateInterval = setInterval(() => {
         this.$data.secondsUntilRateRefresh = --seconds
-        if (seconds == 0) {
+        if (seconds === 0) {
           this.refreshExchangeRate()
           seconds = 60
         }

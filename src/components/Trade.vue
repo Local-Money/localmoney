@@ -1,5 +1,5 @@
 <template>
-  <section class="create-trade" v-if="trade && trade.offer && trade.state.length > 0">
+  <section class="create-trade">
     <h1 v-if="trade.offer.offer_type == 'buy'">
       You are selling <img src="@/assets/ic_ust.svg" />
       <b>{{ formatAmount(trade.amount) }} UST </b> to
@@ -72,7 +72,7 @@ export default defineComponent({
     }
   },
   computed: {
-    ...mapGetters(['getTrades', 'getTradeById', 'walletAddress', 'getUsdRate']),
+    ...mapGetters(['trades', 'getTradeById', 'walletAddress', 'getUsdRate']),
     shouldFundEscrow() {
       return (
         this.trade.offer.offer_type == 'sell' &&

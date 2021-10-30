@@ -1,7 +1,7 @@
 <template>
   <div class="open-trade-item card">
-    <p class="trade-type">Selling COP</p>
-    <p class="trade-value">$365,900.00 COP</p>
+    <p class="trade-type">Selling UST</p>
+    <p class="trade-value">{{ formatAmount(trade.ust_amount) }} UST</p>
     <span class="separator"></span>
     <div class="wrap-status">
       <div class="column-1">
@@ -13,11 +13,29 @@
         <p class="time">30 min</p>
       </div>
     </div>
-    <button>view ></button>
+    <router-link :to="`/trade/terra13uflreu7tr4c0vykgwyy0ymgee9xs0r53xcphf`">
+      <button>view ></button>
+    </router-link>
   </div>
 </template>
 
-<script></script>
+<script>
+import {defineComponent} from "vue";
+import {mapGetters} from "vuex";
+import {formatAddress, formatAmount} from '@/shared'
+
+export default defineComponent({
+  name: 'TradeOpenItem',
+  props: ['trade'],
+  computed: {
+    ...mapGetters(['getUsdRate']),
+  },
+  methods: {
+    formatAmount,
+    formatAddress
+  }
+})
+</script>
 
 <style lang="scss" scoped>
 @import "../../style/tokens.scss";
@@ -29,19 +47,23 @@
   align-items: center;
   margin-bottom: 24px;
 }
+
 .trade-type,
 .trade-value {
   flex-grow: 3;
 }
+
 .trade-type {
   font-size: 18px;
   font-weight: $semi-bold;
 }
+
 .trade-value {
   font-size: 14px;
   text-align: right;
   margin-right: 48px;
 }
+
 .wrap-status {
   flex-grow: 10;
   display: flex;
@@ -54,6 +76,7 @@
     font-size: 12px;
     color: $gray600;
   }
+
   .status,
   .time {
     font-size: 14px;
@@ -64,6 +87,7 @@
     text-align: right;
   }
 }
+
 .separator {
   flex-grow: 2;
   border-left: 1px solid $border;
@@ -72,6 +96,7 @@
   width: 1px;
   height: 40px;
 }
+
 button {
   height: 40px;
   background-color: $gray300;

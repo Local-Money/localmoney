@@ -1,18 +1,14 @@
-import {
-  LCDClient,
-  MnemonicKey,
-  MsgExecuteContract,
-  StdSignature,
-  StdSignMsg,
-  StdTx,
-} from '@terra-money/terra.js'
-import { OFFERS_CONTRACT } from '@/constants.js'
+import {LCDClient, MnemonicKey, MsgExecuteContract, StdSignature, StdSignMsg, StdTx,} from '@terra-money/terra.js'
+import { FACTORY_CONTRACT } from '@/constants'
 import router from '@/router'
 
 // create a key out of a mnemonic
+let maker_seed = 'uncle simple tide bundle apart absurd tenant fluid slam actor caught month hip tornado cattle regular nerve brand tower boy alert crash good neck'
+// eslint-disable-next-line no-unused-vars
+let taker_seed = 'paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily'
+
 const mk = new MnemonicKey({
-  mnemonic:
-    'uncle simple tide bundle apart absurd tenant fluid slam actor caught month hip tornado cattle regular nerve brand tower boy alert crash good neck',
+  mnemonic: maker_seed,
 })
 
 const terra = new LCDClient({
@@ -26,6 +22,16 @@ const wallet = terra.wallet(mk)
 const state = {
   offers: [],
   trades: [],
+  fiatCurrency: 'BRL',
+  factoryConfig: {
+    trade_code_id: 0,
+    token_addr: "",
+    local_ust_pool_addr: "",
+    gov_addr: "",
+    offers_addr: "",
+    fee_collector_addr: "",
+    trading_incentives_addr: ""
+  }
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -40,48 +46,55 @@ function prepareTransaction(signedMsg) {
   })
 
   const stdSignMsg = StdSignMsg.fromData(stdSignMsgData)
-  const signedTx = new StdTx(stdSignMsg.msgs, stdSignMsg.fee, [sig], stdSignMsg.memo)
-
-  return signedTx
+  return new StdTx(stdSignMsg.msgs, stdSignMsg.fee, [sig], stdSignMsg.memo)
 }
 
 const getters = {
-  allOffers: (state) => state.offers,
+  offers: (state) => state.offers,
   getOfferById: (state) => (id) => {
-    return state.offers.find((offer) => offer.id == id)
+    return state.offers.find((offer) => offer.id === id)
   },
-  getTrades: (state) => state.trades,
+  trades: (state) => state.trades,
   getTradeById: (state) => (tradeAddress) => {
-    return state.trades.find((trade) => trade.address == tradeAddress)
+    return state.trades.find((trade) => trade.address === tradeAddress)
   },
 }
 
 const actions = {
   /**
+   * Fetch Factory Contract config
+   */
+  async fetchFactoryConfig({ commit, dispatch }) {
+    const cfgQuery = { config: {} }
+    const factoryConfig = await terra.wasm.contractQuery(FACTORY_CONTRACT, cfgQuery)
+    commit('setFactoryConfig', factoryConfig)
+    dispatch('fetchOffers')
+    dispatch('fetchTrades')
+  },
+  /**
    * Fetch Offer by Id
    */
   async fetchOffer({ commit }, { id }) {
     const offerQuery = { load_offer: { id } }
-    const offer = await terra.wasm.contractQuery(OFFERS_CONTRACT, offerQuery)
+    const offer = await terra.wasm.contractQuery(state.factoryConfig.offers_addr, offerQuery)
     commit('addOffer', offer)
   },
   /**
    * Fetch Offers.
    */
   async fetchOffers({ commit }) {
-    const offersQuery = { offers: { fiat_currency: 'BRL' } }
-    const offers = await terra.wasm.contractQuery(OFFERS_CONTRACT, offersQuery)
+    const offersQuery = { offers: { fiat_currency: state.fiatCurrency } }
+    const offers = await terra.wasm.contractQuery(state.factoryConfig.offers_addr, offersQuery)
     commit('setOffers', offers)
   },
   /**
    * Create Offer
    */
   async newOffer({ getters }, { offer }) {
-    const offerMsg = new MsgExecuteContract(getters.walletAddress, OFFERS_CONTRACT, offer)
+    const offerMsg = new MsgExecuteContract(getters.walletAddress, state.factoryConfig.offers_addr, offer)
     console.log('offerMsg', offerMsg)
-    await executeMsg(offerMsg, () => {
-      alert('Offer created')
-    })
+    const result = await executeMsg(offerMsg)
+    console.log('Offer created', result)
   },
   /**
    * Fetch a specific Trade
@@ -102,6 +115,13 @@ const actions = {
     return trade
   },
   /**
+   * Fetches all trades for given Trader (maker or taker) address.
+   */
+  async fetchTrades({commit}) {
+    const trades = await terra.wasm.contractQuery(state.factoryConfig.offers_addr, { trades: { maker: "terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0" } } )
+    commit('setTrades', trades)
+  },
+  /**
    * Sends a transaction to instantiate a Trade contract.
    * @param {*} offerId Id of the Offer provided by the Offers Smart Contract.
    * @param {*} amount Amount of UST to be traded.
@@ -110,17 +130,19 @@ const actions = {
   async openTrade({ getters, dispatch }, { offerId, ustAmount }) {
     console.log('open trade', offerId, ustAmount)
 
+    //let sender = getters.walletAddress
+    let sender = wallet.key.accAddress
     const amount = parseInt(ustAmount) * 1000000
     const newTradeMsg = {
       new_trade: {
         offer_id: offerId,
         ust_amount: amount + '',
-        counterparty: getters.walletAddress,
+        counterparty: sender
       },
     }
     const createTradeMsg = new MsgExecuteContract(
-      getters.walletAddress,
-      OFFERS_CONTRACT,
+      sender,
+      state.factoryConfig.offers_addr,
       newTradeMsg
     )
 
@@ -134,9 +156,10 @@ const actions = {
     }
     */
 
-    executeMsg(createTradeMsg, () => {
-      console.log('trade created')
-    })
+    //TODO: Error handling.
+    await executeMsg(createTradeMsg)
+    dispatch('fetchTrades')
+
     /*
     //Transaction Signing using the Terra Station Extension and brodcasting.
     ext.once('onSign', async (res) => {
@@ -156,21 +179,20 @@ const actions = {
   },
   async releaseEscrow({ getters, dispatch }, { tradeAddress }) {
     const releaseMsg = new MsgExecuteContract(getters.walletAddress, tradeAddress, { release: {} })
-    await executeMsg(releaseMsg, () => {
-      dispatch('fetchTrade', { tradeAddress })
-    })
+    const result = await executeMsg(releaseMsg)
+    console.log('Released', result)
+    dispatch('fetchTrade', { tradeAddress })
   },
 }
 
-async function executeMsg(msg, cb) {
+async function executeMsg(msg) {
   wallet
     .createAndSignTx({
       msgs: [msg],
     })
     .then((tx) => terra.tx.broadcast(tx))
     .then((result) => {
-      console.log(result)
-      cb()
+      return result
     })
 
   /*
@@ -188,6 +210,7 @@ async function executeMsg(msg, cb) {
 }
 
 const mutations = {
+  setFactoryConfig: (state, factoryConfig) => (state.factoryConfig = factoryConfig),
   addOffer: (state, offer) => state.offers.push(offer),
   setOffers: (state, offers) => (state.offers = offers),
   addTrade: (state, trade) => {
@@ -198,6 +221,9 @@ const mutations = {
       state.trades.push(trade)
     }
   },
+  setTrades: (state, trades) => {
+    state.trades = trades
+  }
 }
 
 export default {
