@@ -4,7 +4,7 @@ import Explore from "../pages/Explore.vue";
 import Offers from "../pages/Offers.vue";
 import Trades from "../pages/Trades.vue";
 import Offer from "../components/Offer.vue";
-import Trade from "../components/Trade.vue";
+import TradeDetail from "../pages/TradeDetail.vue";
 
 const routes = [
   {
@@ -34,8 +34,8 @@ const routes = [
   },
   {
     path: "/trade/:addr",
-    name: "Trade",
-    component: Trade,
+    name: "TradeDetail",
+    component: TradeDetail,
   },
 ];
 
