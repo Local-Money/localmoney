@@ -10,7 +10,7 @@
   <label>Max amount:</label>
   <input type="text" v-model="maxAmount" />
   <br/>
-  <button @click="createOffer(minAmount, maxAmount)">Create</button>
+  <button @click="createOffer()">Create</button>
 </template>
 
 <script>
@@ -31,15 +31,15 @@ export default defineComponent({
     ...mapActions(['initWallet', 'newOffer']),
     formatAmount,
     formatAddress,
-    createOffer(min_amount, max_amount) {
+    createOffer() {
       let offerType = parseInt(this.offerType) === 0 ? 'buy' : 'sell'
       const newOffer = {
         create: {
           offer: {
             offer_type: offerType,
             fiat_currency: 'BRL',
-            min_amount,
-            max_amount,
+            min_amount: parseInt(this.minAmount),
+            max_amount: parseInt(this.maxAmount),
           },
         },
       }

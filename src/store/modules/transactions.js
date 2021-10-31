@@ -7,8 +7,11 @@ let maker_seed = 'uncle simple tide bundle apart absurd tenant fluid slam actor 
 // eslint-disable-next-line no-unused-vars
 let taker_seed = 'paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily'
 
+let promptRes = prompt("m for maker, t for taker").toLowerCase().trim()
+
+let seed = (promptRes === "m") ? maker_seed : taker_seed
 const mk = new MnemonicKey({
-  mnemonic: maker_seed,
+  mnemonic: seed,
 })
 
 const terra = new LCDClient({
@@ -61,6 +64,9 @@ const getters = {
 }
 
 const actions = {
+  async fakeWalletConnect({ commit }) {
+    commit('setWalletAddress', wallet.key.accAddress)
+  },
   /**
    * Fetch Factory Contract config
    */
@@ -90,11 +96,11 @@ const actions = {
   /**
    * Create Offer
    */
-  async newOffer({ getters }, { offer }) {
+  async newOffer({ getters, dispatch }, { offer }) {
     const offerMsg = new MsgExecuteContract(getters.walletAddress, state.factoryConfig.offers_addr, offer)
-    console.log('offerMsg', offerMsg)
-    const result = await executeMsg(offerMsg)
-    console.log('Offer created', result)
+    await executeMsg(offerMsg)
+    console.log('fetchOffers')
+    dispatch('fetchOffers')
   },
   /**
    * Fetch a specific Trade
@@ -186,7 +192,7 @@ const actions = {
 }
 
 async function executeMsg(msg) {
-  wallet
+  return wallet
     .createAndSignTx({
       msgs: [msg],
     })

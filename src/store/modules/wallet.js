@@ -1,5 +1,3 @@
-import { Extension } from '@terra-money/terra.js'
-
 const state = {
   walletAddress: '',
 }
@@ -9,12 +7,15 @@ const getters = {
 }
 
 const actions = {
-  async initWallet({ commit }) {
+  async initWallet({ dispatch}) {
+    dispatch('fakeWalletConnect')
+    /*
     const ext = new Extension()
     const res = await ext.request('connect')
     const walletAddress = res.payload.address
 
     commit('setWalletAddress', walletAddress)
+     */
   },
 }
 
