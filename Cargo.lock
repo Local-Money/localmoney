@@ -949,6 +949,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
+ "cw-storage-plus 0.8.1",
  "cw20 0.8.0 (git+https://github.com/CosmWasm/cosmwasm-plus?branch=main)",
  "cw20-base",
  "localterra-protocol",

@@ -1,10 +1,13 @@
+use std::ops::Add;
 use std::str::FromStr;
 
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut,
-    Env, MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, QuerierWrapper, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    WasmQuery,
 };
 
+use localterra_protocol::factory::{Config as FactoryConfig, QueryMsg as FactoryQuery};
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
@@ -14,7 +17,7 @@ use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::state::{state as state_storage, state_read};
-use crate::taxation::deduct_tax;
+use crate::taxation::{compute_tax, deduct_tax};
 
 #[entry_point]
 pub fn instantiate(
@@ -26,15 +29,13 @@ pub fn instantiate(
     //Load Offer
     let offer_contract = deps.api.addr_validate(msg.offers_addr.as_str()).unwrap();
     let offer_id = msg.offer_id;
-    let load_offer_result: StdResult<Offer> =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: offer_contract.clone().into_string(),
-            msg: to_binary(&OfferQueryMsg::Offer { id: offer_id }).unwrap(),
-        }));
-    if load_offer_result.is_err() {
-        return Err(TradeError::OfferNotFound { offer_id });
+    let offer = load_offer(deps.querier, msg.offer_id, offer_contract.to_string());
+    if offer.is_none() {
+        return Err(TradeError::OfferNotFound {
+            offer_id: msg.offer_id,
+        });
     }
-    let offer = load_offer_result.unwrap();
+    let offer = offer.unwrap();
 
     //Load Offer Contract Config
     let load_offer_config_result: StdResult<OfferConfig> =
@@ -42,7 +43,7 @@ pub fn instantiate(
             contract_addr: offer_contract.clone().into_string(),
             msg: to_binary(&OfferQueryMsg::Config {}).unwrap(),
         }));
-    let _offer_config = load_offer_config_result.unwrap();
+    let offers_cfg = load_offer_config_result.unwrap();
 
     //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
     let expire_height = env.block.height + 600; //Roughly 1h.
@@ -75,7 +76,8 @@ pub fn instantiate(
 
     //Instantiate Trade state
     let mut state = State {
-        factory_addr: info.sender.clone(),
+        addr: env.contract.address.clone(),
+        factory_addr: offers_cfg.factory_addr.clone(),
         recipient,
         sender,
         offer_contract: offer_contract.clone(),
@@ -114,30 +116,46 @@ pub fn execute(
 ) -> Result<Response, TradeError> {
     let state = state_storage(deps.storage).load().unwrap();
     match msg {
-        ExecuteMsg::FundEscrow {} => try_fund_escrow(deps, env, info, state),
-        ExecuteMsg::Refund {} => try_refund(deps, env, state),
-        ExecuteMsg::Release {} => try_release(deps, env, info, state),
+        ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state),
+        ExecuteMsg::Refund {} => refund(deps, env, state),
+        ExecuteMsg::Release {} => release(deps, env, info, state),
     }
 }
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::State {} => to_binary(&query_config(deps)?),
+        QueryMsg::State {} => to_binary(&query_state(deps)?),
     }
 }
 
-fn query_config(deps: Deps) -> StdResult<State> {
+fn query_state(deps: Deps) -> StdResult<State> {
     let state = state_read(deps.storage).load()?;
     Ok(state)
 }
 
-fn try_fund_escrow(
+fn load_offer(querier: QuerierWrapper, offer_id: u64, offer_contract: String) -> Option<Offer> {
+    let load_offer_result: StdResult<Offer> =
+        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: offer_contract.clone(),
+            msg: to_binary(&OfferQueryMsg::Offer { id: offer_id }).unwrap(),
+        }));
+
+    if load_offer_result.is_err() {
+        None
+    } else {
+        Some(load_offer_result.unwrap())
+    }
+}
+
+fn fund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     mut state: State,
 ) -> Result<Response, TradeError> {
+    //TODO: Convert to UST if trade is for any other stablecoin or Luna,
+    // skip conversion entirely if fee was paid in $LOCAL.
     let ust_amount = if !info.funds.is_empty() {
         get_ust_amount(info.clone())
     } else {
@@ -151,13 +169,34 @@ fn try_fund_escrow(
             })
             .amount
     };
-    if ust_amount >= state.ust_amount {
+    let ust = Coin::new(ust_amount.clone().u128(), "uusd");
+
+    let offer = load_offer(
+        deps.querier.clone(),
+        state.offer_id,
+        state.offer_contract.to_string(),
+    )
+    .unwrap(); //at this stage, offer is guaranteed to exists.
+
+    let fund_escrow_amount: Uint128 = match offer.offer_type {
+        OfferType::Buy => {
+            let local_terra_fee = subtract_localterra_fee(state.ust_amount);
+            let terra_tax = compute_tax(&deps.querier, &ust)
+                .unwrap()
+                .multiply_ratio(2u128, 1u128);
+            state.ust_amount.add(local_terra_fee).add(terra_tax)
+        }
+        OfferType::Sell => state.ust_amount,
+    };
+    if ust_amount >= fund_escrow_amount {
         state.state = TradeState::EscrowFunded;
     } else {
-        return Err(TradeError::ExecutionError {
-            message: "UST amount is less than required to fund the escrow.".to_string(),
+        return Err(TradeError::FundEscrowError {
+            required_amount: fund_escrow_amount.clone(),
+            sent_amount: ust_amount.clone(),
         });
     }
+
     state_storage(deps.storage).save(&state).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
@@ -167,7 +206,19 @@ fn try_fund_escrow(
     Ok(res)
 }
 
-fn try_release(
+fn get_offer(deps: &Deps, state: &State) -> Offer {
+    deps.querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: state.offer_contract.to_string(),
+            msg: to_binary(&OfferQueryMsg::Offer {
+                id: state.offer_id.clone(),
+            })
+            .unwrap(),
+        }))
+        .unwrap()
+}
+
+fn release(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -202,59 +253,47 @@ fn try_release(
     state.state = TradeState::Closed;
     state_storage(deps.storage).save(&state).unwrap();
 
+    //Calculate fees and final release amount
+    let mut send_msgs: Vec<SubMsg> = Vec::new();
+    let balance = balance_result.unwrap();
+
+    let mut final_balance: Vec<Coin> = Vec::new();
+    let offer = get_offer(&deps.as_ref(), &state);
+
+    let factory_cfg: FactoryConfig =
+        get_factory_config(&deps.querier, state.factory_addr.to_string());
+    let local_terra_fee: Vec<Coin> = deduct_localterra_fee(&balance, &mut final_balance);
+    let fee_collector = factory_cfg.fee_collector_addr.clone();
+    send_msgs.push(SubMsg::new(create_send_msg(
+        &deps,
+        fee_collector,
+        local_terra_fee,
+    )));
+
     //Send Coins
-    let res = Response::new().add_submessage(SubMsg::new(create_send_msg(
+    send_msgs.push(SubMsg::new(create_send_msg(
         &deps,
         state.recipient.clone(),
-        balance_result.unwrap(),
+        final_balance.clone(),
     )));
-    Ok(res)
-    /*
-    let factory_cfg = get_factory_config(&deps.querier, state.factory_addr.to_string());
-    let local_terra_fee = calculate_local_terra_fee(&balance).unwrap();
-    let fee_response = send_tokens(
-        &deps,
-        factory_cfg.fee_collector_addr.clone(),
-        local_terra_fee.clone(),
-        "localterra_fee_deduction",
-    )
-    .unwrap();
-
-    let final_balance = balance.clone();
-
-    //Query maker to send to the incentives contract
-    let offer: Offer = deps
-        .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: "".to_string(),
-            msg: to_binary(&OfferQueryMsg::Offer {
-                id: state.offer_id.clone(),
-            })
-            .unwrap(),
-        }))
-        .unwrap();
-    let maker = offer.owner.to_string();
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
+        contract_addr: factory_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
             trade: env.contract.address.to_string(),
-            maker,
+            maker: offer.owner.to_string(),
         })
         .unwrap(),
         funds: vec![],
     }));
+    send_msgs.push(register_trade_msg);
 
-    let res = Response::new()
-        .add_submessage(fee_response.messages[0].clone())
-        .add_submessage(amount_response.messages[0].clone());
-        .add_submessage(register_trade_msg);
-    Ok(r)
-     */
+    let res = Response::new().add_submessages(send_msgs);
+    Ok(res)
 }
 
-fn try_refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeError> {
+fn refund(deps: DepsMut, env: Env, state: State) -> Result<Response, TradeError> {
     // anyone can try to refund, as long as the contract is expired
     if state.expire_height > env.block.height {
         return Err(TradeError::RefundError {
@@ -283,25 +322,22 @@ fn get_ust_amount(info: MessageInfo) -> Uint128 {
     };
 }
 
-fn calculate_local_terra_fee(balance: &Vec<Coin>) -> StdResult<Vec<Coin>> {
-    let fee_amount = balance[0]
-        .clone()
-        .amount
-        .checked_div(Uint128::new(1000))
-        .unwrap();
-    Ok([Coin {
-        amount: fee_amount,
-        denom: balance[0].clone().denom,
-    }]
-    .to_vec())
+pub fn subtract_localterra_fee(amount: Uint128) -> Uint128 {
+    amount.clone().checked_div(Uint128::new(1000u128)).unwrap()
 }
 
-fn deduct_local_terra_fee(balance: Vec<Coin>, local_terra_fee: Vec<Coin>) -> StdResult<Vec<Coin>> {
-    Ok([Coin {
-        amount: (balance[0].amount.checked_sub(local_terra_fee[0].amount)).unwrap(),
-        denom: balance[0].clone().denom,
-    }]
-    .to_vec())
+fn deduct_localterra_fee(balance: &Vec<Coin>, final_balance: &mut Vec<Coin>) -> Vec<Coin> {
+    let mut fees: Vec<Coin> = Vec::new();
+    balance.iter().for_each(|coin| {
+        let mut fee_amount = subtract_localterra_fee(coin.amount);
+        let fee = Coin::new(fee_amount.u128(), coin.denom.to_string());
+        fees.push(fee);
+        final_balance.push(Coin::new(
+            (coin.amount - fee_amount).u128(),
+            coin.denom.to_string(),
+        ));
+    });
+    fees
 }
 
 fn create_send_msg(deps: &DepsMut, to_address: Addr, coins: Vec<Coin>) -> CosmosMsg {

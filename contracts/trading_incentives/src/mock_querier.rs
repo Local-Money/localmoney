@@ -270,6 +270,7 @@ impl WasmMockQuerier {
                 QueryMsg::TradeInfo { trade: _, maker } => {
                     SystemResult::Ok(ContractResult::from(to_binary(&TradeInfo {
                         trade: TradeState {
+                            addr: Addr::unchecked("trade"),
                             factory_addr: Addr::unchecked("factory"),
                             recipient: Addr::unchecked("taker"),
                             sender: Addr::unchecked(maker),

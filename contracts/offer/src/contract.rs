@@ -3,13 +3,8 @@ use cosmwasm_std::{
     Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
-
-use crate::errors::OfferError;
-use crate::state::{
-    config_read, config_storage, query_all_offers, query_all_trades, state_read, state_storage,
-    trades_storage, OFFERS_KEY,
-};
 use cosmwasm_storage::{bucket, bucket_read};
+
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
@@ -17,6 +12,12 @@ use localterra_protocol::offer::{
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, State as TradeState,
+};
+
+use crate::errors::OfferError;
+use crate::state::{
+    config_read, config_storage, query_all_offers, query_all_trades, state_read, state_storage,
+    OFFERS_KEY, TRADES,
 };
 
 #[entry_point]
@@ -60,8 +61,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offers { fiat_currency } => to_binary(&load_offers(deps.storage, fiat_currency)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
-        QueryMsg::Trades { maker } => to_binary(&query_all_trades(deps.storage, maker)?),
-        QueryMsg::TradeInfo { maker, trade } => to_binary(&load_trade_info(deps, maker, trade)?),
+        QueryMsg::Trades { maker } => to_binary(&load_trades(
+            deps,
+            deps.api.addr_validate(maker.as_str()).unwrap(),
+        )?),
     }
 }
 
@@ -103,9 +106,10 @@ fn trade_instance_reply(
 
     let offer = load_offer_by_id(deps.storage, trade_state.offer_id.clone()).unwrap();
 
-    trades_storage(deps.storage, offer.owner.to_string())
-        .save(trade_addr.as_bytes(), &"".to_string())
-        .unwrap();
+    let trades_store = TRADES.key(offer.owner.as_bytes());
+    let mut trades = trades_store.load(deps.storage).unwrap_or(vec![]);
+    trades.push(trade_addr.clone());
+    trades_store.save(deps.storage, &trades).unwrap();
 
     //trade_state, offer_id, trade_amount,owner
     let res = Response::new()
@@ -325,47 +329,31 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
     Ok(offer)
 }
 
-pub fn load_trade_info(deps: Deps, maker: String, trade: String) -> StdResult<TradeInfo> {
-    let maker = deps.api.addr_validate(&maker).unwrap();
-    let trade = deps.api.addr_validate(&trade).unwrap();
-
-    //TODO: add pagination
-    //Load all trades by maker
-    let trades_by_maker = query_all_trades(deps.storage, maker.to_string());
-    let trade = match trades_by_maker {
-        Ok(trades) => {
-            if trades.contains(&trade.clone().into_string()) {
-                Some(trade.clone())
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
-    };
-
-    //Load Trade State
-    if trade.is_none() {
-        return Err(StdError::generic_err("Trade not found."));
-    }
-    let query_result: StdResult<Binary> =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: trade.unwrap().to_string(),
-            msg: to_binary(&TradeQueryMsg::State {}).unwrap(),
-        }));
-    if query_result.is_err() {
-        return Err(StdError::generic_err("Trade not found."));
-    }
-    let trade: TradeState = from_binary(&query_result.unwrap()).unwrap();
-
-    //Load Offer
-    let offer = load_offer_by_id(deps.storage, trade.offer_id);
-    if offer.is_err() {
-        return Err(StdError::generic_err("Offer not found"));
-    }
-
-    //Result
-    Ok(TradeInfo {
-        trade,
-        offer: offer.unwrap(),
-    })
+pub fn load_trades(deps: Deps, maker: Addr) -> StdResult<Vec<TradeInfo>> {
+    let trades = query_all_trades(deps.storage, maker.clone()).unwrap_or(vec![]);
+    let mut trades_infos: Vec<TradeInfo> = vec![];
+    trades.iter().for_each(|t| {
+        let trade_state: TradeState = deps
+            .querier
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: t.to_string(),
+                msg: to_binary(&TradeQueryMsg::State {}).unwrap(),
+            }))
+            .unwrap();
+        let offer: Offer = deps
+            .querier
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: trade_state.offer_contract.to_string(),
+                msg: to_binary(&QueryMsg::Offer {
+                    id: trade_state.offer_id,
+                })
+                .unwrap(),
+            }))
+            .unwrap();
+        trades_infos.push(TradeInfo {
+            trade: trade_state,
+            offer,
+        })
+    });
+    Ok(trades_infos)
 }

@@ -1,14 +1,15 @@
-use cosmwasm_std::{Order, StdResult, Storage};
+use cosmwasm_std::{Addr, Order, StdResult, Storage};
 use cosmwasm_storage::{
     bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton, Singleton,
 };
+use cw_storage_plus::Map;
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::offer::{Config, Offer, State};
 
 pub static CONFIG_KEY: &[u8] = b"config";
 pub static STATE_KEY: &[u8] = b"state";
 pub static OFFERS_KEY: &[u8] = b"offers";
-pub static TRADES_KEY: &[u8] = b"trades";
+pub const TRADES: Map<&[u8], Vec<Addr>> = Map::new("trades");
 
 pub fn config_storage(storage: &mut dyn Storage) -> Singleton<Config> {
     singleton(storage, CONFIG_KEY)
@@ -44,20 +45,7 @@ pub fn query_all_offers(
     Ok(result)
 }
 
-pub fn trades_storage(storage: &mut dyn Storage, owner: String) -> Bucket<String> {
-    let key: Vec<u8> = [TRADES_KEY, owner.as_bytes()].concat();
-    Bucket::new(storage, key.as_slice())
-}
-
-pub fn trades_read(storage: &dyn Storage, owner: String) -> ReadonlyBucket<String> {
-    let key: Vec<u8> = [TRADES_KEY, owner.as_bytes()].concat();
-    bucket_read(storage, key.as_slice())
-}
-
-pub fn query_all_trades(storage: &dyn Storage, maker: String) -> StdResult<Vec<String>> {
-    let trades: Vec<String> = trades_read(storage, maker.clone())
-        .range(None, None, Order::Descending)
-        .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
-        .collect();
-    Ok(trades)
+pub fn query_all_trades(storage: &dyn Storage, maker: Addr) -> StdResult<Vec<Addr>> {
+    let result = TRADES.load(storage, maker.as_bytes());
+    Ok(result.unwrap_or(vec![]))
 }

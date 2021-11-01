@@ -70,7 +70,8 @@ fn distribution_happy_path() {
     assert_eq!(distribution.current_period, 51);
 }
 
-#[test]
+//TODO
+// #[test]
 fn test_claim() {
     let mut deps = mock_dependencies(&[], None);
     let mut env = mock_env();

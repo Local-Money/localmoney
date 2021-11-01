@@ -110,6 +110,9 @@ fn register_trade(
     deps: DepsMut,
     env: Env,
 ) -> Result<Response, TradingIncentivesError> {
+    //TODO: Refactor
+    Ok(Response::default())
+    /*
     let cfg = CONFIG.load(deps.storage).unwrap();
 
     let trade = deps
@@ -129,11 +132,7 @@ fn register_trade(
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: factory_cfg.offers_addr.into_string(),
-            msg: to_binary(&OfferQueryMsg::TradeInfo {
-                maker: maker.clone(),
-                trade: trade.clone(),
-            })
-            .unwrap(),
+            msg: to_binary(&OfferQueryMsg::TradesStates { trades: vec![] }).unwrap(),
         }))
         .unwrap();
 
@@ -169,6 +168,7 @@ fn register_trade(
         .add_attribute("ust_amount", ust_amount);
 
     Ok(res)
+    */
 }
 
 fn claim(

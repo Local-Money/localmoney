@@ -51,7 +51,6 @@ pub enum QueryMsg {
     Offers { fiat_currency: FiatCurrency },
     Offer { id: u64 },
     Trades { maker: String },
-    TradeInfo { maker: String, trade: String },
 }
 
 ///Data

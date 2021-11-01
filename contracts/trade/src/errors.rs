@@ -31,6 +31,11 @@ pub enum TradeError {
         required_amount: Uint128,
         returned_amount: Uint128,
     },
+    #[error("Fund escrow error.")]
+    FundEscrowError {
+        required_amount: Uint128,
+        sent_amount: Uint128,
+    },
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
 }
