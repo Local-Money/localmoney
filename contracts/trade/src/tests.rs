@@ -4,20 +4,18 @@ use std::ops::Add;
 
 use cosmwasm_std::testing::{MockApi, MockStorage};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Empty, MessageInfo, OwnedDeps,
-    Response, SubMsg, Uint128, WasmMsg,
+    from_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Empty, MessageInfo, OwnedDeps, Response,
+    SubMsg, Uint128,
 };
 use cosmwasm_vm::testing::{mock_env, mock_info};
 
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::offer::{Offer, OfferState, OfferType};
 use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
-use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::contract::{execute, instantiate, query, subtract_localterra_fee};
 use crate::errors::TradeError;
 use crate::mock_querier::{mock_dependencies, WasmMockQuerier};
-use crate::taxation::compute_tax;
 
 #[test]
 fn test_init() {
@@ -103,7 +101,7 @@ fn test_trade_happy_path() {
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
 
     //Send release message
-    let res = release_trade(deps.as_mut(), info.clone());
+    let _res = release_trade(deps.as_mut(), info.clone());
 
     //Check that trade state is Closed
     let trade_state: State =
@@ -291,8 +289,8 @@ fn test_refund() {
             to_address: info.sender.to_string(),
             amount: vec![Coin {
                 denom: "uusd".to_string(),
-                amount: trade_amount.clone()
-            }]
+                amount: trade_amount.clone(),
+            }],
         }))]
     )
 }
@@ -324,4 +322,26 @@ fn test_fund_escrow() {
     let trade_state: State =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
+}
+
+#[test]
+fn test_expired_trade() {
+    let mut trade_amount = Uint128::from(500_000_000u128);
+    let mut info = mock_info_with_ust("taker", Uint128::zero());
+    let (_, mut deps) = create_trade(trade_amount.clone(), info.clone(), None);
+
+    let trade_state: State =
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
+
+    //Send FundEscrow message with UST and check that trade is in EscrowFunded state.
+    let localterra_fee = subtract_localterra_fee(trade_amount);
+    trade_amount = trade_amount.add(localterra_fee);
+    info.funds[0].amount = trade_amount.clone();
+
+    let mut env = mock_env();
+    env.block.height = trade_state.expire_height;
+
+    let res = execute(deps.as_mut(), env, info.clone(), ExecuteMsg::FundEscrow {});
+    assert!(res.is_err());
+    assert!(matches!(res.err().unwrap(), TradeError::Expired { .. }));
 }

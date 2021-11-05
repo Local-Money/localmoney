@@ -7,7 +7,7 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
-use localterra_protocol::factory::{Config as FactoryConfig, QueryMsg as FactoryQuery};
+use localterra_protocol::factory::{Config as FactoryConfig};
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
@@ -154,6 +154,13 @@ fn fund_escrow(
     info: MessageInfo,
     mut state: State,
 ) -> Result<Response, TradeError> {
+    //Check if trade is expired.
+    if env.block.height >= state.expire_height {
+        return Err(TradeError::Expired {
+            current_height: env.block.height,
+            expire_height: state.expire_height,
+        })
+    }
     //TODO: Convert to UST if trade is for any other stablecoin or Luna,
     // skip conversion entirely if fee was paid in $LOCAL.
     let ust_amount = if !info.funds.is_empty() {
@@ -329,7 +336,7 @@ pub fn subtract_localterra_fee(amount: Uint128) -> Uint128 {
 fn deduct_localterra_fee(balance: &Vec<Coin>, final_balance: &mut Vec<Coin>) -> Vec<Coin> {
     let mut fees: Vec<Coin> = Vec::new();
     balance.iter().for_each(|coin| {
-        let mut fee_amount = subtract_localterra_fee(coin.amount);
+        let fee_amount = subtract_localterra_fee(coin.amount);
         let fee = Coin::new(fee_amount.u128(), coin.denom.to_string());
         fees.push(fee);
         final_balance.push(Coin::new(

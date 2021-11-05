@@ -268,12 +268,15 @@ fn create_trade(
     let cfg = config_read(deps.storage).load().unwrap();
     let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
 
+    //TODO: Discuss this with the team.
+    /*
     if info.sender.ne(&offer.owner) {
         return Err(OfferError::Unauthorized {
             owner: offer.owner.clone(),
             caller: info.sender.clone(),
         });
     }
+    */
 
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
