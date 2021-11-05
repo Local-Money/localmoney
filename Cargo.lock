@@ -353,6 +353,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-storage-plus"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8e401ed71bd64abb9b91151a9ff4f7b34e81b2b3eceab23e3cb67fe47e39938"
+dependencies = [
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+]
+
+[[package]]
 name = "cw0"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -592,7 +603,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
- "cw-storage-plus 0.8.1",
+ "cw-storage-plus 0.9.1",
  "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "localterra-protocol",
  "offer",
@@ -617,7 +628,7 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-storage-plus 0.8.1",
+ "cw-storage-plus 0.9.1",
  "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "localterra-protocol",
  "schemars",
@@ -824,6 +835,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
+ "cw-storage-plus 0.8.1",
  "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "schemars",
  "serde",

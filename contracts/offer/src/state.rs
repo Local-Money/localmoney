@@ -4,7 +4,7 @@ use cosmwasm_storage::{
 };
 use cw_storage_plus::Map;
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::offer::{Config, Offer, State};
+use localterra_protocol::offer::{Config, Offer, State, OFFERS};
 
 pub static CONFIG_KEY: &[u8] = b"config";
 pub static STATE_KEY: &[u8] = b"state";
@@ -31,15 +31,10 @@ pub fn query_all_offers(
     storage: &dyn Storage,
     fiat_currency: FiatCurrency,
 ) -> StdResult<Vec<Offer>> {
-    let offers: Vec<Offer> = bucket_read(storage, OFFERS_KEY)
-        .range(None, None, Order::Descending)
+    let result: Vec<Offer> = OFFERS
+        .range(storage, None, None, Order::Ascending)
         .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-        .collect();
-
-    let result: Vec<Offer> = offers
-        .iter()
         .filter(|offer| offer.fiat_currency == fiat_currency)
-        .cloned()
         .collect();
 
     Ok(result)
