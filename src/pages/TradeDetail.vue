@@ -1,23 +1,13 @@
 <template>
-  <main>
+  <main v-if="tradeInfo" v-bind="(trade = tradeInfo.trade)">
     <h3>Breadcrumb > Buying UST from sambarbosa</h3>
     <section class="stepper card">
       <div class="step-item">
-        <div class="icon done">
-          <svg
-            class="icon-24"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <path
-              d="M20 6L9 17L4 12"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+        <IconDone v-if="trade.state === 'escrow_funded'" />
+        <div class="icon" v-else>
+          <div class="counter">
+            <p>1</p>
+          </div>
         </div>
         <p>seller puts UST in escrow</p>
       </div>
@@ -85,12 +75,24 @@
           <div class="transaction">
             <div class="list-item">
               <p class="list-item-label">You will get</p>
-              <p class="value">100.00 UST</p>
+              <p class="value">{{ formatAmount(trade.ust_amount) }}UST</p>
             </div>
             <div class="list-item">
               <p class="list-item-label">You will get</p>
               <p class="value fiat">369,559.00 COP</p>
             </div>
+            <button
+              v-if="tradeCanBeFunded(tradeInfo, this.walletAddress)"
+              @click="this.fundEscrow(trade.addr)"
+            >
+              fund escrow
+            </button>
+            <button
+              v-if="tradeCanBeReleased(tradeInfo, this.walletAddress)"
+              @click="this.releaseEscrow(trade.addr)"
+            >
+              release escrow
+            </button>
           </div>
         </div>
       </section>
@@ -98,7 +100,47 @@
   </main>
 </template>
 
-<script></script>
+<script>
+import IconDone from "@/components/commons/IconDone";
+import { defineComponent } from "vue";
+import { mapGetters, mapActions } from "vuex";
+import {
+  formatAmount,
+  tradeCanBeFunded,
+  tradeCanBeReleased,
+  tradeCanBeRefunded,
+} from "../shared";
+
+export default defineComponent({
+  name: "TradeDetail",
+  components: {
+    IconDone,
+  },
+  data() {
+    return {
+      tradeInfo: undefined,
+    };
+  },
+  methods: {
+    ...mapActions(["fundEscrow", "releaseEscrow"]),
+    formatAmount,
+    tradeCanBeFunded,
+    tradeCanBeReleased,
+    tradeCanBeRefunded,
+  },
+  computed: {
+    ...mapGetters(["getTradeInfo", "walletAddress"]),
+  },
+  mounted() {
+    this.$nextTick(() => {
+      const tradeAddr = this.$route.params.addr;
+      this.tradeInfo = this.getTradeInfo(tradeAddr);
+      console.log("tradeInfo", this.tradeInfo);
+      console.log("route params", this.$route.params);
+    });
+  },
+});
+</script>
 
 <style lang="scss" scoped>
 @import "../style/pages.scss";
@@ -120,11 +162,6 @@
 .step-item {
   .icon {
     margin-right: 24px;
-  }
-  .done {
-    svg {
-      stroke: $primary;
-    }
   }
   .counter {
     width: 32px;

@@ -120,7 +120,7 @@ export default defineComponent({
     ...mapActions(['fetchUsdRates', 'openTrade']),
     newTrade: function () {
       console.log('create trade with: ', this.offer.id, this.offer.min_amount)
-      this.openTrade({ offerId: this.offer.id, ustAmount: this.offer.min_amount / 1000000 })
+      this.openTrade({ offerId: this.offer.id, ustAmount: this.cryptoAmount })
     },
     focus: function () {
       let buyInput = this.$refs.buyAmountInput

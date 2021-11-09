@@ -13,7 +13,7 @@
         <p class="time">30 min</p>
       </div>
     </div>
-    <router-link :to="`/trade/terra13uflreu7tr4c0vykgwyy0ymgee9xs0r53xcphf`">
+    <router-link :to="`/trade/${trade.addr}`">
       <button>view ></button>
     </router-link>
   </div>
