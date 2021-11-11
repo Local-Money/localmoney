@@ -153,7 +153,7 @@ export default defineComponent({
     formatAddress,
     expandOfferItem: function(offer) {
       console.log("offer", offer);
-      this.expandedOffer = offer
+      this.expandedOffer = offer;
       //this.$data.expandedOffer = offer;
       /*
       this.$nextTick(() => {
@@ -194,54 +194,6 @@ export default defineComponent({
 
   @media only screen and (max-width: 550px) {
     display: block;
-  }
-}
-
-.buy-sell {
-  display: inline-flex;
-  justify-content: space-evenly;
-  width: 100%;
-  max-width: 200px;
-  margin-top: 26px;
-  background-color: $surface;
-  border: 1px solid $border;
-  border-radius: 8px;
-  overflow: hidden;
-
-  .separator {
-    width: 1px;
-    height: 40px;
-    background-color: $border;
-    margin: 0px;
-    z-index: 999;
-  }
-
-  button {
-    width: 100%;
-    height: 40px;
-    background-color: $surface;
-    font-size: 14px;
-    font-weight: 600;
-    color: $primary;
-    border-radius: 0px;
-
-    &:focus {
-      background-color: $gray300;
-      color: $primary;
-    }
-  }
-
-  @media only screen and (max-width: 550px) {
-    margin-top: 0;
-    max-width: none;
-    margin-bottom: 16px;
-
-    button {
-      height: 48px;
-    }
-    .separator {
-      height: 48px;
-    }
   }
 }
 

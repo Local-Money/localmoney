@@ -16,10 +16,9 @@ export default defineComponent({
     HomeHero,
     ListOffers,
   },
-
 });
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import "../style/pages.scss";
 </style>
