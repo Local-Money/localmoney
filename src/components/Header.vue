@@ -60,7 +60,7 @@ header {
     justify-content: space-between;
     align-content: center;
     margin: 0 auto;
-    max-width: 1280px;
+    max-width: 1900px;
     padding: 16px 32px;
 
     .logo {

@@ -1,8 +1,12 @@
 <template>
   <main>
     <h3>Open Trades</h3>
-    <TradeOpenItem v-for="tradeInfo in openTrades" :trade="tradeInfo.trade" :offer="tradeInfo.offer"
-                   :key="tradeInfo.trade.addr"/>
+    <TradeOpenItem
+      v-for="tradeInfo in openTrades"
+      :trade="tradeInfo.trade"
+      :offer="tradeInfo.offer"
+      :key="tradeInfo.trade.addr"
+    />
     <h3>Trade History</h3>
     <section class="trade-history-table card">
       <div class="table-header">
@@ -13,17 +17,21 @@
         <div class="col-5"><p>Trader</p></div>
         <div class="col-6"><p>Status</p></div>
       </div>
-      <TradeHistoryItem v-for="tradeInfo in closedTrades" :trade="tradeInfo.trade" :offer="tradeInfo.offer"
-                        :key="tradeInfo.trade.addr"/>
+      <TradeHistoryItem
+        v-for="tradeInfo in closedTrades"
+        :trade="tradeInfo.trade"
+        :offer="tradeInfo.offer"
+        :key="tradeInfo.trade.addr"
+      />
     </section>
   </main>
 </template>
 
 <script>
-import {defineComponent} from "vue";
+import { defineComponent } from "vue";
 import TradeOpenItem from "../components/trades/TradeOpenItem.vue";
 import TradeHistoryItem from "../components/trades/TradeHistoryItem.vue";
-import {mapGetters} from "vuex";
+import { mapGetters } from "vuex";
 
 export default defineComponent({
   name: "Trades",
@@ -32,14 +40,20 @@ export default defineComponent({
     TradeHistoryItem,
   },
   computed: {
-    ...mapGetters(['trades']),
-    openTrades: function () {
-      return this.trades.filter(tradeInfo => ['created', 'escrow_funded'].indexOf(tradeInfo.trade.state) >= 0);
+    ...mapGetters(["trades"]),
+    openTrades: function() {
+      return this.trades.filter(
+        (tradeInfo) =>
+          ["created", "escrow_funded"].indexOf(tradeInfo.trade.state) >= 0
+      );
     },
-    closedTrades: function () {
-      return this.trades.filter(tradeInfo => ['created', 'escrow_funded'].indexOf(tradeInfo.trade.state) === -1);
-    }
-  }
+    closedTrades: function() {
+      return this.trades.filter(
+        (tradeInfo) =>
+          ["created", "escrow_funded"].indexOf(tradeInfo.trade.state) === -1
+      );
+    },
+  },
 });
 </script>
 
@@ -69,32 +83,32 @@ h3 {
 }
 
 .col-1,
-::v-deep .col-1 {
+:deep(.col-1) {
   width: 12.5%;
 }
 
 .col-2,
-::v-deep .col-2 {
+:deep(.col-2) {
   width: 12.5%;
 }
 
 .col-3,
-::v-deep .col-3 {
+:deep(.col-3) {
   width: 20%;
 }
 
 .col-4,
-::v-deep .col-4 {
+:deep(.col-4) {
   width: 25%;
 }
 
 .col-5,
-::v-deep .col-5 {
+:deep(.col-5) {
   width: 20%;
 }
 
 .col-6,
-::v-deep .col-6 {
+:deep(.col-6) {
   width: 10%;
 }
 </style>
