@@ -58,7 +58,6 @@
 
 input {
   width: 100%;
-  max-width: 200px;
   border-radius: 8px;
   font-family: "Poppins", sans-serif;
   font-size: 14px;
@@ -67,4 +66,14 @@ input {
   padding: 10px 16px;
   appearance: none;
   outline: none;
+}
+
+button {
+  height: 40px;
+  font-size: 14px;
+  line-height: 0px;
+  font-weight: 600;
+  color: $gray600;
+  border-radius: 8px;
+  padding: 16px 24px;
 }

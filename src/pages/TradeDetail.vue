@@ -59,43 +59,85 @@
     </section>
     <section class="wrap">
       <section class="chat card">Chat will be here</section>
-      <section class="trade-summary card">
-        <div class="trader-info">
-          <p class="trader">sambarbosa</p>
-          <p class="rating">420 trades</p>
-        </div>
-        <div class="trade-info">
-          <p class="label">UST Price</p>
-          <div class="current-price">
-            <p class="ticker">Will refresh in 47s</p>
-            <p class="mkt-rate">4% above market</p>
-            <p class="price">COP$ 3,659.00</p>
+      <div class="inner-wrap">
+        <section class="trade-summary card">
+          <div class="trader-info">
+            <p class="trader">sambarbosa</p>
+            <p class="rating">420 trades</p>
           </div>
-          <p class="label">Transaction summary</p>
-          <div class="transaction">
-            <div class="list-item">
-              <p class="list-item-label">You will get</p>
-              <p class="value">{{ formatAmount(trade.ust_amount) }}UST</p>
+          <div class="trade-info">
+            <p class="label">UST Price</p>
+            <div class="current-price">
+              <p class="ticker">Will refresh in 47s</p>
+              <p class="mkt-rate">4% above market</p>
+              <p class="price">COP$ 3,659.00</p>
             </div>
-            <div class="list-item">
-              <p class="list-item-label">You will get</p>
-              <p class="value fiat">369,559.00 COP</p>
+            <p class="label">Transaction summary</p>
+            <div class="transaction">
+              <div class="list-item">
+                <p class="list-item-label">You will get</p>
+                <p class="value">{{ formatAmount(trade.ust_amount) }}UST</p>
+              </div>
+              <div class="list-item">
+                <p class="list-item-label">You will get</p>
+                <p class="value fiat">369,559.00 COP</p>
+              </div>
             </div>
-            <button
-              v-if="tradeCanBeFunded(tradeInfo, this.walletAddress)"
-              @click="this.fundEscrow(trade.addr)"
-            >
+          </div>
+        </section>
+        <section class="actions card">
+          <div
+            class="wrap"
+            v-if="tradeCanBeFunded(tradeInfo, this.walletAddress)"
+          >
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 12H19"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 5L19 12L12 19"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <p>To begin the transaction you have to fund the escrow</p>
+            <button @click="this.fundEscrow(trade.addr)">
               fund escrow
             </button>
-            <button
-              v-if="tradeCanBeReleased(tradeInfo, this.walletAddress)"
-              @click="this.releaseEscrow(trade.addr)"
-            >
+          </div>
+          <div
+            class="wrap"
+            v-if="tradeCanBeReleased(tradeInfo, this.walletAddress)"
+          >
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 12H19"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 5L19 12L12 19"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <p>Check if you receive payment before releasing the escrow</p>
+            <button @click="this.releaseEscrow(trade.addr)">
               release escrow
             </button>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </section>
   </main>
 </template>
@@ -207,8 +249,13 @@ export default defineComponent({
   margin-right: 24px;
 }
 
-.trade-summary {
+.inner-wrap {
+  display: flex;
+  flex-direction: column;
   width: 70%;
+}
+
+.trade-summary {
   display: flex;
   justify-content: space-evenly;
 
@@ -278,5 +325,30 @@ export default defineComponent({
       }
     }
   }
+}
+.actions {
+  margin-top: 24px;
+
+  .wrap {
+    display: flex;
+    align-items: center;
+
+    .icon {
+      stroke: $primary;
+    }
+
+    p {
+      width: 50%;
+      font-size: 16px;
+      font-weight: 700;
+      margin-left: 24px;
+    }
+  }
+}
+
+button {
+  background-color: $gray300;
+  color: $primary;
+  margin-left: auto;
 }
 </style>
