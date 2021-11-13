@@ -30,40 +30,20 @@
       <h3>Buy from this sellers</h3>
       <!-- Offers for -->
       <ul>
-        <!-- Collapsed Offer -->
-        <li
-          class="collapsed"
-          v-for="offer in collapsedOffers"
-          :key="`${offer.id}-collapsed`"
-        >
-          <div class="owner">
-            <p class="wallet">{{ formatAddress(offer.owner) }}</p>
-            <p class="n-trades">352 trades</p>
-          </div>
-
-          <div class="info">
-            <div class="divider"></div>
-            <p class="min-max">
-              Min ${{ formatAmount(offer.min_amount) }} - Max ${{
-                formatAmount(offer.max_amount)
-              }}
-            </p>
-          </div>
-
-          <div class="price">
-            <div class="wrap-value">
-              <p class="value">COL$ 348.892,53</p>
-              <p class="margin">4% above market</p>
-            </div>
-            <button type="button" @click="this.expandOfferItem(offer)">
-              {{ this.offerTypeLabels[offer.offer_type] }}
-            </button>
-          </div>
+        <li class="card" v-for="offer in allOffers" v-bind:key="offer.id">
+          <!-- Collapsed Offer -->
+          <CollapsedOffer
+            v-if="!offer.isExpanded"
+            :offer="offer"
+            v-on:select="expandOfferItem"
+          />
+          <!-- Expanded Offer Desktop -->
+          <ExpandedOffer
+            v-else
+            :offer="offer"
+            v-on:cancel="collapseOfferItem"
+          />
         </li>
-
-        <!-- Expanded Offer Desktop -->
-        <ExpandedOffer v-if="expandedOffer" :offer="this.expandedOffer" />
-        <!-- Expanded Offer Desktop -->
       </ul>
     </section>
   </section>
@@ -135,11 +115,13 @@ import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import { formatAddress, formatAmount } from "@/shared";
 import ExpandedOffer from "@/components/ExpandedOffer.vue";
+import CollapsedOffer from "@/components/CollapsedOffer.vue";
 
 export default defineComponent({
   name: "Offers",
   components: {
     ExpandedOffer,
+    CollapsedOffer,
   },
   data() {
     return {
@@ -152,8 +134,14 @@ export default defineComponent({
     formatAmount,
     formatAddress,
     expandOfferItem: function(offer) {
-      console.log("offer", offer);
-      this.expandedOffer = offer;
+      if (this.expandedOffer != offer) {
+        if (this.expandedOffer != null) {
+          this.expandedOffer.isExpanded = false;
+        }
+        offer.isExpanded = true;
+        this.expandedOffer = offer;
+      }
+
       //this.$data.expandedOffer = offer;
       /*
       this.$nextTick(() => {
@@ -161,14 +149,21 @@ export default defineComponent({
       });
        */
     },
+    collapseOfferItem: function(offer) {
+      offer.isExpanded = false;
+      this.expandedOffer = null;
+    },
   },
   computed: {
     ...mapGetters(["offers", "getUsdRate"]),
-    collapsedOffers: function() {
-      return this.offers.filter((offer) => offer.id != this.expandedOffer);
-    },
-    expandedOffers: function() {
-      return this.offers.filter((offer) => offer.id == this.expandedOffer);
+    allOffers: function() {
+      var offers = [];
+      this.offers.forEach((offer) => {
+        offer["isExpanded"] = false;
+        console.log("offer", offer);
+        offers.push(offer);
+      });
+      return offers;
     },
   },
   created() {
@@ -249,146 +244,11 @@ export default defineComponent({
 
   li {
     list-style: none;
-    padding: 24px 32px;
     margin-bottom: 24px;
-    border: 1px solid $border;
-    background-color: $surface;
-    border-radius: 8px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    gap: 16px;
-
-    @media only screen and (max-width: 1050px) {
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    }
-
-    @media only screen and (max-width: 550px) {
-      grid-template-columns: 1fr 1fr;
-      padding: 24px 24px;
-    }
-
-    .owner {
-      grid-column: 1/2;
-      grid-row: 1;
-
-      .wallet {
-        font-size: 18px;
-        font-weight: 600;
-        color: $base-text;
-      }
-      .n-trades {
-        font-size: 14px;
-        color: $gray600;
-      }
-
-      @media only screen and (max-width: 550px) {
-        .owner {
-          display: inline-flex;
-        }
-      }
-    }
-
-    .info {
-      grid-column: 2/5;
-      grid-row: 1;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-
-      .currency {
-        text-align: center;
-        font-size: 12px;
-        font-weight: 600;
-        color: $gray600;
-        text-transform: uppercase;
-
-        img {
-          width: 24px;
-        }
-      }
-
-      .divider {
-        height: 40px;
-        width: 1px;
-        background-color: $border;
-      }
-
-      .note {
-        font-size: 14px;
-        color: $gray600;
-        max-width: 200px;
-      }
-
-      .min-max {
-        font-size: 14px;
-        color: $gray600;
-      }
-
-      @media only screen and (max-width: 550px) {
-        grid-column: 1/7;
-        grid-row: 2;
-
-        .note {
-          grid-row: 3;
-        }
-        .divider {
-          display: none;
-        }
-        .min-max {
-          padding: 8px 16px;
-          margin-bottom: 4px;
-          border-radius: 8px;
-          background-color: $gray150;
-        }
-      }
-    }
-  }
-
-  .collapsed {
-    .price {
-      grid-column: 1/7;
-      grid-row: 1;
-      justify-self: end;
-      text-align: right;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-
-      .value {
-        font-size: 20px;
-        font-weight: 800;
-        color: $base-text;
-      }
-      .margin {
-        font-size: 14px;
-        color: $gray600;
-      }
-      button {
-        background-color: $gray300;
-        color: $primary;
-        border: none;
-        font-family: inherit;
-        font-weight: 700;
-        font-size: 16px;
-        text-transform: lowercase;
-        padding: 8px 24px;
-      }
-
-      @media only screen and (max-width: 550px) {
-        grid-column: 1/7;
-        grid-row: 3;
-        text-align: left;
-        justify-content: space-between;
-        gap: none;
-        width: 100%;
-      }
-    }
   }
 }
 
 /* -------------- Expanded Mobile */
-
 .expanded-mobile {
   position: absolute;
   width: 100%;

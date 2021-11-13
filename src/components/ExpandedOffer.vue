@@ -1,5 +1,5 @@
 <template>
-  <li class="expanded" :key="`${offer.id}-expanded`">
+  <div class="expanded" :key="`${offer.id}-expanded`">
     <div class="owner">
       <p class="wallet">{{ formatAddress(offer.owner) }}</p>
       <p class="n-trades">352 trades</p>
@@ -75,11 +75,13 @@
       </div>
 
       <div class="wrap-btns">
-        <button class="secondary" @click="expandedOffer = null">cancel</button>
+        <button class="secondary" @click="$emit('cancel', offer)">
+          cancel
+        </button>
         <button class="primary" @click="newTrade()">open transaction</button>
       </div>
     </div>
-  </li>
+  </div>
 </template>
 
 <script>
@@ -246,6 +248,19 @@ export default defineComponent({
 }
 
 .expanded {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+
+  @media only screen and (max-width: 1050px) {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+
+  @media only screen and (max-width: 550px) {
+    grid-template-columns: 1fr 1fr;
+    padding: 24px 24px;
+  }
+
   .form-separator {
     width: 100%;
     height: 1px;
