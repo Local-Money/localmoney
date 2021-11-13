@@ -5,21 +5,22 @@ use cosmwasm_std::{
 };
 use cosmwasm_storage::{bucket, bucket_read};
 
+use localterra_protocol::constants::OFFERS_KEY;
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::offer::{
-    Config, ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, QueryMsg, State, TradeInfo,
-    OFFERS,
+    offers, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, QueryMsg,
+    State, TradeInfo,
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, State as TradeState,
 };
 
-use crate::errors::OfferError;
 use crate::state::{
-    config_read, config_storage, query_all_offers, query_all_trades, state_read, state_storage,
-    OFFERS_KEY, TRADES,
+    config_read, config_storage, query_all_trades, state_read, state_storage, TRADES,
 };
+use localterra_protocol::errors::OfferError;
 
 #[entry_point]
 pub fn instantiate(
@@ -60,7 +61,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
-        QueryMsg::Offers { fiat_currency } => to_binary(&load_offers(deps.storage, fiat_currency)?),
+        QueryMsg::Offers { fiat_currency } => {
+            to_binary(&OfferModel::query_all_offers(deps.storage, fiat_currency)?)
+        }
+        QueryMsg::OffersQuery {
+            owner,
+            last_value,
+            limit,
+        } => to_binary(&OfferModel::query(
+            deps.storage,
+            deps.api.addr_validate(owner.as_str())?,
+            last_value,
+            limit,
+        )?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Trades { maker } => to_binary(&load_trades(
             deps,
@@ -128,12 +141,7 @@ pub fn create_offer(
     info: MessageInfo,
     msg: OfferMsg,
 ) -> Result<Response, OfferError> {
-    if msg.min_amount >= msg.max_amount {
-        let err = OfferError::Std(StdError::generic_err(
-            "Min amount must be greater than Max amount.",
-        ));
-        return Err(err);
-    }
+    assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut state = state_storage(deps.storage).load()?;
 
@@ -141,17 +149,19 @@ pub fn create_offer(
 
     state.offers_count = offer_id;
 
-    let offer = Offer {
-        id: offer_id,
-        owner: info.sender.clone(),
-        offer_type: msg.offer_type,
-        fiat_currency: msg.fiat_currency.clone(),
-        min_amount: Uint128::from(msg.min_amount),
-        max_amount: Uint128::from(msg.max_amount),
-        state: OfferState::Active,
-    };
-
-    offer.save(deps.storage)?;
+    let offer = OfferModel::create(
+        deps.storage,
+        Offer {
+            id: offer_id,
+            owner: info.sender.clone(),
+            offer_type: msg.offer_type,
+            fiat_currency: msg.fiat_currency.clone(),
+            min_amount: msg.min_amount,
+            max_amount: msg.max_amount,
+            state: OfferState::Active,
+        },
+    )
+    .offer;
 
     state_storage(deps.storage).save(&state)?;
 
@@ -172,33 +182,18 @@ pub fn activate_offer(
     info: MessageInfo,
     id: u64,
 ) -> Result<Response, OfferError> {
-    let mut offer = OFFERS
-        .may_load(deps.storage, &id.to_be_bytes())?
-        .ok_or(OfferError::InvalidReply {})?;
+    let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
-    if !(offer.owner.eq(&info.sender)) {
-        return Err(OfferError::Unauthorized {
-            owner: offer.owner,
-            caller: info.sender,
-        });
-    }
+    assert_ownership(info.sender, offer_model.offer.owner.clone())?;
 
-    match offer.state {
-        OfferState::Paused => {
-            offer.activate(deps.storage);
+    let offer = offer_model.activate()?;
 
-            let res = Response::new()
-                .add_attribute("action", "activate_offer")
-                .add_attribute("id", offer.id.to_string())
-                .add_attribute("owner", offer.owner.to_string());
+    let res = Response::new()
+        .add_attribute("action", "activate_offer")
+        .add_attribute("id", offer.id.to_string())
+        .add_attribute("owner", offer.owner.to_string());
 
-            Ok(res)
-        }
-        OfferState::Active => Err(OfferError::InvalidStateChange {
-            from: offer.state,
-            to: OfferState::Active,
-        }),
-    }
+    Ok(res)
 }
 
 pub fn pause_offer(
@@ -207,33 +202,18 @@ pub fn pause_offer(
     info: MessageInfo,
     id: u64,
 ) -> Result<Response, OfferError> {
-    let mut offer = OFFERS
-        .may_load(deps.storage, &id.to_be_bytes())?
-        .ok_or(OfferError::InvalidReply {})?;
+    let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
-    if !(offer.owner.eq(&info.sender)) {
-        return Err(OfferError::Unauthorized {
-            owner: offer.owner,
-            caller: info.sender,
-        });
-    }
+    assert_ownership(info.sender, offer_model.offer.owner.clone())?;
 
-    match offer.state {
-        OfferState::Active => {
-            offer.pause(deps.storage);
+    let offer = offer_model.pause()?;
 
-            let res = Response::new()
-                .add_attribute("action", "pause_offer")
-                .add_attribute("id", offer.id.to_string())
-                .add_attribute("owner", offer.owner.to_string());
+    let res = Response::new()
+        .add_attribute("action", "pause_offer")
+        .add_attribute("id", offer.id.to_string())
+        .add_attribute("owner", offer.owner.to_string());
 
-            Ok(res)
-        }
-        OfferState::Paused => Err(OfferError::InvalidStateChange {
-            from: offer.state,
-            to: OfferState::Paused,
-        }),
-    }
+    Ok(res)
 }
 
 pub fn update_offer(
@@ -243,32 +223,20 @@ pub fn update_offer(
     id: u64,
     msg: OfferMsg,
 ) -> Result<Response, OfferError> {
-    let mut offer = OFFERS
-        .may_load(deps.storage, &id.to_be_bytes())?
-        .ok_or(OfferError::InvalidReply {})?;
+    assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
-    if msg.min_amount >= msg.max_amount {
-        let err = OfferError::Std(StdError::generic_err(
-            "Min amount must be greater than Max amount.",
-        ));
-        return Err(err);
-    }
+    let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
-    if !(offer.owner.eq(&info.sender)) {
-        Err(OfferError::Unauthorized {
-            owner: offer.owner,
-            caller: info.sender,
-        })
-    } else {
-        offer.update(deps.storage, msg);
+    assert_ownership(info.sender, offer_model.offer.owner.clone())?;
 
-        let res = Response::new()
-            .add_attribute("action", "pause_offer")
-            .add_attribute("id", offer.id.to_string())
-            .add_attribute("owner", offer.owner.to_string());
+    let offer = offer_model.update(msg);
 
-        Ok(res)
-    }
+    let res = Response::new()
+        .add_attribute("action", "pause_offer")
+        .add_attribute("id", offer.id.to_string())
+        .add_attribute("owner", offer.owner.to_string());
+
+    Ok(res)
 }
 
 fn create_trade(
@@ -281,9 +249,8 @@ fn create_trade(
 ) -> Result<Response, OfferError> {
     let cfg = config_read(deps.storage).load().unwrap();
     // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
-    let offer = OFFERS
-        .may_load(deps.storage, &offer_id.to_be_bytes())?
-        .ok_or(OfferError::InvalidReply {})?; // TODO choose better error
+    let offer = OfferModel::fromStore(deps.storage, &offer_id);
+    //     .ok_or(OfferError::InvalidReply {})?; // TODO choose better error
 
     //TODO: Discuss this with the team.
     /*
@@ -337,14 +304,10 @@ fn query_state(deps: Deps) -> StdResult<State> {
     Ok(state)
 }
 
-pub fn load_offers(storage: &dyn Storage, fiat_currency: FiatCurrency) -> StdResult<Vec<Offer>> {
-    let offers = query_all_offers(storage, fiat_currency)?;
-    Ok(offers)
-}
-
 pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
-    let offer: Offer = bucket_read(storage, OFFERS_KEY)
-        .load(&id.to_be_bytes())
+    let offer = offers()
+        .may_load(storage, &id.to_string())
+        .unwrap_or_default()
         .unwrap();
     Ok(offer)
 }

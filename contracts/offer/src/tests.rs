@@ -1,6 +1,6 @@
 #![cfg(test)]
-use crate::contract::{execute, instantiate, load_offer_by_id, load_offers, query};
-use crate::errors::OfferError;
+use crate::contract::{execute, instantiate, load_offer_by_id, query};
+// use crate::errors::OfferError;
 use crate::mock_querier::mock_dependencies;
 use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{
@@ -9,8 +9,10 @@ use cosmwasm_std::{
 };
 use cosmwasm_vm::testing::mock_info;
 use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::errors::OfferError;
 use localterra_protocol::offer::{
-    Config, ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, OfferType, QueryMsg, State,
+    Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, OfferType,
+    QueryMsg, State,
 };
 use localterra_protocol::trade::InstantiateMsg as TradeInstantiateMsg;
 
@@ -51,8 +53,8 @@ fn create_offer(
         offer: OfferMsg {
             offer_type,
             fiat_currency,
-            min_amount: 1,
-            max_amount: 2,
+            min_amount: Uint128::from(1u128),
+            max_amount: Uint128::from(2u128),
         },
     };
 
@@ -133,7 +135,7 @@ fn pause_offer_test() {
     assert_eq!(res.messages.len(), 0);
 
     //Load all offers and get the created offer
-    let offers = load_offers(&deps.storage, FiatCurrency::BRL).unwrap();
+    let offers = OfferModel::query_all_offers(&mut deps.storage, FiatCurrency::BRL).unwrap();
     let offer = &offers[0];
     assert_eq!(offer.state, OfferState::Active);
 
@@ -153,13 +155,13 @@ fn pause_offer_test() {
         res.err().unwrap(),
         OfferError::Unauthorized { .. }
     ));
-    let offer = &load_offer_by_id(&deps.storage, offer.id).unwrap();
+    let offer = &load_offer_by_id(&mut deps.storage, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Active);
 
     //Try to change state with the Owner
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
-    let offer = &load_offer_by_id(&deps.storage, offer.id).unwrap();
+    let offer = &load_offer_by_id(&mut deps.storage, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to pause Paused offer
@@ -187,7 +189,7 @@ fn activate_offer_test() {
     assert_eq!(res.messages.len(), 0);
 
     //Load all offers and get the created offer
-    let offers = load_offers(&deps.storage, FiatCurrency::BRL).unwrap();
+    let offers = OfferModel::query_all_offers(&mut deps.storage, FiatCurrency::BRL).unwrap();
     let offer = &offers[0];
     assert_eq!(offer.state, OfferState::Active);
 
@@ -200,7 +202,7 @@ fn activate_offer_test() {
     //Try to change state to Paused with the Owner
     let res = execute(deps.as_mut(), env.clone(), info.clone(), pause_msg.clone()).unwrap();
     assert_eq!(res.messages.len(), 0);
-    let offer = &load_offer_by_id(&deps.storage, offer.id).unwrap();
+    let offer = &load_offer_by_id(&mut deps.storage, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to change the State to Active with another address.
@@ -215,7 +217,7 @@ fn activate_offer_test() {
         res.err().unwrap(),
         OfferError::Unauthorized { .. }
     ));
-    let offer = &load_offer_by_id(&deps.storage, offer.id).unwrap();
+    let offer = &load_offer_by_id(&mut deps.storage, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Paused);
 
     //Try to change state to Active with the Owner
@@ -227,7 +229,7 @@ fn activate_offer_test() {
     )
     .unwrap();
     assert_eq!(res.messages.len(), 0);
-    let offer = &load_offer_by_id(&deps.storage, offer.id).unwrap();
+    let offer = &load_offer_by_id(&mut deps.storage, offer.id).unwrap();
     assert_eq!(offer.state, OfferState::Active);
 }
 
@@ -250,7 +252,7 @@ fn update_offer_test() {
     assert_eq!(res.messages.len(), 0);
 
     //Load Created message
-    let offer = load_offer_by_id(&deps.storage, 1).unwrap();
+    let offer = load_offer_by_id(&mut deps.storage, 1).unwrap();
     assert_eq!(offer.fiat_currency, FiatCurrency::BRL);
     assert_eq!(offer.offer_type, OfferType::Buy);
 
@@ -258,8 +260,8 @@ fn update_offer_test() {
     let offer_msg = OfferMsg {
         offer_type: OfferType::Sell,
         fiat_currency: FiatCurrency::COP,
-        min_amount: 1000000,
-        max_amount: 5000000,
+        min_amount: Uint128::from(1000000u128),
+        max_amount: Uint128::from(5000000u128),
     };
     let update_offer_msg = ExecuteMsg::Update {
         id: 1,
@@ -269,11 +271,11 @@ fn update_offer_test() {
     assert_eq!(res.messages.len(), 0);
 
     //Load offer and check that it was updated
-    let offer = load_offer_by_id(&deps.storage, 1).unwrap();
+    let offer = load_offer_by_id(&mut deps.storage, 1).unwrap();
     assert_eq!(offer.offer_type, offer_msg.offer_type);
     assert_eq!(offer.fiat_currency, offer_msg.fiat_currency);
-    assert_eq!(offer.min_amount, Uint128::from(offer_msg.min_amount));
-    assert_eq!(offer.max_amount, Uint128::from(offer_msg.max_amount));
+    assert_eq!(offer.min_amount, offer_msg.min_amount);
+    assert_eq!(offer.max_amount, offer_msg.max_amount);
 }
 
 #[test]
