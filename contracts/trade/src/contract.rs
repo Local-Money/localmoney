@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Sub};
 use std::str::FromStr;
 
 use cosmwasm_std::{
@@ -7,7 +7,7 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
-use localterra_protocol::factory::{Config as FactoryConfig};
+use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
@@ -159,7 +159,7 @@ fn fund_escrow(
         return Err(TradeError::Expired {
             current_height: env.block.height,
             expire_height: state.expire_height,
-        })
+        });
     }
     //TODO: Convert to UST if trade is for any other stablecoin or Luna,
     // skip conversion entirely if fee was paid in $LOCAL.
@@ -183,17 +183,19 @@ fn fund_escrow(
         state.offer_id,
         state.offer_contract.to_string(),
     )
-    .unwrap(); //at this stage, offer is guaranteed to exists.
+        .unwrap(); //at this stage, offer is guaranteed to exists.
 
     let fund_escrow_amount: Uint128 = match offer.offer_type {
-        OfferType::Buy => {
-            let local_terra_fee = subtract_localterra_fee(state.ust_amount);
-            let terra_tax = compute_tax(&deps.querier, &ust)
-                .unwrap()
-                .multiply_ratio(2u128, 1u128);
-            state.ust_amount.add(local_terra_fee).add(terra_tax)
+        OfferType::Sell => {
+            let ltfee = localterra_fee(state.ust_amount);
+            let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
+            let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
+            let release_tax = compute_tax(&deps.querier, &ust).unwrap();
+            state
+                .ust_amount
+                .add(ltfee.add(&ltfee_tax).add(&release_tax))
         }
-        OfferType::Sell => state.ust_amount,
+        OfferType::Buy => state.ust_amount,
     };
     if ust_amount >= fund_escrow_amount {
         state.state = TradeState::EscrowFunded;
@@ -207,6 +209,7 @@ fn fund_escrow(
     state_storage(deps.storage).save(&state).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
+        .add_attribute("fund_amount", fund_escrow_amount.to_string())
         .add_attribute("ust_amount", ust_amount.to_string())
         .add_attribute("sender", info.sender);
 
@@ -220,7 +223,7 @@ fn get_offer(deps: &Deps, state: &State) -> Offer {
             msg: to_binary(&OfferQueryMsg::Offer {
                 id: state.offer_id.clone(),
             })
-            .unwrap(),
+                .unwrap(),
         }))
         .unwrap()
 }
@@ -248,7 +251,8 @@ fn release(
     }
 
     //Load and check balance
-    let balance_result = deps.querier.query_all_balances(&env.contract.address);
+    // let balance_result = deps.querier.query_all_balances(&env.contract.address);
+    let balance_result = deps.querier.query_balance(&env.contract.address, "uusd");
     if balance_result.is_err() {
         return Err(TradeError::ReleaseError {
             message: "Contract has no funds.".to_string(),
@@ -264,25 +268,38 @@ fn release(
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let balance = balance_result.unwrap();
 
-    let mut final_balance: Vec<Coin> = Vec::new();
     let offer = get_offer(&deps.as_ref(), &state);
 
     let factory_cfg: FactoryConfig =
         get_factory_config(&deps.querier, state.factory_addr.to_string());
-    let local_terra_fee: Vec<Coin> = deduct_localterra_fee(&balance, &mut final_balance);
-    let fee_collector = factory_cfg.fee_collector_addr.clone();
-    send_msgs.push(SubMsg::new(create_send_msg(
-        &deps,
-        fee_collector,
-        local_terra_fee,
-    )));
 
-    //Send Coins
-    send_msgs.push(SubMsg::new(create_send_msg(
-        &deps,
-        state.recipient.clone(),
-        final_balance.clone(),
-    )));
+    //Collect Fee
+    let mut local_terra_fee = Coin::new(localterra_fee(state.ust_amount.clone()).u128(), "uusd");
+    let fee_collector = factory_cfg.fee_collector_addr.clone();
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: fee_collector.into_string(),
+        amount: vec![local_terra_fee],
+    })));
+
+    let ust = Coin::new(state.ust_amount.u128(), "uusd");
+    //Release amount
+    let release_amount = if offer.offer_type == OfferType::Buy {
+        //TODO: Move to a method
+        let ltfee = localterra_fee(state.ust_amount);
+        let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
+        let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
+        let release_amount = state.ust_amount.sub(ltfee.add(ltfee_tax));
+        let release_tax = compute_tax(&deps.querier, &Coin::new(release_amount.u128(), "uusd")).unwrap();
+        let deduction = ltfee.add(&ltfee_tax).add(&release_tax);
+        Coin::new(state.ust_amount.sub(deduction).u128(), "uusd")
+    } else {
+        ust
+    };
+
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: state.recipient.into_string(),
+        amount: vec![release_amount],
+    })));
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -291,7 +308,7 @@ fn release(
             trade: env.contract.address.to_string(),
             maker: offer.owner.to_string(),
         })
-        .unwrap(),
+            .unwrap(),
         funds: vec![],
     }));
     send_msgs.push(register_trade_msg);
@@ -329,14 +346,14 @@ fn get_ust_amount(info: MessageInfo) -> Uint128 {
     };
 }
 
-pub fn subtract_localterra_fee(amount: Uint128) -> Uint128 {
-    amount.clone().checked_div(Uint128::new(1000u128)).unwrap()
+pub fn localterra_fee(amount: Uint128) -> Uint128 {
+    amount.clone().checked_div(Uint128::new(100u128)).unwrap()
 }
 
-fn deduct_localterra_fee(balance: &Vec<Coin>, final_balance: &mut Vec<Coin>) -> Vec<Coin> {
+fn deduct_localterra_fee(trade_amount: &Vec<Coin>, final_balance: &mut Vec<Coin>) -> Vec<Coin> {
     let mut fees: Vec<Coin> = Vec::new();
-    balance.iter().for_each(|coin| {
-        let fee_amount = subtract_localterra_fee(coin.amount);
+    trade_amount.iter().for_each(|coin| {
+        let fee_amount = localterra_fee(coin.amount);
         let fee = Coin::new(fee_amount.u128(), coin.denom.to_string());
         fees.push(fee);
         final_balance.push(Coin::new(

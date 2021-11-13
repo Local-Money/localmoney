@@ -13,7 +13,7 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::offer::{Offer, OfferState, OfferType};
 use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
 
-use crate::contract::{execute, instantiate, query, subtract_localterra_fee};
+use crate::contract::{execute, instantiate, localterra_fee, query};
 use crate::errors::TradeError;
 use crate::mock_querier::{mock_dependencies, WasmMockQuerier};
 
@@ -308,7 +308,7 @@ fn test_fund_escrow() {
     assert_eq!(trade_state.state, TradeState::Created);
 
     //Send FundEscrow message with UST and check that trade is in EscrowFunded state.
-    let localterra_fee = subtract_localterra_fee(trade_amount);
+    let localterra_fee = localterra_fee(trade_amount);
     trade_amount = trade_amount.add(localterra_fee);
     info.funds[0].amount = trade_amount.clone();
 
@@ -334,7 +334,7 @@ fn test_expired_trade() {
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
 
     //Send FundEscrow message with UST and check that trade is in EscrowFunded state.
-    let localterra_fee = subtract_localterra_fee(trade_amount);
+    let localterra_fee = localterra_fee(trade_amount);
     trade_amount = trade_amount.add(localterra_fee);
     info.funds[0].amount = trade_amount.clone();
 
