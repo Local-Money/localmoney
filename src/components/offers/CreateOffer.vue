@@ -72,8 +72,8 @@ export default defineComponent({
           offer: {
             offer_type: offerType,
             fiat_currency: "BRL",
-            min_amount: parseInt(this.minAmount),
-            max_amount: parseInt(this.maxAmount),
+            min_amount: this.minAmount + '',
+            max_amount: this.maxAmount + '',
           },
         },
       };
