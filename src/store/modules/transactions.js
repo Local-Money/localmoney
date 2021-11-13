@@ -13,13 +13,11 @@ import router from "@/router";
 
 // create a key out of a mnemonic
 let maker_seed, taker_seed;
-let network = prompt("t for terrarium, b for bombay");
+let network = prompt("1 for terrarium, 2 for bombay")
 
-if (network === "b") {
-  maker_seed =
-    "uncle simple tide bundle apart absurd tenant fluid slam actor caught month hip tornado cattle regular nerve brand tower boy alert crash good neck";
-  taker_seed =
-    "paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily";
+if (network === "2") {
+  maker_seed = 'uncle simple tide bundle apart absurd tenant fluid slam actor caught month hip tornado cattle regular nerve brand tower boy alert crash good neck'
+  taker_seed = 'paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily'
 } else {
   maker_seed =
     "notice oak worry limit wrap speak medal online prefer cluster roof addict wrist behave treat actual wasp year salad speed social layer crew genius";
@@ -27,27 +25,22 @@ if (network === "b") {
     "quality vacuum heart guard buzz spike sight swarm shove special gym robust assume sudden deposit grid alcohol choice devote leader tilt noodle tide penalty";
 }
 
-let takerOrMaker = prompt("m for maker, t for taker")
-  .toLowerCase()
-  .trim();
+let takerOrMaker = prompt("1 for maker, 2 for taker").toLowerCase().trim()
 
-let seed = takerOrMaker === "m" ? maker_seed : taker_seed;
+let seed = (takerOrMaker === "1") ? maker_seed : taker_seed
 const mk = new MnemonicKey({
   mnemonic: seed,
-});
+})
 
-const lcdOptions =
-  network === "b"
-    ? {
-        URL: "https://bombay-lcd.terra.dev",
-        chainID: "bombay-12",
-      }
-    : {
-        URL: "http://143.244.190.1:3060",
-        chainID: "localterra",
-      };
+const lcdOptions = network === "2" ? {
+  URL: 'https://bombay-lcd.terra.dev',
+  chainID: 'bombay-12',
+} : {
+  URL: 'http://143.244.190.1:3060',
+  chainID: 'localterra',
+}
+
 const terra = new LCDClient(lcdOptions);
-
 const wallet = terra.wallet(mk);
 //const ext = new Extension()
 
@@ -208,20 +201,26 @@ const actions = {
     dispatch("fetchTrades");
   },
   async fundEscrow({ getters, dispatch }, tradeAddr) {
-    const tradeInfo = getters.getTradeInfo(tradeAddr);
-    let ustAmount = Math.round(tradeInfo.trade.ust_amount * 1.1);
-    const coin = Coin.fromData({ denom: "uusd", amount: ustAmount });
-    const coins = new Coins([coin]);
+    const tradeInfo = getters.getTradeInfo(tradeAddr)
+    const ustAmount = tradeInfo.trade.ust_amount
+    const ust = Coin.fromData({ denom: 'uusd', amount: ustAmount })
 
-    const fundMsg = { fund_escrow: {} };
-    const fundEscrowMsg = new MsgExecuteContract(
-      getters.walletAddress,
-      tradeAddr,
-      fundMsg,
-      coins
-    );
-    executeMsg(fundEscrowMsg);
-    dispatch("fetchTrade", { tradeAddress: tradeAddr });
+    const localTerraFee = Coin.fromData({ denom: 'uusd', amount: ustAmount * 0.01 })
+    let ltFeeTax = await terra.utils.calculateTax(localTerraFee)
+    let releaseTax = await terra.utils.calculateTax(ust)
+    ltFeeTax = parseInt(ltFeeTax.toData().amount)
+    releaseTax = parseInt(releaseTax.toData().amount)
+
+    //TODO: issue with diveregence between cosmwasm and terrajs posted on tg channel, awaiting response. Adding 1UST
+    let oneUST = 1000000;
+    let fundEscrowAmount = parseInt(ustAmount) + parseInt(localTerraFee.amount) + ltFeeTax + releaseTax + oneUST;
+    console.log('fundEscrowAmount', fundEscrowAmount)
+    fundEscrowAmount = Coin.fromData({ denom: 'uusd', amount: fundEscrowAmount })
+    const coins = new Coins([fundEscrowAmount])
+    const fundMsg = {"fund_escrow":{}}
+    const fundEscrowMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, fundMsg, coins)
+    await executeMsg(fundEscrowMsg)
+    dispatch('fetchTrade', { tradeAddress: tradeAddr })
   },
   async releaseEscrow({ getters, dispatch }, tradeAddr) {
     const releaseMsg = new MsgExecuteContract(
