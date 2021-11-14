@@ -1,9 +1,9 @@
 import {
   Coin,
-  Coins,
+  Coins, Extension,
   LCDClient,
-  MnemonicKey,
   MsgExecuteContract,
+  StdFee,
   StdSignature,
   StdSignMsg,
   StdTx,
@@ -11,40 +11,15 @@ import {
 import { FACTORY_CONTRACT } from "@/constants";
 import router from "@/router";
 
-// create a key out of a mnemonic
-let maker_seed, taker_seed;
-let network = prompt("1 for terrarium, 2 for bombay")
-
-if (network === "2") {
-  maker_seed = 'uncle simple tide bundle apart absurd tenant fluid slam actor caught month hip tornado cattle regular nerve brand tower boy alert crash good neck'
-  taker_seed = 'paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily'
-} else {
-  maker_seed =
-    "notice oak worry limit wrap speak medal online prefer cluster roof addict wrist behave treat actual wasp year salad speed social layer crew genius";
-  taker_seed =
-    "quality vacuum heart guard buzz spike sight swarm shove special gym robust assume sudden deposit grid alcohol choice devote leader tilt noodle tide penalty";
-}
-
-let takerOrMaker = prompt("1 for maker, 2 for taker").toLowerCase().trim()
-
-let seed = (takerOrMaker === "1") ? maker_seed : taker_seed
-const mk = new MnemonicKey({
-  mnemonic: seed,
-})
-
-const lcdOptions = network === "2" ? {
-  URL: 'https://bombay-lcd.terra.dev',
-  chainID: 'bombay-12',
-} : {
+const lcdOptions = {
   URL: 'http://143.244.190.1:3060',
   chainID: 'localterra',
 }
-
-const terra = new LCDClient(lcdOptions);
-const wallet = terra.wallet(mk);
-//const ext = new Extension()
+let terra = new LCDClient(lcdOptions);
+const ext = new Extension()
 
 const state = {
+  walletAddress: '',
   offers: [],
   trades: [],
   fiatCurrency: "BRL",
@@ -61,6 +36,7 @@ const state = {
 
 // eslint-disable-next-line no-unused-vars
 function prepareTransaction(signedMsg) {
+  console.log('signedMsg', signedMsg)
   const { public_key, signature, stdSignMsgData } = signedMsg;
   const sig = StdSignature.fromData({
     signature,
@@ -75,6 +51,7 @@ function prepareTransaction(signedMsg) {
 }
 
 const getters = {
+  walletAddress: (state) => state.walletAddress,
   offers: (state) => state.offers,
   getOfferById: (state) => (id) => {
     return state.offers.find((offer) => offer.id === id);
@@ -87,9 +64,18 @@ const getters = {
 };
 
 const actions = {
-  async fakeWalletConnect({ commit, dispatch }) {
-    await commit("setWalletAddress", wallet.key.accAddress);
-    dispatch("fetchTrades");
+  async initWallet({ commit, dispatch }) {
+    const ext = new Extension()
+    const res = await ext.request('connect')
+    const info = await ext.request('info')
+    terra = new LCDClient({
+      URL: info.payload.lcd,
+      chainID: info.payload.chainID
+    })
+    const walletAddress = res.payload.address
+    commit('setWalletAddress', walletAddress)
+    dispatch('fetchFactoryConfig')
+    dispatch('fetchTrades')
   },
   /**
    * Fetch Factory Contract config
@@ -128,15 +114,16 @@ const actions = {
   /**
    * Create Offer
    */
-  async newOffer({ getters, dispatch }, { offer }) {
+  async newOffer({ getters }, { offer }) {
     const offerMsg = new MsgExecuteContract(
       getters.walletAddress,
       state.factoryConfig.offers_addr,
       offer
     );
-    await executeMsg(offerMsg);
-    console.log("fetchOffers");
-    dispatch("fetchOffers");
+    let result = await executeMsg(offerMsg);
+    console.log('newOffer Result', result)
+    // console.log("fetchOffers");
+    // dispatch("fetchOffers");
   },
   /**
    * Fetch a specific Trade
@@ -180,8 +167,7 @@ const actions = {
   async openTrade({ getters, dispatch }, { offerId, ustAmount }) {
     console.log("open trade", offerId, ustAmount);
 
-    //let sender = getters.walletAddressess
-    let sender = wallet.key.accAddress;
+    let sender = getters.walletAddress
     const amount = parseInt(ustAmount) * 1000000;
     const newTradeMsg = {
       new_trade: {
@@ -197,7 +183,8 @@ const actions = {
     );
 
     //TODO: Error handling.
-    await executeMsg(createTradeMsg);
+    let result = await executeMsg(createTradeMsg);
+    console.log('open Trade Result', result)
     dispatch("fetchTrades");
   },
   async fundEscrow({ getters, dispatch }, tradeAddr) {
@@ -219,7 +206,8 @@ const actions = {
     const coins = new Coins([fundEscrowAmount])
     const fundMsg = {"fund_escrow":{}}
     const fundEscrowMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, fundMsg, coins)
-    await executeMsg(fundEscrowMsg)
+    let result = await executeMsg(fundEscrowMsg)
+    console.log('fund Escrow Result', result)
     dispatch('fetchTrade', { tradeAddress: tradeAddr })
   },
   async releaseEscrow({ getters, dispatch }, tradeAddr) {
@@ -245,30 +233,28 @@ const actions = {
 };
 
 async function executeMsg(msg) {
-  return wallet
-    .createAndSignTx({
-      msgs: [msg],
+  let promise = new Promise((resolve, reject) => {
+    let id = 0;
+    ext.once(async (res) => {
+      if (res.id === id) {
+        if (res.success) {
+          resolve(res)
+        } else {
+          reject(res)
+        }
+      }
     })
-    .then((tx) => terra.tx.broadcast(tx))
-    .then((result) => {
-      return result;
-    });
-
-  /*
-  ext.once('onSign', async (res) => {
-    if (res.result) {
-      const signedTx = prepareTransaction(res.result)
-      await terra.tx.broadcast(signedTx)
-      cb()
-    } else {
-      alert('Error')
-    }
+    //TODO: we should probably use fee information from extension
+    id = ext.post({
+      fee: new StdFee(1000000, '800000uusd'),
+      msgs: [msg]
+    })
   })
-  ext.sign({ msgs: [msg] })
-   */
+  return promise
 }
 
 const mutations = {
+  setWalletAddress: (state, walletAddress) => (state.walletAddress = walletAddress),
   setFactoryConfig: (state, factoryConfig) =>
     (state.factoryConfig = factoryConfig),
   addOffer: (state, offer) => state.offers.push(offer),

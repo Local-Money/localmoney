@@ -1,7 +1,6 @@
 import { createStore } from 'vuex'
 import axios from 'axios'
 
-import wallet from './modules/wallet'
 import transactions from './modules/transactions'
 
 export default createStore({
@@ -28,6 +27,5 @@ export default createStore({
   },
   modules: {
     transactions,
-    wallet,
   },
 })
