@@ -114,8 +114,8 @@
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import { formatAddress, formatAmount } from "@/shared";
-import ExpandedOffer from "@/components/ExpandedOffer.vue";
-import CollapsedOffer from "@/components/CollapsedOffer.vue";
+import ExpandedOffer from "@/components/offers/ExpandedOffer.vue";
+import CollapsedOffer from "@/components/offers/CollapsedOffer.vue";
 
 export default defineComponent({
   name: "Offers",
@@ -173,7 +173,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "../style/tokens.scss";
+@import "@/style/tokens.scss";
 
 /* ----------- BUY SELL ROW */
 

@@ -3,7 +3,6 @@ import Home from "../pages/Home.vue";
 import Explore from "../pages/Explore.vue";
 import Offers from "../pages/Offers.vue";
 import Trades from "../pages/Trades.vue";
-import Offer from "../components/Offer.vue";
 import TradeDetail from "../pages/TradeDetail.vue";
 
 const routes = [
@@ -26,11 +25,6 @@ const routes = [
     path: "/trades",
     name: "Trades",
     component: Trades,
-  },
-  {
-    path: "/offer/:id",
-    name: "Offer",
-    component: Offer,
   },
   {
     path: "/trade/:addr",

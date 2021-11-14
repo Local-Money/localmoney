@@ -7,8 +7,8 @@
 
 <script>
 import { defineComponent } from "vue";
-import HomeHero from "../components/HomeHero.vue";
-import ListOffers from "../components/ListOffers.vue";
+import HomeHero from "@/components/HomeHero.vue";
+import ListOffers from "@/components/offers/ListOffers.vue";
 
 export default defineComponent({
   name: "Home",
@@ -20,5 +20,5 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-@import "../style/pages.scss";
+@import "@/style/pages.scss";
 </style>

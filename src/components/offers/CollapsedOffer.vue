@@ -47,7 +47,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "../style/tokens.scss";
+@import "@/style/tokens.scss";
 
 .owner {
   grid-column: 1/2;

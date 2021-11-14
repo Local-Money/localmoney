@@ -87,7 +87,7 @@
 <script>
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
-import CurrencyInput from "./CurrencyInput.vue";
+import CurrencyInput from "../CurrencyInput.vue";
 import { formatAddress, formatAmount } from "@/shared";
 
 export default defineComponent({
@@ -224,7 +224,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "../style/tokens.scss";
+@import "@/style/tokens.scss";
 
 .owner {
   grid-column: 1/2;
