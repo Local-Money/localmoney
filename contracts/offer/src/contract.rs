@@ -68,12 +68,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             owner,
             last_value,
             limit,
-        } => to_binary(&OfferModel::query(
-            deps.storage,
-            deps.api.addr_validate(owner.as_str())?,
-            last_value,
-            limit,
-        )?),
+        } => to_binary(&OfferModel::query(deps.storage, owner, last_value, limit)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Trades { maker } => to_binary(&load_trades(
             deps,

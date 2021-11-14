@@ -2,7 +2,7 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
 use crate::trade::State as TradeState;
-use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Order, Pair, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -26,8 +26,8 @@ pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
     let indexes = OfferIndexes {
         owner: MultiIndex::new(
             |d: &Offer, k: Vec<u8>| (d.owner.clone(), k),
-            "offer",
-            "offer__owner",
+            "offers",
+            "offers__owner",
         ),
     };
     IndexedMap::new(OFFERS_KEY, indexes)
@@ -79,8 +79,8 @@ pub enum QueryMsg {
         fiat_currency: FiatCurrency,
     },
     OffersQuery {
-        owner: Addr,
-        last_value: Vec<u8>,
+        owner: String,
+        last_value: u64,
         limit: u32,
     },
     Offer {
@@ -202,20 +202,29 @@ impl OfferModel<'_> {
 
     pub fn query(
         storage: &dyn Storage,
-        owner: Addr,
-        last_value: Vec<u8>,
+        owner: String,
+        last_value: u64,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
-        let result: Vec<Offer> = offers()
-            .idx
-            .owner
-            .prefix(owner)
-            .range(
+        let  range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
+
+        if owner.is_empty() {
+            range = offers().range(
                 storage,
-                Some(Bound::Exclusive(last_value)),
+                Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
                 None,
                 Order::Ascending,
-            )
+            );
+        } else {
+            range = offers().idx.owner.prefix(Addr::unchecked(owner)).range( // TODO validate the address
+                storage,
+                Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
+                None,
+                Order::Ascending,
+            );
+        }
+
+        let result = range
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
