@@ -43,13 +43,13 @@ export default defineComponent({
     ...mapGetters(["trades"]),
     openTrades: function() {
       return this.trades.filter(
-        (tradeInfo) =>
+        (tradeInfo) => !tradeInfo.expired &&
           ["created", "escrow_funded"].indexOf(tradeInfo.trade.state) >= 0
       );
     },
     closedTrades: function() {
       return this.trades.filter(
-        (tradeInfo) =>
+        (tradeInfo) => tradeInfo.expired ||
           ["created", "escrow_funded"].indexOf(tradeInfo.trade.state) === -1
       );
     },

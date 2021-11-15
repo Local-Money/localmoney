@@ -5,7 +5,7 @@
     <div class="col-3"><p>{{ formatAmount(trade.ust_amount) }} UST</p></div>
     <div class="col-4"><p>$365,900.00 COP</p></div>
     <div class="col-5 trader"><p>{{ formatAddress(counterparty) }}</p></div>
-    <div class="col-6"><p>{{ formatTradeState(trade.state) }}</p></div>
+    <div class="col-6"><p>{{ tradeState(trade.state) }}</p></div>
   </div>
 </template>
 
@@ -20,7 +20,14 @@ export default defineComponent({
   methods: {
     formatAmount,
     formatAddress,
-    formatTradeState
+    formatTradeState,
+    tradeState: function (state) {
+      if (state == "created") {
+        return "Expired"
+      } else {
+        return formatTradeState(state)
+      }
+    }
   },
   computed: {
     ...mapGetters(['walletAddress']),
