@@ -26,8 +26,8 @@ pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
     let indexes = OfferIndexes {
         owner: MultiIndex::new(
             |d: &Offer, k: Vec<u8>| (d.owner.clone(), k),
-            "offers",
-            "offers__owner",
+            "offers",        // TODO replace with OFFERS_KEY
+            "offers__owner", // TODO replace with OFFERS_KEY and concat
         ),
     };
     IndexedMap::new(OFFERS_KEY, indexes)
@@ -88,6 +88,12 @@ pub enum QueryMsg {
     },
     Trades {
         maker: String,
+    },
+    TradesBySender {
+        sender: String,
+    },
+    TradesByRecipient {
+        recipient: String,
     },
 }
 
@@ -206,7 +212,7 @@ impl OfferModel<'_> {
         last_value: u64,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
-        let  range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
+        let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
         if owner.is_empty() {
             range = offers().range(
@@ -216,7 +222,8 @@ impl OfferModel<'_> {
                 Order::Ascending,
             );
         } else {
-            range = offers().idx.owner.prefix(Addr::unchecked(owner)).range( // TODO validate the address
+            range = offers().idx.owner.prefix(Addr::unchecked(owner)).range(
+                // TODO validate the address
                 storage,
                 Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
                 None,
