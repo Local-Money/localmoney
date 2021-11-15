@@ -57,7 +57,7 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
@@ -71,6 +71,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&OfferModel::query(deps.storage, owner, last_value, limit)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Trades { maker } => to_binary(&load_trades(
+            env,
             deps,
             deps.api.addr_validate(maker.as_str()).unwrap(),
         )?),
@@ -156,7 +157,7 @@ pub fn create_offer(
             state: OfferState::Active,
         },
     )
-    .offer;
+        .offer;
 
     state_storage(deps.storage).save(&state)?;
 
@@ -268,7 +269,7 @@ fn create_trade(
             counterparty: counterparty.clone(),
             offers_addr: env.contract.address.to_string(),
         })
-        .unwrap(),
+            .unwrap(),
         funds: info.funds,
         label: "new-trade".to_string(),
     };
@@ -307,7 +308,8 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
     Ok(offer)
 }
 
-pub fn load_trades(deps: Deps, maker: Addr) -> StdResult<Vec<TradeInfo>> {
+pub fn load_trades(env: Env, deps: Deps, maker: Addr) -> StdResult<Vec<TradeInfo>> {
+    let curr_height = env.block.height;
     let trades = query_all_trades(deps.storage, maker.clone()).unwrap_or(vec![]);
     let mut trades_infos: Vec<TradeInfo> = vec![];
     trades.iter().for_each(|t| {
@@ -325,12 +327,15 @@ pub fn load_trades(deps: Deps, maker: Addr) -> StdResult<Vec<TradeInfo>> {
                 msg: to_binary(&QueryMsg::Offer {
                     id: trade_state.offer_id,
                 })
-                .unwrap(),
+                    .unwrap(),
             }))
             .unwrap();
+
+        let expired = curr_height >= trade_state.expire_height;
         trades_infos.push(TradeInfo {
             trade: trade_state,
             offer,
+            expired,
         })
     });
     Ok(trades_infos)
