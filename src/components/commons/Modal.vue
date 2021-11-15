@@ -1,7 +1,8 @@
 <template>
   <transition name="modal-animation">
-    <div @click="$emit('close')" v-if="modalActive" class="modal-overlay">
-      <div v-if="modalActive" class="modal-inner">
+    <div v-if="modalActive" class="modal">
+      <div @click="$emit('close')" class="modal-outside"></div>
+      <div class="modal-inner">
         <!-- Modal Content -->
         <slot />
       </div>
@@ -32,5 +33,14 @@ export default {
 .modal-inner {
   display: flex;
   justify-content: center;
+}
+
+.modal-outside {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 99;
 }
 </style>

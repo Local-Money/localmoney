@@ -50,13 +50,12 @@ button {
   color: $primary;
 }
 
-.modal-overlay {
+.modal {
   position: fixed;
   width: 100%;
   height: 100vh;
   left: 0;
   top: 0;
-  //background-color: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
 }
 
@@ -64,5 +63,6 @@ button {
   display: inline-flex;
   background-color: $gray150;
   margin-top: 10%;
+  z-index: 100;
 }
 </style>
