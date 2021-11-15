@@ -1,5 +1,6 @@
 <template>
   <div class="main-wrap">
+    <p>Create Offer</p>
     <div class="buy-sell">
       <button
         v-on:click="offerType = 0"
@@ -15,33 +16,37 @@
         Sell
       </button>
     </div>
-    <div class="currency card">
-      <div class="filter">
-        <label for="crypto">Crypto</label>
-        <select name="crypto" id="crypto">
-          <option value="UST">UST</option>
-        </select>
+    <div class="card">
+      <div class="currency">
+        <div class="filter">
+          <label for="crypto">Crypto</label>
+          <select name="crypto" id="crypto">
+            <option value="UST">UST</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label for="currency">Currency (FIAT)</label>
+          <select name="currency" id="currency">
+            <option value="UST">COP</option>
+            <option value="UST">BRL</option>
+            <option value="UST">USD</option>
+          </select>
+        </div>
       </div>
-      <div class="filter">
-        <label for="currency">Currency (FIAT)</label>
-        <select name="currency" id="currency">
-          <option value="UST">COP</option>
-          <option value="UST">BRL</option>
-          <option value="UST">USD</option>
-        </select>
+      <div class="divider"></div>
+      <div class="min-max">
+        <div class="wrap">
+          <label>Min amount:</label>
+          <input type="text" v-model="minAmount" />
+        </div>
+        <div class="wrap">
+          <label>Max amount:</label>
+          <input type="text" v-model="maxAmount" />
+        </div>
       </div>
     </div>
-    <div class="min-max card">
-      <div class="wrap">
-        <label>Min amount:</label>
-        <input type="text" v-model="minAmount" />
-      </div>
-      <div class="wrap">
-        <label>Max amount:</label>
-        <input type="text" v-model="maxAmount" />
-      </div>
-    </div>
-    <div class="create">
+    <div class="btns">
+      <button class="cancel-btn" @click="$emit('cancel')">Cancel</button>
       <button class="create-btn" @click="createOffer()">Create</button>
     </div>
   </div>
@@ -72,8 +77,8 @@ export default defineComponent({
           offer: {
             offer_type: offerType,
             fiat_currency: "BRL",
-            min_amount: this.minAmount + '',
-            max_amount: this.maxAmount + '',
+            min_amount: this.minAmount + "",
+            max_amount: this.maxAmount + "",
           },
         },
       };
@@ -98,11 +103,17 @@ export default defineComponent({
 
 .buy-sell {
   display: flex;
-  margin-top: 40px;
+  margin: 24px 0 24px;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background-color: $border;
+  margin: 32px 0;
 }
 
 .min-max {
-  margin-top: 24px;
   display: inline-flex;
   flex-basis: content;
 
@@ -128,24 +139,24 @@ export default defineComponent({
   }
 }
 
-.create {
+.btns {
   display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
 
   .create-btn {
-    padding: 16px 24px;
-    margin-top: 24px;
-    background-color: $surface;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 0px;
+    background-color: $gray300;
     color: $primary;
-    border-radius: 8px;
+  }
+  .cancel-btn {
+    background-color: $gray300;
+    color: $base-text;
+    margin-right: 24px;
   }
 }
 
 .currency {
   display: flex;
-  margin-top: 24px;
   .filter {
     display: flex;
     flex-direction: column;
