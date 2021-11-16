@@ -3,7 +3,7 @@
     <div class="owner">
       <div class="avatar">
         <img
-          src="https://pbs.twimg.com/profile_images/1460226103486910471/SqZPB_Nr_400x400.jpg"
+          src="https://d75aawrtvbfp1.cloudfront.net/ipfs%3A%2F%2FQmeiaAqTMg5CV5ojTQCT6mJyLUR4teVPR8F43xcKyCcyT4"
           alt=""
         />
       </div>
