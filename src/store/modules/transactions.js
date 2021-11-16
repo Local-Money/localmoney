@@ -153,8 +153,7 @@ const actions = {
     const wallet = getters.walletAddress;
     console.log("wallet: ", wallet);
     const trades = await terra.wasm.contractQuery(
-      state.factoryConfig.offers_addr,
-      { trades: { maker: wallet } }
+      state.factoryConfig.offers_addr, { trades: { trader: wallet } }
     );
     commit("setTrades", trades);
   },
