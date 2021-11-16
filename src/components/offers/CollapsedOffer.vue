@@ -1,8 +1,16 @@
 <template>
   <div class="collapsed" :key="`${offer.id}-collapsed`">
     <div class="owner">
-      <p class="wallet">{{ formatAddress(offer.owner) }}</p>
-      <p class="n-trades">352 trades</p>
+      <div class="avatar">
+        <img
+          src="https://pbs.twimg.com/profile_images/1460226103486910471/SqZPB_Nr_400x400.jpg"
+          alt=""
+        />
+      </div>
+      <div class="wrap">
+        <p class="wallet">{{ formatAddress(offer.owner) }}</p>
+        <p class="n-trades">352 trades</p>
+      </div>
     </div>
 
     <div class="info">
@@ -52,6 +60,26 @@ export default defineComponent({
 .owner {
   grid-column: 1/2;
   grid-row: 1;
+  display: flex;
+  flex-direction: row;
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+    margin-right: 24px;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 100px;
+    }
+  }
+
+  .wrap {
+    display: flex;
+    flex-direction: column;
+  }
 
   .wallet {
     font-size: 18px;
