@@ -340,7 +340,7 @@ fn instantiate_trade() {
             deps.as_ref(),
             mock_env(),
             QueryMsg::Trades {
-                maker: "maker".to_string(),
+                trader: "maker".to_string(),
             },
         )
         .unwrap(),

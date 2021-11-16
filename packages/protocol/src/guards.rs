@@ -1,5 +1,5 @@
 use crate::errors::OfferError;
-use cosmwasm_std::{Addr, StdError, StdResult, Uint128};
+use cosmwasm_std::{Addr, StdError, Uint128};
 
 pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), OfferError> {
     if caller.eq(&owner) {

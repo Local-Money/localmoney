@@ -3,7 +3,7 @@ use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
 use crate::trade::State as TradeState;
 use cosmwasm_std::{Addr, Order, Pair, StdResult, Storage, Uint128};
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -87,13 +87,7 @@ pub enum QueryMsg {
         id: u64,
     },
     Trades {
-        maker: String,
-    },
-    TradesBySender {
-        sender: String,
-    },
-    TradesByRecipient {
-        recipient: String,
+        trader: String,
     },
 }
 
@@ -129,7 +123,7 @@ impl OfferModel<'_> {
         offers().save(storage, &offer.id.to_string(), &offer)
     }
 
-    pub fn fromStore(storage: &mut dyn Storage, id: &u64) -> Offer {
+    pub fn from_store(storage: &mut dyn Storage, id: &u64) -> Offer {
         offers()
             .may_load(storage, &id.to_string())
             .unwrap_or_default()
@@ -137,18 +131,18 @@ impl OfferModel<'_> {
     }
 
     pub fn create(storage: &mut dyn Storage, offer: Offer) -> OfferModel {
-        OfferModel::store(storage, &offer);
+        OfferModel::store(storage, &offer).unwrap();
         OfferModel { offer, storage }
     }
 
     pub fn save<'a>(self) -> Offer {
-        OfferModel::store(self.storage, &self.offer);
+        OfferModel::store(self.storage, &self.offer).unwrap();
         self.offer
     }
 
     pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &u64) -> OfferModel<'a> {
         let offer_model = OfferModel {
-            offer: OfferModel::fromStore(storage, &id),
+            offer: OfferModel::from_store(storage, &id),
             storage,
         };
         return offer_model;
@@ -158,7 +152,7 @@ impl OfferModel<'_> {
         match self.offer.state {
             OfferState::Paused => {
                 self.offer.state = OfferState::Active;
-                OfferModel::store(self.storage, &self.offer);
+                OfferModel::store(self.storage, &self.offer).unwrap();
                 Ok(&self.offer)
             }
             OfferState::Active => Err(OfferError::InvalidStateChange {
@@ -172,7 +166,7 @@ impl OfferModel<'_> {
         match self.offer.state {
             OfferState::Active => {
                 self.offer.state = OfferState::Paused;
-                OfferModel::store(self.storage, &self.offer);
+                OfferModel::store(self.storage, &self.offer).unwrap();
                 Ok(&self.offer)
             }
             OfferState::Paused => Err(OfferError::InvalidStateChange {
@@ -187,7 +181,7 @@ impl OfferModel<'_> {
         self.offer.fiat_currency = msg.fiat_currency;
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
-        OfferModel::store(self.storage, &self.offer);
+        OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
         // self.save()
         //     ^^^^ move occurs because `*self` has type `OfferModel<'_>`, which does not implement the `Copy` trait
@@ -245,6 +239,13 @@ pub struct TradeInfo {
     pub trade: TradeState,
     pub offer: Offer,
     pub expired: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct TradeAddr {
+    pub trade: Addr,
+    pub sender: Addr,
+    pub recipient: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

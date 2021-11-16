@@ -289,6 +289,7 @@ impl WasmMockQuerier {
                             max_amount: Uint128::new(500_000_000u128),
                             state: OfferState::Active,
                         },
+                        expired: false
                     })))
                 }
             },

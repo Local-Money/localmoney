@@ -1,25 +1,20 @@
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut,
-    Env, MessageInfo, Order, Pair, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult,
-    Storage, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut,
+    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult,
+    Storage, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
-use cosmwasm_storage::{bucket, bucket_read};
 
-use localterra_protocol::constants::OFFERS_KEY;
-use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::offer::{
     offers, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, QueryMsg,
-    State, TradeInfo,
+    State, TradeAddr, TradeInfo,
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, State as TradeState,
 };
 
-use crate::state::{
-    config_read, config_storage, query_all_trades, state_read, state_storage, trades, TRADES,
-};
+use crate::state::{config_read, config_storage, state_read, state_storage, trades};
 use localterra_protocol::errors::OfferError;
 
 #[entry_point]
@@ -70,20 +65,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
         } => to_binary(&OfferModel::query(deps.storage, owner, last_value, limit)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
-        QueryMsg::Trades { maker } => to_binary(&load_trades(
+        QueryMsg::Trades { trader } => to_binary(&load_trades(
             env,
             deps,
-            deps.api.addr_validate(maker.as_str()).unwrap(),
-        )?),
-        QueryMsg::TradesBySender { sender } => to_binary(&query_trades_by_sender(
-            env,
-            deps,
-            deps.api.addr_validate(sender.as_str()).unwrap(),
-        )?),
-        QueryMsg::TradesByRecipient { recipient } => to_binary(&query_trades_by_recipient(
-            env,
-            deps,
-            deps.api.addr_validate(recipient.as_str()).unwrap(),
+            deps.api.addr_validate(trader.as_str()).unwrap(),
         )?),
     }
 }
@@ -124,14 +109,17 @@ fn trade_instance_reply(
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
 
-    trades().save(deps.storage, trade_state.addr.as_str(), &trade_state);
+    trades().save(
+        deps.storage,
+        trade_state.addr.as_str(),
+        &TradeAddr {
+            trade: trade_addr.clone(),
+            sender: trade_state.sender.clone(),
+            recipient: trade_state.recipient.clone(),
+        },
+    ).unwrap();
 
     let offer = load_offer_by_id(deps.storage, trade_state.offer_id.clone()).unwrap();
-
-    let trades_store = TRADES.key(offer.owner.as_bytes());
-    let mut trades = trades_store.load(deps.storage).unwrap_or(vec![]);
-    trades.push(trade_addr.clone());
-    trades_store.save(deps.storage, &trades).unwrap();
 
     //trade_state, offer_id, trade_amount,owner
     let res = Response::new()
@@ -257,18 +245,8 @@ fn create_trade(
 ) -> Result<Response, OfferError> {
     let cfg = config_read(deps.storage).load().unwrap();
     // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
-    let offer = OfferModel::fromStore(deps.storage, &offer_id);
+    let offer = OfferModel::from_store(deps.storage, &offer_id);
     //     .ok_or(OfferError::InvalidReply {})?; // TODO choose better error
-
-    //TODO: Discuss this with the team.
-    /*
-    if info.sender.ne(&offer.owner) {
-        return Err(OfferError::Unauthorized {
-            owner: offer.owner.clone(),
-            caller: info.sender.clone(),
-        });
-    }
-    */
 
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
@@ -320,15 +298,22 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
     Ok(offer)
 }
 
-pub fn load_trades(env: Env, deps: Deps, maker: Addr) -> StdResult<Vec<TradeInfo>> {
+pub fn load_trades(env: Env, deps: Deps, trader: Addr) -> StdResult<Vec<TradeInfo>> {
     let curr_height = env.block.height;
-    let trades = query_all_trades(deps.storage, maker.clone()).unwrap_or(vec![]);
+
     let mut trades_infos: Vec<TradeInfo> = vec![];
+    let mut trades: Vec<TradeAddr> = vec![];
+    let mut as_sender = query_trades_by_sender(deps, trader.clone()).unwrap();
+    let mut as_recipient = query_trades_by_recipient(deps, trader.clone()).unwrap();
+
+    trades.append(&mut as_sender);
+    trades.append(&mut as_recipient);
+
     trades.iter().for_each(|t| {
         let trade_state: TradeState = deps
             .querier
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: t.to_string(),
+                contract_addr: t.trade.to_string(),
                 msg: to_binary(&TradeQueryMsg::State {}).unwrap(),
             }))
             .unwrap();
@@ -353,9 +338,7 @@ pub fn load_trades(env: Env, deps: Deps, maker: Addr) -> StdResult<Vec<TradeInfo
     Ok(trades_infos)
 }
 
-pub fn query_trades_by_sender(env: Env, deps: Deps, sender: Addr) -> StdResult<Vec<TradeState>> {
-    let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
-
+pub fn query_trades_by_sender(deps: Deps, sender: Addr) -> StdResult<Vec<TradeAddr>> {
     let result = trades()
         .idx
         .sender
@@ -366,8 +349,8 @@ pub fn query_trades_by_sender(env: Env, deps: Deps, sender: Addr) -> StdResult<V
 
     Ok(result)
 }
-pub fn query_trades_by_recipient(env: Env, deps: Deps, recipient: Addr) -> StdResult<Vec<TradeState>> {
 
+pub fn query_trades_by_recipient(deps: Deps, recipient: Addr) -> StdResult<Vec<TradeAddr>> {
     let result = trades()
         .idx
         .recipient
