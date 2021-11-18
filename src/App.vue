@@ -1,24 +1,29 @@
 <template>
   <Header />
   <router-view />
+
+  <!-- Loading Modal -->
+  <ModalLoading :isLoading="true" />
 </template>
 
 <script>
 import { defineComponent } from "vue";
 import Header from "./components/Header.vue";
+import ModalLoading from "./components/commons/ModalLoading.vue";
 import { mapActions } from "vuex";
 
 export default defineComponent({
   name: "App",
   components: {
     Header,
+    ModalLoading,
   },
   methods: {
-    ...mapActions(['fetchFactoryConfig'])
+    ...mapActions(["fetchFactoryConfig"]),
   },
   created() {
-    this.fetchFactoryConfig()
-  }
+    this.fetchFactoryConfig();
+  },
 });
 </script>
 
