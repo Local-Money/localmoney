@@ -3,13 +3,13 @@
     <div class="owner">
       <div class="avatar">
         <img
-          src="https://d75aawrtvbfp1.cloudfront.net/ipfs%3A%2F%2FQmeiaAqTMg5CV5ojTQCT6mJyLUR4teVPR8F43xcKyCcyT4"
-          alt=""
+            src="https://d75aawrtvbfp1.cloudfront.net/ipfs%3A%2F%2FQmeiaAqTMg5CV5ojTQCT6mJyLUR4teVPR8F43xcKyCcyT4"
+            alt=""
         />
       </div>
       <div class="wrap">
         <p class="wallet">{{ formatAddress(offer.owner) }}</p>
-        <p class="n-trades">352 trades</p>
+        <p class="n-trades">0 trades</p>
       </div>
     </div>
 
@@ -24,8 +24,8 @@
 
     <div class="price">
       <div class="wrap-value">
-        <p class="value">COL$ 348.892,53</p>
-        <p class="margin">4% above market</p>
+        <p class="value">{{offer.fiat_currency}} {{ formatAmount(usdRate, false) }}</p>
+        <p class="margin">0% above market</p>
       </div>
       <button type="button" v-on:click="$emit('select', offer)">
         {{ this.offerTypeLabels[offer.offer_type] }}
@@ -35,22 +35,30 @@
 </template>
 
 <script>
-import { defineComponent } from "vue";
-import { formatAddress, formatAmount } from "@/shared";
+import {defineComponent} from "vue";
+import {formatAddress, formatAmount} from "@/shared";
+import { mapGetters } from "vuex";
 
 export default defineComponent({
   name: "CollapsedOffer",
   props: ["offer"],
-  setup() {},
+  setup() {
+  },
   data() {
     return {
-      offerTypeLabels: { buy: "Sell", sell: "Buy" },
+      offerTypeLabels: {buy: "Sell", sell: "Buy"},
     };
   },
   methods: {
     formatAddress,
     formatAmount,
   },
+  computed: {
+    ...mapGetters(["getUsdRate"]),
+    usdRate: function () {
+      return this.getUsdRate(this.$props.offer.fiat_currency)
+    }
+  }
 });
 </script>
 
@@ -86,6 +94,7 @@ export default defineComponent({
     font-weight: 600;
     color: $base-text;
   }
+
   .n-trades {
     font-size: 14px;
     color: $gray600;
@@ -182,10 +191,12 @@ export default defineComponent({
       font-weight: 800;
       color: $base-text;
     }
+
     .margin {
       font-size: 14px;
       color: $gray600;
     }
+
     button {
       background-color: $gray300;
       color: $primary;

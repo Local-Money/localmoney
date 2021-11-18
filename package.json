@@ -8,13 +8,14 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "core-js": "^3.6.5",
-    "vue": "^3.0.0",
     "@terra-money/terra.js": "^2.0.16",
     "axios": "^0.22.0",
     "buffer": "^6.0.3",
+    "core-js": "^3.6.5",
+    "firebase": "^9.4.1",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
+    "vue": "^3.0.0",
     "vue-currency-input": "^2.0.0",
     "vue-router": "^4.0.11",
     "vuex": "^4.0.2"

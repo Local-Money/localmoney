@@ -37,33 +37,55 @@
       <div class="min-max">
         <div class="wrap">
           <label>Min amount:</label>
-          <input type="text" v-model="minAmount" />
+          <CurrencyInput
+            v-model="minAmount"
+            :placeholder="this.cryptoPlaceholder"
+            :options="{
+              currency: 'UST',
+              currencyDisplay: 'code',
+              hideCurrencySymbolOnFocus: false,
+              hideGroupingSeparatorOnFocus: false,
+              precision: 2,
+            }" ref="minAmount"/>
         </div>
         <div class="wrap">
           <label>Max amount:</label>
-          <input type="text" v-model="maxAmount" />
+          <CurrencyInput
+              v-model="maxAmount"
+              :placeholder="this.cryptoPlaceholder"
+              :options="{
+              currency: 'UST',
+              currencyDisplay: 'code',
+              hideCurrencySymbolOnFocus: false,
+              hideGroupingSeparatorOnFocus: false,
+              precision: 2,
+            }" ref="maxAmount"/>
         </div>
       </div>
     </div>
     <div class="btns">
       <button class="cancel-btn" @click="$emit('cancel')">Cancel</button>
-      <button class="create-btn" @click="createOffer()">Create</button>
+      <button class="create-btn" @click="createOffer()" :disabled="!valid">Create</button>
     </div>
   </div>
 </template>
 
 <script>
 import { defineComponent } from "vue";
+import CurrencyInput from "../CurrencyInput.vue";
 import { formatAddress, formatAmount } from "@/shared";
 import { mapActions, mapGetters } from "vuex";
 
 export default defineComponent({
   name: "CreateOffer",
+  components: {
+    CurrencyInput,
+  },
   data() {
     return {
-      minAmount: 10000000,
-      maxAmount: 500000000,
-      offerType: 1,
+      minAmount: 0,
+      maxAmount: 0,
+      offerType: 0,
     };
   },
   methods: {
@@ -77,15 +99,20 @@ export default defineComponent({
           offer: {
             offer_type: offerType,
             fiat_currency: "BRL",
-            min_amount: this.minAmount + "",
-            max_amount: this.maxAmount + "",
+            min_amount: parseInt(this.minAmount * 1000000) + "",
+            max_amount: parseInt(this.maxAmount * 1000000) + "",
           },
         },
       };
       this.newOffer({ offer: newOffer });
     },
   },
-  computed: mapGetters(["walletAddress"]),
+  computed: {
+    ...mapGetters(["walletAddress"]),
+    valid: function () {
+      return this.maxAmount > this.minAmount
+    }
+  },
   created() {
     this.initWallet();
   },

@@ -11,16 +11,13 @@
         <label for="crypto">Crypto</label>
         <select name="crypto" id="crypto">
           <option value="UST">UST</option>
-          <option value="UST">LUNA</option>
-          <option value="UST">LOTA</option>
-          <option value="UST">LOCAL</option>
         </select>
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
         <select name="currency" id="currency">
-          <option value="UST">COP</option>
           <option value="UST">BRL</option>
+          <option value="UST">COP</option>
           <option value="UST">USD</option>
         </select>
       </div>
@@ -134,41 +131,35 @@ export default defineComponent({
     formatAmount,
     formatAddress,
     expandOfferItem: function(offer) {
-      if (this.expandedOffer != offer) {
+      if (this.expandedOffer !== offer) {
         if (this.expandedOffer != null) {
           this.expandedOffer.isExpanded = false;
         }
         offer.isExpanded = true;
         this.expandedOffer = offer;
       }
-
-      //this.$data.expandedOffer = offer;
-      /*
-      this.$nextTick(() => {
-        this.$refs.expandedOffer.focus()
-      });
-       */
     },
     collapseOfferItem: function(offer) {
       offer.isExpanded = false;
       this.expandedOffer = null;
     },
+
   },
   computed: {
     ...mapGetters(["offers", "getUsdRate"]),
     allOffers: function() {
-      var offers = [];
+      let offers = [];
       this.offers.forEach((offer) => {
         offer["isExpanded"] = false;
-        console.log("offer", offer);
         offers.push(offer);
       });
       return offers;
     },
   },
-  created() {
+  created: function () {
     this.fetchUsdRates();
-  },
+    this.fetchOffers()
+  }
 });
 </script>
 

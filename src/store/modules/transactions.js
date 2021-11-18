@@ -3,13 +3,14 @@ import {
   Coins, Extension,
   LCDClient,
   MsgExecuteContract,
-  StdFee,
   StdSignature,
   StdSignMsg,
   StdTx,
 } from "@terra-money/terra.js";
 import { FACTORY_CONTRACT } from "@/constants";
 import router from "@/router";
+import { updateTrade } from "@/store/firebase"
+import { newTrade } from "../firebase";
 
 const lcdOptions = {
   URL: 'http://143.244.190.1:3060',
@@ -23,6 +24,8 @@ const state = {
   offers: [],
   trades: [],
   fiatCurrency: "BRL",
+  lunaUstPrice: 0,
+  ustUsdPrice: 0,
   factoryConfig: {
     trade_code_id: 0,
     token_addr: "",
@@ -58,9 +61,10 @@ const getters = {
   },
   trades: (state) => state.trades,
   getTradeInfo: (state) => (tradeAddr) => {
-    console.log("getTradeInfo", tradeAddr, state.trades);
     return state.trades.find((tradeInfo) => tradeInfo.trade.addr === tradeAddr);
   },
+  lunaUstPrice: (state) => state.lunaUstPrice,
+  ustUsdPrice: (state) => state.ustUsdPrice
 };
 
 const actions = {
@@ -114,25 +118,23 @@ const actions = {
   /**
    * Create Offer
    */
-  async newOffer({ getters }, { offer }) {
+  async newOffer({ getters, dispatch }, { offer }) {
     const offerMsg = new MsgExecuteContract(
       getters.walletAddress,
       state.factoryConfig.offers_addr,
       offer
     );
-    let result = await executeMsg(offerMsg);
-    console.log('newOffer Result', result)
-    // console.log("fetchOffers");
-    // dispatch("fetchOffers");
+    await executeMsg(getters, dispatch, offerMsg);
+    dispatch("fetchOffers");
   },
   /**
    * Fetch a specific Trade
    */
   async fetchTrade(
     { commit, getters, dispatch },
-    { tradeAddress, redirect = false }
+    tradeAddress, redirect = false
   ) {
-    const trade = await terra.wasm.contractQuery(tradeAddress, { config: {} });
+    const trade = await terra.wasm.contractQuery(tradeAddress, { state: {} });
     trade.offer = getters.getOfferById(trade.offer_id);
     if (!trade.offer) {
       await dispatch("fetchOffer", { id: trade.offer_id });
@@ -149,13 +151,15 @@ const actions = {
   /**
    * Fetches all trades for given Trader (maker or taker) address.
    */
-  async fetchTrades({ commit, getters }) {
+  async fetchTrades({ commit, getters }, redirect = false) {
     const wallet = getters.walletAddress;
-    console.log("wallet: ", wallet);
     const trades = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr, { trades: { trader: wallet } }
     );
     commit("setTrades", trades);
+    if (redirect) {
+      router.push('/trades')
+    }
   },
   /**
    * Sends a transaction to instantiate a Trade contract.
@@ -163,14 +167,12 @@ const actions = {
    * @param {*} amount Amount of UST to be traded.
    */
   // eslint-disable-next-line no-unused-vars
-  async openTrade({ getters, dispatch }, { offerId, ustAmount }) {
-    console.log("open trade", offerId, ustAmount);
-
+  async openTrade({ getters, dispatch }, { offer, ustAmount }) {
     let sender = getters.walletAddress
-    const amount = parseInt(ustAmount) * 1000000;
+    const amount = ustAmount * 1000000;
     const newTradeMsg = {
       new_trade: {
-        offer_id: offerId,
+        offer_id: offer.id,
         ust_amount: amount + "",
         counterparty: sender,
       },
@@ -182,9 +184,9 @@ const actions = {
     );
 
     //TODO: Error handling.
-    let result = await executeMsg(createTradeMsg);
-    console.log('open Trade Result', result)
-    dispatch("fetchTrades");
+    await executeMsg(getters, dispatch, createTradeMsg);
+    dispatch("fetchTrades", true);
+    newTrade(offer.owner, newTradeMsg)
   },
   async fundEscrow({ getters, dispatch }, tradeAddr) {
     const tradeInfo = getters.getTradeInfo(tradeAddr)
@@ -200,14 +202,13 @@ const actions = {
     //TODO: issue with diveregence between cosmwasm and terrajs posted on tg channel, awaiting response. Adding 1UST
     let oneUST = 1000000;
     let fundEscrowAmount = parseInt(ustAmount) + parseInt(localTerraFee.amount) + ltFeeTax + releaseTax + oneUST;
-    console.log('fundEscrowAmount', fundEscrowAmount)
     fundEscrowAmount = Coin.fromData({ denom: 'uusd', amount: fundEscrowAmount })
     const coins = new Coins([fundEscrowAmount])
     const fundMsg = {"fund_escrow":{}}
     const fundEscrowMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, fundMsg, coins)
-    let result = await executeMsg(fundEscrowMsg)
-    console.log('fund Escrow Result', result)
-    dispatch('fetchTrade', { tradeAddress: tradeAddr })
+    await executeMsg(getters, dispatch, fundEscrowMsg)
+    let trade = await dispatch('fetchTrade', tradeAddr)
+    updateTrade(trade)
   },
   async releaseEscrow({ getters, dispatch }, tradeAddr) {
     const releaseMsg = new MsgExecuteContract(
@@ -215,41 +216,55 @@ const actions = {
       tradeAddr,
       { release: {} }
     );
-    const result = await executeMsg(releaseMsg);
+    await executeMsg(getters, dispatch, releaseMsg);
     //TODO: Error handling
-    console.log("Released", result);
-    dispatch("fetchTrade", { tradeAddress: tradeAddr });
+    let trade = await dispatch("fetchTrade", tradeAddr);
+    updateTrade(trade)
   },
   async refundEscrow({ getters, dispatch }, tradeAddr) {
     const refundMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
       refund: {},
     });
-    const result = await executeMsg(refundMsg);
-    //TODO: Error handling
-    console.log("Refunded", result);
-    dispatch("fetchTrade", { tradeAddress: tradeAddr });
+    await executeMsg(getters, dispatch, refundMsg);
+    dispatch("fetchTrade", tradeAddr);
   },
+  async fetchLunaPrice({ commit }) {
+    const res = await fetch(`${lcdOptions.URL}/v1/market/swaprate/uluna`)
+    const priceData = await res.json()
+    const lunaUstPrice = priceData.find(p => p.denom === "uusd").swaprate
+    commit('setLunaUstPrice', parseFloat(lunaUstPrice).toFixed(2))
+  },
+  async fetchUstUsdPrice({ commit }) {
+    const res = await fetch("https://api.coinpaprika.com/v1/tickers/ust-terrausd?quotes=USD")
+    const ustPriceData = await res.json()
+    const ustUsdPrice = ustPriceData.quotes["USD"].price
+    commit('setUstUsdPrice', ustUsdPrice.toFixed(2))
+  }
 };
 
-async function executeMsg(msg) {
-  let promise = new Promise((resolve, reject) => {
-    let id = 0;
-    ext.once(async (res) => {
-      if (res.id === id) {
-        if (res.success) {
-          resolve(res)
-        } else {
-          reject(res)
+async function executeMsg(getters, dispatch, msg) {
+  if (getters.walletAddress === "") {
+    dispatch('initWallet')
+    return
+  }
+  return new Promise((resolve) => {
+    ext.once('onPost', async (res) => {
+      console.log('post tx result', res)
+      let interval = setInterval(async () => {
+        let txInfo = await terra.tx.txInfo(res.result.txhash)
+        if (txInfo) {
+          resolve(txInfo)
+          clearInterval(interval)
         }
-      }
+      }, 1000)
     })
-    //TODO: we should probably use fee information from extension
-    id = ext.post({
-      fee: new StdFee(1000000, '800000uusd'),
-      msgs: [msg]
+    terra.tx.estimateFee(getters.walletAddress, [msg]).then((stdFee) => {
+      ext.post({
+        fee: stdFee,
+        msgs: [msg]
+      })
     })
   })
-  return promise
 }
 
 const mutations = {
@@ -259,16 +274,20 @@ const mutations = {
   addOffer: (state, offer) => state.offers.push(offer),
   setOffers: (state, offers) => (state.offers = offers),
   addTrade: (state, trade) => {
-    const addedTrade = state.trades.find((t) => t.address == trade.address);
+    const addedTrade = state.trades.find((t) => t.trade.addr === trade.addr);
     if (addedTrade) {
-      state.trades[state.trades.indexOf(addedTrade)] = trade;
+      state.trades[state.trades.indexOf(addedTrade)].trade = trade;
+      state.trades = [...state.trades]
     } else {
       state.trades.push(trade);
+      state.trades = [...state.trades]
     }
   },
   setTrades: (state, trades) => {
-    state.trades = trades;
+    state.trades = [...trades];
   },
+  setLunaUstPrice: (state, price) => state.lunaUstPrice = price,
+  setUstUsdPrice: (state, price) => state.ustUsdPrice= price,
 };
 
 export default {

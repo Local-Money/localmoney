@@ -31,22 +31,17 @@ export function scrollToElement(el) {
 
 /** Trade State **/
 export function tradeCanBeFunded(tradeInfo, walletAddr) {
-  const { trade, offer } = tradeInfo;
-  return trade.state === 'created'
-      && offer.owner === walletAddr
-      && offer.offer_type === 'sell';
+  const { trade } = tradeInfo;
+  return trade.state === 'created' && trade.sender === walletAddr;
 }
 
 export function tradeCanBeReleased(tradeInfo, walletAddr) {
-  const { trade, offer } = tradeInfo;
-  return trade.state === 'escrow_funded'
-      && offer.owner === walletAddr
-      && offer.offer_type === 'sell';
+  const { trade } = tradeInfo;
+  return trade.state === 'escrow_funded' && trade.sender === walletAddr
 }
-export function tradeCanBeRefunded(tradeInfo, walletAddr, currentHeight) {
-  const { trade, offer } = tradeInfo;
+export function tradeCanBeRefunded(tradeInfo, walletAddr) {
+  const { trade } = tradeInfo;
   return trade.state === 'escrow_funded'
-      && trade.expire_height >= currentHeight
-      && offer.owner === walletAddr
-      && offer.offer_type === 'sell';
+      && tradeInfo.expired
+      && trade.sender === walletAddr;
 }

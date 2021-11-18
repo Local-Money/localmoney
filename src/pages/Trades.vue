@@ -31,7 +31,9 @@
 import { defineComponent } from "vue";
 import TradeOpenItem from "../components/trades/TradeOpenItem.vue";
 import TradeHistoryItem from "../components/trades/TradeHistoryItem.vue";
-import { mapGetters } from "vuex";
+import {mapActions, mapGetters} from "vuex";
+import { onSnapshot, doc } from "firebase/firestore"
+import { db } from "../store/firebase";
 
 export default defineComponent({
   name: "Trades",
@@ -39,8 +41,11 @@ export default defineComponent({
     TradeOpenItem,
     TradeHistoryItem,
   },
+  methods: {
+    ...mapActions(["fetchTrades"])
+  },
   computed: {
-    ...mapGetters(["trades"]),
+    ...mapGetters(["walletAddress", "trades"]),
     openTrades: function() {
       return this.trades.filter(
         (tradeInfo) => !tradeInfo.expired &&
@@ -54,6 +59,14 @@ export default defineComponent({
       );
     },
   },
+  mounted: function () {
+    scrollTo(0, 0)
+    if (this.walletAddress) {
+      onSnapshot(doc(db, 'tradeRequests', this.walletAddress), () => {
+        this.fetchTrades()
+      })
+    }
+  }
 });
 </script>
 

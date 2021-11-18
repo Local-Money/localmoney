@@ -13,13 +13,13 @@
       <div class="card currency">
         <img src="@/assets/ic_ust.svg" alt="Icon UST" />
         <p class="token">UST</p>
-        <p class="price">$1.01 USD</p>
+        <p class="price">${{this.ustUsdPrice}} USD</p>
       </div>
 
       <div class="card currency">
         <img src="@/assets/ic_luna.svg" alt="Icon UST" />
         <p class="token">Luna</p>
-        <p class="price">$11.78 UST</p>
+        <p class="price">{{this.lunaUstPrice}} UST</p>
       </div>
     </div>
 
@@ -29,13 +29,37 @@
         <p class="content">Better savings with Anchor</p>
         <div class="yield">
           <p class="caption">yearly</p>
-          <p class="percentage">19.86%</p>
+          <p class="percentage">19.72%</p>
         </div>
-        <a href="#">connect ></a>
+        <a href="#" @click="alert('soon :)')">connect ></a>
       </div>
     </div>
   </section>
 </template>
+
+<script>
+import { defineComponent } from "vue";
+import { mapActions, mapGetters } from "vuex";
+import { formatAmount } from "@/shared";
+
+export default defineComponent({
+  name: "HomeHero",
+  methods: {
+    ...mapActions(["fetchLunaPrice", "fetchUstUsdPrice"]),
+    formatAmount,
+    alert: function (msg) {
+      window.alert(msg)
+    }
+  },
+  computed: {
+    ...mapGetters(["lunaUstPrice", "ustUsdPrice"])
+  },
+  mounted: function () {
+    this.fetchLunaPrice()
+    this.fetchUstUsdPrice()
+  }
+})
+</script>
 
 <style lang="scss" scoped>
 @import "../style/tokens.scss";
