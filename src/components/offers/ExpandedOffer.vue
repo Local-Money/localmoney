@@ -30,24 +30,25 @@
       <div class="input">
         <label for="sell">I want to receive</label>
         <CurrencyInput
-            @focus="watchingCrypto === true && watchingFiat === false"
-            v-model="cryptoAmount"
-            :placeholder="this.cryptoPlaceholder"
-            :options="{
-              currency: 'UST',
-              currencyDisplay: 'code',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
-            ref="receiveAmountInput"/>
+          @focus="watchingCrypto === true && watchingFiat === false"
+          v-model="cryptoAmount"
+          :placeholder="this.cryptoPlaceholder"
+          :options="{
+            currency: 'UST',
+            currencyDisplay: 'code',
+            hideCurrencySymbolOnFocus: false,
+            hideGroupingSeparatorOnFocus: false,
+            precision: 2,
+          }"
+          ref="receiveAmountInput"
+        />
         <p>
-          Min <b @click="useMin()">{{ minMaxCryptoStr[0] }}</b> -
-          Max <b @click="useMax()">{{ minMaxCryptoStr[1] }}</b>
+          Min <b @click="useMin()">{{ minMaxCryptoStr[0] }}</b> - Max
+          <b @click="useMax()">{{ minMaxCryptoStr[1] }}</b>
         </p>
         <p>
-          Min <b @click="useMin()">{{ minMaxFiatStr[0] }}</b> -
-          Max <b @click="useMax()">{{ minMaxFiatStr[1] }}</b>
+          Min <b @click="useMin()">{{ minMaxFiatStr[0] }}</b> - Max
+          <b @click="useMax()">{{ minMaxFiatStr[1] }}</b>
         </p>
       </div>
     </form>
@@ -80,7 +81,9 @@
         <button class="secondary" @click="$emit('cancel', offer)">
           cancel
         </button>
-        <button class="primary" @click="newTrade()" :disabled="!valid">open transaction</button>
+        <button class="primary" @click="newTrade()" :disabled="!valid">
+          open transaction
+        </button>
       </div>
     </div>
   </div>
@@ -112,8 +115,8 @@ export default defineComponent({
   mounted() {
     this.startExchangeRateRefreshTimer();
     this.$nextTick(() => {
-      this.focus()
-    })
+      this.focus();
+    });
   },
   unmounted: function() {
     clearInterval(this.refreshRateInterval);
@@ -154,14 +157,14 @@ export default defineComponent({
       let usdRate = this.getUsdRate(fiatCurrency);
       return usdRate * (parseInt(this.offer.max_amount) / 1000000);
     },
-    useMin: function () {
-      this.watchingCrypto = true
-      this.cryptoAmount = parseInt(this.offer.min_amount) / 1000000
+    useMin: function() {
+      this.watchingCrypto = true;
+      this.cryptoAmount = parseInt(this.offer.min_amount) / 1000000;
     },
-    useMax: function () {
-      this.watchingCrypto = true
-      this.cryptoAmount = parseInt(this.offer.max_amount) / 1000000
-    }
+    useMax: function() {
+      this.watchingCrypto = true;
+      this.cryptoAmount = parseInt(this.offer.max_amount) / 1000000;
+    },
   },
   computed: {
     ...mapGetters(["getUsdRate"]),
@@ -177,13 +180,13 @@ export default defineComponent({
       let symbol = this.offer.fiat_currency.toUpperCase();
       let min = this.minAmountInFiat(this.offer).toFixed(2);
       let max = this.maxAmountInFiat(this.offer).toFixed(2);
-      return [`${symbol} ${min}`, `${symbol} ${max}`]
+      return [`${symbol} ${min}`, `${symbol} ${max}`];
     },
     minMaxCryptoStr: function() {
       let symbol = "UST"; //TODO: get from offer
       let min = (parseInt(this.offer.min_amount) / 1000000).toFixed(2);
       let max = (parseInt(this.offer.max_amount) / 1000000).toFixed(2);
-      return [`${symbol} ${min}`, `${symbol} ${max}`]
+      return [`${symbol} ${min}`, `${symbol} ${max}`];
     },
     cryptoPlaceholder: function() {
       let symbol = "UST"; //TODO: get from offer
@@ -314,7 +317,6 @@ export default defineComponent({
       text-align: right;
       margin-top: 8px;
     }
-
   }
 
   .receipt {
@@ -396,28 +398,6 @@ export default defineComponent({
       display: flex;
       justify-content: flex-end;
       gap: 24px;
-
-      .primary {
-        background-color: $gray300;
-        color: $primary;
-        border: none;
-        font-family: inherit;
-        font-weight: 700;
-        font-size: 16px;
-        text-transform: lowercase;
-        padding: 8px 24px;
-      }
-
-      .secondary {
-        background-color: $surface;
-        color: $primary;
-        border: none;
-        font-family: inherit;
-        font-weight: 700;
-        font-size: 16px;
-        text-transform: lowercase;
-        padding: 8px 24px;
-      }
     }
   }
 }

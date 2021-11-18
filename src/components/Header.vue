@@ -8,7 +8,7 @@
       <nav-mobile v-if="isMobile()"> </nav-mobile>
       <nav-desktop v-else> </nav-desktop>
 
-      <button class="btn-wallet" @click="initWallet()">
+      <button class="wallet" @click="initWallet()">
         <p v-if="walletAddress.length > 0">
           {{ formatAddress(walletAddress) }}
         </p>
@@ -79,34 +79,6 @@ header {
         margin-left: 24px;
         background-size: cover;
         background-image: $logo-horizontal-dark;
-      }
-    }
-
-    button {
-      background-color: $surface;
-      //border: 2px solid $base-text;
-
-      padding: 0 16px;
-      cursor: pointer;
-
-      p {
-        font-size: 16px;
-        color: $base-text;
-        margin-right: 16px;
-      }
-
-      p,
-      img {
-        vertical-align: middle;
-        display: inline-block;
-      }
-      @media only screen and (max-width: 550px) {
-        margin-top: 24px;
-        margin-right: 24px;
-      }
-
-      &:active {
-        background-color: $border;
       }
     }
   }

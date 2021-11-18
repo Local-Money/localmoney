@@ -46,26 +46,32 @@
               hideCurrencySymbolOnFocus: false,
               hideGroupingSeparatorOnFocus: false,
               precision: 2,
-            }" ref="minAmount"/>
+            }"
+            ref="minAmount"
+          />
         </div>
         <div class="wrap">
           <label>Max amount:</label>
           <CurrencyInput
-              v-model="maxAmount"
-              :placeholder="this.cryptoPlaceholder"
-              :options="{
+            v-model="maxAmount"
+            :placeholder="this.cryptoPlaceholder"
+            :options="{
               currency: 'UST',
               currencyDisplay: 'code',
               hideCurrencySymbolOnFocus: false,
               hideGroupingSeparatorOnFocus: false,
               precision: 2,
-            }" ref="maxAmount"/>
+            }"
+            ref="maxAmount"
+          />
         </div>
       </div>
     </div>
     <div class="btns">
-      <button class="cancel-btn" @click="$emit('cancel')">Cancel</button>
-      <button class="create-btn" @click="createOffer()" :disabled="!valid">Create</button>
+      <button class="secondary" @click="$emit('cancel')">Cancel</button>
+      <button class="primary" @click="createOffer()" :disabled="!valid">
+        Create
+      </button>
     </div>
   </div>
 </template>
@@ -109,9 +115,9 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters(["walletAddress"]),
-    valid: function () {
-      return this.maxAmount > this.minAmount
-    }
+    valid: function() {
+      return this.maxAmount > this.minAmount;
+    },
   },
   created() {
     this.initWallet();
@@ -169,17 +175,8 @@ export default defineComponent({
 .btns {
   display: flex;
   justify-content: flex-end;
+  gap: 24px;
   margin-top: 24px;
-
-  .create-btn {
-    background-color: $gray300;
-    color: $primary;
-  }
-  .cancel-btn {
-    background-color: $gray300;
-    color: $base-text;
-    margin-right: 24px;
-  }
 }
 
 .currency {
