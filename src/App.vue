@@ -3,7 +3,7 @@
   <router-view />
 
   <!-- Loading Modal -->
-  <ModalLoading :isLoading="true" />
+  <ModalLoading :isLoading="false" />
 </template>
 
 <script>
