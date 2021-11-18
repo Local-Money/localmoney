@@ -20,6 +20,11 @@ let terra = new LCDClient(lcdOptions);
 const ext = new Extension()
 
 const state = {
+  loading: {
+    isLoading: false,
+    label: "Processing...",
+    transaction: "Follow the transaction"
+  },
   walletAddress: '',
   offers: [],
   trades: [],
@@ -64,7 +69,8 @@ const getters = {
     return state.trades.find((tradeInfo) => tradeInfo.trade.addr === tradeAddr);
   },
   lunaUstPrice: (state) => state.lunaUstPrice,
-  ustUsdPrice: (state) => state.ustUsdPrice
+  ustUsdPrice: (state) => state.ustUsdPrice,
+  loading: (state) => state.loading,
 };
 
 const actions = {
@@ -118,14 +124,17 @@ const actions = {
   /**
    * Create Offer
    */
-  async newOffer({ getters, dispatch }, { offer }) {
+  async newOffer({ commit, getters, dispatch }, { offer }) {
     const offerMsg = new MsgExecuteContract(
       getters.walletAddress,
       state.factoryConfig.offers_addr,
       offer
     );
-    await executeMsg(getters, dispatch, offerMsg);
+
+    console.log("newOffer")
+    await executeMsg(commit, getters, dispatch, offerMsg);
     dispatch("fetchOffers");
+    router.push(`/`);
   },
   /**
    * Fetch a specific Trade
@@ -167,7 +176,7 @@ const actions = {
    * @param {*} amount Amount of UST to be traded.
    */
   // eslint-disable-next-line no-unused-vars
-  async openTrade({ getters, dispatch }, { offer, ustAmount }) {
+  async openTrade({ commit, getters, dispatch }, { offer, ustAmount }) {
     let sender = getters.walletAddress
     const amount = ustAmount * 1000000;
     const newTradeMsg = {
@@ -184,11 +193,11 @@ const actions = {
     );
 
     //TODO: Error handling.
-    await executeMsg(getters, dispatch, createTradeMsg);
+    await executeMsg(commit, getters, dispatch, createTradeMsg);
     dispatch("fetchTrades", true);
     newTrade(offer.owner, newTradeMsg)
   },
-  async fundEscrow({ getters, dispatch }, tradeAddr) {
+  async fundEscrow({ commit, getters, dispatch }, tradeAddr) {
     const tradeInfo = getters.getTradeInfo(tradeAddr)
     const ustAmount = tradeInfo.trade.ust_amount
     const ust = Coin.fromData({ denom: 'uusd', amount: ustAmount })
@@ -204,28 +213,28 @@ const actions = {
     let fundEscrowAmount = parseInt(ustAmount) + parseInt(localTerraFee.amount) + ltFeeTax + releaseTax + oneUST;
     fundEscrowAmount = Coin.fromData({ denom: 'uusd', amount: fundEscrowAmount })
     const coins = new Coins([fundEscrowAmount])
-    const fundMsg = {"fund_escrow":{}}
+    const fundMsg = { "fund_escrow": {} }
     const fundEscrowMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, fundMsg, coins)
-    await executeMsg(getters, dispatch, fundEscrowMsg)
+    await executeMsg(commit, getters, dispatch, fundEscrowMsg)
     let trade = await dispatch('fetchTrade', tradeAddr)
     updateTrade(trade)
   },
-  async releaseEscrow({ getters, dispatch }, tradeAddr) {
+  async releaseEscrow({ commit, getters, dispatch }, tradeAddr) {
     const releaseMsg = new MsgExecuteContract(
       getters.walletAddress,
       tradeAddr,
       { release: {} }
     );
-    await executeMsg(getters, dispatch, releaseMsg);
+    await executeMsg(commit, getters, dispatch, releaseMsg);
     //TODO: Error handling
     let trade = await dispatch("fetchTrade", tradeAddr);
     updateTrade(trade)
   },
-  async refundEscrow({ getters, dispatch }, tradeAddr) {
+  async refundEscrow({ commit, getters, dispatch }, tradeAddr) {
     const refundMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
       refund: {},
     });
-    await executeMsg(getters, dispatch, refundMsg);
+    await executeMsg(commit, getters, dispatch, refundMsg);
     dispatch("fetchTrade", tradeAddr);
   },
   async fetchLunaPrice({ commit }) {
@@ -242,7 +251,7 @@ const actions = {
   }
 };
 
-async function executeMsg(getters, dispatch, msg) {
+async function executeMsg(commit, getters, dispatch, msg) {
   if (getters.walletAddress === "") {
     dispatch('initWallet')
     return
@@ -250,11 +259,16 @@ async function executeMsg(getters, dispatch, msg) {
   return new Promise((resolve) => {
     ext.once('onPost', async (res) => {
       console.log('post tx result', res)
+      if (res.success) {
+        commit("setLoadingTransaction", res.result.txhash)
+        commit("setIsLoading", true)
+      }
       let interval = setInterval(async () => {
         let txInfo = await terra.tx.txInfo(res.result.txhash)
         if (txInfo) {
           resolve(txInfo)
           clearInterval(interval)
+          commit("setIsLoading", false)
         }
       }, 1000)
     })
@@ -283,11 +297,22 @@ const mutations = {
       state.trades = [...state.trades]
     }
   },
+  setIsLoading: (state, isLoading) => {
+    state.loading.isLoading = isLoading;
+    console.log("loading", state.loading);
+  },
+  setLoadingLabel: (state, label) => {
+    state.loading.label = label;
+    console.log("loading", state.loading);
+  },
+  setLoadingTransaction: (state, transaction) => {
+    state.loading.transaction = transaction;
+  },
   setTrades: (state, trades) => {
     state.trades = [...trades];
   },
   setLunaUstPrice: (state, price) => state.lunaUstPrice = price,
-  setUstUsdPrice: (state, price) => state.ustUsdPrice= price,
+  setUstUsdPrice: (state, price) => state.ustUsdPrice = price,
 };
 
 export default {

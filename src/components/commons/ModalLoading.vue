@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-animation">
-    <div v-if="isLoading" class="modal">
+    <div v-if="loading.isLoading" class="modal">
       <div class="loading">
         <div class="spinner">
           <svg
@@ -23,8 +23,10 @@
           </svg>
         </div>
         <div class="loading-content">
-          <p class="label">Processing...</p>
-          <a class="transaction" href="#">Follow the transaction</a>
+          <p class="label">{{ loading.label }}</p>
+          <a class="transaction" :href="'#' + loading.transaction">{{
+            formatAddress(loading.transaction)
+          }}</a>
         </div>
       </div>
     </div>
@@ -32,8 +34,13 @@
 </template>
 
 <script>
+import { formatAddress } from "@/shared";
+
 export default {
-  props: ["isLoading"],
+  props: ["loading"],
+  methods: {
+    formatAddress,
+  },
 };
 </script>
 
