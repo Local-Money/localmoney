@@ -3,8 +3,7 @@
     <h3>Open Trades</h3>
     <TradeOpenItem
       v-for="tradeInfo in openTrades"
-      :trade="tradeInfo.trade"
-      :offer="tradeInfo.offer"
+      :tradeAddr="tradeInfo.trade.addr"
       :key="tradeInfo.trade.addr"
     />
     <h3>Trade History</h3>
@@ -19,8 +18,7 @@
       </div>
       <TradeHistoryItem
         v-for="tradeInfo in closedTrades"
-        :trade="tradeInfo.trade"
-        :offer="tradeInfo.offer"
+        :tradeAddr="tradeInfo.trade.addr"
         :key="tradeInfo.trade.addr"
       />
     </section>
@@ -42,7 +40,7 @@ export default defineComponent({
     TradeHistoryItem,
   },
   methods: {
-    ...mapActions(["fetchTrades"])
+    ...mapActions(["fetchTradeInfos"])
   },
   computed: {
     ...mapGetters(["walletAddress", "trades"]),
@@ -63,7 +61,7 @@ export default defineComponent({
     scrollTo(0, 0)
     if (this.walletAddress) {
       onSnapshot(doc(db, 'tradeRequests', this.walletAddress), () => {
-        this.fetchTrades()
+        this.fetchTradeInfos()
       })
     }
   }

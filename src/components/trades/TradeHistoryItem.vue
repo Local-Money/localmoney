@@ -2,10 +2,10 @@
   <div class="wrap-table-item">
     <div class="col-1"><p>18 Jul 2021</p></div>
     <div class="col-2"><p>Selling</p></div>
-    <div class="col-3"><p>{{ formatAmount(trade.ust_amount) }} UST</p></div>
-    <div class="col-4"><p>$365,900.00 COP</p></div>
+    <div class="col-3"><p>{{ formatAmount(this.tradeInfo.trade.ust_amount) }} UST</p></div>
+    <div class="col-4"><p>{{ fiatAmountStr }}</p></div>
     <div class="col-5 trader"><p>{{ formatAddress(counterparty) }}</p></div>
-    <div class="col-6"><p>{{ tradeState(trade.state) }}</p></div>
+    <div class="col-6"><p>{{ tradeState(this.tradeInfo.trade.state) }}</p></div>
   </div>
 </template>
 
@@ -16,7 +16,7 @@ import {mapGetters} from "vuex";
 
 export default defineComponent({
   name: 'TradeHistoryItem',
-  props: ['trade'],
+  props: ['tradeAddr'],
   methods: {
     formatAmount,
     formatAddress,
@@ -30,9 +30,21 @@ export default defineComponent({
     }
   },
   computed: {
-    ...mapGetters(['walletAddress']),
+    ...mapGetters(["walletAddress", "getUsdRate", "getTradeInfo"]),
+    tradeInfo: function () {
+      return this.getTradeInfo(this.$props.tradeAddr)
+    },
+    fiatCurrency: function () {
+      return this.tradeInfo.offer.fiat_currency
+    },
+    fiatAmountStr: function () {
+      const fiatAmount = formatAmount((this.tradeInfo.trade.ust_amount / 1000000)
+          * this.getUsdRate(this.fiatCurrency), false)
+      return `${this.fiatCurrency} ${fiatAmount}`
+    },
     counterparty: function () {
-      return this.walletAddress === this.trade.sender ? this.trade.recipient : this.trade.sender;
+      const trade = this.tradeInfo.trade
+      return this.walletAddress === trade.sender ? trade.recipient : trade.sender;
     }
   }
 })

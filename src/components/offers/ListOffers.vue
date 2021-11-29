@@ -158,7 +158,6 @@ export default defineComponent({
   },
   created: function () {
     this.fetchUsdRates();
-    this.fetchOffers()
   }
 });
 </script>

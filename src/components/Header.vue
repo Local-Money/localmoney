@@ -1,7 +1,7 @@
 <template>
   <header>
     <div class="wrap">
-      <router-link :to="{ path: '/' }">
+      <router-link :to="{ path: '/' }" @click="this.fetchOffers()">
         <div className="logo"></div>
       </router-link>
 
@@ -33,7 +33,7 @@ export default defineComponent({
     NavMobile,
   },
   methods: {
-    ...mapActions(["initWallet"]),
+    ...mapActions(["initWallet", "fetchOffers"]),
     formatAmount,
     formatAddress,
     isMobile() {
@@ -45,6 +45,9 @@ export default defineComponent({
     },
   },
   computed: mapGetters(["walletAddress"]),
+  created: function () {
+    this.initWallet()
+  }
 });
 </script>
 

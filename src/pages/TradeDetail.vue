@@ -15,7 +15,7 @@
 
       <!-- Step 2 -->
       <div class="step-item">
-        <IconDone v-if="paid" />
+        <IconDone v-if="trade.paid || trade.state === 'closed'" />
         <div class="icon" v-else>
           <div class="counter">
             <p>2</p>
@@ -78,7 +78,7 @@
             <p class="label">UST Price</p>
             <div class="current-price">
               <p class="mkt-rate">0% above market</p>
-              <p class="price">{{ price }}</p>
+              <p class="price">{{ priceStr }}</p>
             </div>
             <p class="label">Transaction summary</p>
             <div class="transaction">
@@ -117,19 +117,19 @@
 
           <!-- Step 2 -->
           <!-- Mark as Paid -->
-          <div class="wrap" v-if="trade.state === 'escrow_funded' && this.isBuying && !paid">
+          <div class="wrap" v-if="trade.state === 'escrow_funded' && this.isBuying && !trade.paid">
             <div class="icon">
               <RightArrow />
             </div>
             <p v-if="trade.paid">You notified the trade about the off-chain payment</p>
             <p v-else>Notify the trader that you made the off-chain payment</p>
-            <button @click="this.markAsPaid(trade)" v-if="!paid">
+            <button @click="this.markAsPaid(trade)" v-if="!trade.paid">
               mark as paid
             </button>
           </div>
 
           <!-- Wait for Off-chain Payment -->
-          <div class="wrap" v-if="trade.state === 'escrow_funded' && !this.isBuying && !paid">
+          <div class="wrap" v-if="trade.state === 'escrow_funded' && !this.isBuying && !trade.paid">
             <div class="icon">
               <RightArrow />
             </div>
@@ -138,7 +138,7 @@
 
           <!-- Step 3 -->
           <!-- Release Escrow -->
-          <div class="wrap" v-if="tradeCanBeReleased(tradeInfo, this.walletAddress) && this.paid">
+          <div class="wrap" v-if="tradeCanBeReleased(tradeInfo, this.walletAddress) && trade.paid">
             <div class="icon">
               <RightArrow />
             </div>
@@ -149,7 +149,7 @@
           </div>
 
           <!-- Wait for Escrow Release -->
-          <div class="wrap" v-else-if="this.paid && trade.state === 'escrow_funded'">
+          <div class="wrap" v-else-if="trade.paid && trade.state === 'escrow_funded'">
             <div class="icon">
               <RightArrow />
             </div>
@@ -191,25 +191,19 @@ export default defineComponent({
     IconDone,
     RightArrow
   },
-  data() {
-    return {
-      paid: false
-    }
-  },
   methods: {
-    ...mapActions(["fundEscrow", "releaseEscrow", "fetchTrade"]),
+    ...mapActions(["fundEscrow", "releaseEscrow", "fetchTradeInfo", "setTradeAsPaid"]),
     formatAmount,
     formatAddress,
     tradeCanBeFunded,
     tradeCanBeReleased,
     tradeCanBeRefunded,
     markAsPaid: function () {
-      this.tradeInfo.trade.paid = true
+      const trade = this.tradeInfo.trade
+      trade.paid = true
+      this.setTradeAsPaid({ tradeAddr: trade.addr, paid: true })
       updateTrade(this.tradeInfo.trade)
     },
-    log: function (msg) {
-      console.log(msg)
-    }
   },
   computed: {
     ...mapGetters(["getTradeInfo", "walletAddress", "getUsdRate"]),
@@ -235,17 +229,32 @@ export default defineComponent({
       return `${this.fiatCurrency} ${fiatAmount}`
     },
     priceStr: function () {
-      const fiatAmount = formatAmount((this.tradeInfo.trade.ust_amount)
-          * this.getUsdRate(this.fiatCurrency), false)
+      const fiatAmount = formatAmount( this.getUsdRate(this.fiatCurrency), false)
       return `${this.fiatCurrency} ${fiatAmount}`
     }
   },
-  created: function () {
-    onSnapshot(tradesCollection.doc(this.tradeInfo.trade.addr), (doc) => {
+  mounted: async function () {
+    const trade = this.tradeInfo.trade
+    const tradeAddr = trade.addr
+    this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
       let data = doc.data()
-      this.$data.paid = data.paid
-      this.fetchTrade(this.$route.params.addr)
+      if (data && data.state === "closed" && trade.state !== "closed") {
+        this.$nextTick(() => {
+          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+        })
+      } else if (data && data.paid !== undefined && trade.paid !== data.paid) {
+        this.setTradeAsPaid({tradeAddr, paid: data.paid})
+      } else {
+        this.$nextTick(() => {
+          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+        })
+      }
     })
+  },
+  unmounted: function () {
+    if (this.unsubscribe) {
+      this.unsubscribe()
+    }
   }
 });
 </script>

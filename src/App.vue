@@ -21,9 +21,6 @@ export default defineComponent({
   methods: {
     ...mapActions(["fetchFactoryConfig"]),
   },
-  created() {
-    this.fetchFactoryConfig();
-  },
   computed: {
     ...mapGetters(["loading"]),
   },

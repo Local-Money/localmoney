@@ -1,12 +1,6 @@
 <template>
   <div class="collapsed" :key="`${offer.id}-collapsed`">
     <div class="owner">
-      <div class="avatar">
-        <img
-            src="https://d75aawrtvbfp1.cloudfront.net/ipfs%3A%2F%2FQmeiaAqTMg5CV5ojTQCT6mJyLUR4teVPR8F43xcKyCcyT4"
-            alt=""
-        />
-      </div>
       <div class="wrap">
         <p class="wallet">{{ formatAddress(offer.owner) }}</p>
         <p class="n-trades">0 trades</p>
