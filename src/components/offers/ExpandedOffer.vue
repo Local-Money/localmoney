@@ -1,5 +1,5 @@
 <template>
-  <div class="expanded" :key="`${offer.id}-expanded`">
+  <div class="expanded" :key="`${offer.id}-expanded`" ref="expandedCard">
     <div class="owner">
       <p class="wallet">{{ formatAddress(offer.owner) }}</p>
       <p class="n-trades">352 trades</p>
@@ -24,7 +24,6 @@
               max: maxAmountInFiat(offer),
             },
           }"
-          ref="buyAmountInput"
         />
       </div>
       <div class="input">
@@ -123,13 +122,13 @@ export default defineComponent({
   },
   methods: {
     ...mapActions(["fetchUsdRates", "openTrade"]),
-    scrollToElement: scrollToElement.bind(this),
+    scrollToElement,
     newTrade: function() {
       this.openTrade({ offer: this.offer, ustAmount: this.cryptoAmount });
     },
     focus: function() {
-      let buyInput = this.$refs.buyAmountInput;
-      buyInput.focus();
+      let card = this.$refs.expandedCard;
+      scrollToElement(card);
     },
     startExchangeRateRefreshTimer: function() {
       let seconds = 60;

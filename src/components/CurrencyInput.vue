@@ -3,27 +3,26 @@
 </template>
 
 <script>
-import useCurrencyInput from 'vue-currency-input'
-import { scrollToElement } from '@/shared'
+import useCurrencyInput from "vue-currency-input";
 
 export default {
-  name: 'CurrencyInput',
-  props: ['modelValue', 'options', 'placeholder'],
+  name: "CurrencyInput",
+  props: ["modelValue", "options", "placeholder"],
   methods: {
-    scrollToElement: scrollToElement.bind(this),
-    focus: function () {
-      let input = this.$refs.inputRef
-      input.focus()
-      this.scrollToElement(input)
+    focus: function() {
+      let input = this.$refs.inputRef;
+      input.focus();
     },
     update(val) {
-      this.setValue(val)
+      this.setValue(val);
     },
   },
   setup(props) {
-    const { formattedValue, inputRef, setValue } = useCurrencyInput(props.options)
+    const { formattedValue, inputRef, setValue } = useCurrencyInput(
+      props.options
+    );
 
-    return { inputRef, formattedValue, setValue }
+    return { inputRef, formattedValue, setValue };
   },
-}
+};
 </script>

@@ -36,7 +36,7 @@ export function formatDate(date) {
 /** UI Elements **/
 export function scrollToElement(el) {
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth' })
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }
 
