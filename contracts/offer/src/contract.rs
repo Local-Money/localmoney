@@ -1,7 +1,7 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
-    SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut,
+    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult,
+    Storage, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
 
 use localterra_protocol::factory_util::get_factory_config;
@@ -63,7 +63,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             owner,
             last_value,
             limit,
-        } => to_binary(&OfferModel::query(deps, owner, last_value, limit)?),
+        } => to_binary(&OfferModel::query(deps.storage, owner, last_value, limit)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Trades { trader } => to_binary(&load_trades(
             env,
@@ -109,17 +109,15 @@ fn trade_instance_reply(
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
 
-    trades()
-        .save(
-            deps.storage,
-            trade_state.addr.as_str(),
-            &TradeAddr {
-                trade: trade_addr.clone(),
-                sender: trade_state.sender.clone(),
-                recipient: trade_state.recipient.clone(),
-            },
-        )
-        .unwrap();
+    trades().save(
+        deps.storage,
+        trade_state.addr.as_str(),
+        &TradeAddr {
+            trade: trade_addr.clone(),
+            sender: trade_state.sender.clone(),
+            recipient: trade_state.recipient.clone(),
+        },
+    ).unwrap();
 
     let offer = load_offer_by_id(deps.storage, trade_state.offer_id.clone()).unwrap();
 

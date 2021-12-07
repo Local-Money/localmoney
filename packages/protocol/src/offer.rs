@@ -2,7 +2,7 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
 use crate::trade::State as TradeState;
-use cosmwasm_std::{Addr, Deps, Order, Pair, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Order, Pair, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -79,7 +79,7 @@ pub enum QueryMsg {
         fiat_currency: FiatCurrency,
     },
     OffersQuery {
-        owner: Option<Addr>,
+        owner: String,
         last_value: u64,
         limit: u32,
     },
@@ -201,16 +201,14 @@ impl OfferModel<'_> {
     }
 
     pub fn query(
-        // storage: &dyn Storage,
-        deps: Deps,
-        owner: Option<Addr>,
+        storage: &dyn Storage,
+        owner: String,
         last_value: u64,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
-        let storage = deps.storage;
         let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
-        if owner.is_none() {
+        if owner.is_empty() {
             range = offers().range(
                 storage,
                 Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
@@ -218,9 +216,8 @@ impl OfferModel<'_> {
                 Order::Ascending,
             );
         } else {
-            let owner_addr = deps.api.addr_validate(owner.unwrap().as_str()).unwrap();
-
-            range = offers().idx.owner.prefix(owner_addr).range(
+            range = offers().idx.owner.prefix(Addr::unchecked(owner)).range(
+                // TODO validate the address
                 storage,
                 Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
                 None,
