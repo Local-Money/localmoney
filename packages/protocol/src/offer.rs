@@ -2,7 +2,7 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
 use crate::trade::State as TradeState;
-use cosmwasm_std::{Addr, Order, Pair, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Deps, Order, Pair, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -71,6 +71,13 @@ pub enum ExecuteMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum TradesIndex {
+    Sender,
+    Recipient,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
@@ -79,15 +86,18 @@ pub enum QueryMsg {
         fiat_currency: FiatCurrency,
     },
     OffersQuery {
-        owner: String,
+        owner: Option<Addr>,
         last_value: u64,
         limit: u32,
     },
     Offer {
         id: u64,
     },
-    Trades {
-        trader: String,
+    TradesQuery {
+        trader: Addr,
+        index: TradesIndex,
+        last_value: u64,
+        limit: u32,
     },
 }
 
@@ -201,14 +211,15 @@ impl OfferModel<'_> {
     }
 
     pub fn query(
-        storage: &dyn Storage,
-        owner: String,
+        deps: Deps,
+        owner: Option<Addr>,
         last_value: u64,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
+        let storage = deps.storage;
         let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
-        if owner.is_empty() {
+        if owner.is_none() {
             range = offers().range(
                 storage,
                 Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
@@ -216,8 +227,9 @@ impl OfferModel<'_> {
                 Order::Ascending,
             );
         } else {
-            range = offers().idx.owner.prefix(Addr::unchecked(owner)).range(
-                // TODO validate the address
+            let owner_addr = deps.api.addr_validate(owner.unwrap().as_str()).unwrap();
+
+            range = offers().idx.owner.prefix(owner_addr).range(
                 storage,
                 Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
                 None,

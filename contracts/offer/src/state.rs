@@ -1,8 +1,6 @@
 use cosmwasm_std::{Addr, Storage};
-use cosmwasm_storage::{
-    singleton, singleton_read, ReadonlySingleton, Singleton,
-};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Map, MultiIndex};
+use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
+use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
 use localterra_protocol::offer::{Config, State, TradeAddr};
 
 pub static CONFIG_KEY: &[u8] = b"config";

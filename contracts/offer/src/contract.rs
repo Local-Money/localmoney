@@ -1,14 +1,15 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut,
-    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult,
-    Storage, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
+    SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
+use cw_storage_plus::Bound;
 
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::offer::{
     offers, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, QueryMsg,
-    State, TradeAddr, TradeInfo,
+    State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, State as TradeState,
@@ -63,12 +64,20 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             owner,
             last_value,
             limit,
-        } => to_binary(&OfferModel::query(deps.storage, owner, last_value, limit)?),
+        } => to_binary(&OfferModel::query(deps, owner, last_value, limit)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
-        QueryMsg::Trades { trader } => to_binary(&load_trades(
+        QueryMsg::TradesQuery {
+            trader,
+            index,
+            last_value,
+            limit,
+        } => to_binary(&query_trades(
             env,
             deps,
             deps.api.addr_validate(trader.as_str()).unwrap(),
+            index,
+            last_value,
+            limit,
         )?),
     }
 }
@@ -109,15 +118,17 @@ fn trade_instance_reply(
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
 
-    trades().save(
-        deps.storage,
-        trade_state.addr.as_str(),
-        &TradeAddr {
-            trade: trade_addr.clone(),
-            sender: trade_state.sender.clone(),
-            recipient: trade_state.recipient.clone(),
-        },
-    ).unwrap();
+    trades()
+        .save(
+            deps.storage,
+            trade_state.addr.as_str(),
+            &TradeAddr {
+                trade: trade_addr.clone(),
+                sender: trade_state.sender.clone(),
+                recipient: trade_state.recipient.clone(),
+            },
+        )
+        .unwrap();
 
     let offer = load_offer_by_id(deps.storage, trade_state.offer_id.clone()).unwrap();
 
@@ -298,16 +309,33 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
     Ok(offer)
 }
 
-pub fn load_trades(env: Env, deps: Deps, trader: Addr) -> StdResult<Vec<TradeInfo>> {
+pub fn query_trades(
+    env: Env,
+    deps: Deps,
+    trader: Addr,
+    index: TradesIndex,
+    last_value: u64,
+    limit: u32,
+) -> StdResult<Vec<TradeInfo>> {
     let curr_height = env.block.height;
 
     let mut trades_infos: Vec<TradeInfo> = vec![];
-    let mut trades: Vec<TradeAddr> = vec![];
-    let mut as_sender = query_trades_by_sender(deps, trader.clone()).unwrap();
-    let mut as_recipient = query_trades_by_recipient(deps, trader.clone()).unwrap();
 
-    trades.append(&mut as_sender);
-    trades.append(&mut as_recipient);
+    let multi_index = match index {
+        TradesIndex::Sender => trades().idx.sender,
+        TradesIndex::Recipient => trades().idx.recipient,
+    };
+
+    let trades: Vec<TradeAddr> = multi_index.prefix(trader)
+        .range(
+            deps.storage,
+            Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
+            None,
+            Order::Ascending,
+        )
+        .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+        .take(limit as usize)
+        .collect();
 
     trades.iter().for_each(|t| {
         let trade_state: TradeState = deps
@@ -336,28 +364,4 @@ pub fn load_trades(env: Env, deps: Deps, trader: Addr) -> StdResult<Vec<TradeInf
         })
     });
     Ok(trades_infos)
-}
-
-pub fn query_trades_by_sender(deps: Deps, sender: Addr) -> StdResult<Vec<TradeAddr>> {
-    let result = trades()
-        .idx
-        .sender
-        .prefix(sender)
-        .range(deps.storage, None, None, Order::Ascending)
-        .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_trades_by_recipient(deps: Deps, recipient: Addr) -> StdResult<Vec<TradeAddr>> {
-    let result = trades()
-        .idx
-        .recipient
-        .prefix(recipient)
-        .range(deps.storage, None, None, Order::Ascending)
-        .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-        .collect();
-
-    Ok(result)
 }
