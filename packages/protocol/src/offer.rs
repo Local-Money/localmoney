@@ -13,11 +13,15 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct OfferIndexes<'a> {
     // pk goes to second tuple element
     pub owner: MultiIndex<'a, (Addr, Vec<u8>), Offer>,
+    pub offer_type: MultiIndex<'a, (String, Vec<u8>), Offer>,
+    pub fiat: MultiIndex<'a, (String, Vec<u8>), Offer>,
+    pub filter: MultiIndex<'a, (String, String, Vec<u8>), Offer>,
 }
 
 impl<'a> IndexList<Offer> for OfferIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Offer>> + '_> {
-        let v: Vec<&dyn Index<Offer>> = vec![&self.owner];
+        let v: Vec<&dyn Index<Offer>> =
+            vec![&self.owner, &self.offer_type, &self.fiat, &self.filter];
         Box::new(v.into_iter())
     }
 }
@@ -28,6 +32,21 @@ pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
             |d: &Offer, k: Vec<u8>| (d.owner.clone(), k),
             "offers",        // TODO replace with OFFERS_KEY
             "offers__owner", // TODO replace with OFFERS_KEY and concat
+        ),
+        offer_type: MultiIndex::new(
+            |d: &Offer, k: Vec<u8>| (d.offer_type.to_string(), k),
+            "offers",             // TODO replace with OFFERS_KEY
+            "offers__offer_type", // TODO replace with OFFERS_KEY and concat
+        ),
+        fiat: MultiIndex::new(
+            |d: &Offer, k: Vec<u8>| (d.fiat_currency.to_string(), k),
+            "offers",       // TODO replace with OFFERS_KEY
+            "offers__fiat", // TODO replace with OFFERS_KEY and concat
+        ),
+        filter: MultiIndex::new(
+            |d: &Offer, k: Vec<u8>| (d.offer_type.to_string(), d.fiat_currency.to_string(), k),
+            "offers",         // TODO replace with OFFERS_KEY
+            "offers__filter", // TODO replace with OFFERS_KEY and concat
         ),
     };
     IndexedMap::new(OFFERS_KEY, indexes)
@@ -83,11 +102,28 @@ pub enum QueryMsg {
     Config {},
     State {},
     Offers {
+        // TODO deprecated, remove
         fiat_currency: FiatCurrency,
     },
     OffersQuery {
         owner: Option<Addr>,
-        last_value: u64,
+        last_value: Option<u64>,
+        limit: u32,
+    },
+    OffersByType {
+        offer_type: OfferType,
+        last_value: Option<u64>,
+        limit: u32,
+    },
+    OffersByFiat {
+        fiat_currency: FiatCurrency,
+        last_value: Option<u64>,
+        limit: u32,
+    },
+    OffersByTypeFiat {
+        offer_type: OfferType,
+        fiat_currency: FiatCurrency,
+        last_value: Option<u64>,
         limit: u32,
     },
     Offer {
@@ -210,32 +246,110 @@ impl OfferModel<'_> {
         Ok(result)
     }
 
+    pub fn query_by_type(
+        deps: Deps,
+        offer_type: OfferType,
+        last_value: Option<u64>,
+        limit: u32,
+    ) -> StdResult<Vec<Offer>> {
+        let storage = deps.storage;
+
+        let range_from = match last_value {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            None => None,
+        };
+
+        let result = offers()
+            .idx
+            .offer_type
+            .prefix(offer_type.to_string())
+            .range(storage, range_from, None, Order::Ascending)
+            .take(limit as usize)
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn query_by_type_fiat(
+        deps: Deps,
+        offer_type: OfferType,
+        fiat_currency: FiatCurrency,
+        last_value: Option<u64>,
+        limit: u32,
+    ) -> StdResult<Vec<Offer>> {
+        let storage = deps.storage;
+
+        let range_from = match last_value {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            None => None,
+        };
+
+        let result = offers()
+            .idx
+            .filter
+            .prefix((offer_type.to_string(), fiat_currency.to_string()))
+            .range(storage, range_from, None, Order::Ascending)
+            .take(limit as usize)
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn query_by_fiat(
+        deps: Deps,
+        fiat_currency: FiatCurrency,
+        last_value: Option<u64>,
+        limit: u32,
+    ) -> StdResult<Vec<Offer>> {
+        let storage = deps.storage;
+
+        let range_from = match last_value {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            None => None,
+        };
+
+        let result = offers()
+            .idx
+            .fiat
+            .prefix(fiat_currency.to_string())
+            .range(storage, range_from, None, Order::Ascending)
+            .take(limit as usize)
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .collect();
+
+        Ok(result)
+    }
+
     pub fn query(
         deps: Deps,
         owner: Option<Addr>,
-        last_value: u64,
+        last_value: Option<u64>,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
         let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
-        if owner.is_none() {
-            range = offers().range(
-                storage,
-                Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
-                None,
-                Order::Ascending,
-            );
-        } else {
-            let owner_addr = deps.api.addr_validate(owner.unwrap().as_str()).unwrap();
+        let range_from = match last_value {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            None => None,
+        };
 
-            range = offers().idx.owner.prefix(owner_addr).range(
-                storage,
-                Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
-                None,
-                Order::Ascending,
-            );
-        }
+        // Handle optional owner address query parameter
+        let range = match owner {
+            None => offers().range(storage, range_from, None, Order::Ascending),
+            Some(unchecked_addr) => {
+                let owner_addr = deps.api.addr_validate(unchecked_addr.as_str()).unwrap();
+
+                offers().idx.owner.prefix(owner_addr).range(
+                    storage,
+                    range_from,
+                    None,
+                    Order::Ascending,
+                )
+            }
+        };
 
         let result = range
             .take(limit as usize)

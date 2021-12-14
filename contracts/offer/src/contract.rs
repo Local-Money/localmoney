@@ -65,6 +65,35 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             last_value,
             limit,
         } => to_binary(&OfferModel::query(deps, owner, last_value, limit)?),
+        QueryMsg::OffersByType {
+            offer_type,
+            last_value,
+            limit,
+        } => to_binary(&OfferModel::query_by_type(
+            deps, offer_type, last_value, limit,
+        )?),
+        QueryMsg::OffersByFiat {
+            fiat_currency,
+            last_value,
+            limit,
+        } => to_binary(&OfferModel::query_by_fiat(
+            deps,
+            fiat_currency,
+            last_value,
+            limit,
+        )?),
+        QueryMsg::OffersByTypeFiat {
+            offer_type,
+            fiat_currency,
+            last_value,
+            limit,
+        } => to_binary(&OfferModel::query_by_type_fiat(
+            deps,
+            offer_type,
+            fiat_currency,
+            last_value,
+            limit,
+        )?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::TradesQuery {
             trader,

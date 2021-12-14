@@ -12,7 +12,7 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::errors::OfferError;
 use localterra_protocol::offer::{
     Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, OfferType,
-    QueryMsg, State,
+    QueryMsg, State, TradesIndex
 };
 use localterra_protocol::trade::InstantiateMsg as TradeInstantiateMsg;
 
@@ -339,8 +339,11 @@ fn instantiate_trade() {
         &query(
             deps.as_ref(),
             mock_env(),
-            QueryMsg::Trades {
-                trader: "maker".to_string(),
+            QueryMsg::TradesQuery {
+                trader: Addr::unchecked("maker"),
+                index: TradesIndex::Recipient,
+                last_value: None,
+                limit: 10
             },
         )
         .unwrap(),
