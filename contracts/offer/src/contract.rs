@@ -314,25 +314,29 @@ pub fn query_trades(
     deps: Deps,
     trader: Addr,
     index: TradesIndex,
-    last_value: u64,
+    last_value: Option<Addr>,
     limit: u32,
 ) -> StdResult<Vec<TradeInfo>> {
     let curr_height = env.block.height;
 
     let mut trades_infos: Vec<TradeInfo> = vec![];
 
+    let range_from = match last_value {
+        Some(addr) => {
+            let valid_addr = deps.api.addr_validate(addr.as_str()).unwrap();
+            Some(Bound::Exclusive(Vec::from(valid_addr.to_string())))
+        }
+        None => None,
+    };
+
     let multi_index = match index {
         TradesIndex::Sender => trades().idx.sender,
         TradesIndex::Recipient => trades().idx.recipient,
     };
 
-    let trades: Vec<TradeAddr> = multi_index.prefix(trader)
-        .range(
-            deps.storage,
-            Some(Bound::Exclusive(Vec::from(last_value.to_string()))),
-            None,
-            Order::Ascending,
-        )
+    let trades: Vec<TradeAddr> = multi_index
+        .prefix(trader)
+        .range(deps.storage, range_from, None, Order::Ascending)
         .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
         .take(limit as usize)
         .collect();
