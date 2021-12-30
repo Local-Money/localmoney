@@ -44,7 +44,13 @@ pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
             "offers__fiat", // TODO replace with OFFERS_KEY and concat
         ),
         filter: MultiIndex::new(
-            |d: &Offer, k: Vec<u8>| (d.offer_type.to_string(), d.fiat_currency.to_string(), k),
+            |d: &Offer, k: Vec<u8>| {
+                (
+                    d.offer_type.to_string(),
+                    d.fiat_currency.to_string() + &*d.state.to_string(),
+                    k,
+                )
+            },
             "offers",         // TODO replace with OFFERS_KEY
             "offers__filter", // TODO replace with OFFERS_KEY and concat
         ),
@@ -288,7 +294,10 @@ impl OfferModel<'_> {
         let result = offers()
             .idx
             .filter
-            .prefix((offer_type.to_string(), fiat_currency.to_string()))
+            .prefix((
+                offer_type.to_string(),
+                fiat_currency.to_string() + &*OfferState::Active.to_string(),
+            ))
             .range(storage, range_from, None, Order::Ascending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
@@ -381,6 +390,11 @@ pub enum OfferType {
     Sell,
 }
 impl fmt::Display for OfferType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+impl fmt::Display for OfferState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
