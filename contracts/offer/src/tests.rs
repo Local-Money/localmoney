@@ -101,7 +101,7 @@ fn create_offer_test() {
     assert_eq!(brl_offers.len(), 1);
 
     let query_order_by_id = QueryMsg::Offer { id: 1 };
-    let created_offer = Offer {
+    let mut created_offer = Offer {
         id: 1,
         owner: factory,
         offer_type: OfferType::Buy,
@@ -109,9 +109,13 @@ fn create_offer_test() {
         min_amount: Uint128::new(1),
         max_amount: Uint128::new(2),
         state: OfferState::Active,
+        timestamp: 1641329895
     };
     let queried_offer: Offer =
         from_binary(&query(deps.as_ref(), env.clone(), query_order_by_id).unwrap()).unwrap();
+
+    created_offer.timestamp = queried_offer.timestamp; // Or assert_eq will fail
+    
     assert_eq!(queried_offer, created_offer);
 }
 
@@ -312,6 +316,8 @@ fn instantiate_trade() {
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "taker".to_string(),
         offers_addr: "offers".to_string(),
+        timestamp: 1641329895
+
     })
     .unwrap();
     let from_binary_msg: TradeInstantiateMsg = from_binary(&msg).unwrap();

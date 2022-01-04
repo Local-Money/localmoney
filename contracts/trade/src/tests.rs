@@ -28,6 +28,8 @@ fn test_init() {
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "other".to_string(),
         offers_addr: "offers".to_string(),
+        timestamp: 1641329895
+
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_trade_msg);
@@ -56,6 +58,7 @@ fn create_trade(
         ust_amount: trade_amount.clone().to_string(),
         counterparty: info.sender.clone().into_string(),
         offers_addr: "offers".to_string(),
+        timestamp: 1641329895
     };
     let res = instantiate(
         deps.as_mut(),
@@ -165,6 +168,7 @@ fn create_offer_struct(
         min_amount: min_amount.clone(),
         max_amount: max_amount.clone(),
         state: OfferState::Active,
+        timestamp: 1641329895
     }
 }
 

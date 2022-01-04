@@ -237,6 +237,7 @@ impl WasmMockQuerier {
                         min_amount: Uint128::new(1_000_000u128),
                         max_amount: Uint128::new(500_000_000u128),
                         state: OfferState::Active,
+                        timestamp: 1641329895
                     });
                     SystemResult::Ok(ContractResult::from(to_binary(&offer)))
                 }
@@ -288,6 +289,8 @@ impl WasmMockQuerier {
                             min_amount: Uint128::new(1_000_000u128),
                             max_amount: Uint128::new(500_000_000u128),
                             state: OfferState::Active,
+                            timestamp: 1641329895
+
                         },
                         expired: false
                     })))
