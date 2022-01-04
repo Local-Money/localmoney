@@ -2,19 +2,19 @@ use crate::errors::TradingIncentivesError;
 use crate::math::DECIMAL_FRACTIONAL;
 use crate::state::{CONFIG, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, QueryRequest, StdError, StdResult,
-    Storage, SubMsg, WasmMsg, WasmQuery,
+    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps,  StdError, StdResult,
+    Storage, SubMsg, WasmMsg, 
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use localterra_protocol::factory_util::get_factory_config;
-use localterra_protocol::offer::{QueryMsg as OfferQueryMsg, TradeInfo};
-use localterra_protocol::trade::TradeState as TradeTradeState;
+// use localterra_protocol::offer::{QueryMsg as OfferQueryMsg, TradeInfo};
+// use localterra_protocol::trade::TradeState as TradeTradeState;
 use localterra_protocol::trading_incentives::{
     Config, Distribution, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use std::cmp;
-use std::ops::{Add, Mul};
+use std::ops::{ Mul};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

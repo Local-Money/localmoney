@@ -5,6 +5,8 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Bound;
 
+use std::time::{SystemTime};
+
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::offer::{
@@ -195,6 +197,7 @@ pub fn create_offer(
             min_amount: msg.min_amount,
             max_amount: msg.max_amount,
             state: OfferState::Active,
+            timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
         },
     )
     .offer;
@@ -298,6 +301,7 @@ fn create_trade(
             ust_amount: ust_amount.clone(),
             counterparty: counterparty.clone(),
             offers_addr: env.contract.address.to_string(),
+            timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
         })
         .unwrap(),
         funds: info.funds,

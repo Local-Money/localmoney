@@ -8,6 +8,7 @@ pub struct InstantiateMsg {
     pub ust_amount: String,
     pub counterparty: String,
     pub offers_addr: String,
+    pub timestamp: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

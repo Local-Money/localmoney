@@ -2,7 +2,7 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
 use crate::trade::State as TradeState;
-use cosmwasm_std::{Addr, Deps, Order, Pair, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Deps, Order,  StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -163,6 +163,7 @@ pub struct Offer {
     pub min_amount: Uint128,
     pub max_amount: Uint128,
     pub state: OfferState,
+    pub timestamp: u64,
 }
 
 pub struct OfferModel<'a> {
@@ -338,7 +339,7 @@ impl OfferModel<'_> {
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
-        let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
+        // let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
         let range_from = match last_value {
             Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
