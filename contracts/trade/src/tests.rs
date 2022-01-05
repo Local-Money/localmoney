@@ -326,6 +326,20 @@ fn test_fund_escrow() {
     let trade_state: State =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
+    
+    
+    // Funding trade a second time will throw an error.
+    let res_error = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        ExecuteMsg::FundEscrow {},
+    );
+
+    println!("{:?}", res_error);
+    
+    assert!(res_error.is_err());
+
 }
 
 #[test]

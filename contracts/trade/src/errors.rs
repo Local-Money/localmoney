@@ -36,6 +36,8 @@ pub enum TradeError {
         required_amount: Uint128,
         sent_amount: Uint128,
     },
+    #[error("Escrow already funded.")]
+    AlreadyFundedError {},
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
 }

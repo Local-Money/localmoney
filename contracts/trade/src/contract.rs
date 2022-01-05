@@ -158,6 +158,12 @@ fn fund_escrow(
             expire_height: state.expire_height,
         });
     }
+    
+    // Check if escrow has already been funded
+    if state.state == TradeState::EscrowFunded {
+        return Err(TradeError::AlreadyFundedError {});
+    }
+    
     //TODO: Convert to UST if trade is for any other stablecoin or Luna,
     // skip conversion entirely if fee was paid in $LOCAL.
     let ust_amount = if !info.funds.is_empty() {
