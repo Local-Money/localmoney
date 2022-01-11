@@ -119,6 +119,7 @@ pub fn execute(
         ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state),
         ExecuteMsg::Refund {} => refund(deps, env, info, state),
         ExecuteMsg::Release {} => release(deps, env, info, state),
+        ExecuteMsg::Dispute {} => dispute(deps, env, info, state),
     }
 }
 
@@ -232,6 +233,30 @@ fn get_offer(deps: &Deps, state: &State) -> Offer {
         .unwrap()
 }
 
+fn dispute(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    state: State,
+) -> Result<Response, TradeError> {
+    if (info.sender != state.sender) & (info.sender != state.recipient) {
+        return Err(TradeError::UnauthorizedDispute {
+            sender: state.sender,
+            recipient: state.recipient,
+            caller: info.sender,
+        });
+    }
+
+    // Update trade State to TradeState::Disputed
+    let mut state: State = state_storage(deps.storage).load().unwrap();
+
+    state.state = TradeState::Disputed;
+
+    state_storage(deps.storage).save(&state).unwrap();
+
+    let res = Response::new();
+    Ok(res)
+}
 fn release(
     deps: DepsMut,
     env: Env,
@@ -239,7 +264,7 @@ fn release(
     state: State,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender != state.arbitrator) & (state.state != TradeState::Disputed);
+        (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
 
     //Check if sender can release
     if (info.sender != state.sender) & !arbitration_mode {
@@ -340,7 +365,7 @@ fn refund(
     state: State,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender != state.arbitrator) & (state.state != TradeState::Disputed);
+        (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration

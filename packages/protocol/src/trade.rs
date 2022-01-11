@@ -20,6 +20,7 @@ pub enum ExecuteMsg {
     FundEscrow {},
     Refund {},
     Release {},
+    Dispute {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -33,7 +34,7 @@ pub struct State {
     pub addr: Addr,
     pub factory_addr: Addr,
     pub recipient: Addr, // buyer
-    pub sender: Addr, // seller
+    pub sender: Addr,    // seller
     pub taker_contact: String,
     pub arbitrator: Addr,
     pub offer_contract: Addr,
@@ -52,7 +53,7 @@ pub enum TradeState {
     EscrowFunded,
     Disputed,
     SettledForMaker,
-    SettledForTaker
+    SettledForTaker,
 }
 
 impl fmt::Display for TradeState {
