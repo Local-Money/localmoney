@@ -70,6 +70,7 @@ pub struct OfferMsg {
     pub fiat_currency: FiatCurrency,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
+    pub maker_contact: String
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -92,6 +93,7 @@ pub enum ExecuteMsg {
         offer_id: u64,
         ust_amount: String,
         counterparty: String,
+        taker_contact: String,
     },
 }
 
@@ -158,6 +160,7 @@ pub struct State {
 pub struct Offer {
     pub id: u64,
     pub owner: Addr,
+    pub maker_contact: String,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub min_amount: Uint128,

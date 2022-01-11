@@ -75,10 +75,11 @@ pub fn instantiate(
     let mut state = State {
         addr: env.contract.address.clone(),
         factory_addr: offers_cfg.factory_addr.clone(),
-        recipient,
-        sender,
+        recipient, // buyer
+        sender, // seller
         offer_contract: offer_contract.clone(),
         offer_id,
+        taker_contact: msg.taker_contact,
         state: TradeState::Created,
         expire_height,
         ust_amount: amount,

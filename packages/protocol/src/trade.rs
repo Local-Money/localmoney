@@ -8,6 +8,7 @@ pub struct InstantiateMsg {
     pub ust_amount: String,
     pub counterparty: String,
     pub offers_addr: String,
+    pub taker_contact: String,
     pub timestamp: u64,
 }
 
@@ -29,8 +30,9 @@ pub enum QueryMsg {
 pub struct State {
     pub addr: Addr,
     pub factory_addr: Addr,
-    pub recipient: Addr,
-    pub sender: Addr,
+    pub recipient: Addr, // buyer
+    pub sender: Addr, // seller
+    pub taker_contact: String,
     pub offer_contract: Addr,
     pub offer_id: u64,
     pub expire_height: u64,

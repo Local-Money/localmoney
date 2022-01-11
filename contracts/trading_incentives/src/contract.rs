@@ -105,10 +105,11 @@ fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<U
 }
 
 fn register_trade(
-    trade: String,
-    maker: String,
-    deps: DepsMut,
-    env: Env,
+    // TODO remove leading underscores (suppressing unused variables warnings)
+    _trade: String,
+    _maker: String,
+    _deps: DepsMut,
+    _env: Env,
 ) -> Result<Response, TradingIncentivesError> {
     //TODO: Refactor
     Ok(Response::default())
