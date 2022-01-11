@@ -23,7 +23,7 @@ pub enum TradeError {
     #[error("Offer not found.")]
     OfferNotFound { offer_id: u64 },
     #[error("Refund error.")]
-    RefundError { message: String },
+    RefundError { message: String, state: String },
     #[error("Release error.")]
     ReleaseError { message: String },
     #[error("Swap error.")]
@@ -39,5 +39,9 @@ pub enum TradeError {
     #[error("Escrow already funded.")]
     AlreadyFundedError {},
     #[error("Unauthorized.")]
-    Unauthorized { owner: Addr, caller: Addr },
+    Unauthorized {
+        owner: Addr,
+        arbitrator: Addr,
+        caller: Addr,
+    },
 }

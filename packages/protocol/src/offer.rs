@@ -94,6 +94,7 @@ pub enum ExecuteMsg {
         ust_amount: String,
         counterparty: String,
         taker_contact: String,
+        arbitrator: String,
     },
 }
 

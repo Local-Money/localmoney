@@ -1,6 +1,7 @@
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::fmt::{self};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -8,6 +9,7 @@ pub struct InstantiateMsg {
     pub ust_amount: String,
     pub counterparty: String,
     pub offers_addr: String,
+    pub arbitrator: String,
     pub taker_contact: String,
     pub timestamp: u64,
 }
@@ -33,6 +35,7 @@ pub struct State {
     pub recipient: Addr, // buyer
     pub sender: Addr, // seller
     pub taker_contact: String,
+    pub arbitrator: Addr,
     pub offer_contract: Addr,
     pub offer_id: u64,
     pub expire_height: u64,
@@ -47,4 +50,13 @@ pub enum TradeState {
     Closed,
     Created,
     EscrowFunded,
+    Disputed,
+    SettledForMaker,
+    SettledForTaker
+}
+
+impl fmt::Display for TradeState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
