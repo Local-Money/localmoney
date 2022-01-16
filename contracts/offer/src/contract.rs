@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
-    SubMsgExecutionResponse, WasmMsg, WasmQuery, 
+    SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
 use cw_storage_plus::Bound;
 
@@ -49,8 +49,17 @@ pub fn execute(
             ust_amount,
             counterparty,
             taker_contact,
-            arbitrator
-        } => create_trade(deps, env, info, offer_id, ust_amount, counterparty, taker_contact, arbitrator),
+            arbitrator,
+        } => create_trade(
+            deps,
+            env,
+            info,
+            offer_id,
+            ust_amount,
+            counterparty,
+            taker_contact,
+            arbitrator,
+        ),
     }
 }
 
@@ -157,6 +166,7 @@ fn trade_instance_reply(
                 trade: trade_addr.clone(),
                 sender: trade_state.sender.clone(),
                 recipient: trade_state.recipient.clone(),
+                arbitrator: trade_state.arbitrator.clone(),
             },
         )
         .unwrap();
@@ -370,6 +380,7 @@ pub fn query_trades(
     let multi_index = match index {
         TradesIndex::Sender => trades().idx.sender,
         TradesIndex::Recipient => trades().idx.recipient,
+        TradesIndex::Arbitrator => trades().idx.arbitrator,
     };
 
     let trades: Vec<TradeAddr> = multi_index

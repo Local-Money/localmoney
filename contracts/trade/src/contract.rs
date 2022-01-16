@@ -390,9 +390,9 @@ fn refund(
         if !arbitration_mode {
             state.state = TradeState::Canceled;
         } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.recipient) {
-            state.state = TradeState::SettledForMaker;
-        } else {
             state.state = TradeState::SettledForTaker;
+        } else {
+            state.state = TradeState::SettledForMaker;
         }
 
         state_storage(deps.storage).save(&state).unwrap();

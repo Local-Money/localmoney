@@ -2,7 +2,7 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
 use crate::trade::State as TradeState;
-use cosmwasm_std::{Addr, Deps, Order,  StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -70,7 +70,7 @@ pub struct OfferMsg {
     pub fiat_currency: FiatCurrency,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
-    pub maker_contact: String
+    pub maker_contact: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -103,6 +103,7 @@ pub enum ExecuteMsg {
 pub enum TradesIndex {
     Sender,
     Recipient,
+    Arbitrator,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -386,6 +387,7 @@ pub struct TradeAddr {
     pub trade: Addr,
     pub sender: Addr,
     pub recipient: Addr,
+    pub arbitrator: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

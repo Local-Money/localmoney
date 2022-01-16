@@ -10,11 +10,12 @@ pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
     pub sender: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
     pub recipient: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
+    pub arbitrator: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
 }
 
 impl<'a> IndexList<TradeAddr> for TradeIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<TradeAddr>> + '_> {
-        let v: Vec<&dyn Index<TradeAddr>> = vec![&self.sender, &self.recipient];
+        let v: Vec<&dyn Index<TradeAddr>> = vec![&self.sender, &self.recipient, &self.arbitrator];
         Box::new(v.into_iter())
     }
 }
@@ -30,6 +31,11 @@ pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
             |d: &TradeAddr, k: Vec<u8>| (d.recipient.clone(), k),
             "trades",            // TODO replace with TRADES_KEY
             "trades__recipient", // TODO replace with TRADES_KEY and concat
+        ),
+        arbitrator: MultiIndex::new(
+            |d: &TradeAddr, k: Vec<u8>| (d.arbitrator.clone(), k),
+            "trades",             // TODO replace with TRADES_KEY
+            "trades__arbitrator", // TODO replace with TRADES_KEY and concat
         ),
     };
     IndexedMap::new("trades", indexes)
