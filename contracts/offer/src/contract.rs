@@ -164,8 +164,8 @@ fn trade_instance_reply(
             trade_state.addr.as_str(),
             &TradeAddr {
                 trade: trade_addr.clone(),
-                sender: trade_state.sender.clone(),
-                recipient: trade_state.recipient.clone(),
+                seller: trade_state.sender.clone(),
+                buyer: trade_state.recipient.clone(),
                 arbitrator: trade_state.arbitrator.clone(),
             },
         )

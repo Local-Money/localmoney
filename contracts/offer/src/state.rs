@@ -23,12 +23,12 @@ impl<'a> IndexList<TradeAddr> for TradeIndexes<'a> {
 pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
     let indexes = TradeIndexes {
         sender: MultiIndex::new(
-            |d: &TradeAddr, k: Vec<u8>| (d.sender.clone(), k),
+            |d: &TradeAddr, k: Vec<u8>| (d.seller.clone(), k),
             "trades",         // TODO replace with TRADES_KEY
             "trades__sender", // TODO replace with TRADES_KEY and concat
         ),
         recipient: MultiIndex::new(
-            |d: &TradeAddr, k: Vec<u8>| (d.recipient.clone(), k),
+            |d: &TradeAddr, k: Vec<u8>| (d.buyer.clone(), k),
             "trades",            // TODO replace with TRADES_KEY
             "trades__recipient", // TODO replace with TRADES_KEY and concat
         ),
