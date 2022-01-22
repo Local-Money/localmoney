@@ -25,11 +25,12 @@ fn test_init() {
 
     let instantiate_trade_msg = InstantiateMsg {
         offer_id: 1,
+        arbitrator: "arbitrator".to_string(),
+        taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "other".to_string(),
         offers_addr: "offers".to_string(),
-        timestamp: 1641329895
-
+        timestamp: 1641329895,
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_trade_msg);
@@ -55,10 +56,12 @@ fn create_trade(
     //Init trade
     let instantiate_trade_msg = InstantiateMsg {
         offer_id: 1,
+        arbitrator: "arbitrator".to_string(),
+        taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
         counterparty: info.sender.clone().into_string(),
         offers_addr: "offers".to_string(),
-        timestamp: 1641329895
+        timestamp: 1641329895,
     };
     let res = instantiate(
         deps.as_mut(),
@@ -163,12 +166,13 @@ fn create_offer_struct(
     Offer {
         id: 1,
         owner: Addr::unchecked("offer-owner"),
+        maker_contact: "LunaQueen".to_string(),
         offer_type: offer_type.clone().unwrap_or(OfferType::Buy),
         fiat_currency: fiat_currency.clone().unwrap_or(FiatCurrency::COP),
         min_amount: min_amount.clone(),
         max_amount: max_amount.clone(),
         state: OfferState::Active,
-        timestamp: 1641329895
+        timestamp: 1641329895,
     }
 }
 
@@ -326,8 +330,6 @@ fn test_fund_escrow() {
     let trade_state: State =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
-    
-    
     // Funding trade a second time will throw an error.
     let res_error = execute(
         deps.as_mut(),
@@ -337,9 +339,8 @@ fn test_fund_escrow() {
     );
 
     println!("{:?}", res_error);
-    
-    assert!(res_error.is_err());
 
+    assert!(res_error.is_err());
 }
 
 #[test]

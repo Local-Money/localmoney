@@ -52,6 +52,7 @@ fn create_offer(
     let msg = ExecuteMsg::Create {
         offer: OfferMsg {
             offer_type,
+            maker_contact: "LunaQueen".to_string(),
             fiat_currency,
             min_amount: Uint128::from(1u128),
             max_amount: Uint128::from(2u128),
@@ -104,6 +105,7 @@ fn create_offer_test() {
     let mut created_offer = Offer {
         id: 1,
         owner: factory,
+        maker_contact: "LunaQueen".to_string(),
         offer_type: OfferType::Buy,
         fiat_currency: FiatCurrency::BRL,
         min_amount: Uint128::new(1),
@@ -262,6 +264,7 @@ fn update_offer_test() {
     //Prepare Update message
     let offer_msg = OfferMsg {
         offer_type: OfferType::Sell,
+        maker_contact: "LunaQueen".to_string(),
         fiat_currency: FiatCurrency::COP,
         min_amount: Uint128::from(1000000u128),
         max_amount: Uint128::from(5000000u128),
@@ -303,6 +306,8 @@ fn instantiate_trade() {
     //Send Message to Create Trade
     let new_trade_msg = ExecuteMsg::NewTrade {
         offer_id: 1,
+        arbitrator: "arbitrator".to_string(),
+        taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "taker".to_string(),
     };
@@ -312,6 +317,8 @@ fn instantiate_trade() {
 
     let msg = to_binary(&TradeInstantiateMsg {
         offer_id: 1,
+        arbitrator: "arbitrator".to_string(),
+        taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "taker".to_string(),
         offers_addr: "offers".to_string(),

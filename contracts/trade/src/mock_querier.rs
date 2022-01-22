@@ -232,12 +232,13 @@ impl WasmMockQuerier {
                     let offer = self.offer.clone().unwrap_or(Offer {
                         id,
                         owner: Addr::unchecked("offer-owner"),
+                        maker_contact: "LunaQueen".to_string(),
                         offer_type: OfferType::Buy,
                         fiat_currency: FiatCurrency::COP,
                         min_amount: Uint128::new(1_000_000u128),
                         max_amount: Uint128::new(500_000_000u128),
                         state: OfferState::Active,
-                        timestamp: 1641329895
+                        timestamp: 1641329895,
                     });
                     SystemResult::Ok(ContractResult::from(to_binary(&offer)))
                 }
@@ -274,6 +275,8 @@ impl WasmMockQuerier {
                             addr: Addr::unchecked("trade"),
                             factory_addr: Addr::unchecked("factory"),
                             recipient: Addr::unchecked("taker"),
+                            arbitrator: Addr::unchecked("arbitrator"),
+                            taker_contact: "USTKing".to_string(),
                             sender: Addr::unchecked(maker),
                             offer_id: 1,
                             offer_contract: Addr::unchecked("offer"),
@@ -284,14 +287,16 @@ impl WasmMockQuerier {
                         offer: Offer {
                             id: 1,
                             owner: Addr::unchecked("offer-owner"),
+                            maker_contact: "LunaQueen".to_string(),
+
                             offer_type: OfferType::Buy,
                             fiat_currency: FiatCurrency::COP,
                             min_amount: Uint128::new(1_000_000u128),
                             max_amount: Uint128::new(500_000_000u128),
                             state: OfferState::Active,
-                            timestamp: 1641329895
+                            timestamp: 1641329895,
                         },
-                        expired: false
+                        expired: false,
                     })))
                 }
             },
