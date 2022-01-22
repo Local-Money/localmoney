@@ -140,7 +140,7 @@ pub enum QueryMsg {
         id: u64,
     },
     TradesQuery {
-        trader: Addr,
+        user: Addr,
         index: TradesIndex,
         last_value: Option<Addr>,
         limit: u32,

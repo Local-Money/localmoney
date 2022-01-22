@@ -107,14 +107,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         )?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::TradesQuery {
-            trader,
+            user,
             index,
             last_value,
             limit,
         } => to_binary(&query_trades(
             env,
             deps,
-            deps.api.addr_validate(trader.as_str()).unwrap(),
+            deps.api.addr_validate(user.as_str()).unwrap(),
             index,
             last_value,
             limit,
@@ -360,7 +360,7 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
 pub fn query_trades(
     env: Env,
     deps: Deps,
-    trader: Addr,
+    user: Addr,
     index: TradesIndex,
     last_value: Option<Addr>,
     limit: u32,
@@ -384,7 +384,7 @@ pub fn query_trades(
     };
 
     let trades: Vec<TradeAddr> = multi_index
-        .prefix(trader)
+        .prefix(user)
         .range(deps.storage, range_from, None, Order::Ascending)
         .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
         .take(limit as usize)

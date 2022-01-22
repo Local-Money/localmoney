@@ -12,7 +12,7 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::errors::OfferError;
 use localterra_protocol::offer::{
     Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, OfferType,
-    QueryMsg, State, TradesIndex
+    QueryMsg, State, TradesIndex,
 };
 use localterra_protocol::trade::InstantiateMsg as TradeInstantiateMsg;
 
@@ -109,13 +109,12 @@ fn create_offer_test() {
         min_amount: Uint128::new(1),
         max_amount: Uint128::new(2),
         state: OfferState::Active,
-        timestamp: 1641329895
+        timestamp: 1641329895,
     };
     let queried_offer: Offer =
         from_binary(&query(deps.as_ref(), env.clone(), query_order_by_id).unwrap()).unwrap();
 
     created_offer.timestamp = queried_offer.timestamp; // Or assert_eq will fail
-    
     assert_eq!(queried_offer, created_offer);
 }
 
@@ -316,8 +315,7 @@ fn instantiate_trade() {
         ust_amount: trade_amount.clone().to_string(),
         counterparty: "taker".to_string(),
         offers_addr: "offers".to_string(),
-        timestamp: 1641329895
-
+        timestamp: 1641329895,
     })
     .unwrap();
     let from_binary_msg: TradeInstantiateMsg = from_binary(&msg).unwrap();
@@ -346,10 +344,10 @@ fn instantiate_trade() {
             deps.as_ref(),
             mock_env(),
             QueryMsg::TradesQuery {
-                trader: Addr::unchecked("maker"),
+                user: Addr::unchecked("maker"),
                 index: TradesIndex::Recipient,
                 last_value: None,
-                limit: 10
+                limit: 10,
             },
         )
         .unwrap(),
