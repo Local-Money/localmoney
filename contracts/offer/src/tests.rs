@@ -352,6 +352,7 @@ fn instantiate_trade() {
             mock_env(),
             QueryMsg::TradesQuery {
                 user: Addr::unchecked("maker"),
+                state: None,
                 index: TradesIndex::Recipient,
                 last_value: None,
                 limit: 10,

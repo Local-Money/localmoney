@@ -11,7 +11,7 @@ use cosmwasm_vm::testing::{mock_env, mock_info};
 
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::offer::{Offer, OfferState, OfferType};
-use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
 
 use crate::contract::{execute, instantiate, localterra_fee, query};
 use crate::errors::TradeError;
@@ -102,7 +102,7 @@ fn test_trade_happy_path() {
     let (_, mut deps) = create_trade(trade_amount.clone(), info.clone(), None);
 
     //Trade should be in funded state
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
 
@@ -110,7 +110,7 @@ fn test_trade_happy_path() {
     let _res = release_trade(deps.as_mut(), info.clone());
 
     //Check that trade state is Closed
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::Closed);
 
@@ -215,7 +215,7 @@ fn test_trade_expiration() {
     let (_, mut deps) = create_trade(trade_amount, info.clone(), None);
 
     //Set env.block to trade.expiration_height + 1
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
 
     let mut expired_env = mock_env();
@@ -241,7 +241,7 @@ fn test_custom_errors() {
 
     //Create Trade and assert that it's funded.
     let (_, mut deps) = create_trade(trade_amount, info.clone(), None);
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
 
@@ -277,7 +277,7 @@ fn test_refund() {
     assert!(matches!(res.err().unwrap(), TradeError::RefundError { .. }));
 
     //Set env.block to trade.expiration_height + 1
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     let mut expired_env = mock_env();
     expired_env.block.height = trade_state.expire_height + 1;
@@ -311,7 +311,7 @@ fn test_fund_escrow() {
     let (_, mut deps) = create_trade(trade_amount.clone(), info.clone(), None);
 
     //Trade should be in Created state
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::Created);
 
@@ -327,7 +327,7 @@ fn test_fund_escrow() {
         ExecuteMsg::FundEscrow {},
     );
     assert!(res.is_ok());
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
     assert_eq!(trade_state.state, TradeState::EscrowFunded);
     // Funding trade a second time will throw an error.
@@ -349,7 +349,7 @@ fn test_expired_trade() {
     let mut info = mock_info_with_ust("taker", Uint128::zero());
     let (_, mut deps) = create_trade(trade_amount.clone(), info.clone(), None);
 
-    let trade_state: State =
+    let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
 
     //Send FundEscrow message with UST and check that trade is in EscrowFunded state.

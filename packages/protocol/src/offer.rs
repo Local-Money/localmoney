@@ -1,7 +1,7 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::errors::OfferError;
-use crate::trade::{State as TradeState, TradeState as UniState};
+use crate::trade::{TradeData, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -141,7 +141,7 @@ pub enum QueryMsg {
     },
     TradesQuery {
         user: Addr,
-        state: Option<UniState>,
+        state: Option<TradeState>,
         index: TradesIndex,
         last_value: Option<Addr>,
         limit: u32,
@@ -378,7 +378,7 @@ impl OfferModel<'_> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeInfo {
-    pub trade: TradeState,
+    pub trade: TradeData,
     pub offer: Offer,
     pub expired: bool,
 }
@@ -389,7 +389,7 @@ pub struct TradeAddr {
     pub seller: Addr,
     pub buyer: Addr,
     pub arbitrator: Addr,
-    pub state: UniState,
+    pub state: TradeState,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

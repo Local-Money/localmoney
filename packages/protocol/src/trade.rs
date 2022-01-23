@@ -30,7 +30,7 @@ pub enum QueryMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct State {
+pub struct TradeData {
     pub addr: Addr,
     pub factory_addr: Addr,
     pub recipient: Addr, // buyer

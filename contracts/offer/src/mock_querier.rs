@@ -13,7 +13,7 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::governance::Config as GovConfig;
 use localterra_protocol::offer::{Config as OfferConfig, Offer, OfferState, OfferType, TradeInfo};
-use localterra_protocol::trade::{State as TradeState, TradeState as TradeTradeState};
+use localterra_protocol::trade::{TradeData as TradeState, TradeState as TradeTradeState};
 use std::collections::HashMap;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
 use terraswap::asset::{AssetInfo, PairInfo};

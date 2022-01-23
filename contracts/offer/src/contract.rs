@@ -12,8 +12,7 @@ use localterra_protocol::offer::{
     State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
-    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, State as TradeState,
-    TradeState as UniState,
+    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData, TradeState,
 };
 
 use crate::state::{config_read, config_storage, state_read, state_storage, trades};
@@ -156,7 +155,7 @@ fn trade_instance_reply(
         .and_then(|addr| deps.api.addr_validate(addr.as_str()).ok())
         .unwrap();
 
-    let trade_state: TradeState = deps
+    let trade_state: TradeData = deps
         .querier
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
@@ -365,7 +364,7 @@ pub fn query_trades(
     env: Env,
     deps: Deps,
     user: Addr,
-    state: Option<UniState>,
+    state: Option<TradeState>,
     index: TradesIndex,
     last_value: Option<Addr>,
     limit: u32,
@@ -413,7 +412,7 @@ pub fn query_trades(
     }
 
     trade_results.iter().for_each(|t| {
-        let trade_state: TradeState = deps
+        let trade_state: TradeData = deps
             .querier
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: t.trade.to_string(),

@@ -12,7 +12,7 @@ use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
     Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
-use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, State, TradeState};
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
@@ -73,7 +73,7 @@ pub fn instantiate(
     }
 
     //Instantiate Trade state
-    let mut state = State {
+    let mut state = TradeData {
         addr: env.contract.address.clone(),
         factory_addr: offers_cfg.factory_addr.clone(),
         recipient, // buyer
@@ -130,7 +130,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_state(deps: Deps) -> StdResult<State> {
+fn query_state(deps: Deps) -> StdResult<TradeData> {
     let state = state_read(deps.storage).load()?;
     Ok(state)
 }
@@ -153,7 +153,7 @@ fn fund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    mut state: State,
+    mut state: TradeData,
 ) -> Result<Response, TradeError> {
     //Check if trade is expired.
     if env.block.height >= state.expire_height {
@@ -221,7 +221,7 @@ fn fund_escrow(
     Ok(res)
 }
 
-fn get_offer(deps: &Deps, state: &State) -> Offer {
+fn get_offer(deps: &Deps, state: &TradeData) -> Offer {
     deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: state.offer_contract.to_string(),
@@ -237,7 +237,7 @@ fn dispute(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    state: State,
+    state: TradeData,
 ) -> Result<Response, TradeError> {
     if (info.sender != state.sender) & (info.sender != state.recipient) {
         return Err(TradeError::UnauthorizedDispute {
@@ -248,7 +248,7 @@ fn dispute(
     }
 
     // Update trade State to TradeState::Disputed
-    let mut state: State = state_storage(deps.storage).load().unwrap();
+    let mut state: TradeData = state_storage(deps.storage).load().unwrap();
 
     state.state = TradeState::Disputed;
 
@@ -261,7 +261,7 @@ fn release(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    state: State,
+    state: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
         (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
@@ -295,7 +295,7 @@ fn release(
     let offer = get_offer(&deps.as_ref(), &state);
 
     //Update trade State to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
-    let mut state: State = state_storage(deps.storage).load().unwrap();
+    let mut state: TradeData = state_storage(deps.storage).load().unwrap();
 
     if !arbitration_mode {
         state.state = TradeState::Closed;
@@ -362,7 +362,7 @@ fn refund(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    state: State,
+    state: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
         (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
@@ -385,7 +385,7 @@ fn refund(
         let offer = get_offer(&deps.as_ref(), &state);
 
         //Update trade State to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
-        let mut state: State = state_storage(deps.storage).load().unwrap();
+        let mut state: TradeData = state_storage(deps.storage).load().unwrap();
 
         if !arbitration_mode {
             state.state = TradeState::Canceled;
