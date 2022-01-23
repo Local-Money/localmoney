@@ -73,7 +73,7 @@ pub fn instantiate(
     }
 
     //Instantiate Trade state
-    let mut state = TradeData {
+    let mut trade = TradeData {
         addr: env.contract.address.clone(),
         factory_addr: offers_cfg.factory_addr.clone(),
         buyer: recipient, // buyer
@@ -92,12 +92,12 @@ pub fn instantiate(
         //TODO: Check for Luna or other Terra native tokens.
         let ust_amount = get_ust_amount(info.clone());
         if ust_amount >= amount {
-            state.state = TradeState::EscrowFunded
+            trade.state = TradeState::EscrowFunded
         }
     }
 
     //Save state.
-    let save_state_result = state_storage(deps.storage).save(&state);
+    let save_state_result = state_storage(deps.storage).save(&trade);
     if save_state_result.is_err() {
         return Err(TradeError::InstantiationError {
             message: "Couldn't save state.".to_string(),
@@ -153,17 +153,18 @@ fn fund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    mut state: TradeData,
+    mut trade: TradeData,
 ) -> Result<Response, TradeError> {
     //Check if trade is expired.
-    if env.block.height >= state.expire_height {
+    if env.block.height >= trade.expire_height {
         return Err(TradeError::Expired {
             current_height: env.block.height,
-            expire_height: state.expire_height,
+            expire_height: trade.expire_height,
         });
     }
     // Check if escrow has already been funded
-    if state.state == TradeState::EscrowFunded {
+    // TODO also base this on actual balance, switch to cancelled state and refund automatically on diffs
+    if trade.state == TradeState::EscrowFunded {
         return Err(TradeError::AlreadyFundedError {});
     }
     //TODO: Convert to UST if trade is for any other stablecoin or Luna,
@@ -185,25 +186,26 @@ fn fund_escrow(
 
     let offer = load_offer(
         deps.querier.clone(),
-        state.offer_id,
-        state.offer_contract.to_string(),
+        trade.offer_id,
+        trade.offer_contract.to_string(),
     )
     .unwrap(); //at this stage, offer is guaranteed to exists.
 
     let fund_escrow_amount: Uint128 = match offer.offer_type {
+        // TODO review this and avoid over-funding by returning diff
         OfferType::Sell => {
-            let ltfee = localterra_fee(state.ust_amount);
+            let ltfee = localterra_fee(trade.ust_amount);
             let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
             let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
             let release_tax = compute_tax(&deps.querier, &ust).unwrap();
-            state
+            trade
                 .ust_amount
                 .add(ltfee.add(&ltfee_tax).add(&release_tax))
         }
-        OfferType::Buy => state.ust_amount,
+        OfferType::Buy => trade.ust_amount,
     };
     if ust_amount >= fund_escrow_amount {
-        state.state = TradeState::EscrowFunded;
+        trade.state = TradeState::EscrowFunded;
     } else {
         return Err(TradeError::FundEscrowError {
             required_amount: fund_escrow_amount.clone(),
@@ -211,7 +213,7 @@ fn fund_escrow(
         });
     }
 
-    state_storage(deps.storage).save(&state).unwrap();
+    state_storage(deps.storage).save(&trade).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
         .add_attribute("fund_amount", fund_escrow_amount.to_string())
@@ -248,11 +250,11 @@ fn dispute(
     }
 
     // Update trade State to TradeState::Disputed
-    let mut state: TradeData = state_storage(deps.storage).load().unwrap();
+    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
-    state.state = TradeState::Disputed;
+    trade.state = TradeState::Disputed;
 
-    state_storage(deps.storage).save(&state).unwrap();
+    state_storage(deps.storage).save(&trade).unwrap();
 
     let res = Response::new();
     Ok(res)
@@ -261,24 +263,24 @@ fn release(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    state: TradeData,
+    trade: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
+        (info.sender == trade.arbitrator) & (trade.state == TradeState::Disputed);
 
     //Check if sender can release
-    if (info.sender != state.seller) & !arbitration_mode {
+    if (info.sender != trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
-            owner: state.seller,
-            arbitrator: state.arbitrator,
+            owner: trade.seller,
+            arbitrator: trade.arbitrator,
             caller: info.sender,
         });
     }
 
-    // throws error if state is expired, arbitrator can release expired trades
-    if (env.block.height > state.expire_height) & !arbitration_mode {
+    // throws error if state is expired BUT arbitrator can release expired trades
+    if (env.block.height > trade.expire_height) & !arbitration_mode {
         return Err(TradeError::Expired {
-            expire_height: state.expire_height,
+            expire_height: trade.expire_height,
             current_height: env.block.height,
         });
     }
@@ -292,53 +294,84 @@ fn release(
         });
     }
 
-    let offer = get_offer(&deps.as_ref(), &state);
+    let offer = get_offer(&deps.as_ref(), &trade);
 
     //Update trade State to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
-    let mut state: TradeData = state_storage(deps.storage).load().unwrap();
+    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
     if !arbitration_mode {
-        state.state = TradeState::Closed;
-    } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.buyer) {
-        state.state = TradeState::SettledForMaker;
+        trade.state = TradeState::Closed;
+    } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
+        trade.state = TradeState::SettledForMaker;
     } else {
-        state.state = TradeState::SettledForTaker;
+        trade.state = TradeState::SettledForTaker;
     }
 
-    state_storage(deps.storage).save(&state).unwrap();
+    state_storage(deps.storage).save(&trade).unwrap();
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
 
     let factory_cfg: FactoryConfig =
-        get_factory_config(&deps.querier, state.factory_addr.to_string());
+        get_factory_config(&deps.querier, trade.factory_addr.to_string());
 
     //Collect Fee
-    let local_terra_fee = Coin::new(localterra_fee(state.ust_amount.clone()).u128(), "uusd");
+    let local_terra_fee = Coin::new(localterra_fee(trade.ust_amount.clone()).u128(), "uusd");
     let fee_collector = factory_cfg.fee_collector_addr.clone();
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
         to_address: fee_collector.into_string(),
         amount: vec![local_terra_fee],
     })));
 
-    let ust = Coin::new(state.ust_amount.u128(), "uusd");
+    let ust = Coin::new(trade.ust_amount.u128(), "uusd");
     //Release amount
     let release_amount = if offer.offer_type == OfferType::Buy {
         //TODO: Move to a method
-        let ltfee = localterra_fee(state.ust_amount);
+        let ltfee = localterra_fee(trade.ust_amount);
         let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
         let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
-        let release_amount = state.ust_amount.sub(ltfee.add(ltfee_tax));
+
+        let mut arbitration_fee_inc_tax = Uint128::zero();
+        if arbitration_mode {
+            // Pay arbitration fee
+            let arbitration_rate = 10u128; // TODO move fee to constant
+            let arbitration_coin = Coin::new(
+                trade
+                    .ust_amount
+                    .u128()
+                    .clone()
+                    .checked_div(arbitration_rate)
+                    .unwrap(),
+                "uusd",
+            );
+
+            arbitration_fee_inc_tax =
+                arbitration_coin.amount + compute_tax(&deps.querier, &arbitration_coin).unwrap();
+
+            send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                to_address: trade.arbitrator.to_string(),
+                amount: vec![arbitration_coin],
+            })));
+        }
+
+        let release_amount = trade
+            .ust_amount
+            .sub(ltfee)
+            .sub(ltfee_tax)
+            .sub(arbitration_fee_inc_tax);
+
         let release_tax =
             compute_tax(&deps.querier, &Coin::new(release_amount.u128(), "uusd")).unwrap();
+
         let deduction = ltfee.add(&ltfee_tax).add(&release_tax);
-        Coin::new(state.ust_amount.sub(deduction).u128(), "uusd")
+
+        Coin::new(trade.ust_amount.sub(deduction).u128(), "uusd")
     } else {
         ust
     };
 
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: state.buyer.into_string(),
+        to_address: trade.buyer.into_string(),
         amount: vec![release_amount],
     })));
 
@@ -362,48 +395,70 @@ fn refund(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    state: TradeData,
+    trade: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
+        (info.sender == trade.arbitrator) & (trade.state == TradeState::Disputed);
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
-    if (state.expire_height > env.block.height)
-        & ((state.state != TradeState::Disputed) & !arbitration_mode)
+    if (trade.expire_height > env.block.height)
+        & ((trade.state != TradeState::Disputed) & !arbitration_mode)
     {
         return Err(TradeError::RefundError {
             message:
                 "Only expired trades that are not disputed can be refunded by non-arbitrators."
                     .to_string(),
-            state: state.state.to_string(),
+            trade: trade.state.to_string(),
         });
     }
 
     let balance_result = deps.querier.query_all_balances(&env.contract.address);
     return if balance_result.is_ok() {
-        let offer = get_offer(&deps.as_ref(), &state);
+        let offer = get_offer(&deps.as_ref(), &trade);
 
-        //Update trade State to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
-        let mut state: TradeData = state_storage(deps.storage).load().unwrap();
+        //Update TradeData to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
+        let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
         if !arbitration_mode {
-            state.state = TradeState::Canceled;
-        } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.buyer) {
-            state.state = TradeState::SettledForTaker;
+            trade.state = TradeState::Canceled;
+        } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
+            trade.state = TradeState::SettledForTaker;
         } else {
-            state.state = TradeState::SettledForMaker;
+            trade.state = TradeState::SettledForMaker;
         }
 
-        state_storage(deps.storage).save(&state).unwrap();
-        let balance = balance_result.unwrap();
-        let send_msg = create_send_msg(&deps, state.seller, balance);
-        let res = Response::new().add_submessage(SubMsg::new(send_msg));
-        Ok(res)
+        state_storage(deps.storage).save(&trade).unwrap();
+
+        // Pay arbitration fee
+        if arbitration_mode {
+            let mut balance = balance_result.unwrap();
+
+            let fee_rate: Uint128 = Uint128::new(10);
+            let fee_amount = balance[0].amount.multiply_ratio(Uint128::new(1), fee_rate); // TODO support multiple coins
+            let mut fee = balance.clone();
+            fee[0].amount = fee_amount;
+            balance[0].amount = balance[0].amount - fee_amount;
+
+            let seller_msg = create_send_msg(&deps, trade.seller, balance);
+
+            let arbitrator_msg = create_send_msg(&deps, trade.arbitrator, fee);
+
+            let res = Response::new()
+                .add_submessage(SubMsg::new(seller_msg))
+                .add_submessage(SubMsg::new(arbitrator_msg));
+            Ok(res)
+        } else {
+            let balance = balance_result.unwrap();
+            let send_msg = create_send_msg(&deps, trade.seller, balance);
+            let res = Response::new().add_submessage(SubMsg::new(send_msg));
+
+            Ok(res)
+        }
     } else {
         Err(TradeError::RefundError {
             message: "Contract has no funds.".to_string(),
-            state: state.state.to_string(),
+            trade: trade.state.to_string(),
         })
     };
 }

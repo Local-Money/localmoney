@@ -23,7 +23,7 @@ pub enum TradeError {
     #[error("Offer not found.")]
     OfferNotFound { offer_id: u64 },
     #[error("Refund error.")]
-    RefundError { message: String, state: String },
+    RefundError { message: String, trade: String },
     #[error("Release error.")]
     ReleaseError { message: String },
     #[error("Swap error.")]
