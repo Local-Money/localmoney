@@ -76,8 +76,8 @@ pub fn instantiate(
     let mut state = TradeData {
         addr: env.contract.address.clone(),
         factory_addr: offers_cfg.factory_addr.clone(),
-        recipient, // buyer
-        sender,    // seller
+        buyer: recipient, // buyer
+        seller: sender,   // seller
         offer_contract: offer_contract.clone(),
         offer_id,
         taker_contact: msg.taker_contact,
@@ -239,10 +239,10 @@ fn dispute(
     info: MessageInfo,
     state: TradeData,
 ) -> Result<Response, TradeError> {
-    if (info.sender != state.sender) & (info.sender != state.recipient) {
+    if (info.sender != state.seller) & (info.sender != state.buyer) {
         return Err(TradeError::UnauthorizedDispute {
-            sender: state.sender,
-            recipient: state.recipient,
+            sender: state.seller,
+            recipient: state.buyer,
             caller: info.sender,
         });
     }
@@ -267,9 +267,9 @@ fn release(
         (info.sender == state.arbitrator) & (state.state == TradeState::Disputed);
 
     //Check if sender can release
-    if (info.sender != state.sender) & !arbitration_mode {
+    if (info.sender != state.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
-            owner: state.sender,
+            owner: state.seller,
             arbitrator: state.arbitrator,
             caller: info.sender,
         });
@@ -299,7 +299,7 @@ fn release(
 
     if !arbitration_mode {
         state.state = TradeState::Closed;
-    } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.recipient) {
+    } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.buyer) {
         state.state = TradeState::SettledForMaker;
     } else {
         state.state = TradeState::SettledForTaker;
@@ -338,7 +338,7 @@ fn release(
     };
 
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: state.recipient.into_string(),
+        to_address: state.buyer.into_string(),
         amount: vec![release_amount],
     })));
 
@@ -389,7 +389,7 @@ fn refund(
 
         if !arbitration_mode {
             state.state = TradeState::Canceled;
-        } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.recipient) {
+        } else if (offer.offer_type == OfferType::Buy) & (offer.owner == state.buyer) {
             state.state = TradeState::SettledForTaker;
         } else {
             state.state = TradeState::SettledForMaker;
@@ -397,7 +397,7 @@ fn refund(
 
         state_storage(deps.storage).save(&state).unwrap();
         let balance = balance_result.unwrap();
-        let send_msg = create_send_msg(&deps, state.sender, balance);
+        let send_msg = create_send_msg(&deps, state.seller, balance);
         let res = Response::new().add_submessage(SubMsg::new(send_msg));
         Ok(res)
     } else {

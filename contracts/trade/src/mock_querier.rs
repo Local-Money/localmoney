@@ -274,10 +274,10 @@ impl WasmMockQuerier {
                         trade: TradeState {
                             addr: Addr::unchecked("trade"),
                             factory_addr: Addr::unchecked("factory"),
-                            recipient: Addr::unchecked("taker"),
+                            buyer: Addr::unchecked("taker"),
                             arbitrator: Addr::unchecked("arbitrator"),
                             taker_contact: "USTKing".to_string(),
-                            sender: Addr::unchecked(maker),
+                            seller: Addr::unchecked(maker),
                             offer_id: 1,
                             offer_contract: Addr::unchecked("offer"),
                             state: TradeTradeState::Closed,

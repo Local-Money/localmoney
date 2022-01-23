@@ -33,8 +33,8 @@ pub enum QueryMsg {
 pub struct TradeData {
     pub addr: Addr,
     pub factory_addr: Addr,
-    pub recipient: Addr, // buyer
-    pub sender: Addr,    // seller
+    pub buyer: Addr,
+    pub seller: Addr,
     pub taker_contact: String,
     pub arbitrator: Addr,
     pub offer_contract: Addr,
