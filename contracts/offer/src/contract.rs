@@ -13,6 +13,7 @@ use localterra_protocol::offer::{
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, State as TradeState,
+    TradeState as UniState,
 };
 
 use crate::state::{config_read, config_storage, state_read, state_storage, trades};
@@ -108,6 +109,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::TradesQuery {
             user,
+            state,
             index,
             last_value,
             limit,
@@ -115,6 +117,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             env,
             deps,
             deps.api.addr_validate(user.as_str()).unwrap(),
+            state,
             index,
             last_value,
             limit,
@@ -167,6 +170,7 @@ fn trade_instance_reply(
                 seller: trade_state.sender.clone(),
                 buyer: trade_state.recipient.clone(),
                 arbitrator: trade_state.arbitrator.clone(),
+                state: trade_state.state.clone(),
             },
         )
         .unwrap();
@@ -361,6 +365,7 @@ pub fn query_trades(
     env: Env,
     deps: Deps,
     user: Addr,
+    state: Option<UniState>,
     index: TradesIndex,
     last_value: Option<Addr>,
     limit: u32,
@@ -377,20 +382,37 @@ pub fn query_trades(
         None => None,
     };
 
-    let multi_index = match index {
-        TradesIndex::Sender => trades().idx.sender,
-        TradesIndex::Recipient => trades().idx.recipient,
-        TradesIndex::Arbitrator => trades().idx.arbitrator,
-    };
+    let trade_results: Vec<TradeAddr>;
 
-    let trades: Vec<TradeAddr> = multi_index
-        .prefix(user)
-        .range(deps.storage, range_from, None, Order::Ascending)
-        .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-        .take(limit as usize)
-        .collect();
+    if index == TradesIndex::ArbitratorState {
+        let prefix = match state {
+            Some(state) => trades()
+                .idx
+                .arbitrator_state
+                .prefix((user, state.to_string())),
+            None => trades().idx.arbitrator_state.sub_prefix(user),
+        };
 
-    trades.iter().for_each(|t| {
+        trade_results = prefix
+            .range(deps.storage, range_from, None, Order::Ascending)
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .take(limit as usize)
+            .collect();
+    } else {
+        let multi_index = match index {
+            TradesIndex::Sender => trades().idx.sender,
+            _ => trades().idx.recipient, // TradesIndex::Recipient
+        };
+
+        trade_results = multi_index
+            .prefix(user)
+            .range(deps.storage, range_from, None, Order::Ascending)
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .take(limit as usize)
+            .collect();
+    }
+
+    trade_results.iter().for_each(|t| {
         let trade_state: TradeState = deps
             .querier
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
