@@ -309,7 +309,7 @@ fn instantiate_trade() {
         arbitrator: "arbitrator".to_string(),
         taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
-        counterparty: "taker".to_string(),
+        taker: "taker".to_string(),
     };
     let res = execute(deps.as_mut(), env.clone(), info.clone(), new_trade_msg);
     assert!(res.is_ok());
@@ -320,7 +320,7 @@ fn instantiate_trade() {
         arbitrator: "arbitrator".to_string(),
         taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
-        counterparty: "taker".to_string(),
+        taker: "taker".to_string(),
         offers_addr: "offers".to_string(),
         timestamp: 1641329895,
     })

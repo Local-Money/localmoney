@@ -61,14 +61,14 @@ pub fn instantiate(
     //Instantiate recipient and sender addresses according to Offer type (buy, sell)
     let recipient: Addr;
     let sender: Addr;
-    let counterparty = deps.api.addr_validate(msg.counterparty.as_str()).unwrap();
+    let taker = deps.api.addr_validate(msg.taker.as_str()).unwrap();
     let arbitrator = deps.api.addr_validate(msg.arbitrator.as_str()).unwrap();
 
     if offer.offer_type == OfferType::Buy {
         recipient = offer.owner; // maker
-        sender = counterparty.clone(); // taker
+        sender = taker.clone(); // taker
     } else {
-        recipient = counterparty.clone(); // taker
+        recipient = taker.clone(); // taker
         sender = offer.owner; // maker
     }
 

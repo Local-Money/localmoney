@@ -92,7 +92,7 @@ pub enum ExecuteMsg {
     NewTrade {
         offer_id: u64,
         ust_amount: String,
-        counterparty: String, // TODO should be Addr
+        taker: String, // TODO should be Addr
         taker_contact: String,
         arbitrator: String, // TODO should be Addr
     },

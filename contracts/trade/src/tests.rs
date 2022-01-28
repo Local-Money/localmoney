@@ -28,7 +28,7 @@ fn test_init() {
         arbitrator: "arbitrator".to_string(),
         taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
-        counterparty: "other".to_string(),
+        taker: "other".to_string(),
         offers_addr: "offers".to_string(),
         timestamp: 1641329895,
     };
@@ -59,7 +59,7 @@ fn create_trade(
         arbitrator: "arbitrator".to_string(),
         taker_contact: "USTKing".to_string(),
         ust_amount: trade_amount.clone().to_string(),
-        counterparty: info.sender.clone().into_string(),
+        taker: info.sender.clone().into_string(),
         offers_addr: "offers".to_string(),
         timestamp: 1641329895,
     };

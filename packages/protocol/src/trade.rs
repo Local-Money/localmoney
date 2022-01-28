@@ -7,7 +7,7 @@ use std::fmt::{self};
 pub struct InstantiateMsg {
     pub offer_id: u64,
     pub ust_amount: String,
-    pub counterparty: String,
+    pub taker: String,
     pub offers_addr: String,
     pub arbitrator: String,
     pub taker_contact: String,
