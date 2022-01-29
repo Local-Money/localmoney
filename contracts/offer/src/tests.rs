@@ -353,7 +353,7 @@ fn instantiate_trade() {
             QueryMsg::TradesQuery {
                 user: Addr::unchecked("maker"),
                 state: None,
-                index: TradesIndex::Recipient,
+                index: TradesIndex::Buyer,
                 last_value: None,
                 limit: 10,
             },
