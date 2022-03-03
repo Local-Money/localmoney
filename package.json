@@ -1,0 +1,11 @@
+{
+  "name": "localterra",
+  "version": "1.0.0",
+  "description": "Decentralized P2P marketplace for terra.money assets.",
+  "repository": "https://github.com/Local-Terra/localterra",
+  "author": "The Local-Terra Team",
+  "contributors": [
+    "Lunarevolution1972"
+  ],
+  "license": "MIT"
+}
