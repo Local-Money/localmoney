@@ -1,0 +1,50 @@
+/* Colors */
+$gray100: #202225;
+$gray150: #25272b;
+$gray200: #292c30;
+$gray300: #33363c;
+$gray600: #666666;
+$gray700: #999999;
+$gray900: #dddddd;
+
+$white: #ffffff;
+
+$primary: #ef6100;
+$secondary: #fba367;
+$base-text: #ffffff;
+$background: #202225;
+$border: #33363c;
+$surface: $gray200;
+
+$anchor: #5fce5f;
+
+/*Typography */
+
+$regular: 400;
+$semi-bold: 600;
+$bold: 700;
+$extra-bold: 800;
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+/*Assets */
+
+$logo-horizontal-dark: url(../assets/logo-horizontal-dark.svg);
+
+.icon-24 {
+  width: 24px;
+  height: 24px;
+  stroke: #ffffff;
+}
+
+/* LIGHT MODE
+$primary: #ef6100;
+$secondary: #fba367;
+$base-text: #202225;
+$background: #f9f9f9;
+$border: #eeeeee;
+$white: #ffffff;
+
+$gray-4: #999999;
+$gray-5: #666666;
+*/
