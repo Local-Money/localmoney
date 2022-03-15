@@ -168,9 +168,6 @@ const actions = {
       state.factoryConfig.offers_addr, { trades_query: { user: wallet, index: "buyer", limit: 10} }
     );
 
-    console.log('trades_as_seller', trades_as_seller);
-    console.log('trades_as_buyer', trades_as_buyer);
-
     const trades = trades_as_buyer.concat(trades_as_seller);
 
     commit("setTradeInfos", trades);

@@ -4,7 +4,7 @@
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
-        <IconDone v-if="trade.state === 'escrow_funded' || trade.state === 'closed'" />
+        <IconDone v-if="trade.state === 'escrow_funded' || trade.state === 'closed'"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>1</p>
@@ -15,7 +15,7 @@
 
       <!-- Step 2 -->
       <div class="step-item">
-        <IconDone v-if="trade.paid || trade.state === 'closed'" />
+        <IconDone v-if="trade.paid || trade.state === 'closed'"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>2</p>
@@ -26,7 +26,7 @@
 
       <!-- Step 3 -->
       <div class="step-item">
-        <IconDone v-if="trade.state === 'closed'" />
+        <IconDone v-if="trade.state === 'closed'"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>3</p>
@@ -43,23 +43,23 @@
         </div>
         <div class="icon">
           <svg
-            class="icon-24"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
+              class="icon-24"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
           >
             <path
-              d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
             />
             <path
-              d="M12 6V12L16 14"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+                d="M12 6V12L16 14"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
             />
           </svg>
         </div>
@@ -90,7 +90,7 @@
               <div class="list-item">
                 <p class="list-item-label" v-if="isBuying">You will send</p>
                 <p class="list-item-label" v-else>You will get</p>
-                <p class="value fiat">{{fiatAmountStr}}</p>
+                <p class="value fiat">{{ fiatAmountStr }}</p>
               </div>
             </div>
           </div>
@@ -101,7 +101,7 @@
           <!-- Fund Escrow -->
           <div class="wrap" v-if="tradeCanBeFunded(tradeInfo, this.walletAddress)">
             <div class="icon">
-              <RightArrow />
+              <RightArrow/>
             </div>
             <p>To begin the transaction you have to fund the escrow</p>
             <button @click="this.fundEscrow(trade.addr)">
@@ -110,7 +110,7 @@
           </div>
           <div class="wrap" v-else-if="trade.state === 'created'">
             <div class="icon">
-              <RightArrow />
+              <RightArrow/>
             </div>
             <p>Wait until the trader funds the escrow</p>
           </div>
@@ -119,7 +119,7 @@
           <!-- Mark as Paid -->
           <div class="wrap" v-if="trade.state === 'escrow_funded' && this.isBuying && !trade.paid">
             <div class="icon">
-              <RightArrow />
+              <RightArrow/>
             </div>
             <p v-if="trade.paid">You notified the trade about the off-chain payment</p>
             <p v-else>Notify the trader that you made the off-chain payment</p>
@@ -131,7 +131,7 @@
           <!-- Wait for Off-chain Payment -->
           <div class="wrap" v-if="trade.state === 'escrow_funded' && !this.isBuying && !trade.paid">
             <div class="icon">
-              <RightArrow />
+              <RightArrow/>
             </div>
             <p @click="log(trade)">Wait until the trader makes the off-chain payment</p>
           </div>
@@ -140,7 +140,7 @@
           <!-- Release Escrow -->
           <div class="wrap" v-if="tradeCanBeReleased(tradeInfo, this.walletAddress) && trade.paid">
             <div class="icon">
-              <RightArrow />
+              <RightArrow/>
             </div>
             <p>Check if you received the off-chain payment before releasing the escrow</p>
             <button @click="this.releaseEscrow(trade.addr)">
@@ -151,7 +151,7 @@
           <!-- Wait for Escrow Release -->
           <div class="wrap" v-else-if="trade.paid && trade.state === 'escrow_funded'">
             <div class="icon">
-              <RightArrow />
+              <RightArrow/>
             </div>
             <p>Wait until trader releases the escrow, you'll receive it on your wallet</p>
           </div>
@@ -159,7 +159,7 @@
           <!-- Trade Closed -->
           <div class="wrap" v-if="trade.state === 'closed'">
             <div class="icon">
-              <IconDone />
+              <IconDone/>
             </div>
             <p>Trade finished</p>
           </div>
@@ -173,10 +173,10 @@
 <script>
 import IconDone from "@/components/commons/IconDone";
 import RightArrow from "@/components/commons/RightArrow";
-import { defineComponent } from "vue";
-import { mapGetters, mapActions } from "vuex";
+import {defineComponent} from "vue";
+import {mapGetters, mapActions} from "vuex";
 import {tradesCollection, updateTrade} from "../store/firebase";
-import { onSnapshot } from "firebase/firestore"
+import {onSnapshot} from "firebase/firestore"
 import {
   formatAmount,
   formatAddress,
@@ -201,7 +201,7 @@ export default defineComponent({
     markAsPaid: function () {
       const trade = this.tradeInfo.trade
       trade.paid = true
-      this.setTradeAsPaid({ tradeAddr: trade.addr, paid: true })
+      this.setTradeAsPaid({tradeAddr: trade.addr, paid: true})
       updateTrade(this.tradeInfo.trade)
     },
   },
@@ -217,8 +217,8 @@ export default defineComponent({
       return this.isBuying ? "Buy" : "Sell"
     },
     counterparty: function () {
-      const isSender = this.tradeInfo.trade.sender === this.walletAddress
-      return isSender ? this.tradeInfo.trade.recipient : this.tradeInfo.trade.sender
+      const trade = this.tradeInfo.trade
+      return this.walletAddress === trade.seller ? trade.buyer : trade.seller;
     },
     fiatCurrency: function () {
       return this.tradeInfo.offer.fiat_currency
@@ -229,8 +229,9 @@ export default defineComponent({
       return `${this.fiatCurrency} ${fiatAmount}`
     },
     priceStr: function () {
-      const fiatAmount = formatAmount( this.getUsdRate(this.fiatCurrency), false)
-      return `${this.fiatCurrency} ${fiatAmount}`
+      console.log('fiat', this.fiatCurrency);
+      const fiatAmount = formatAmount(this.getUsdRate(this.fiatCurrency), false);
+      return `${this.fiatCurrency} ${fiatAmount}`;
     }
   },
   mounted: async function () {
@@ -280,6 +281,7 @@ export default defineComponent({
   .icon {
     margin-right: 24px;
   }
+
   .counter {
     width: 32px;
     height: 32px;
@@ -290,13 +292,16 @@ export default defineComponent({
     font-size: 14px;
     font-weight: $semi-bold;
   }
+
   p {
     font-size: 14px;
   }
 }
+
 .step-status {
   justify-content: flex-end;
   border-left: 1px solid $border;
+
   .wrap {
     text-align: right;
     margin-right: 24px;
@@ -307,6 +312,7 @@ export default defineComponent({
       font-size: 14px;
       color: $gray900;
     }
+
     .step-time-left {
       font-size: 18px;
       font-weight: $semi-bold;
@@ -342,10 +348,12 @@ export default defineComponent({
 
   .trader-info {
     width: 40%;
+
     .trader {
       font-size: 18px;
       font-weight: $semi-bold;
     }
+
     .rating {
       font-size: 14px;
       color: $gray900;
@@ -354,30 +362,36 @@ export default defineComponent({
 
   .trade-info {
     width: 100%;
+
     .current-price,
     .transaction {
       background-color: $gray150;
       padding: 16px;
       border-radius: 8px;
     }
+
     .current-price {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
+
       .ticker {
         font-size: 12px;
         color: $gray900;
       }
+
       .mkt-rate {
         font-size: 14px;
         color: $gray900;
       }
+
       .price {
         font-size: 16px;
         font-weight: $semi-bold;
       }
     }
+
     .transaction {
       .list-item {
         display: flex;
@@ -391,9 +405,11 @@ export default defineComponent({
         p {
           font-size: 16px;
         }
+
         .value {
           font-weight: $semi-bold;
         }
+
         .fiat {
           color: $primary;
         }
@@ -401,6 +417,7 @@ export default defineComponent({
     }
   }
 }
+
 .actions {
   margin-top: 24px;
 
