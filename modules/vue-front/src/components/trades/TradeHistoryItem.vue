@@ -74,9 +74,9 @@ export default defineComponent({
     },
     counterparty: function() {
       const trade = this.tradeInfo.trade;
-      return this.walletAddress === trade.sender
-        ? trade.recipient
-        : trade.sender;
+      return this.walletAddress === trade.seller
+        ? trade.buyer
+        : trade.seller;
     },
   },
 });

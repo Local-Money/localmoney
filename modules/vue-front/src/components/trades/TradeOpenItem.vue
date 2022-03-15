@@ -1,12 +1,12 @@
 <template>
   <div class="open-trade-item card" v-bind="trade = this.tradeInfo.trade">
-    <p class="trade-type">{{buyOrSell}}ing UST {{fromTo}} {{formatAddress(counterparty)}}</p>
+    <p class="trade-type">{{ buyOrSell }}ing UST {{ fromTo }} {{ formatAddress(counterparty) }}</p>
     <p class="trade-value">{{ formatAmount(trade.ust_amount) }} UST</p>
     <span class="separator"></span>
     <div class="wrap-status">
       <div class="column-1">
-        <p class="step">Step {{step}} of 4</p>
-        <p class="status">{{stepLabel}}</p>
+        <p class="step">Step {{ step }} of 4</p>
+        <p class="status">{{ stepLabel }}</p>
       </div>
       <div class="column-2">
         <p class="time-label">Time remaining</p>
@@ -46,7 +46,7 @@ export default defineComponent({
     },
     counterparty: function () {
       const trade = this.tradeInfo.trade
-      return this.walletAddress === trade.sender ? trade.recipient : trade.sender;
+      return this.walletAddress === trade.seller ? trade.buyer: trade.seller;
     },
     isBuying: function () {
       return this.tradeInfo.trade.recipient === this.walletAddress
