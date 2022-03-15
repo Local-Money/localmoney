@@ -161,9 +161,14 @@ const actions = {
    */
   async fetchTradeInfos({ commit, getters }, redirect = false) {
     const wallet = getters.walletAddress;
-    const trades = await terra.wasm.contractQuery(
-      state.factoryConfig.offers_addr, { trades: { trader: wallet } }
+    const trades_as_seller = await terra.wasm.contractQuery(
+      state.factoryConfig.offers_addr, { trades_query: { user: wallet, index: "seller", limit: 10} }
     );
+    const trades_as_buyer = await terra.wasm.contractQuery(
+      state.factoryConfig.offers_addr, { trades_query: { user: wallet, index: "buyer", limit: 10} }
+    );
+    const trades = trades_as_buyer.concat(trades_as_seller);
+
     commit("setTradeInfos", trades);
     if (redirect) {
       router.push('/trades')
@@ -183,6 +188,9 @@ const actions = {
         offer_id: offer.id,
         ust_amount: amount + "",
         counterparty: sender,
+        taker: sender, //TODO
+        taker_contact: "USTKing",
+        arbitrator: sender, //TODO
       },
     };
     const createTradeMsg = new MsgExecuteContract(

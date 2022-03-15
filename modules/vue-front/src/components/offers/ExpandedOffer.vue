@@ -2,7 +2,7 @@
   <div class="expanded" :key="`${offer.id}-expanded`" ref="expandedCard">
     <div class="owner">
       <p class="wallet">{{ formatAddress(offer.owner) }}</p>
-      <p class="n-trades">352 trades</p>
+      <p class="n-trades">0 trades</p>
     </div>
 
     <div class="form-separator"></div>
