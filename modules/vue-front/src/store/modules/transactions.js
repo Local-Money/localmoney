@@ -278,6 +278,7 @@ async function executeMsg(commit, getters, dispatch, msg) {
         commit("setIsLoading", true)
       }
       let interval = setInterval(async () => {
+        console.log('res', res);
         let txInfo = await terra.tx.txInfo(res.result.txhash)
         if (txInfo) {
           resolve(txInfo)

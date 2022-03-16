@@ -9,7 +9,6 @@ export default createStore({
   },
   getters: {
     getUsdRate: (state) => (currency) => {
-      console.log('rates', state.usdRates);
       return state.usdRates[('usd' + currency).toUpperCase()]
     },
   },

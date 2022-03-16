@@ -229,8 +229,8 @@ export default defineComponent({
       return `${this.fiatCurrency} ${fiatAmount}`
     },
     priceStr: function () {
-      console.log('fiat', this.fiatCurrency);
-      const fiatAmount = formatAmount(this.getUsdRate(this.fiatCurrency), false);
+      const usdFiatRate = this.getUsdRate(this.fiatCurrency);
+      const fiatAmount = formatAmount(usdFiatRate, false);
       return `${this.fiatCurrency} ${fiatAmount}`;
     }
   },

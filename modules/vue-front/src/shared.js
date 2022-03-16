@@ -43,7 +43,7 @@ export function scrollToElement(el) {
 /** Trade State **/
 export function tradeCanBeFunded(tradeInfo, walletAddr) {
   const { trade } = tradeInfo;
-  return trade.state === 'created' && trade.sender === walletAddr;
+  return trade.state === 'created' && trade.seller === walletAddr;
 }
 
 export function tradeCanBeReleased(tradeInfo, walletAddr) {
