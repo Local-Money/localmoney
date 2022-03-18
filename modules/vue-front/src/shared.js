@@ -48,7 +48,7 @@ export function tradeCanBeFunded(tradeInfo, walletAddr) {
 
 export function tradeCanBeReleased(tradeInfo, walletAddr) {
   const { trade } = tradeInfo;
-  return trade.state === 'escrow_funded' && trade.sender === walletAddr
+  return trade.state === 'escrow_funded' && trade.seller === walletAddr
 }
 export function tradeCanBeRefunded(tradeInfo, walletAddr) {
   const { trade } = tradeInfo;
