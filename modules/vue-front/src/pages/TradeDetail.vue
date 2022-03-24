@@ -192,7 +192,7 @@ export default defineComponent({
     RightArrow
   },
   methods: {
-    ...mapActions(["fundEscrow", "releaseEscrow", "fetchTradeInfo", "setTradeAsPaid"]),
+    ...mapActions(["fundEscrow", "releaseEscrow", "fetchTradeInfo", "fetchUsdRates", "setTradeAsPaid"]),
     formatAmount,
     formatAddress,
     tradeCanBeFunded,
@@ -229,28 +229,40 @@ export default defineComponent({
       return `${this.fiatCurrency} ${fiatAmount}`
     },
     priceStr: function () {
-      const usdFiatRate = this.getUsdRate(this.fiatCurrency);
-      const fiatAmount = formatAmount(usdFiatRate, false);
-      return `${this.fiatCurrency} ${fiatAmount}`;
+      if (this.fiatCurrency) {
+        const usdFiatRate = this.getUsdRate(this.fiatCurrency);
+        const fiatAmount = formatAmount(usdFiatRate, false);
+        return `${this.fiatCurrency} ${fiatAmount}`;
+      } else {
+        return '';
+      }
+    }
+  },
+  beforeMount: async function() {
+    await this.fetchUsdRates();
+    if (!this.tradeInfo) {
+      await this.fetchTradeInfo({addr: this.$route.params.addr});
     }
   },
   mounted: async function () {
-    const trade = this.tradeInfo.trade
-    const tradeAddr = trade.addr
-    this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
-      let data = doc.data()
-      if (data && data.state === "closed" && trade.state !== "closed") {
-        this.$nextTick(() => {
-          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-        })
-      } else if (data && data.paid !== undefined && trade.paid !== data.paid) {
-        this.setTradeAsPaid({tradeAddr, paid: data.paid})
-      } else {
-        this.$nextTick(() => {
-          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-        })
-      }
-    })
+    if (this.tradeInfo && this.tradeInfo.trade) {
+      const trade = this.tradeInfo.trade
+      const tradeAddr = trade.addr
+      this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
+        let data = doc.data()
+        if (data && data.state === "closed" && trade.state !== "closed") {
+          this.$nextTick(() => {
+            this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+          })
+        } else if (data && data.paid !== undefined && trade.paid !== data.paid) {
+          this.setTradeAsPaid({tradeAddr, paid: data.paid})
+        } else {
+          this.$nextTick(() => {
+            this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+          })
+        }
+      })
+    }
   },
   unmounted: function () {
     if (this.unsubscribe) {
