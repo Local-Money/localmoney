@@ -107,6 +107,7 @@ export default defineComponent({
             fiat_currency: "BRL",
             min_amount: parseInt(this.minAmount * 1000000) + "",
             max_amount: parseInt(this.maxAmount * 1000000) + "",
+            maker_contact: "TODO",
           },
         },
       };
