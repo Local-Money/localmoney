@@ -241,7 +241,7 @@ export default defineComponent({
   beforeMount: async function() {
     await this.fetchUsdRates();
     if (!this.tradeInfo) {
-      await this.fetchTrade();
+      await this.fetchTradeInfo({addr: this.$route.params.addr});
     }
   },
   fetchTrade: async function() {
