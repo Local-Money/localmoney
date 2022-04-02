@@ -296,11 +296,11 @@ fn release(
 
     let offer = get_offer(&deps.as_ref(), &trade);
 
-    //Update trade State to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
+    //Update trade State to TradeState::Released or TradeState::SettledFor(Maker|Taker)
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
     if !arbitration_mode {
-        trade.state = TradeState::Closed;
+        trade.state = TradeState::Released;
     } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
         trade.state = TradeState::SettledForMaker;
     } else {
@@ -417,7 +417,7 @@ fn refund(
     return if balance_result.is_ok() {
         let offer = get_offer(&deps.as_ref(), &trade);
 
-        //Update TradeData to TradeState::Closed or TradeState::SettledFor(Maker|Taker)
+        //Update TradeData to TradeState::Released or TradeState::SettledFor(Maker|Taker)
         let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
         if !arbitration_mode {

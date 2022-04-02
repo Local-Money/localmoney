@@ -62,7 +62,7 @@ import { before } from "mocha";
           return offerResult;
         });
       });
-      describe("closed BUY offer: Taker creates trade, funds escrow and releases.", function () {
+      describe("released BUY offer: Taker creates trade, funds escrow and releases.", function () {
         // Suit variables
         this.tradeAddr = undefined;
 
@@ -123,10 +123,10 @@ import { before } from "mocha";
           // console.log(offers);
 
           expect(offers.length).to.equal(1);
-          expect(offers[0].trade.state).to.equal("closed");
+          expect(offers[0].trade.state).to.equal("released");
         });
       });
-      describe("closed SELL offer: Taker creates trade. Maker funds escrow and releases.", function () {
+      describe("released SELL offer: Taker creates trade. Maker funds escrow and releases.", function () {
         // Suit variables
         this.tradeAddr = undefined;
 
@@ -188,8 +188,8 @@ import { before } from "mocha";
           // console.log(offers);
 
           expect(offers.length).to.equal(2);
-          expect(offers[0].trade.state).to.equal("closed");
-          expect(offers[1].trade.state).to.equal("closed");
+          expect(offers[0].trade.state).to.equal("released");
+          expect(offers[1].trade.state).to.equal("released");
         });
       });
       // TODO enabled cancellation in smart contract
@@ -255,8 +255,8 @@ import { before } from "mocha";
           // console.log(trades);
 
           // expect(trades.length).to.equal(2);
-          // expect(trades[0].trade.state).to.equal("closed");
-          // expect(trades[1].trade.state).to.equal("closed");
+          // expect(trades[0].trade.state).to.equal("released");
+          // expect(trades[1].trade.state).to.equal("released");
         });
       });
     });

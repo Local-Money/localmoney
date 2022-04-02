@@ -112,7 +112,7 @@ fn test_trade_happy_path() {
     //Check that trade state is Closed
     let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
-    assert_eq!(trade_state.state, TradeState::Closed);
+    assert_eq!(trade_state.state, TradeState::Released);
 
     //Verify that the correct messages were sent after trade completion
     /*
