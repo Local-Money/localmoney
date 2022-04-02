@@ -28,7 +28,6 @@ const state = {
   walletAddress: '',
   offers: [],
   tradeInfos: [],
-  fiatCurrency: "BRL",
   lunaUstPrice: 0,
   ustUsdPrice: 0,
   factoryConfig: {
@@ -95,7 +94,6 @@ const actions = {
       cfgQuery
     );
     commit("setFactoryConfig", factoryConfig);
-    dispatch("fetchOffers");
     dispatch("fetchTradeInfos")
   },
   /**
@@ -112,8 +110,8 @@ const actions = {
   /**
    * Fetch Offers.
    */
-  async fetchOffers({ commit }) {
-    const offersQuery = { offers: { fiat_currency: state.fiatCurrency } };
+  async fetchOffers({ commit }, fiatCurrency) {
+    const offersQuery = { offers: { fiat_currency: fiatCurrency } };
     const offers = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr,
       offersQuery
@@ -131,7 +129,6 @@ const actions = {
     );
 
     await executeMsg(commit, getters, dispatch, offerMsg);
-    dispatch("fetchOffers");
     router.push(`/`);
   },
   /**

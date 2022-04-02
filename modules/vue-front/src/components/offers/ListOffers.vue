@@ -3,22 +3,24 @@
     <div class="separator"></div>
     <section class="offers-filter">
       <div class="buy-sell">
-        <button class="buy">buy</button>
+        <button class="buy" className="focus">buy</button>
         <div class="separator"></div>
         <button class="sell">sell</button>
       </div>
+      <!--
       <div class="filter">
         <label for="crypto">Crypto</label>
         <select name="crypto" id="crypto">
           <option value="UST">UST</option>
         </select>
       </div>
+      -->
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
-        <select name="currency" id="currency">
-          <option value="UST">BRL</option>
-          <option value="UST">COP</option>
-          <option value="UST">USD</option>
+        <select name="currency" id="currency" v-model="fiatCurrency" @change="fetchOffers(fiatCurrency)">
+          <option value="ARS">ARS</option>
+          <option value="BRL">BRL</option>
+          <option value="COP">COP</option>
         </select>
       </div>
     </section>
@@ -124,7 +126,11 @@ export default defineComponent({
     return {
       offerTypeLabels: { buy: "Sell", sell: "Buy" },
       expandedOffer: null,
+      fiatCurrency: 'ARS',
     };
+  },
+  mounted: async function () {
+    await this.fetchOffers(this.fiatCurrency)
   },
   methods: {
     ...mapActions(["fetchOffers", "fetchUsdRates", "openTrade"]),
@@ -143,7 +149,6 @@ export default defineComponent({
       offer.isExpanded = false;
       this.expandedOffer = null;
     },
-
   },
   computed: {
     ...mapGetters(["offers", "getUsdRate"]),
