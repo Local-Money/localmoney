@@ -241,8 +241,11 @@ export default defineComponent({
   beforeMount: async function() {
     await this.fetchUsdRates();
     if (!this.tradeInfo) {
-      await this.fetchTradeInfo({addr: this.$route.params.addr});
+      await this.fetchTrade();
     }
+  },
+  fetchTrade: async function() {
+    await this.fetchTradeInfo({addr: this.$route.params.addr});
   },
   mounted: async function () {
     if (this.tradeInfo && this.tradeInfo.trade) {
@@ -262,11 +265,18 @@ export default defineComponent({
           })
         }
       })
+
+      this.refreshInterval = setInterval(() => {
+        this.fetchTrade();
+      }, 5000);
     }
   },
   unmounted: function () {
     if (this.unsubscribe) {
       this.unsubscribe()
+    }
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
     }
   }
 });

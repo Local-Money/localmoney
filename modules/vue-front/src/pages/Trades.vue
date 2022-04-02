@@ -64,6 +64,12 @@ export default defineComponent({
         this.fetchTradeInfos()
       })
     }
+    this.refreshInterval = setInterval(() => {
+      this.fetchTradeInfos()
+    }, 5000)
+  },
+  unmounted: function () {
+    clearInterval(this.refreshInterval);
   }
 });
 </script>

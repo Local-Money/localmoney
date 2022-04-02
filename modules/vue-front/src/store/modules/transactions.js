@@ -100,7 +100,7 @@ const actions = {
    * Fetch Offer by Id
    */
   async fetchOffer({commit}, {id}) {
-    const offerQuery = {load_offer: {id}};
+    const offerQuery = {offer: {id}};
     const offer = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr,
       offerQuery
