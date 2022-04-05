@@ -10,7 +10,7 @@ use cosmwasm_std::{
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::offer::{
-    Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
+    Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
 use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
@@ -62,7 +62,6 @@ pub fn instantiate(
     let recipient: Addr;
     let sender: Addr;
     let taker = deps.api.addr_validate(msg.taker.as_str()).unwrap();
-    let arbitrator = deps.api.addr_validate(msg.arbitrator.as_str()).unwrap();
 
     if offer.offer_type == OfferType::Buy {
         recipient = offer.owner; // maker
@@ -81,10 +80,11 @@ pub fn instantiate(
         offer_contract: offer_contract.clone(),
         offer_id,
         taker_contact: msg.taker_contact,
-        arbitrator,
+        arbitrator: None,
         state: TradeState::Created,
         expire_height,
         ust_amount: amount,
+        asset: offer.fiat_currency,
     };
 
     //Set state to EscrowFunded if enough UST was sent in the message.
@@ -254,6 +254,17 @@ fn dispute(
 
     trade.state = TradeState::Disputed;
 
+    let arbitrator: Arbitrator = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: trade.offer_contract.clone().to_string(),
+        msg: to_binary(&OfferQueryMsg::ArbitratorRandom {
+            random_value: (_env.block.time.seconds() % 100) as u32, // Generates a range of 0..99
+            asset: trade.asset.clone(),
+        })
+        .unwrap(),
+    }))?;
+
+    trade.arbitrator = Some(arbitrator.arbitrator);
+
     state_storage(deps.storage).save(&trade).unwrap();
 
     let res = Response::new();
@@ -266,13 +277,13 @@ fn release(
     trade: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender == trade.arbitrator) & (trade.state == TradeState::Disputed);
+        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::Disputed);
 
     //Check if sender can release
     if (info.sender != trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
             owner: trade.seller,
-            arbitrator: trade.arbitrator,
+            arbitrator: trade.arbitrator.clone().unwrap(),
             caller: info.sender,
         });
     }
@@ -349,7 +360,7 @@ fn release(
                 arbitration_coin.amount + compute_tax(&deps.querier, &arbitration_coin).unwrap();
 
             send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                to_address: trade.arbitrator.to_string(),
+                to_address: trade.arbitrator.clone().unwrap().to_string(),
                 amount: vec![arbitration_coin],
             })));
         }
@@ -398,7 +409,7 @@ fn refund(
     trade: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender == trade.arbitrator) & (trade.state == TradeState::Disputed);
+        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::Disputed);
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
@@ -421,7 +432,7 @@ fn refund(
         let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
         if !arbitration_mode {
-            trade.state = TradeState::Canceled;
+            trade.state = TradeState::Refunded;
         } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
             trade.state = TradeState::SettledForTaker;
         } else {
@@ -442,7 +453,7 @@ fn refund(
 
             let seller_msg = create_send_msg(&deps, trade.seller, balance);
 
-            let arbitrator_msg = create_send_msg(&deps, trade.arbitrator, fee);
+            let arbitrator_msg = create_send_msg(&deps, trade.arbitrator.clone().unwrap(), fee);
 
             let res = Response::new()
                 .add_submessage(SubMsg::new(seller_msg))

@@ -94,7 +94,6 @@ pub enum ExecuteMsg {
         ust_amount: String,
         taker: String, // TODO should be Addr
         taker_contact: String,
-        arbitrator: String, // TODO should be Addr
     },
     NewArbitrator {
         arbitrator: Addr,

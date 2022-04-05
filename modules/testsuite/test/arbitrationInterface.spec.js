@@ -204,7 +204,7 @@ import { before } from "mocha";
 
           console.log("cop arbitrators result :>> ", result);
 
-          expect(result.length).to.equal(2);
+          expect(result.length).to.equal(3);
         });
         it.only("should return a random arbitrator", async function () {
           const query = {

@@ -30,28 +30,28 @@ pub fn instantiate(
         factory_addr: info.sender,
     })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
-    let index = "terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0".to_string() + &"COP".to_string();
 
     // TODO remove testing code
+    let index = "terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz".to_string() + &"COP".to_string();
     arbitrators().save(
         deps.storage,
         &index,
         &Arbitrator {
-            arbitrator: Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"),
+            arbitrator: Addr::unchecked("terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz"),
             asset: FiatCurrency::COP,
         },
     )?;
 
-    let index = "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk".to_string() + &"COP".to_string();
+    // let index = "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk".to_string() + &"COP".to_string();
 
-    arbitrators().save(
-        deps.storage,
-        &index,
-        &Arbitrator {
-            arbitrator: Addr::unchecked("terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk"),
-            asset: FiatCurrency::COP,
-        },
-    )?;
+    // arbitrators().save(
+    //     deps.storage,
+    //     &index,
+    //     &Arbitrator {
+    //         arbitrator: Addr::unchecked("terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk"),
+    //         asset: FiatCurrency::COP,
+    //     },
+    // )?;
     // TODO END remove testing code
 
     Ok(Response::default())
@@ -74,17 +74,7 @@ pub fn execute(
             ust_amount,
             taker,
             taker_contact,
-            arbitrator,
-        } => create_trade(
-            deps,
-            env,
-            info,
-            offer_id,
-            ust_amount,
-            taker,
-            taker_contact,
-            arbitrator,
-        ),
+        } => create_trade(deps, env, info, offer_id, ust_amount, taker, taker_contact),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -212,7 +202,7 @@ fn trade_instance_reply(
                 trade: trade_addr.clone(),
                 seller: trade.seller.clone(),
                 buyer: trade.buyer.clone(),
-                arbitrator: trade.arbitrator.clone(),
+                arbitrator: Addr::unchecked("None"), // We need a non-sensical Addr to create the indices, `None` won't work
                 state: trade.state.clone(),
             },
         )
@@ -404,7 +394,6 @@ fn create_trade(
     ust_amount: String,
     taker: String,
     taker_contact: String,
-    arbitrator: String,
 ) -> Result<Response, OfferError> {
     let cfg = config_read(deps.storage).load().unwrap();
     // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
@@ -421,7 +410,6 @@ fn create_trade(
             ust_amount: ust_amount.clone(),
             taker: taker.clone(),
             taker_contact,
-            arbitrator,
             offers_addr: env.contract.address.to_string(),
             timestamp: env.block.time.seconds(),
         })
