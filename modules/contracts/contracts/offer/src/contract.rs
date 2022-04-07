@@ -477,8 +477,8 @@ pub fn query_trades(
     // Select correct index for data lookup
     // * The `state<TradeState>` filter only supported for `user == arbitrator` queries
     let prefix = match index {
-        TradesIndex::Seller => trades().idx.sender.prefix(user),
-        TradesIndex::Buyer => trades().idx.recipient.prefix(user),
+        TradesIndex::Seller => trades().idx.seller.prefix(user),
+        TradesIndex::Buyer => trades().idx.buyer.prefix(user),
         TradesIndex::ArbitratorState => match state {
             Some(state) => trades()
                 .idx

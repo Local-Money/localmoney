@@ -72,9 +72,9 @@ fn create_trade(
     (res, deps)
 }
 
-fn mock_info_with_ust(sender: &str, amount: Uint128) -> MessageInfo {
+fn mock_info_with_ust(seller: &str, amount: Uint128) -> MessageInfo {
     mock_info(
-        sender,
+        seller,
         &[Coin {
             denom: "uusd".to_string(),
             amount: amount.clone(),

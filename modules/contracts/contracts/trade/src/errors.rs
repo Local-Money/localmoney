@@ -46,8 +46,8 @@ pub enum TradeError {
     },
     #[error("Unauthorized Dispute.")]
     UnauthorizedDispute {
-        sender: Addr,
-        recipient: Addr,
+        seller: Addr,
+        buyer: Addr,
         caller: Addr,
     },
 }

@@ -58,25 +58,25 @@ pub fn instantiate(
         });
     }
 
-    //Instantiate recipient and sender addresses according to Offer type (buy, sell)
-    let recipient: Addr;
-    let sender: Addr;
+    //Instantiate buyer and seller addresses according to Offer type (buy, sell)
+    let buyer: Addr;
+    let seller: Addr;
     let taker = deps.api.addr_validate(msg.taker.as_str()).unwrap();
 
     if offer.offer_type == OfferType::Buy {
-        recipient = offer.owner; // maker
-        sender = taker.clone(); // taker
+        buyer = offer.owner; // maker
+        seller = taker.clone(); // taker
     } else {
-        recipient = taker.clone(); // taker
-        sender = offer.owner; // maker
+        buyer = taker.clone(); // taker
+        seller = offer.owner; // maker
     }
 
     //Instantiate Trade state
     let mut trade = TradeData {
         addr: env.contract.address.clone(),
         factory_addr: offers_cfg.factory_addr.clone(),
-        buyer: recipient, // buyer
-        seller: sender,   // seller
+        buyer: buyer,   // buyer
+        seller: seller, // seller
         offer_contract: offer_contract.clone(),
         offer_id,
         taker_contact: msg.taker_contact,
@@ -218,7 +218,7 @@ fn fund_escrow(
         .add_attribute("action", "fund_escrow")
         .add_attribute("fund_amount", fund_escrow_amount.to_string())
         .add_attribute("ust_amount", ust_amount.to_string())
-        .add_attribute("sender", info.sender);
+        .add_attribute("seller", info.sender);
 
     Ok(res)
 }
@@ -243,8 +243,8 @@ fn dispute(
 ) -> Result<Response, TradeError> {
     if (info.sender != state.seller) & (info.sender != state.buyer) {
         return Err(TradeError::UnauthorizedDispute {
-            sender: state.seller,
-            recipient: state.buyer,
+            seller: state.seller,
+            buyer: state.buyer,
             caller: info.sender,
         });
     }
@@ -279,7 +279,7 @@ fn release(
     let arbitration_mode =
         (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::Disputed);
 
-    //Check if sender can release
+    //Check if seller can release
     if (info.sender != trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
             owner: trade.seller,

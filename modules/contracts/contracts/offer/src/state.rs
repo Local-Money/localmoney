@@ -8,8 +8,8 @@ pub static STATE_KEY: &[u8] = b"state";
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
-    pub sender: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
-    pub recipient: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
+    pub seller: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
+    pub buyer: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
     pub arbitrator: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
     pub arbitrator_state: MultiIndex<'a, (Addr, String, Vec<u8>), TradeAddr>,
 }
@@ -17,8 +17,8 @@ pub struct TradeIndexes<'a> {
 impl<'a> IndexList<TradeAddr> for TradeIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<TradeAddr>> + '_> {
         let v: Vec<&dyn Index<TradeAddr>> = vec![
-            &self.sender,
-            &self.recipient,
+            &self.seller,
+            &self.buyer,
             &self.arbitrator,
             &self.arbitrator_state,
         ];
@@ -28,15 +28,15 @@ impl<'a> IndexList<TradeAddr> for TradeIndexes<'a> {
 
 pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
     let indexes = TradeIndexes {
-        sender: MultiIndex::new(
+        seller: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.seller.clone(), k),
             "trades",         // TODO replace with TRADES_KEY
-            "trades__sender", // TODO replace with TRADES_KEY and concat
+            "trades__seller", // TODO replace with TRADES_KEY and concat
         ),
-        recipient: MultiIndex::new(
+        buyer: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.buyer.clone(), k),
-            "trades",            // TODO replace with TRADES_KEY
-            "trades__recipient", // TODO replace with TRADES_KEY and concat
+            "trades",        // TODO replace with TRADES_KEY
+            "trades__buyer", // TODO replace with TRADES_KEY and concat
         ),
         arbitrator: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.arbitrator.clone(), k),

@@ -7,7 +7,7 @@
     "test:terrarium": "NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js'",
     "test:terrarium:disputeResolution": "NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js'",
     "test:terrarium:tradeFlow": "NETWORK_ENV=terrarium mocha './test/tradeFlow.spec.js'",
-    "test:bombay": "NETWORK_ENV=bombay mocha --parallel './test/**/*.spec.js'",
+    "test:bombay": "NETWORK_ENV=bombay mocha './test/**/*.spec.js'",
     "test:bombay:disputeResolution": "NETWORK_ENV=bombay mocha './test/disputeResolution.spec.js'",
     "test:bombay:queryInterfaces": "NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js'",
     "test:bombay:arbitrationInterface": "NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
