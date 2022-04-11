@@ -3,42 +3,45 @@
     <div class="separator"></div>
     <section class="offers-filter">
       <div class="buy-sell">
-        <button class="buy">buy</button>
+        <button class="buy" :class="{ focus: offerType === 'sell'}" @click="setOfferType('sell')">buy</button>
         <div class="separator"></div>
-        <button class="sell">sell</button>
+        <button class="sell" :class="{ focus: offerType === 'buy'}" @click="setOfferType('buy')">sell</button>
       </div>
+      <!--
       <div class="filter">
         <label for="crypto">Crypto</label>
         <select name="crypto" id="crypto">
           <option value="UST">UST</option>
         </select>
       </div>
+      -->
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
-        <select name="currency" id="currency">
-          <option value="UST">BRL</option>
-          <option value="UST">COP</option>
-          <option value="UST">USD</option>
+        <select name="currency" id="currency" v-model="fiatCurrency" @change="fetchOffers({fiatCurrency, offerType})">
+          <option value="ARS">ARS</option>
+          <option value="BRL">BRL</option>
+          <option value="COP">COP</option>
         </select>
       </div>
     </section>
 
     <section class="offers-list">
-      <h3>Buy from this sellers</h3>
+      <h3 v-if="offerType === 'sell'">Buy from these sellers</h3>
+      <h3 v-if="offerType === 'buy'">Sell to these buyers</h3>
       <!-- Offers for -->
       <ul>
         <li class="card" v-for="offer in allOffers" v-bind:key="offer.id">
           <!-- Collapsed Offer -->
           <CollapsedOffer
-            v-if="!offer.isExpanded"
-            :offer="offer"
-            v-on:select="expandOfferItem"
+              v-if="!offer.isExpanded"
+              :offer="offer"
+              v-on:select="expandOfferItem"
           />
           <!-- Expanded Offer Desktop -->
           <ExpandedOffer
-            v-else
-            :offer="offer"
-            v-on:cancel="collapseOfferItem"
+              v-else
+              :offer="offer"
+              v-on:cancel="collapseOfferItem"
           />
         </li>
       </ul>
@@ -59,11 +62,11 @@
     <form action="">
       <div class="input">
         <label for="buy">I want to buy</label>
-        <input type="text" placeholder="100.00" ref="buyAmountInput" />
+        <input type="text" placeholder="100.00" ref="buyAmountInput"/>
       </div>
       <div class="input">
         <label for="sell">I will receive</label>
-        <input type="text" placeholder="100.00" />
+        <input type="text" placeholder="100.00"/>
         <p>Min - 1 | Max - 50</p>
       </div>
     </form>
@@ -108,9 +111,9 @@
 </template>
 
 <script>
-import { defineComponent } from "vue";
-import { mapActions, mapGetters } from "vuex";
-import { formatAddress, formatAmount } from "@/shared";
+import {defineComponent} from "vue";
+import {mapActions, mapGetters} from "vuex";
+import {formatAddress, formatAmount} from "@/shared";
 import ExpandedOffer from "@/components/offers/ExpandedOffer.vue";
 import CollapsedOffer from "@/components/offers/CollapsedOffer.vue";
 
@@ -122,15 +125,20 @@ export default defineComponent({
   },
   data() {
     return {
-      offerTypeLabels: { buy: "Sell", sell: "Buy" },
+      offerTypeLabels: {buy: "Sell", sell: "Buy"},
       expandedOffer: null,
+      fiatCurrency: 'ARS',
+      offerType: 'sell',
     };
+  },
+  mounted: async function () {
+    await this.fetchOffers({fiatCurrency: this.fiatCurrency, offerType: this.offerType})
   },
   methods: {
     ...mapActions(["fetchOffers", "fetchUsdRates", "openTrade"]),
     formatAmount,
     formatAddress,
-    expandOfferItem: function(offer) {
+    expandOfferItem: function (offer) {
       if (this.expandedOffer !== offer) {
         if (this.expandedOffer != null) {
           this.expandedOffer.isExpanded = false;
@@ -139,15 +147,20 @@ export default defineComponent({
         this.expandedOffer = offer;
       }
     },
-    collapseOfferItem: function(offer) {
+    collapseOfferItem: function (offer) {
       offer.isExpanded = false;
       this.expandedOffer = null;
     },
-
+    setOfferType: function (offerType) {
+      this.offerType = offerType;
+      this.$nextTick(() => {
+        this.fetchOffers({fiatCurrency: this.fiatCurrency, offerType: this.offerType});
+      })
+    },
   },
   computed: {
     ...mapGetters(["offers", "getUsdRate"]),
-    allOffers: function() {
+    allOffers: function () {
       let offers = [];
       this.offers.forEach((offer) => {
         offer["isExpanded"] = false;
@@ -257,6 +270,7 @@ export default defineComponent({
       font-weight: 600;
       color: $base-text;
     }
+
     .n-trades {
       font-size: 14px;
       color: $gray600;
@@ -358,6 +372,7 @@ export default defineComponent({
           max-width: 100px;
           color: $gray600;
         }
+
         .value {
           font-size: 16px;
           font-weight: 600;
@@ -394,6 +409,7 @@ export default defineComponent({
           .price-get {
             font-weight: 800;
           }
+
           .price-pay {
             font-weight: 800;
             color: $primary;
