@@ -47,7 +47,7 @@
       </ul>
     </section>
     <section>
-      <button>Load more...</button>
+      <button @click="loadMore()">Load more...</button>
     </section>
   </section>
 
@@ -157,9 +157,18 @@ export default defineComponent({
     setOfferType: function (offerType) {
       this.offerType = offerType;
       this.$nextTick(() => {
-        this.fetchOffers({fiatCurrency: this.fiatCurrency, offerType: this.offerType});
+        this.fetchOffers(
+            {fiatCurrency: this.fiatCurrency, offerType: this.offerType}
+        );
       })
     },
+    loadMore: function () {
+      this.$nextTick(() => {
+        this.fetchOffers(
+            {fiatCurrency: this.fiatCurrency, offerType: this.offerType, paginated: true}
+        );
+      })
+    }
   },
   computed: {
     ...mapGetters(["offers", "getUsdRate"]),
