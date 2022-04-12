@@ -112,7 +112,7 @@ fn test_trade_happy_path() {
     //Check that trade state is Closed
     let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
-    assert_eq!(trade_state.state, TradeState::Released);
+    assert_eq!(trade_state.state, TradeState::EscrowReleased);
 
     //Verify that the correct messages were sent after trade completion
     /*
@@ -313,7 +313,7 @@ fn test_fund_escrow() {
     //Trade should be in Created state
     let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
-    assert_eq!(trade_state.state, TradeState::Created);
+    assert_eq!(trade_state.state, TradeState::RequestCreated);
 
     //Send FundEscrow message with UST and check that trade is in EscrowFunded state.
     let localterra_fee = localterra_fee(trade_amount);

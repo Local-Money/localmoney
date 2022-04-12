@@ -49,12 +49,13 @@ pub struct TradeData {
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {
     RequestCreated,
-    EscrowFunded,
-    Released,
+    RequestCanceled,
     RequestExpired,
-    Refunded,
-    Canceled,
-    Disputed,
+    EscrowFunded,
+    EscrowRefunded,
+    FiatDeposited,
+    EscrowReleased,
+    EscrowDisputed,
     SettledForMaker,
     SettledForTaker,
 }

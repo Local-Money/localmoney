@@ -263,7 +263,7 @@ fn dispute(
     // Update trade State to TradeState::Disputed
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
-    trade.state = TradeState::Disputed;
+    trade.state = TradeState::EscrowDisputed;
 
     let arbitrator: Arbitrator = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: trade.offer_contract.clone().to_string(),
@@ -288,7 +288,7 @@ fn release(
     trade: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::Disputed);
+        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::EscrowDisputed);
 
     //Check if seller can release
     if (info.sender != trade.seller) & !arbitration_mode {
@@ -322,7 +322,7 @@ fn release(
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
     if !arbitration_mode {
-        trade.state = TradeState::Released;
+        trade.state = TradeState::EscrowReleased;
     } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
         trade.state = TradeState::SettledForMaker;
     } else {
@@ -420,12 +420,12 @@ fn refund(
     trade: TradeData,
 ) -> Result<Response, TradeError> {
     let arbitration_mode =
-        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::Disputed);
+        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::EscrowDisputed);
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
     if (trade.expire_height > env.block.height)
-        & ((trade.state != TradeState::Disputed) & !arbitration_mode)
+        & ((trade.state != TradeState::EscrowDisputed) & !arbitration_mode)
     {
         return Err(TradeError::RefundError {
             message:
@@ -443,7 +443,7 @@ fn refund(
         let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
         if !arbitration_mode {
-            trade.state = TradeState::Refunded;
+            trade.state = TradeState::EscrowRefunded;
         } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
             trade.state = TradeState::SettledForTaker;
         } else {
