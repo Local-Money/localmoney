@@ -20,7 +20,7 @@
     "upload:bombay:arbitrationInterface": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
     "upload:mainnet:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js'",
     "upload:terrarium:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js'",
-    "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha --parallel './test/**/*.spec.js'",
+    "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/**/*.spec.js'",
     "instantiate": "npm run instantiate:terrarium",
     "instantiate:terrarium": "INSTANTIATE=true NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js'",
     "instantiate:bombay": "INSTANTIATE=true NETWORK_ENV=bombay mocha --parallel './test/**/*.spec.js'"

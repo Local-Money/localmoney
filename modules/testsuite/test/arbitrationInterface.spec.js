@@ -22,7 +22,7 @@ import { before } from "mocha";
         global.factoryCfg = await getFactoryCfg(terra, quorum);
       });
       describe("New arbitrator with asset", function () {
-        it.only("should create a new arbitrator `jr` with fiat currency COP", async function () {
+        it("should create a new arbitrator `jr` with fiat currency COP", async function () {
           const arbitrator = {
             arbitrator: "terra1a29pt4q0vmf3qzjl3nu5fc0wuqj02qsfkvqyjr",
             asset: "COP",
@@ -193,7 +193,7 @@ import { before } from "mocha";
 
           expect(result.length).to.equal(2);
         });
-        it.only("should return the arbitrators for a fiat currency COP", async function () {
+        it("should return the arbitrators for a fiat currency COP", async function () {
           const query = {
             arbitrator_asset: {
               asset: "COP",
@@ -206,7 +206,7 @@ import { before } from "mocha";
 
           expect(result.length).to.equal(3);
         });
-        it.only("should return a random arbitrator", async function () {
+        it("should return a random arbitrator", async function () {
           const query = {
             arbitrator_random: { random_value: 23, asset: "COP" },
           };

@@ -154,6 +154,7 @@ fn fund_escrow(
     // assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
     assert_trade_state_for_sender(info.sender.clone(), &trade, &offer.offer_type).unwrap();
 
+    // TODO write test for RequestExpired, attempt to fund
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
         trade.state = TradeState::RequestExpired;
 
@@ -239,6 +240,8 @@ fn dispute(
     info: MessageInfo,
     state: TradeData,
 ) -> Result<Response, TradeError> {
+    // TODO rename to dispute_escrow
+    // check escrow funding timer
     if (info.sender != state.seller) & (info.sender != state.buyer) {
         return Err(TradeError::UnauthorizedDispute {
             seller: state.seller,
@@ -274,6 +277,9 @@ fn release(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
+    // TODO rename to release_escrow
+    // TODO check esrowfunding timer
+
     let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
         & (trade.state == TradeState::EscrowDisputed);
 
@@ -410,6 +416,9 @@ fn refund(
 ) -> Result<Response, TradeError> {
     let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
         & (trade.state == TradeState::EscrowDisputed);
+
+    // TODO use EscrowFunding Timer
+    // rename to refund_escrow
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
