@@ -9,6 +9,7 @@ use cosmwasm_std::{
 
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::guards::assert_value_in_range;
 use localterra_protocol::guards::trade_request_is_expired;
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
@@ -46,15 +47,11 @@ pub fn instantiate(
         }));
     let offers_cfg = load_offer_config_result.unwrap();
 
-    //Check that ust_amount is inside Offer limits
-    let amount = Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap());
-    if amount > offer.max_amount || amount < offer.min_amount {
-        return Err(TradeError::AmountError {
-            amount,
-            min_amount: offer.min_amount,
-            max_amount: offer.max_amount,
-        });
-    }
+    assert_value_in_range(
+        offer.min_amount,
+        offer.max_amount,
+        Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap()),
+    )?;
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -287,8 +284,8 @@ fn release(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    let arbitration_mode =
-        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::EscrowDisputed);
+    let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
+        & (trade.state == TradeState::EscrowDisputed);
 
     //Check if seller can release
     if (info.sender != trade.seller) & !arbitration_mode {
@@ -419,8 +416,8 @@ fn refund(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    let arbitration_mode =
-        (info.sender == trade.arbitrator.clone().unwrap()) & (trade.state == TradeState::EscrowDisputed);
+    let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
+        & (trade.state == TradeState::EscrowDisputed);
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
