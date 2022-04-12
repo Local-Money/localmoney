@@ -39,7 +39,7 @@ pub struct TradeData {
     pub arbitrator: Option<Addr>,
     pub offer_contract: Addr,
     pub offer_id: u64,
-    pub expire_height: u64,
+    pub created_at: u64,
     pub ust_amount: Uint128,
     pub state: TradeState,
     pub asset: FiatCurrency,
@@ -48,11 +48,12 @@ pub struct TradeData {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {
-    Refunded,
-    Canceled,
-    Released,
     Created,
     EscrowFunded,
+    Released,
+    RequestExpired,
+    Refunded,
+    Canceled,
     Disputed,
     SettledForMaker,
     SettledForTaker,

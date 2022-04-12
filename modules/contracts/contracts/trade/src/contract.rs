@@ -9,6 +9,7 @@ use cosmwasm_std::{
 
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::guards::trade_request_is_expired;
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
@@ -45,9 +46,6 @@ pub fn instantiate(
         }));
     let offers_cfg = load_offer_config_result.unwrap();
 
-    //TODO: it's probably a good idea to store this kind of configuration in a Gov contract.
-    let expire_height = env.block.height + 600; //Roughly 1h.
-
     //Check that ust_amount is inside Offer limits
     let amount = Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap());
     if amount > offer.max_amount || amount < offer.min_amount {
@@ -82,19 +80,20 @@ pub fn instantiate(
         taker_contact: msg.taker_contact,
         arbitrator: None,
         state: TradeState::Created,
-        expire_height,
+        created_at: env.block.time.seconds(),
         ust_amount: amount,
         asset: offer.fiat_currency,
     };
 
+    // TODO: Trade must first be accepted by both parties, then funded
     //Set state to EscrowFunded if enough UST was sent in the message.
-    if !info.funds.is_empty() {
-        //TODO: Check for Luna or other Terra native tokens.
-        let ust_amount = get_ust_amount(info.clone());
-        if ust_amount >= amount {
-            trade.state = TradeState::EscrowFunded
-        }
-    }
+    // if !info.funds.is_empty() {
+    //     //TODO: Check for Luna or other Terra native tokens.
+    //     let ust_amount = get_ust_amount(info.clone());
+    //     if ust_amount >= amount {
+    //         trade.state = TradeState::EscrowFunded
+    //     }
+    // }
 
     //Save state.
     let save_state_result = state_storage(deps.storage).save(&trade);
@@ -155,15 +154,27 @@ fn fund_escrow(
     info: MessageInfo,
     mut trade: TradeData,
 ) -> Result<Response, TradeError> {
-    //Check if trade is expired.
-    if env.block.height >= trade.expire_height {
+    // 20 mins TODO: move to constant, eventually user configurable parameter
+    let expire_timer = 20 * 60;
+
+    // MUST DO assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
+    // // check that info.sender is trade.buyer / trade.seller
+
+    if trade_request_is_expired(env.block.time.seconds(), trade.created_at, expire_timer) {
+        trade.state = TradeState::RequestExpired;
+
+        state_storage(deps.storage).save(&trade).unwrap();
+
         return Err(TradeError::Expired {
-            current_height: env.block.height,
-            expire_height: trade.expire_height,
+            expire_timer,
+            expired_at: env.block.time.seconds() + expire_timer,
+            created_at: trade.created_at,
         });
     }
+
     // Check if escrow has already been funded
     // TODO also base this on actual balance, switch to cancelled state and refund automatically on diffs
+    // what happens on automatic refund if fiat has already been deposited?
     if trade.state == TradeState::EscrowFunded {
         return Err(TradeError::AlreadyFundedError {});
     }

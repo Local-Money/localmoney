@@ -29,3 +29,7 @@ pub fn assert_range_0_to_99(random_value: usize) -> Result<(), OfferError> {
         Ok(())
     }
 }
+
+pub fn trade_request_is_expired(block_time: u64, created_at: u64, expire_timer: u64) -> bool {
+    block_time > created_at + expire_timer
+}

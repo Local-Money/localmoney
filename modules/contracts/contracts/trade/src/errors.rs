@@ -15,8 +15,9 @@ pub enum TradeError {
     ExecutionError { message: String },
     #[error("This trade has expired.")]
     Expired {
-        current_height: u64,
-        expire_height: u64,
+        expire_timer: u64,
+        expired_at: u64,
+        created_at: u64,
     },
     #[error("Failed to instantiate contract.")]
     InstantiationError { message: String },
