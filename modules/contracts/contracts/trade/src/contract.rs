@@ -79,7 +79,7 @@ pub fn instantiate(
         offer_id,
         taker_contact: msg.taker_contact,
         arbitrator: None,
-        state: TradeState::Created,
+        state: TradeState::RequestCreated,
         created_at: env.block.time.seconds(),
         ust_amount: amount,
         asset: offer.fiat_currency,

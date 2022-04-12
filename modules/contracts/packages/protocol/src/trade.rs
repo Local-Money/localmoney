@@ -48,7 +48,7 @@ pub struct TradeData {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {
-    Created,
+    RequestCreated,
     EscrowFunded,
     Released,
     RequestExpired,
