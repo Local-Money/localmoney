@@ -251,7 +251,7 @@ impl OfferModel<'_> {
         fiat_currency: FiatCurrency,
     ) -> StdResult<Vec<Offer>> {
         let result: Vec<Offer> = offers()
-            .range(storage, None, None, Order::Ascending)
+            .range(storage, None, None, Order::Descending)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .filter(|offer| offer.fiat_currency == fiat_currency)
             .collect();
