@@ -18,6 +18,7 @@
     "upload:bombay:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/disputeResolution.spec.js'",
     "upload:bombay:queryInterfaces": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js'",
     "upload:bombay:arbitrationInterface": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
+    "upload:bombay:tradeFlow": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js'",
     "upload:mainnet:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js'",
     "upload:terrarium:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js'",
     "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/**/*.spec.js'",
