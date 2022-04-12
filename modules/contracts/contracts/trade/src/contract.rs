@@ -10,7 +10,9 @@ use cosmwasm_std::{
 use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
-use localterra_protocol::guards::{assert_value_in_range, trade_request_is_expired};
+use localterra_protocol::guards::{
+    assert_trade_state_for_sender, assert_value_in_range, trade_request_is_expired,
+};
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
@@ -49,7 +51,7 @@ pub fn instantiate(
 
     let amount = Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap());
 
-    assert_value_in_range(offer.min_amount, offer.max_amount)?;
+    assert_value_in_range(offer.min_amount, offer.max_amount, amount); // TODO test this guard
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -139,8 +141,16 @@ fn fund_escrow(
     info: MessageInfo,
     mut trade: TradeData,
 ) -> Result<Response, TradeError> {
+    let offer = load_offer(
+        deps.querier.clone(),
+        trade.offer_id,
+        trade.offer_contract.to_string(),
+    )
+    .unwrap(); //at this stage, offer is guaranteed to exists.
+
     // MUST DO assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
     // // check that info.sender is trade.buyer / trade.seller
+    assert_trade_state_for_sender(info.sender, &trade, offer.offer_type)?;
 
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
         trade.state = TradeState::RequestExpired;
@@ -176,13 +186,6 @@ fn fund_escrow(
             .amount
     };
     let ust = Coin::new(ust_amount.clone().u128(), "uusd");
-
-    let offer = load_offer(
-        deps.querier.clone(),
-        trade.offer_id,
-        trade.offer_contract.to_string(),
-    )
-    .unwrap(); //at this stage, offer is guaranteed to exists.
 
     let fund_escrow_amount: Uint128 = match offer.offer_type {
         // TODO review this and avoid over-funding by returning diff

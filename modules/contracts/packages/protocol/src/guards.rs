@@ -1,4 +1,6 @@
 use crate::errors::GuardError;
+use crate::offer::OfferType;
+use crate::trade::{TradeData, TradeState};
 use cosmwasm_std::{Addr, StdError, Uint128};
 
 pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), GuardError> {
@@ -49,4 +51,29 @@ pub fn assert_range_0_to_99(random_value: usize) -> Result<(), GuardError> {
 
 pub fn trade_request_is_expired(block_time: u64, created_at: u64, expire_timer: u64) -> bool {
     block_time > created_at + expire_timer
+}
+
+pub fn assert_trade_state_for_sender(
+    sender: Addr,
+    trade: &TradeData,
+    offer_type: OfferType,
+) -> Result<(), GuardError> {
+    // sender == maker == seller
+    if offer_type == OfferType::Sell
+        && &sender == &trade.seller
+        && trade.state == TradeState::RequestCreated
+    {
+        Ok(())
+    }
+    // sender == taker == buyer
+    else if offer_type == OfferType::Buy
+        && &sender == &trade.buyer
+        && trade.state == TradeState::RequestAccepted
+    {
+        Ok(())
+    } else {
+        Err(GuardError::Std(StdError::generic_err(
+            "Incorrect sender funding the trade.", // TODO use costum error and return the funds
+        )))
+    }
 }
