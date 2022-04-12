@@ -15,7 +15,7 @@ pub enum TradeError {
     ExecutionError { message: String },
     #[error("This trade has expired.")]
     Expired {
-        expire_timer: u64,
+        timeout: u64,
         expired_at: u64,
         created_at: u64,
     },

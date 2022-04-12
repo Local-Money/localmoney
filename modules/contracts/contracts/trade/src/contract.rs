@@ -7,10 +7,10 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
+use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
-use localterra_protocol::guards::assert_value_in_range;
-use localterra_protocol::guards::trade_request_is_expired;
+use localterra_protocol::guards::{assert_value_in_range, trade_request_is_expired};
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
@@ -47,11 +47,9 @@ pub fn instantiate(
         }));
     let offers_cfg = load_offer_config_result.unwrap();
 
-    assert_value_in_range(
-        offer.min_amount,
-        offer.max_amount,
-        Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap()),
-    )?;
+    let amount = Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap());
+
+    assert_value_in_range(offer.min_amount, offer.max_amount)?;
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -81,16 +79,6 @@ pub fn instantiate(
         ust_amount: amount,
         asset: offer.fiat_currency,
     };
-
-    // TODO: Trade must first be accepted by both parties, then funded
-    //Set state to EscrowFunded if enough UST was sent in the message.
-    // if !info.funds.is_empty() {
-    //     //TODO: Check for Luna or other Terra native tokens.
-    //     let ust_amount = get_ust_amount(info.clone());
-    //     if ust_amount >= amount {
-    //         trade.state = TradeState::EscrowFunded
-    //     }
-    // }
 
     //Save state.
     let save_state_result = state_storage(deps.storage).save(&trade);
@@ -151,20 +139,17 @@ fn fund_escrow(
     info: MessageInfo,
     mut trade: TradeData,
 ) -> Result<Response, TradeError> {
-    // 20 mins TODO: move to constant, eventually user configurable parameter
-    let expire_timer = 20 * 60;
-
     // MUST DO assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
     // // check that info.sender is trade.buyer / trade.seller
 
-    if trade_request_is_expired(env.block.time.seconds(), trade.created_at, expire_timer) {
+    if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
         trade.state = TradeState::RequestExpired;
 
         state_storage(deps.storage).save(&trade).unwrap();
 
         return Err(TradeError::Expired {
-            expire_timer,
-            expired_at: env.block.time.seconds() + expire_timer,
+            timeout: REQUEST_TIMEOUT,
+            expired_at: env.block.time.seconds() + REQUEST_TIMEOUT,
             created_at: trade.created_at,
         });
     }
