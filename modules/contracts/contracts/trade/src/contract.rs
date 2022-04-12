@@ -107,6 +107,7 @@ pub fn execute(
         ExecuteMsg::Release {} => release(deps, env, info, state),
         ExecuteMsg::Dispute {} => dispute(deps, env, info, state),
         // ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
+        // ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
         // ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
     }
 }
