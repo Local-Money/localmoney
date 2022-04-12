@@ -65,9 +65,9 @@ pub fn assert_trade_state_for_sender(
     {
         Ok(())
     }
-    // sender == taker == buyer
+    // sender == taker == seller
     else if offer_type == &OfferType::Buy
-        && &sender == &trade.buyer
+        && &sender == &trade.seller
         && trade.state == TradeState::RequestAccepted
     {
         Ok(())

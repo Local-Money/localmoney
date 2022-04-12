@@ -150,8 +150,7 @@ fn fund_escrow(
     )
     .unwrap(); //at this stage, offer is guaranteed to exists.
 
-    // MUST DO assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
-    // // check that info.sender is trade.buyer / trade.seller
+    // assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
     assert_trade_state_for_sender(info.sender.clone(), &trade, &offer.offer_type).unwrap();
 
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
