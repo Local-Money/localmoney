@@ -27,7 +27,7 @@ use crate::taxation::{compute_tax, deduct_tax};
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
     //Load Offer
@@ -51,7 +51,7 @@ pub fn instantiate(
 
     let amount = Uint128::new(u128::from_str(msg.ust_amount.as_str()).unwrap());
 
-    assert_value_in_range(offer.min_amount, offer.max_amount, amount); // TODO test this guard
+    assert_value_in_range(offer.min_amount, offer.max_amount, amount).unwrap(); // TODO test this guard
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -67,7 +67,7 @@ pub fn instantiate(
     }
 
     //Instantiate Trade state
-    let mut trade = TradeData {
+    let trade = TradeData {
         addr: env.contract.address.clone(),
         factory_addr: offers_cfg.factory_addr.clone(),
         buyer: buyer,   // buyer
@@ -106,6 +106,8 @@ pub fn execute(
         ExecuteMsg::Refund {} => refund(deps, env, info, state),
         ExecuteMsg::Release {} => release(deps, env, info, state),
         ExecuteMsg::Dispute {} => dispute(deps, env, info, state),
+        // ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
+        // ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
     }
 }
 
@@ -150,7 +152,7 @@ fn fund_escrow(
 
     // MUST DO assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
     // // check that info.sender is trade.buyer / trade.seller
-    assert_trade_state_for_sender(info.sender, &trade, offer.offer_type)?;
+    assert_trade_state_for_sender(info.sender.clone(), &trade, &offer.offer_type).unwrap();
 
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
         trade.state = TradeState::RequestExpired;
@@ -285,10 +287,12 @@ fn release(
     }
 
     // throws error if state is expired BUT arbitrator can release expired trades
-    if (env.block.height > trade.expire_height) & !arbitration_mode {
+    if (env.block.time.seconds() > trade.created_at + REQUEST_TIMEOUT) & !arbitration_mode {
+        // TODO handle different expiration options
         return Err(TradeError::Expired {
-            expire_height: trade.expire_height,
-            current_height: env.block.height,
+            timeout: REQUEST_TIMEOUT,
+            expired_at: trade.created_at + REQUEST_TIMEOUT,
+            created_at: trade.created_at,
         });
     }
 
@@ -409,7 +413,7 @@ fn refund(
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
-    if (trade.expire_height > env.block.height)
+    if (env.block.time.seconds() > trade.created_at + REQUEST_TIMEOUT) // TODO handle escrow fundind timer instead
         & ((trade.state != TradeState::EscrowDisputed) & !arbitration_mode)
     {
         return Err(TradeError::RefundError {

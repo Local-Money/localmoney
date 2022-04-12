@@ -5,6 +5,7 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Bound;
 
+use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
@@ -17,7 +18,7 @@ use localterra_protocol::trade::{
 };
 
 use crate::state::{arbitrators, config_read, config_storage, state_read, state_storage, trades};
-use localterra_protocol::errors::OfferError;
+use localterra_protocol::errors::GuardError;
 
 #[entry_point]
 pub fn instantiate(
@@ -25,7 +26,7 @@ pub fn instantiate(
     _env: Env,
     info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     config_storage(deps.storage).save(&Config {
         factory_addr: info.sender,
     })?;
@@ -63,7 +64,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::Activate { id } => activate_offer(deps, env, info, id),
@@ -159,10 +160,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, OfferError> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, GuardError> {
     match msg.id {
         0 => trade_instance_reply(deps, env, msg.result),
-        _ => Err(OfferError::InvalidReply {}),
+        _ => Err(GuardError::InvalidReply {}),
     }
 }
 
@@ -170,9 +171,9 @@ fn trade_instance_reply(
     deps: DepsMut,
     _env: Env,
     result: ContractResult<SubMsgExecutionResponse>,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     if result.is_err() {
-        return Err(OfferError::InvalidReply {});
+        return Err(GuardError::InvalidReply {});
     }
 
     let trade_addr: Addr = result
@@ -225,7 +226,7 @@ pub fn create_offer(
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut state = state_storage(deps.storage).load()?;
@@ -269,7 +270,7 @@ pub fn create_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     assert_ownership(
         info.sender,
         Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
@@ -305,7 +306,7 @@ pub fn delete_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     assert_ownership(
         info.sender,
         Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
@@ -328,7 +329,7 @@ pub fn activate_offer(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
     assert_ownership(info.sender, offer_model.offer.owner.clone())?;
@@ -348,7 +349,7 @@ pub fn pause_offer(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
     assert_ownership(info.sender, offer_model.offer.owner.clone())?;
@@ -369,7 +370,7 @@ pub fn update_offer(
     info: MessageInfo,
     id: u64,
     msg: OfferMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
@@ -394,11 +395,11 @@ fn create_trade(
     ust_amount: String,
     taker: String,
     taker_contact: String,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
     // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
-    //     .ok_or(OfferError::InvalidReply {})?; // TODO choose better error
+    //     .ok_or(GuardError::InvalidReply {})?; // TODO choose better error
 
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
@@ -461,8 +462,6 @@ pub fn query_trades(
     last_value: Option<Addr>,
     limit: u32,
 ) -> StdResult<Vec<TradeInfo>> {
-    let curr_height = env.block.height;
-
     let mut trades_infos: Vec<TradeInfo> = vec![];
 
     // Pagination range (TODO pagination doesn't work with Addr as pk)
@@ -513,7 +512,10 @@ pub fn query_trades(
             }))
             .unwrap();
 
-        let expired = curr_height >= trade_state.expire_height;
+        let current_time = env.block.time.seconds();
+
+        let expired = current_time > trade_state.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
+
         trades_infos.push(TradeInfo {
             trade: trade_state,
             offer,
@@ -579,7 +581,7 @@ pub fn query_arbitrator_random(
     random_value: usize,
     asset: FiatCurrency,
 ) -> StdResult<Arbitrator> {
-    assert_range_0_to_99(random_value);
+    assert_range_0_to_99(random_value).unwrap();
 
     let storage = deps.storage;
 

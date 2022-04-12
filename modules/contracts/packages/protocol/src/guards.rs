@@ -56,17 +56,17 @@ pub fn trade_request_is_expired(block_time: u64, created_at: u64, expire_timer: 
 pub fn assert_trade_state_for_sender(
     sender: Addr,
     trade: &TradeData,
-    offer_type: OfferType,
+    offer_type: &OfferType,
 ) -> Result<(), GuardError> {
     // sender == maker == seller
-    if offer_type == OfferType::Sell
+    if offer_type == &OfferType::Sell
         && &sender == &trade.seller
         && trade.state == TradeState::RequestCreated
     {
         Ok(())
     }
     // sender == taker == buyer
-    else if offer_type == OfferType::Buy
+    else if offer_type == &OfferType::Buy
         && &sender == &trade.buyer
         && trade.state == TradeState::RequestAccepted
     {
