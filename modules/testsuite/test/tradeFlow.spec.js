@@ -48,7 +48,7 @@ import { before } from "mocha";
 
           return offerResult;
         });
-        it("Maker creates a SELL offer in BRL", async function () {
+        it("Maker creates a buy offer in COP", async function () {
           const offer = {
             offer_type: "buy",
             fiat_currency: "COP",

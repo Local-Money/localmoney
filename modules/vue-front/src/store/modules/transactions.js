@@ -110,19 +110,23 @@ const actions = {
   /**
    * Fetch Offers.
    */
-  async fetchOffers({commit}, {fiatCurrency, offerType}) {
+  async fetchOffers({commit, getters}, {fiatCurrency, offerType, paginated = false}) {
+    const offers = paginated ? getters.offers : []
+    const last_offer_id = offers.length > 0 && paginated ? offers[offers.length -1].id : 0
+
     const offersQuery = {
       offers_by_type_fiat: {
         fiat_currency: fiatCurrency,
         offer_type: offerType,
+        last_value: last_offer_id,
         limit: 10
       }
     };
-    const offers = await terra.wasm.contractQuery(
+    const loadedOffers = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr,
       offersQuery
     );
-    commit("setOffers", offers);
+    commit("setOffers", offers.concat(loadedOffers));
   },
   /**
    * Create Offer
