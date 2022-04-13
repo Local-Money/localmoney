@@ -23,6 +23,7 @@ pub enum ExecuteMsg {
     DisputeEscrow {},
     FiatDeposited {},
     CancelRequest {},
+    AcceptRequest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

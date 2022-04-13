@@ -107,7 +107,7 @@ pub fn execute(
         ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state),
         ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state),
         ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state),
-        // ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
+        ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
         ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
         ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
     }
@@ -273,6 +273,35 @@ fn dispute_escrow(
     state_storage(deps.storage).save(&trade).unwrap();
 
     let res = Response::new();
+    Ok(res)
+}
+
+
+fn accept_request(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    state: TradeData,
+) -> Result<Response, TradeError> {
+    // Only the buyer can accept the request
+    assert_ownership(info.sender, state.buyer); // TODO test this case
+
+    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
+
+    // Only change state if the current state is TradeState::RequestCreated
+    if trade.state != TradeState::RequestCreated {
+        return Err(TradeError::InvalidStateChange {
+            from: TradeState::RequestCreated,
+            to: TradeState::RequestAccepted
+        });
+    }
+
+    trade.state = TradeState::RequestAccepted;
+
+    state_storage(deps.storage).save(&trade).unwrap();
+
+    let res = Response::new();
+
     Ok(res)
 }
 
