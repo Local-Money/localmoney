@@ -13,7 +13,6 @@ async function fiatDeposited(client, { tradeAddr }, user) {
     console.error(`%Error marking fiat_deposited for trade ${tradeAdd}%`);
     throw new Error();
   }
-  console.log("result :>> ", result);
   return result;
 }
 

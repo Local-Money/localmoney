@@ -11,6 +11,7 @@ import { fiatDeposited } from "../lib/fiatDeposited.js";
 import { releaseTradeEscrow } from "../lib/releaseTradeEscrow.js";
 import { refundTradeEscrow } from "../lib/refundTradeEscrow.js";
 import { fundTradeEscrow } from "../lib/fundTradeEscrow.js";
+import { cancelTradeRequest } from "../lib/cancelTradeRequest.js";
 import { before } from "mocha";
 
 (async () => {
@@ -161,7 +162,7 @@ import { before } from "mocha";
       });
 
       it("Maker cancels the trade request (TradeState::RequestCanceled)", async function () {
-        await cancelTradeRequest(terra, {}, maker);
+        await cancelTradeRequest(terra, this.tradeAddr, maker);
       });
     });
     describe.only("SELL.RequestCanceled: Taker cancels", function () {
@@ -219,7 +220,7 @@ import { before } from "mocha";
       });
 
       it("Taker cancels the trade request (TradeState::RequestCanceled)", async function () {
-        await cancelTradeRequest(terra, {}, taker);
+        await cancelTradeRequest(terra, this.tradeAddr, taker);
       });
     });
     describe.skip("SELL.EscrowRefunded", function () {
