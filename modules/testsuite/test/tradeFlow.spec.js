@@ -160,7 +160,7 @@ import { before } from "mocha";
         return this.tradeAddr;
       });
 
-      it("Taker cancels the trade request (TradeState::RequestCanceled)", async function () {
+      it("Maker cancels the trade request (TradeState::RequestCanceled)", async function () {
         await cancelTradeRequest(terra, {}, maker);
       });
     });
