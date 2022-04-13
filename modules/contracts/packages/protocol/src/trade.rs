@@ -21,6 +21,7 @@ pub enum ExecuteMsg {
     Refund {},
     Release {},
     Dispute {},
+    FiatDeposited {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

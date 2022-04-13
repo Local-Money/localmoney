@@ -11,7 +11,8 @@ use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{
-    assert_trade_state_for_sender, assert_value_in_range, trade_request_is_expired,
+    assert_ownership, assert_trade_state_for_sender, assert_value_in_range,
+    trade_request_is_expired,
 };
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
@@ -107,7 +108,7 @@ pub fn execute(
         ExecuteMsg::Release {} => release(deps, env, info, state),
         ExecuteMsg::Dispute {} => dispute(deps, env, info, state),
         // ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
-        // ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
+        ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
         // ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
     }
 }
@@ -271,6 +272,29 @@ fn dispute(
     let res = Response::new();
     Ok(res)
 }
+
+fn fiat_deposited(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    state: TradeData,
+) -> Result<Response, TradeError> {
+    // The buyer is always the one depositing fiat
+    // Only the buyer can mark the fiat as deposited
+    assert_ownership(info.sender, state.buyer); // TODO test this case
+
+    // Update trade State to TradeState::FiatDeposited
+    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
+
+    trade.state = TradeState::FiatDeposited;
+
+    state_storage(deps.storage).save(&trade).unwrap();
+
+    let res = Response::new();
+
+    Ok(res)
+}
+
 fn release(
     deps: DepsMut,
     env: Env,

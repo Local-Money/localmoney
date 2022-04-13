@@ -1,6 +1,12 @@
 72505a6f1fd692ee243e686907284536dbde4dd1ae1699d436ac8f321d891837  ./target/wasm32-unknown-unknown/release/factory.wasm
 94a7428ff7fbdb01aed59f6e5be7baca003cf9699b5872230256f250dfb5046f  ./target/wasm32-unknown-unknown/release/fee_collector.wasm
 cbad6be24f137214c8198f42f5a5bf28575cb5448d0f41098a13103dacf7bda3  ./target/wasm32-unknown-unknown/release/governance.wasm
-0cb204ecb6e8eede3f9ede5691282b54d0a858517b41d08ebb3e6169c93281ab  ./target/wasm32-unknown-unknown/release/offer.wasm
-364e1acf20a6d252d3f88838e50eaa08b1328931c59bfb1eb0551b1437a2a401  ./target/wasm32-unknown-unknown/release/trade.wasm
+e8ad90ceade3a6499689b2af699763ba6a8dd4412711db17029da1e3edfb6774  ./target/wasm32-unknown-unknown/release/offer.wasm
+9a579f4039d71f75b7e4a1fd6279862a0b6b8272491ed4f334d7b79af240606c  ./target/wasm32-unknown-unknown/release/trade.wasm
+8537177cced2bc1545d911968a988d2f0e9f1d333192c9216aaa472c3e9dbfa2  ./target/wasm32-unknown-unknown/release/trading_incentives.wasm
+72505a6f1fd692ee243e686907284536dbde4dd1ae1699d436ac8f321d891837  ./target/wasm32-unknown-unknown/release/factory.wasm
+94a7428ff7fbdb01aed59f6e5be7baca003cf9699b5872230256f250dfb5046f  ./target/wasm32-unknown-unknown/release/fee_collector.wasm
+cbad6be24f137214c8198f42f5a5bf28575cb5448d0f41098a13103dacf7bda3  ./target/wasm32-unknown-unknown/release/governance.wasm
+e8ad90ceade3a6499689b2af699763ba6a8dd4412711db17029da1e3edfb6774  ./target/wasm32-unknown-unknown/release/offer.wasm
+9a579f4039d71f75b7e4a1fd6279862a0b6b8272491ed4f334d7b79af240606c  ./target/wasm32-unknown-unknown/release/trade.wasm
 8537177cced2bc1545d911968a988d2f0e9f1d333192c9216aaa472c3e9dbfa2  ./target/wasm32-unknown-unknown/release/trading_incentives.wasm
