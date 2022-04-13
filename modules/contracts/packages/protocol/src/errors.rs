@@ -16,6 +16,12 @@ pub enum GuardError {
     },
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
+    #[error("Unauthorized2.")]
+    UnauthorizedUser {
+        caller: Addr,
+        buyer: Addr,
+        seller: Addr,
+    },
     #[error("Governance not found.")]
     GovernanceNotFound { gov_addr: Addr },
     #[error("Invalid reply message id.")]

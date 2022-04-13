@@ -3,7 +3,7 @@ import { executeMsg } from "./executeMsg.js";
 
 async function releaseTradeEscrow(client, tradeAddr, user) {
   const releaseMsg = new MsgExecuteContract(user.address, tradeAddr, {
-    release: {},
+    release_escrow: {},
   });
 
   const result = await executeMsg(client, releaseMsg, user.wallet);

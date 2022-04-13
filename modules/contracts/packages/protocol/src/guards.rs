@@ -11,6 +11,22 @@ pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), GuardError> {
     }
 }
 
+pub fn assert_caller_is_buyer_or_seller(
+    caller: Addr,
+    buyer: Addr,
+    seller: Addr,
+) -> Result<(), GuardError> {
+    if caller.eq(&buyer) || caller.eq(&seller) {
+        Ok(())
+    } else {
+        Err(GuardError::UnauthorizedUser {
+            caller,
+            buyer,
+            seller,
+        })
+    }
+}
+
 pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), GuardError> {
     if min >= max {
         Err(GuardError::Std(StdError::generic_err(
@@ -53,23 +69,13 @@ pub fn trade_request_is_expired(block_time: u64, created_at: u64, expire_timer: 
     block_time > created_at + expire_timer
 }
 
-pub fn assert_trade_state_for_sender(
-    sender: Addr,
+pub fn assert_trade_state_and_type(
     trade: &TradeData,
     offer_type: &OfferType,
 ) -> Result<(), GuardError> {
-    // sender == maker == seller
-    if offer_type == &OfferType::Sell
-        && &sender == &trade.seller
-        && trade.state == TradeState::RequestCreated
-    {
+    if offer_type == &OfferType::Sell && trade.state == TradeState::RequestCreated {
         Ok(())
-    }
-    // sender == taker == seller
-    else if offer_type == &OfferType::Buy
-        && &sender == &trade.seller
-        && trade.state == TradeState::RequestAccepted
-    {
+    } else if offer_type == &OfferType::Buy && trade.state == TradeState::RequestAccepted {
         Ok(())
     } else {
         Err(GuardError::Std(StdError::generic_err(

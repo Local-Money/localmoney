@@ -7,12 +7,12 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
-use localterra_protocol::constants::REQUEST_TIMEOUT;
+use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT};
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{
-    assert_ownership, assert_trade_state_for_sender, assert_value_in_range,
-    trade_request_is_expired,
+    assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
+    assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
@@ -104,12 +104,12 @@ pub fn execute(
     let state = state_storage(deps.storage).load().unwrap();
     match msg {
         ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state),
-        ExecuteMsg::Refund {} => refund(deps, env, info, state),
-        ExecuteMsg::Release {} => release(deps, env, info, state),
-        ExecuteMsg::Dispute {} => dispute(deps, env, info, state),
+        ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state),
+        ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state),
+        ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state),
         // ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
         ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
-        // ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
+        ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
     }
 }
 
@@ -152,9 +152,7 @@ fn fund_escrow(
     )
     .unwrap(); //at this stage, offer is guaranteed to exists.
 
-    // assert TradeState::Created if maker is seller or TradeState::Accepted if maker is buyer
-    assert_trade_state_for_sender(info.sender.clone(), &trade, &offer.offer_type).unwrap();
-
+    // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
     // TODO write test for RequestExpired, attempt to fund
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
         trade.state = TradeState::RequestExpired;
@@ -167,6 +165,11 @@ fn fund_escrow(
             created_at: trade.created_at,
         });
     }
+    // Only the seller wallet is authorized to fund this trade.
+    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap(); // TODO test this case
+
+    // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
+    assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
 
     // Check if escrow has already been funded
     // TODO also base this on actual balance, switch to cancelled state and refund automatically on diffs
@@ -174,8 +177,8 @@ fn fund_escrow(
     if trade.state == TradeState::EscrowFunded {
         return Err(TradeError::AlreadyFundedError {});
     }
-    //TODO: Convert to UST if trade is for any other stablecoin or Luna,
-    // skip conversion entirely if fee was paid in $LOCAL.
+
+    // TODO only accept exact funding amounts, return otherwise
     let ust_amount = if !info.funds.is_empty() {
         get_ust_amount(info.clone())
     } else {
@@ -189,10 +192,10 @@ fn fund_escrow(
             })
             .amount
     };
+
     let ust = Coin::new(ust_amount.clone().u128(), "uusd");
 
     let fund_escrow_amount: Uint128 = match offer.offer_type {
-        // TODO review this and avoid over-funding by returning diff
         OfferType::Sell => {
             let ltfee = localterra_fee(trade.ust_amount);
             let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
@@ -235,7 +238,7 @@ fn get_offer(deps: &Deps, state: &TradeData) -> Offer {
         .unwrap()
 }
 
-fn dispute(
+fn dispute_escrow(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -295,19 +298,41 @@ fn fiat_deposited(
     Ok(res)
 }
 
-fn release(
+fn cancel_request(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    state: TradeData,
+) -> Result<Response, TradeError> {
+    // TODO anyone can set the state to RequestExpired
+
+    // Only the buyer or seller can cancel the trade.
+    assert_caller_is_buyer_or_seller(info.sender, state.buyer, state.seller).unwrap(); // TODO test this case
+
+    // Update trade State to TradeState::RequestCanceled
+    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
+
+    trade.state = TradeState::RequestCanceled;
+
+    state_storage(deps.storage).save(&trade).unwrap();
+
+    let res = Response::new();
+
+    Ok(res)
+}
+
+fn release_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    // TODO rename to release_escrow
-    // TODO check esrowfunding timer
+    // TODO support arbitrator option
+    // let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
+    //     & (trade.state == TradeState::EscrowDisputed);
+    let arbitration_mode = false;
 
-    let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
-        & (trade.state == TradeState::EscrowDisputed);
-
-    //Check if seller can release
+    // Check if seller can release
     if (info.sender != trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
             owner: trade.seller,
@@ -316,18 +341,18 @@ fn release(
         });
     }
 
+    // TODO test funding timeout case
     // throws error if state is expired BUT arbitrator can release expired trades
-    if (env.block.time.seconds() > trade.created_at + REQUEST_TIMEOUT) & !arbitration_mode {
+    if (env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT) & !arbitration_mode {
         // TODO handle different expiration options
         return Err(TradeError::Expired {
-            timeout: REQUEST_TIMEOUT,
-            expired_at: trade.created_at + REQUEST_TIMEOUT,
+            timeout: FUNDING_TIMEOUT,
+            expired_at: trade.created_at + FUNDING_TIMEOUT,
             created_at: trade.created_at,
         });
     }
 
     //Load and check balance
-    // let balance_result = deps.querier.query_all_balances(&env.contract.address);
     let balance_result = deps.querier.query_balance(&env.contract.address, "uusd");
     if balance_result.is_err() {
         return Err(TradeError::ReleaseError {
@@ -337,7 +362,7 @@ fn release(
 
     let offer = get_offer(&deps.as_ref(), &trade);
 
-    //Update trade State to TradeState::Released or TradeState::SettledFor(Maker|Taker)
+    //Update trade State to TradeState::EscrowReleased or TradeState::SettledFor(Maker|Taker)
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
     if !arbitration_mode {
@@ -432,22 +457,23 @@ fn release(
     Ok(res)
 }
 
-fn refund(
+fn refund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
-        & (trade.state == TradeState::EscrowDisputed);
-
-    // TODO use EscrowFunding Timer
-    // rename to refund_escrow
+    // TODO support arbitration option
+    // let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
+    // & (trade.state == TradeState::EscrowDisputed);
+    let arbitration_mode = false;
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
-    if (env.block.time.seconds() > trade.created_at + REQUEST_TIMEOUT) // TODO handle escrow fundind timer instead
-        & ((trade.state != TradeState::EscrowDisputed) & !arbitration_mode)
+    let expired = env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT; // TODO test expiration case
+
+    if !expired
+    // & ((trade.state != TradeState::EscrowDisputed) & !arbitration_mode) // TODO test this case
     {
         return Err(TradeError::RefundError {
             message:

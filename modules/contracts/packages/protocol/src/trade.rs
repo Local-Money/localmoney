@@ -18,10 +18,11 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     FundEscrow {},
-    Refund {},
-    Release {},
-    Dispute {},
+    RefundEscrow {},
+    ReleaseEscrow {},
+    DisputeEscrow {},
     FiatDeposited {},
+    CancelRequest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
