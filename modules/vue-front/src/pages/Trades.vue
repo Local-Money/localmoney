@@ -46,14 +46,16 @@ export default defineComponent({
     ...mapGetters(["walletAddress", "trades"]),
     openTrades: function() {
       return this.trades.filter(
+          // TODO create a open states list
         (tradeInfo) => !tradeInfo.expired &&
-          ["created", "escrow_funded"].indexOf(tradeInfo.trade.state) >= 0
+          ["request_created", "request_accepted", "escrow_funded", "fiat_deposited", "escrow_disputed"].indexOf(tradeInfo.trade.state) >= 0
       );
     },
     closedTrades: function() {
       return this.trades.filter(
+          // TODO create a closed states list
         (tradeInfo) => tradeInfo.expired ||
-          ["created", "escrow_funded"].indexOf(tradeInfo.trade.state) === -1
+          ["request_canceled", "request_expired", "escrow_refunded", "escrow_released", "settled_for_maker", "settled_for_taker"].indexOf(tradeInfo.trade.state) >= 0
       );
     },
   },
