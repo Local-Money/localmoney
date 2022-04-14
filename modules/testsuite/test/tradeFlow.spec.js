@@ -31,7 +31,7 @@ import { before } from "mocha";
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
   describe("Trade LifeCycle Endpoints", function () {
-    describe.only("SELL.EscrowReleased", function () {
+    describe("SELL.EscrowReleased", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
@@ -108,7 +108,7 @@ import { before } from "mocha";
         await releaseTradeEscrow(terra, this.tradeAddr, maker);
       });
     });
-    describe.only("SELL.RequestCanceled: Maker cancels", function () {
+    describe("SELL.RequestCanceled: Maker cancels", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
@@ -166,7 +166,7 @@ import { before } from "mocha";
         await cancelTradeRequest(terra, this.tradeAddr, maker);
       });
     });
-    describe.only("SELL.RequestCanceled: Taker cancels", function () {
+    describe("SELL.RequestCanceled: Taker cancels", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
@@ -344,26 +344,26 @@ import { before } from "mocha";
         return this.tradeAddr;
       });
       it("Maker accepts the trade (TadeState::RequestAccepted)", async function () {
-        await acceptTradeRequest(terra, this.tradeAddr, maker)
+        await acceptTradeRequest(terra, this.tradeAddr, taker);
         return;
       });
       it("Taker funds the trade escrow (TradeState::EscrowFunded)", async function () {
         await fundTradeEscrow(
-            terra,
-            {
-              offerId: global.tradeFlow.offerId,
-              tradeAddr: this.tradeAddr,
-            },
-            taker
+          terra,
+          {
+            offerId: global.tradeFlow.offerId,
+            tradeAddr: this.tradeAddr,
+          },
+          taker
         );
       });
       it("Maker clicks `mark paid` (TradeState::FiatDeposited)", async function () {
         await fiatDeposited(
-            terra,
-            {
-              tradeAddr: this.tradeAddr,
-            },
-            maker
+          terra,
+          {
+            tradeAddr: this.tradeAddr,
+          },
+          maker
         );
       });
       it("Taker releases the escrow (TradeState::EscrowReleased)", async function () {

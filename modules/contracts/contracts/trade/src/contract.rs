@@ -276,7 +276,6 @@ fn dispute_escrow(
     Ok(res)
 }
 
-
 fn accept_request(
     deps: DepsMut,
     _env: Env,
@@ -284,7 +283,7 @@ fn accept_request(
     state: TradeData,
 ) -> Result<Response, TradeError> {
     // Only the buyer can accept the request
-    assert_ownership(info.sender, state.buyer); // TODO test this case
+    assert_ownership(info.sender, state.buyer).unwrap(); // TODO test this case
 
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
@@ -292,7 +291,7 @@ fn accept_request(
     if trade.state != TradeState::RequestCreated {
         return Err(TradeError::InvalidStateChange {
             from: TradeState::RequestCreated,
-            to: TradeState::RequestAccepted
+            to: TradeState::RequestAccepted,
         });
     }
 
