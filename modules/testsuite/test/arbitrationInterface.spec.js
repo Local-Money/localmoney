@@ -154,7 +154,7 @@ import { before } from "mocha";
 
           console.log("query all result :>> ", result);
 
-          expect(result.length).to.equal(1);
+          expect(result.length).to.equal(2);
         });
         it("should return the fiat currencies for an arbitrator `jr`", async function () {
           const query = {
@@ -191,7 +191,7 @@ import { before } from "mocha";
 
           console.log("result :>> ", result);
 
-          expect(result.length).to.equal(2);
+          expect(result.length).to.equal(3);
         });
         it("should return the arbitrators for a fiat currency COP", async function () {
           const query = {
