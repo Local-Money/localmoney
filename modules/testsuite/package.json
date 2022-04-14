@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Providing coverage for localterra-contracts.",
   "scripts": {
+    "git-commit": "./scripts/git-commit.sh",
     "test": "npm run test:terrarium",
     "test:terrarium": "NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js'",
     "test:terrarium:disputeResolution": "NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js'",
@@ -13,16 +14,16 @@
     "test:bombay:queryInterfaces": "NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js'",
     "test:bombay:arbitrationInterface": "NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
     "test:mainnet:disputeResolution": "NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js'",
-    "upload": "npm run upload:terrarium",
-    "upload:terrarium": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js'",
-    "upload:terrarium:tradeFlow": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/tradeFlow.spec.js'",
-    "upload:bombay:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/disputeResolution.spec.js'",
-    "upload:bombay:queryInterfaces": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js'",
-    "upload:bombay:arbitrationInterface": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
-    "upload:bombay:tradeFlow": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js'",
-    "upload:mainnet:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js'",
-    "upload:terrarium:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js'",
-    "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/**/*.spec.js'",
+    "upload": "npm run upload:terrarium ; npm run git-commit",
+    "upload:terrarium": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js' ; npm run git-commit",
+    "upload:terrarium:tradeFlow": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/tradeFlow.spec.js' ; npm run git-commit",
+    "upload:bombay:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/disputeResolution.spec.js' ; npm run git-commit",
+    "upload:bombay:queryInterfaces": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js' ; npm run git-commit",
+    "upload:bombay:arbitrationInterface": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js' ; npm run git-commit",
+    "upload:bombay:tradeFlow": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js' ; npm run git-commit",
+    "upload:mainnet:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js' ; npm run git-commit",
+    "upload:terrarium:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js' ; npm run git-commit",
+    "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/**/*.spec.js' ; npm run git-commit",
     "instantiate": "npm run instantiate:terrarium",
     "instantiate:terrarium": "INSTANTIATE=true NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js'",
     "instantiate:bombay": "INSTANTIATE=true NETWORK_ENV=bombay mocha --parallel './test/**/*.spec.js'"
@@ -42,7 +43,6 @@
     "@terra-money/terra.js": "^3.0.6",
     "chai": "^4.3.4",
     "dotenv": "^12.0.4",
-    "mocha": "^9.2.0",
-    "simple-git": "^3.6.0"
+    "mocha": "^9.2.0"
   }
 }
