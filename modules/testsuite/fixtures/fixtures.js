@@ -22,14 +22,11 @@ export const mochaGlobalSetup = async () => {
     );
 
   // Don't do anything if there is nothing to do
-  if (!process.env.UPLOAD && !process.env.INSTANTIATE) return;
+  if (!process.env.UPLOAD) return;
 
   const terra = await createLCDClient();
 
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
   if (process.env.UPLOAD) await uploadContracts(terra, arbitrator);
-
-  if (process.env.INSTANTIATE)
-    await instantiateFactory(terra, arbitrator, { cache: true });
 };

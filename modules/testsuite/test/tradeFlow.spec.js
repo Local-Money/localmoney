@@ -32,7 +32,7 @@ import { before } from "mocha";
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
   describe("Trade LifeCycle Endpoints", function () {
-    describe.only("SELL.EscrowReleased", function () {
+    describe("SELL.EscrowReleased", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
@@ -78,7 +78,6 @@ import { before } from "mocha";
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,
-          // arbitrator:,
         };
 
         this.tradeAddr = await createTrade(terra, new_trade, taker);
@@ -87,7 +86,6 @@ import { before } from "mocha";
       });
 
       it("Maker funds the trade escrow (TradeState::EscrowFunded)", async function () {
-        await sleep(5000);
         await fundTradeEscrow(
           terra,
           {
@@ -295,7 +293,7 @@ import { before } from "mocha";
         await refundTradeEscrow(terra, this.tradeAddr, maker);
       });
     });
-    describe.only("BUY.EscrowReleased", function () {
+    describe("BUY.EscrowReleased", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
         global.tradeFlow = { offerId: undefined };
