@@ -1,4 +1,5 @@
 use crate::offer::OfferState;
+use crate::trade::TradeState;
 use cosmwasm_std::{Addr, StdError, Uint128};
 use thiserror::Error;
 
@@ -8,6 +9,12 @@ pub enum GuardError {
     Std(#[from] StdError),
     #[error("Invalid state change.")]
     InvalidStateChange { from: OfferState, to: OfferState },
+    #[error("Invalid trade state change.")]
+    InvalidTradeStateChange {
+        from: TradeState,
+        from_allowed: TradeState,
+        to: TradeState,
+    },
     #[error("Amount is outside of offer amount range.")]
     AmountError {
         amount: Uint128,

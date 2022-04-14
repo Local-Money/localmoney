@@ -13,6 +13,7 @@ import { releaseTradeEscrow } from "../lib/releaseTradeEscrow.js";
 import { refundTradeEscrow } from "../lib/refundTradeEscrow.js";
 import { fundTradeEscrow } from "../lib/fundTradeEscrow.js";
 import { cancelTradeRequest } from "../lib/cancelTradeRequest.js";
+import { sleep } from "../lib/sleep.js";
 import { before } from "mocha";
 
 (async () => {
@@ -31,7 +32,7 @@ import { before } from "mocha";
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
   describe("Trade LifeCycle Endpoints", function () {
-    describe("SELL.EscrowReleased", function () {
+    describe.only("SELL.EscrowReleased", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
@@ -86,6 +87,7 @@ import { before } from "mocha";
       });
 
       it("Maker funds the trade escrow (TradeState::EscrowFunded)", async function () {
+        await sleep(5000);
         await fundTradeEscrow(
           terra,
           {
@@ -344,10 +346,11 @@ import { before } from "mocha";
         return this.tradeAddr;
       });
       it("Maker accepts the trade (TadeState::RequestAccepted)", async function () {
-        await acceptTradeRequest(terra, this.tradeAddr, taker);
+        await acceptTradeRequest(terra, this.tradeAddr, maker);
         return;
       });
       it("Taker funds the trade escrow (TradeState::EscrowFunded)", async function () {
+        await sleep(5000);
         await fundTradeEscrow(
           terra,
           {

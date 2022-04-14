@@ -42,6 +42,7 @@
     "@terra-money/terra.js": "^3.0.6",
     "chai": "^4.3.4",
     "dotenv": "^12.0.4",
-    "mocha": "^9.2.0"
+    "mocha": "^9.2.0",
+    "simple-git": "^3.6.0"
   }
 }

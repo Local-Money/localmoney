@@ -7,7 +7,7 @@ use std::fmt::{self};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub offer_id: u64,
-    pub ust_amount: String,
+    pub ust_amount: Uint128,
     pub taker: String,
     pub offers_addr: String,
     pub taker_contact: String,

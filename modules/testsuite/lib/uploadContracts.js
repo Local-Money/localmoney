@@ -6,6 +6,7 @@ import { findNewContractFiles } from "./findNewContractFiles.js";
 import { _readCachedContractChecksums } from "./_readCachedContractChecksums.js";
 import { _readCachedCodeIds } from "./_readCachedCodeIds.js";
 import { _writeCachedContractChecksums } from "./_writeCachedContractChecksums.js";
+import simpleGit, { CleanOptions } from "simple-git";
 
 import { MsgStoreCode } from "@terra-money/terra.js";
 import * as fs from "fs";
@@ -72,6 +73,10 @@ async function uploadContracts(client, user) {
     "Uploading contract wasm files finished!",
     JSON.stringify(codeIds)
   );
+
+  const git = simpleGit().clean(CleanOptions.FORCE);
+  console.log(process.cwd());
+  await git.commit("upload");
 }
 
 export { uploadContracts };

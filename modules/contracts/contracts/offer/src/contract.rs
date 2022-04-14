@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
-    SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw_storage_plus::Bound;
 
@@ -392,7 +392,7 @@ fn create_trade(
     env: Env,
     info: MessageInfo,
     offer_id: u64,
-    ust_amount: String,
+    ust_amount: Uint128,
     taker: String,
     taker_contact: String,
 ) -> Result<Response, GuardError> {
@@ -408,7 +408,7 @@ fn create_trade(
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            ust_amount: ust_amount.clone(),
+            ust_amount: ust_amount,
             taker: taker.clone(),
             taker_contact,
             offers_addr: env.contract.address.to_string(),

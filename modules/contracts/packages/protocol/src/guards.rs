@@ -27,6 +27,22 @@ pub fn assert_caller_is_buyer_or_seller(
     }
 }
 
+pub fn assert_trade_state_change_is_valid(
+    from: TradeState,
+    from_allowed: TradeState,
+    to: TradeState,
+) -> Result<(), GuardError> {
+    if from == from_allowed {
+        Ok(())
+    } else {
+        Err(GuardError::InvalidTradeStateChange {
+            from,
+            from_allowed,
+            to,
+        })
+    }
+}
+
 pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), GuardError> {
     if min >= max {
         Err(GuardError::Std(StdError::generic_err(
