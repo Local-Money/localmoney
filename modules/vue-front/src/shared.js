@@ -15,10 +15,17 @@ export function formatAmount(amount, ustAmount = true) {
 
 export function formatTradeState(state) {
   return {
-    'created': 'Created',
-    'escrow_funded': 'Escrow Funded',
-    'closed': 'Closed',
-    'canceled': 'Canceled'
+    "request_created" : "request_created",
+    "request_accepted" : "request_accepted",
+    "escrow_funded" : "escrow_funded",
+    "fiat_deposited": "fiat_deposited" ,
+    "escrow_disputed": "escrow_disputed",
+    "request_canceled": "request_canceled",
+    "request_expired":"request_expired",
+    "escrow_refunded": "escrow_refunded",
+    "escrow_released": "escrow_released",
+    "settled_for_maker": "settled_for_maker",
+    "settled_for_taker":  "settled_for_taker",
   }[state]
 }
 

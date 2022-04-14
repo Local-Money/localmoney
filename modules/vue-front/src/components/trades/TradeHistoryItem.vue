@@ -40,8 +40,9 @@ export default defineComponent({
     formatTradeState,
     formatDate,
     tradeState: function(state) {
-      if (state == "created") {
-        return "Expired";
+      if (this.tradeInfo.expired) {
+        // TODO remove state
+        return "Expired - " + formatTradeState(state);
       } else {
         return formatTradeState(state);
       }
