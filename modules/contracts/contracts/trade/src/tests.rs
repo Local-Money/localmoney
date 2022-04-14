@@ -72,9 +72,9 @@ fn create_trade(
     (res, deps)
 }
 
-fn mock_info_with_ust(sender: &str, amount: Uint128) -> MessageInfo {
+fn mock_info_with_ust(seller: &str, amount: Uint128) -> MessageInfo {
     mock_info(
-        sender,
+        seller,
         &[Coin {
             denom: "uusd".to_string(),
             amount: amount.clone(),
@@ -83,7 +83,7 @@ fn mock_info_with_ust(sender: &str, amount: Uint128) -> MessageInfo {
 }
 
 fn release_trade(deps: DepsMut, info: MessageInfo) -> Result<Response<Empty>, TradeError> {
-    let res = execute(deps, mock_env(), info.clone(), ExecuteMsg::Release {});
+    let res = execute(deps, mock_env(), info.clone(), ExecuteMsg::ReleaseEscrow {});
     assert!(&res.is_ok());
     return res;
 }
@@ -112,7 +112,7 @@ fn test_trade_happy_path() {
     //Check that trade state is Closed
     let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
-    assert_eq!(trade_state.state, TradeState::Closed);
+    assert_eq!(trade_state.state, TradeState::EscrowReleased);
 
     //Verify that the correct messages were sent after trade completion
     /*
@@ -226,7 +226,7 @@ fn test_trade_expiration() {
         deps.as_mut(),
         expired_env.clone(),
         info.clone(),
-        ExecuteMsg::Release {},
+        ExecuteMsg::ReleaseEscrow {},
     );
     assert!(res.is_err());
     assert!(matches!(res.err().unwrap(), TradeError::Expired { .. }));
@@ -250,7 +250,7 @@ fn test_custom_errors() {
         deps.as_mut(),
         mock_env(),
         other_info,
-        ExecuteMsg::Release {},
+        ExecuteMsg::ReleaseEscrow {},
     );
     assert!(matches!(
         res.err().unwrap(),
@@ -271,7 +271,7 @@ fn test_refund() {
         deps.as_mut(),
         mock_env(),
         any_info.clone(),
-        ExecuteMsg::Refund {},
+        ExecuteMsg::RefundEscrow {},
     );
     assert!(res.is_err());
     assert!(matches!(res.err().unwrap(), TradeError::RefundError { .. }));
@@ -287,7 +287,7 @@ fn test_refund() {
         deps.as_mut(),
         expired_env,
         any_info.clone(),
-        ExecuteMsg::Refund {},
+        ExecuteMsg::RefundEscrow {},
     );
     assert!(res.is_ok());
     //Verify that the correct messages were sent after trade completion
@@ -313,7 +313,7 @@ fn test_fund_escrow() {
     //Trade should be in Created state
     let trade_state: TradeData =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap()).unwrap();
-    assert_eq!(trade_state.state, TradeState::Created);
+    assert_eq!(trade_state.state, TradeState::RequestCreated);
 
     //Send FundEscrow message with UST and check that trade is in EscrowFunded state.
     let localterra_fee = localterra_fee(trade_amount);

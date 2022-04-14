@@ -26,7 +26,7 @@ fn distribution_happy_path() {
         env.clone(),
         mock_info("local", &[]),
         ExecuteMsg::Receive(Cw20ReceiveMsg {
-            sender: "local".to_string(),
+            seller: "local".to_string(),
             amount: Uint128::new(1_000_000u128),
             msg: to_binary(&Cw20HookMsg::StartDistribution {}).unwrap(),
         }),
@@ -88,7 +88,7 @@ fn test_claim() {
         env.clone(),
         local_info.clone(),
         ExecuteMsg::Receive(Cw20ReceiveMsg {
-            sender: "local".to_string(),
+            seller: "local".to_string(),
             amount: Uint128::new(1_000_000u128),
             msg: to_binary(&Cw20HookMsg::StartDistribution {}).unwrap(),
         }),
@@ -111,7 +111,7 @@ fn test_claim() {
         maker_a.clone(),
         TradingIncentivesMsg::RegisterTrade {
             trade: env.contract.address.to_string(),
-            maker: maker_a.sender.to_string(),
+            maker: maker_a.seller.to_string(),
         },
     );
     assert!(res.is_ok());

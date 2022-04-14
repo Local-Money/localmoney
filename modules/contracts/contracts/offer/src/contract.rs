@@ -1,22 +1,24 @@
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
-    SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw_storage_plus::Bound;
 
+use localterra_protocol::constants::REQUEST_TIMEOUT;
+use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory_util::get_factory_config;
-use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
+use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
-    offers, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, QueryMsg,
-    State, TradeAddr, TradeInfo, TradesIndex,
+    offers, Arbitrator, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg,
+    OfferState, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData, TradeState,
 };
 
-use crate::state::{config_read, config_storage, state_read, state_storage, trades};
-use localterra_protocol::errors::OfferError;
+use crate::state::{arbitrators, config_read, config_storage, state_read, state_storage, trades};
+use localterra_protocol::errors::GuardError;
 
 #[entry_point]
 pub fn instantiate(
@@ -24,11 +26,35 @@ pub fn instantiate(
     _env: Env,
     info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     config_storage(deps.storage).save(&Config {
         factory_addr: info.sender,
     })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
+
+    // TODO remove testing code
+    let index = "terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz".to_string() + &"COP".to_string();
+    arbitrators().save(
+        deps.storage,
+        &index,
+        &Arbitrator {
+            arbitrator: Addr::unchecked("terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz"),
+            asset: FiatCurrency::COP,
+        },
+    )?;
+
+    // let index = "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk".to_string() + &"COP".to_string();
+
+    // arbitrators().save(
+    //     deps.storage,
+    //     &index,
+    //     &Arbitrator {
+    //         arbitrator: Addr::unchecked("terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk"),
+    //         asset: FiatCurrency::COP,
+    //     },
+    // )?;
+    // TODO END remove testing code
+
     Ok(Response::default())
 }
 
@@ -38,7 +64,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::Activate { id } => activate_offer(deps, env, info, id),
@@ -49,17 +75,13 @@ pub fn execute(
             ust_amount,
             taker,
             taker_contact,
-            arbitrator,
-        } => create_trade(
-            deps,
-            env,
-            info,
-            offer_id,
-            ust_amount,
-            taker,
-            taker_contact,
-            arbitrator,
-        ),
+        } => create_trade(deps, env, info, offer_id, ust_amount, taker, taker_contact),
+        ExecuteMsg::NewArbitrator { arbitrator, asset } => {
+            create_arbitrator(deps, env, info, arbitrator, asset)
+        }
+        ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
+            delete_arbitrator(deps, env, info, arbitrator, asset)
+        }
     }
 }
 
@@ -121,14 +143,27 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             last_value,
             limit,
         )?),
+        QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
+        QueryMsg::Arbitrators { last_value, limit } => {
+            to_binary(&query_arbitrators(deps, last_value, limit)?)
+        }
+        QueryMsg::ArbitratorAsset { asset } => to_binary(&query_arbitrator_asset(deps, asset)?),
+        QueryMsg::ArbitratorRandom {
+            random_value,
+            asset,
+        } => to_binary(&query_arbitrator_random(
+            deps,
+            random_value as usize,
+            asset,
+        )?),
     }
 }
 
 #[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, OfferError> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, GuardError> {
     match msg.id {
         0 => trade_instance_reply(deps, env, msg.result),
-        _ => Err(OfferError::InvalidReply {}),
+        _ => Err(GuardError::InvalidReply {}),
     }
 }
 
@@ -136,9 +171,9 @@ fn trade_instance_reply(
     deps: DepsMut,
     _env: Env,
     result: ContractResult<SubMsgExecutionResponse>,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     if result.is_err() {
-        return Err(OfferError::InvalidReply {});
+        return Err(GuardError::InvalidReply {});
     }
 
     let trade_addr: Addr = result
@@ -168,7 +203,7 @@ fn trade_instance_reply(
                 trade: trade_addr.clone(),
                 seller: trade.seller.clone(),
                 buyer: trade.buyer.clone(),
-                arbitrator: trade.arbitrator.clone(),
+                arbitrator: Addr::unchecked("None"), // We need a non-sensical Addr to create the indices, `None` won't work
                 state: trade.state.clone(),
             },
         )
@@ -191,7 +226,7 @@ pub fn create_offer(
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut state = state_storage(deps.storage).load()?;
@@ -229,12 +264,72 @@ pub fn create_offer(
     Ok(res)
 }
 
+pub fn create_arbitrator(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    arbitrator: Addr,
+    asset: FiatCurrency,
+) -> Result<Response, GuardError> {
+    assert_ownership(
+        info.sender,
+        Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
+    )?;
+
+    let index = arbitrator.clone().to_string() + &asset.to_string();
+
+    arbitrators().save(
+        deps.storage,
+        &index,
+        &Arbitrator {
+            arbitrator: arbitrator.clone(),
+            asset: asset.clone(),
+        },
+    )?;
+
+    let res = Response::new()
+        .add_attribute("action", "create_arbitrator")
+        .add_attribute("arbitrator", arbitrator.to_string())
+        .add_attribute("asset", asset.to_string())
+        .add_attribute("timestamp", _env.block.time.seconds().to_string())
+        .add_attribute(
+            "numeric",
+            ((_env.block.time.seconds() % 100) * (3 + 1) / (99 + 1)).to_string(),
+        );
+
+    Ok(res)
+}
+
+pub fn delete_arbitrator(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    arbitrator: Addr,
+    asset: FiatCurrency,
+) -> Result<Response, GuardError> {
+    assert_ownership(
+        info.sender,
+        Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
+    )?;
+
+    let index = arbitrator.clone().to_string() + &asset.to_string();
+
+    arbitrators().remove(deps.storage, &index)?;
+
+    let res = Response::new()
+        .add_attribute("action", "delete_arbitrator")
+        .add_attribute("arbitrator", arbitrator.to_string())
+        .add_attribute("asset", asset.to_string());
+
+    Ok(res)
+}
+
 pub fn activate_offer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
     assert_ownership(info.sender, offer_model.offer.owner.clone())?;
@@ -254,7 +349,7 @@ pub fn pause_offer(
     _env: Env,
     info: MessageInfo,
     id: u64,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
     assert_ownership(info.sender, offer_model.offer.owner.clone())?;
@@ -275,7 +370,7 @@ pub fn update_offer(
     info: MessageInfo,
     id: u64,
     msg: OfferMsg,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
@@ -297,15 +392,14 @@ fn create_trade(
     env: Env,
     info: MessageInfo,
     offer_id: u64,
-    ust_amount: String,
+    ust_amount: Uint128,
     taker: String,
     taker_contact: String,
-    arbitrator: String,
-) -> Result<Response, OfferError> {
+) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
     // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
-    //     .ok_or(OfferError::InvalidReply {})?; // TODO choose better error
+    //     .ok_or(GuardError::InvalidReply {})?; // TODO choose better error
 
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
@@ -314,10 +408,9 @@ fn create_trade(
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            ust_amount: ust_amount.clone(),
+            ust_amount: ust_amount,
             taker: taker.clone(),
             taker_contact,
-            arbitrator,
             offers_addr: env.contract.address.to_string(),
             timestamp: env.block.time.seconds(),
         })
@@ -369,8 +462,6 @@ pub fn query_trades(
     last_value: Option<Addr>,
     limit: u32,
 ) -> StdResult<Vec<TradeInfo>> {
-    let curr_height = env.block.height;
-
     let mut trades_infos: Vec<TradeInfo> = vec![];
 
     // Pagination range (TODO pagination doesn't work with Addr as pk)
@@ -385,8 +476,8 @@ pub fn query_trades(
     // Select correct index for data lookup
     // * The `state<TradeState>` filter only supported for `user == arbitrator` queries
     let prefix = match index {
-        TradesIndex::Seller => trades().idx.sender.prefix(user),
-        TradesIndex::Buyer => trades().idx.recipient.prefix(user),
+        TradesIndex::Seller => trades().idx.seller.prefix(user),
+        TradesIndex::Buyer => trades().idx.buyer.prefix(user),
         TradesIndex::ArbitratorState => match state {
             Some(state) => trades()
                 .idx
@@ -421,7 +512,10 @@ pub fn query_trades(
             }))
             .unwrap();
 
-        let expired = curr_height >= trade_state.expire_height;
+        let current_time = env.block.time.seconds();
+
+        let expired = current_time > trade_state.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
+
         trades_infos.push(TradeInfo {
             trade: trade_state,
             offer,
@@ -429,4 +523,84 @@ pub fn query_trades(
         })
     });
     Ok(trades_infos)
+}
+
+pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrator>> {
+    let storage = deps.storage;
+
+    let result = arbitrators()
+        .idx
+        .arbitrator
+        .prefix(arbitrator)
+        .range(storage, None, None, Order::Ascending)
+        .take(10)
+        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+        .collect();
+
+    Ok(result)
+}
+
+pub fn query_arbitrators(
+    deps: Deps,
+    last_value: Option<String>,
+    limit: u32,
+) -> StdResult<Vec<Arbitrator>> {
+    let storage = deps.storage;
+
+    let range_from = match last_value {
+        Some(addr) => Some(Bound::Exclusive(Vec::from(addr))),
+        None => None,
+    };
+
+    let result = arbitrators()
+        .range(storage, range_from, None, Order::Ascending)
+        .take(limit as usize)
+        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+        .collect();
+
+    Ok(result)
+}
+
+pub fn query_arbitrator_asset(deps: Deps, asset: FiatCurrency) -> StdResult<Vec<Arbitrator>> {
+    let storage = deps.storage;
+
+    let result: Vec<Arbitrator> = arbitrators()
+        .idx
+        .asset
+        .prefix(asset.clone().to_string())
+        .range(storage, None, None, Order::Ascending)
+        .take(10)
+        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+        .collect();
+
+    Ok(result)
+}
+
+pub fn query_arbitrator_random(
+    deps: Deps,
+    random_value: usize,
+    asset: FiatCurrency,
+) -> StdResult<Arbitrator> {
+    assert_range_0_to_99(random_value).unwrap();
+
+    let storage = deps.storage;
+
+    let result: Vec<Arbitrator> = arbitrators()
+        .idx
+        .asset
+        .prefix(asset.to_string())
+        .range(storage, None, None, Order::Ascending)
+        .take(10)
+        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+        .collect();
+
+    let arbitrator_count = result.len();
+
+    // Random range: 0..99
+    // Mapped range: 0..result.len()-1
+    // Formula is:
+    // RandomValue * (MaxMappedRange + 1) / (MaxRandomRange + 1)
+    let random_index = random_value * arbitrator_count / (99 + 1);
+
+    Ok(result[random_index].clone())
 }

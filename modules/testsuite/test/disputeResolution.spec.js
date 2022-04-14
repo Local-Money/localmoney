@@ -75,8 +75,9 @@ import { before } from "mocha";
             ust_amount: process.env.MIN_AMOUNT,
             taker: taker.address,
             taker_contact,
-            arbitrator: arbitrator.address,
           };
+
+          console.log("new_trade :>> ", new_trade);
 
           this.tradeAddr = await createTrade(terra, new_trade, taker);
 
@@ -159,7 +160,6 @@ import { before } from "mocha";
             ust_amount: process.env.MIN_AMOUNT,
             taker: taker.address,
             taker_contact,
-            arbitrator: arbitrator.address,
           };
 
           this.tradeAddr = await createTrade(terra, new_trade, taker);

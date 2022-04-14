@@ -1,5 +1,6 @@
 use cosmwasm_std::{Addr, StdError, Uint128};
 use thiserror::Error;
+use localterra_protocol::trade::TradeState;
 
 #[derive(Error, Debug)]
 pub enum TradeError {
@@ -11,12 +12,15 @@ pub enum TradeError {
         min_amount: Uint128,
         max_amount: Uint128,
     },
+    #[error("Invalid trade state change.")]
+    InvalidStateChange { from: TradeState, to: TradeState },
     #[error("Failed to execute contract.")]
     ExecutionError { message: String },
     #[error("This trade has expired.")]
     Expired {
-        current_height: u64,
-        expire_height: u64,
+        timeout: u64,
+        expired_at: u64,
+        created_at: u64,
     },
     #[error("Failed to instantiate contract.")]
     InstantiationError { message: String },
@@ -46,8 +50,8 @@ pub enum TradeError {
     },
     #[error("Unauthorized Dispute.")]
     UnauthorizedDispute {
-        sender: Addr,
-        recipient: Addr,
+        seller: Addr,
+        buyer: Addr,
         caller: Addr,
     },
 }

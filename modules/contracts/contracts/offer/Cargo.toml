@@ -32,6 +32,7 @@ terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
 cw20 = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
 cw20-base = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
 cw-storage-plus = "0.9.1"
+rand = "0.7"
 
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }

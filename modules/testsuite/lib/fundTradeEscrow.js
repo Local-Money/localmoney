@@ -4,7 +4,7 @@ import { executeMsg } from "./executeMsg.js";
 async function fundTradeEscrow(client, { tradeAddr, offerId }, user) {
   console.log(
     "Funding Escrow:",
-    `https://finder.terra.money/${process.env.NETWORK}/address/${tradeAddr}`
+    `https://terrasco.pe/testnet/address/${tradeAddr}`
   );
 
   const coin = Coin.fromData({

@@ -280,7 +280,7 @@ impl WasmMockQuerier {
                             seller: Addr::unchecked(maker),
                             offer_id: 1,
                             offer_contract: Addr::unchecked("offer"),
-                            state: TradeTradeState::Closed,
+                            state: TradeTradeState::EscrowReleased,
                             expire_height: 0,
                             ust_amount: Uint128::new(1_000_000u128),
                         },

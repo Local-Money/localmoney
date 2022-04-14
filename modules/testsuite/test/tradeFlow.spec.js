@@ -6,10 +6,14 @@ import { createOffer } from "../lib/createOffer.js";
 import { queryOffers } from "../lib/queryOffers.js";
 import { getFactoryCfg } from "../lib/getFactoryCfg.js";
 import { createTrade } from "../lib/createTrade.js";
+import { acceptTradeRequest } from "../lib/acceptTradeRequest.js";
 import { disputeTrade } from "../lib/disputeTrade.js";
+import { fiatDeposited } from "../lib/fiatDeposited.js";
 import { releaseTradeEscrow } from "../lib/releaseTradeEscrow.js";
 import { refundTradeEscrow } from "../lib/refundTradeEscrow.js";
 import { fundTradeEscrow } from "../lib/fundTradeEscrow.js";
+import { cancelTradeRequest } from "../lib/cancelTradeRequest.js";
+import { sleep } from "../lib/sleep.js";
 import { before } from "mocha";
 
 (async () => {
@@ -27,237 +31,346 @@ import { before } from "mocha";
 
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
-  describe("LocalTerra", function () {
-    describe("Trade Flow", function () {
+  describe("Trade LifeCycle Endpoints", function () {
+    describe.only("SELL.EscrowReleased", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
         global.tradeFlow = { offerId: undefined };
       });
-      describe("Setup", function () {
-        it("Maker creates a BUY offer in COP", async function () {
-          const offer = {
-            offer_type: "buy",
-            fiat_currency: "COP",
-            min_amount,
-            max_amount,
-            maker_contact,
-          };
+      it("Maker creates a SELL offer in COP", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "COP",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
 
-          const offerResult = await createOffer(terra, offer, maker);
+        const offerResult = await createOffer(terra, offer, maker);
 
-          return offerResult;
-        });
-        it("Maker creates a buy offer in COP", async function () {
-          const offer = {
-            offer_type: "buy",
-            fiat_currency: "COP",
-            min_amount,
-            max_amount,
-            maker_contact,
-          };
-
-          const offerResult = await createOffer(terra, offer, maker);
-
-          return offerResult;
-        });
+        return offerResult;
       });
-      describe("closed BUY offer: Taker creates trade, funds escrow and releases.", function () {
-        // Suit variables
-        this.tradeAddr = undefined;
 
-        it("Taker lists an offer", async function () {
-          const query = {
-            offers_query: {
-              limit: 1,
-              last_value: 0,
-            },
-          };
+      // Suit variables
+      this.tradeAddr = undefined;
 
-          const offers = await queryOffers(terra, query);
+      it("Taker lists an offer", async function () {
+        const query = {
+          offers_query: {
+            limit: 1,
+            last_value: 0,
+          },
+        };
 
-          if (offers.length === 0) throw Error("No offers found.");
+        const offers = await queryOffers(terra, query);
 
-          global.tradeFlow.offerId = offers[0].id;
+        if (offers.length === 0) throw Error("No offers found.");
 
-          return;
-        });
+        global.tradeFlow.offerId = offers[0].id;
 
-        it("Taker creates a trade", async function () {
-          const new_trade = {
-            offer_id: parseInt(global.tradeFlow.offerId),
-            ust_amount: process.env.MIN_AMOUNT,
-            taker: taker.address,
-            taker_contact,
-            arbitrator: arbitrator.address,
-          };
-
-          this.tradeAddr = await createTrade(terra, new_trade, taker);
-
-          return this.tradeAddr;
-        });
-
-        it("Taker funds the trade escrow.", async function () {
-          await fundTradeEscrow(
-            terra,
-            {
-              offerId: global.tradeFlow.offerId,
-              tradeAddr: this.tradeAddr,
-            },
-            taker
-          );
-        });
-
-        it("Taker releases the trade escrow.", async function () {
-          await releaseTradeEscrow(terra, this.tradeAddr, taker);
-        });
-        it("Taker lists his trades", async function () {
-          const trades_query = {
-            user: taker.address,
-            index: "seller",
-            limit: 10,
-          };
-
-          const offers = await queryOffers(terra, { trades_query });
-
-          // console.log(offers);
-
-          expect(offers.length).to.equal(1);
-          expect(offers[0].trade.state).to.equal("closed");
-        });
+        return;
       });
-      describe("closed SELL offer: Taker creates trade. Maker funds escrow and releases.", function () {
-        // Suit variables
-        this.tradeAddr = undefined;
 
-        it("Taker lists a SELL offer", async function () {
-          // TODO use query filters
-          const query = {
-            offers_query: {
-              limit: 1,
-              last_value: 1,
-            },
-          };
+      it("Taker requests a trade (TadeState::RequestCreated)", async function () {
+        const new_trade = {
+          offer_id: parseInt(global.tradeFlow.offerId),
+          ust_amount: process.env.MIN_AMOUNT,
+          taker: taker.address,
+          taker_contact,
+          // arbitrator:,
+        };
 
-          const offers = await queryOffers(terra, query);
+        this.tradeAddr = await createTrade(terra, new_trade, taker);
 
-          if (offers.length === 0) throw Error("No offers found.");
-
-          global.tradeFlow.offerId = offers[0].id;
-
-          return;
-        });
-
-        it("Taker creates a trade", async function () {
-          const new_trade = {
-            offer_id: parseInt(global.tradeFlow.offerId),
-            ust_amount: process.env.MIN_AMOUNT,
-            taker: taker.address,
-            taker_contact,
-            arbitrator: arbitrator.address,
-          };
-
-          this.tradeAddr = await createTrade(terra, new_trade, taker);
-
-          return this.tradeAddr;
-        });
-
-        it("Maker funds the trade escrow.", async function () {
-          await fundTradeEscrow(
-            terra,
-            {
-              offerId: global.tradeFlow.offerId,
-              tradeAddr: this.tradeAddr,
-            },
-            maker
-          );
-        });
-
-        it("Maker releases the trade escrow.", async function () {
-          await releaseTradeEscrow(terra, this.tradeAddr, taker);
-        });
-        it("Taker lists his trades", async function () {
-          const trades_query = {
-            user: taker.address,
-            index: "seller",
-            limit: 10,
-          };
-
-          const offers = await queryOffers(terra, { trades_query });
-
-          // console.log(offers);
-
-          expect(offers.length).to.equal(2);
-          expect(offers[0].trade.state).to.equal("closed");
-          expect(offers[1].trade.state).to.equal("closed");
-        });
+        return this.tradeAddr;
       });
-      // TODO enabled cancellation in smart contract
-      describe.skip("cancelled SELL offer: Taker creates trade. Maker funds escrow. Taker refunds.", function () {
-        // Suit variables
-        this.tradeAddr = undefined;
 
-        it("Taker lists a SELL offer", async function () {
-          // TODO use query filters
-          const query = {
-            offers_query: {
-              limit: 1,
-              last_value: 1,
-            },
-          };
+      it("Maker funds the trade escrow (TradeState::EscrowFunded)", async function () {
+        await sleep(5000);
+        await fundTradeEscrow(
+          terra,
+          {
+            offerId: global.tradeFlow.offerId,
+            tradeAddr: this.tradeAddr,
+          },
+          maker
+        );
+      });
+      it("Taker clicks `mark paid` (TradeState::FiatDeposited)", async function () {
+        await fiatDeposited(
+          terra,
+          {
+            tradeAddr: this.tradeAddr,
+          },
+          taker
+        );
+      });
+      it("Maker releases the escrow (TradeState::EscrowReleased)", async function () {
+        await releaseTradeEscrow(terra, this.tradeAddr, maker);
+      });
+    });
+    describe("SELL.RequestCanceled: Maker cancels", function () {
+      before(async function () {
+        global.factoryCfg = await getFactoryCfg(terra, maker);
 
-          const offers = await queryOffers(terra, query);
+        global.tradeFlow = { offerId: undefined };
+      });
+      it("Maker creates a SELL offer in COP", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "COP",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
 
-          if (offers.length === 0) throw Error("No offers found.");
+        const offerResult = await createOffer(terra, offer, maker);
 
-          global.tradeFlow.offerId = offers[0].id;
+        return offerResult;
+      });
 
-          return;
-        });
+      // Suit variables
+      this.tradeAddr = undefined;
 
-        it("Taker creates a trade", async function () {
-          const new_trade = {
-            offer_id: parseInt(global.tradeFlow.offerId),
-            ust_amount: process.env.MIN_AMOUNT,
-            taker: taker.address,
-            taker_contact,
-            arbitrator: arbitrator.address,
-          };
+      it("Taker lists an offer", async function () {
+        const query = {
+          offers_query: {
+            limit: 1,
+            last_value: 0,
+          },
+        };
 
-          this.tradeAddr = await createTrade(terra, new_trade, taker);
+        const offers = await queryOffers(terra, query);
 
-          return this.tradeAddr;
-        });
+        if (offers.length === 0) throw Error("No offers found.");
 
-        it("Maker funds the trade escrow.", async function () {
-          await fundTradeEscrow(
-            terra,
-            {
-              offerId: global.tradeFlow.offerId,
-              tradeAddr: this.tradeAddr,
-            },
-            maker
-          );
-        });
+        global.tradeFlow.offerId = offers[0].id;
 
-        it("Taker refunds the trade escrow.", async function () {
-          await refundTradeEscrow(terra, this.tradeAddr, maker);
-        });
-        it("Taker lists his trades", async function () {
-          const trades_query = {
-            user: taker.address,
-            index: "seller",
-            limit: 10,
-          };
+        return;
+      });
 
-          const trades = await queryOffers(terra, { trades_query });
+      it("Taker requests a trade (TadeState::RequestCreated)", async function () {
+        const new_trade = {
+          offer_id: parseInt(global.tradeFlow.offerId),
+          ust_amount: process.env.MIN_AMOUNT,
+          taker: taker.address,
+          taker_contact,
+          // arbitrator:,
+        };
 
-          // console.log(trades);
+        this.tradeAddr = await createTrade(terra, new_trade, taker);
 
-          // expect(trades.length).to.equal(2);
-          // expect(trades[0].trade.state).to.equal("closed");
-          // expect(trades[1].trade.state).to.equal("closed");
-        });
+        return this.tradeAddr;
+      });
+
+      it("Maker cancels the trade request (TradeState::RequestCanceled)", async function () {
+        await cancelTradeRequest(terra, this.tradeAddr, maker);
+      });
+    });
+    describe("SELL.RequestCanceled: Taker cancels", function () {
+      before(async function () {
+        global.factoryCfg = await getFactoryCfg(terra, maker);
+
+        global.tradeFlow = { offerId: undefined };
+      });
+      it("Maker creates a SELL offer in COP", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "COP",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        const offerResult = await createOffer(terra, offer, maker);
+
+        return offerResult;
+      });
+
+      // Suit variables
+      this.tradeAddr = undefined;
+
+      it("Taker lists an offer", async function () {
+        const query = {
+          offers_query: {
+            limit: 1,
+            last_value: 0,
+          },
+        };
+
+        const offers = await queryOffers(terra, query);
+
+        if (offers.length === 0) throw Error("No offers found.");
+
+        global.tradeFlow.offerId = offers[0].id;
+
+        return;
+      });
+
+      it("Taker requests a trade (TadeState::RequestCreated)", async function () {
+        const new_trade = {
+          offer_id: parseInt(global.tradeFlow.offerId),
+          ust_amount: process.env.MIN_AMOUNT,
+          taker: taker.address,
+          taker_contact,
+          // arbitrator:,
+        };
+
+        this.tradeAddr = await createTrade(terra, new_trade, taker);
+
+        return this.tradeAddr;
+      });
+
+      it("Taker cancels the trade request (TradeState::RequestCanceled)", async function () {
+        await cancelTradeRequest(terra, this.tradeAddr, taker);
+      });
+    });
+    describe.skip("SELL.EscrowRefunded", function () {
+      // TODO test after waiting for 2 hours?
+      before(async function () {
+        global.factoryCfg = await getFactoryCfg(terra, maker);
+
+        global.tradeFlow = { offerId: undefined };
+      });
+      it("Maker creates a SELL offer in COP", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "COP",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        const offerResult = await createOffer(terra, offer, maker);
+
+        return offerResult;
+      });
+
+      // Suit variables
+      this.tradeAddr = undefined;
+
+      it("Taker lists an offer", async function () {
+        const query = {
+          offers_query: {
+            limit: 1,
+            last_value: 0,
+          },
+        };
+
+        const offers = await queryOffers(terra, query);
+
+        if (offers.length === 0) throw Error("No offers found.");
+
+        global.tradeFlow.offerId = offers[0].id;
+
+        return;
+      });
+
+      it("Taker requests a trade (TadeState::RequestCreated)", async function () {
+        const new_trade = {
+          offer_id: parseInt(global.tradeFlow.offerId),
+          ust_amount: process.env.MIN_AMOUNT,
+          taker: taker.address,
+          taker_contact,
+          // arbitrator:,
+        };
+
+        this.tradeAddr = await createTrade(terra, new_trade, taker);
+
+        return this.tradeAddr;
+      });
+
+      it("Maker funds the trade escrow (TradeState::EscrowFunded)", async function () {
+        await fundTradeEscrow(
+          terra,
+          {
+            offerId: global.tradeFlow.offerId,
+            tradeAddr: this.tradeAddr,
+          },
+          maker
+        );
+      });
+      it("The funding expires; Maker refunds the escrow (TradeState::EscrowRefunded)", async function () {
+        await refundTradeEscrow(terra, this.tradeAddr, maker);
+      });
+    });
+    describe.only("BUY.EscrowReleased", function () {
+      before(async function () {
+        global.factoryCfg = await getFactoryCfg(terra, maker);
+        global.tradeFlow = { offerId: undefined };
+      });
+      it("Maker creates a BUY offer in BRL", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "BRL",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        const offerResult = await createOffer(terra, offer, maker);
+
+        return offerResult;
+      });
+
+      // Suit variables
+      this.tradeAddr = undefined;
+
+      it("Taker lists an offer", async function () {
+        const query = {
+          offers_query: {
+            limit: 1,
+            last_value: 0,
+          },
+        };
+
+        const offers = await queryOffers(terra, query);
+
+        if (offers.length === 0) throw Error("No offers found.");
+        global.tradeFlow.offerId = offers[0].id;
+
+        return;
+      });
+
+      it("Taker requests a trade (TadeState::RequestCreated)", async function () {
+        const new_trade = {
+          offer_id: parseInt(global.tradeFlow.offerId),
+          ust_amount: process.env.MIN_AMOUNT,
+          taker: taker.address,
+          taker_contact,
+          // arbitrator:,
+        };
+
+        this.tradeAddr = await createTrade(terra, new_trade, taker);
+        return this.tradeAddr;
+      });
+      it("Maker accepts the trade (TadeState::RequestAccepted)", async function () {
+        await acceptTradeRequest(terra, this.tradeAddr, maker);
+        return;
+      });
+      it("Taker funds the trade escrow (TradeState::EscrowFunded)", async function () {
+        await sleep(5000);
+        await fundTradeEscrow(
+          terra,
+          {
+            offerId: global.tradeFlow.offerId,
+            tradeAddr: this.tradeAddr,
+          },
+          taker
+        );
+      });
+      it("Maker clicks `mark paid` (TradeState::FiatDeposited)", async function () {
+        await fiatDeposited(
+          terra,
+          {
+            tradeAddr: this.tradeAddr,
+          },
+          maker
+        );
+      });
+      it("Taker releases the escrow (TradeState::EscrowReleased)", async function () {
+        await releaseTradeEscrow(terra, this.tradeAddr, taker);
       });
     });
   });

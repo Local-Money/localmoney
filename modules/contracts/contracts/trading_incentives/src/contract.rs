@@ -2,8 +2,8 @@ use crate::errors::TradingIncentivesError;
 use crate::math::DECIMAL_FRACTIONAL;
 use crate::state::{CONFIG, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps,  StdError, StdResult,
-    Storage, SubMsg, WasmMsg, 
+    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, StdError, StdResult, Storage, SubMsg,
+    WasmMsg,
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -14,7 +14,7 @@ use localterra_protocol::trading_incentives::{
     Config, Distribution, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use std::cmp;
-use std::ops::{ Mul};
+use std::ops::Mul;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -137,7 +137,7 @@ fn register_trade(
         }))
         .unwrap();
 
-    if trade_info.trade.state != TradeTradeState::Closed {
+    if trade_info.trade.state != TradeTradeState::Released {
         return Err(TradingIncentivesError::Unauthorized {});
     }
 

@@ -1,3 +1,4 @@
+use crate::currencies::FiatCurrency;
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -6,10 +7,9 @@ use std::fmt::{self};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub offer_id: u64,
-    pub ust_amount: String,
+    pub ust_amount: Uint128,
     pub taker: String,
     pub offers_addr: String,
-    pub arbitrator: String,
     pub taker_contact: String,
     pub timestamp: u64,
 }
@@ -18,9 +18,12 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     FundEscrow {},
-    Refund {},
-    Release {},
-    Dispute {},
+    RefundEscrow {},
+    ReleaseEscrow {},
+    DisputeEscrow {},
+    FiatDeposited {},
+    CancelRequest {},
+    AcceptRequest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -36,22 +39,27 @@ pub struct TradeData {
     pub buyer: Addr,
     pub seller: Addr,
     pub taker_contact: String,
-    pub arbitrator: Addr,
+    pub arbitrator: Option<Addr>,
     pub offer_contract: Addr,
     pub offer_id: u64,
-    pub expire_height: u64,
+    pub created_at: u64,
     pub ust_amount: Uint128,
     pub state: TradeState,
+    pub asset: FiatCurrency,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {
-    Canceled,
-    Closed,
-    Created,
+    RequestCreated,
+    RequestAccepted,
+    RequestCanceled,
+    RequestExpired,
     EscrowFunded,
-    Disputed,
+    EscrowRefunded,
+    FiatDeposited,
+    EscrowReleased,
+    EscrowDisputed,
     SettledForMaker,
     SettledForTaker,
 }

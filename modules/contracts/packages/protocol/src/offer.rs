@@ -1,6 +1,6 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
-use crate::errors::OfferError;
+use crate::errors::GuardError;
 use crate::trade::{TradeData, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
@@ -91,10 +91,17 @@ pub enum ExecuteMsg {
     },
     NewTrade {
         offer_id: u64,
-        ust_amount: String,
+        ust_amount: Uint128,
         taker: String, // TODO should be Addr
         taker_contact: String,
-        arbitrator: String, // TODO should be Addr
+    },
+    NewArbitrator {
+        arbitrator: Addr,
+        asset: FiatCurrency,
+    },
+    DeleteArbitrator {
+        arbitrator: Addr,
+        asset: FiatCurrency,
     },
 }
 
@@ -145,6 +152,20 @@ pub enum QueryMsg {
         index: TradesIndex,
         last_value: Option<Addr>,
         limit: u32,
+    },
+    Arbitrator {
+        arbitrator: Addr,
+    },
+    Arbitrators {
+        last_value: Option<String>,
+        limit: u32,
+    },
+    ArbitratorAsset {
+        asset: FiatCurrency,
+    },
+    ArbitratorRandom {
+        random_value: u32,
+        asset: FiatCurrency,
     },
 }
 
@@ -207,28 +228,28 @@ impl OfferModel<'_> {
         return offer_model;
     }
 
-    pub fn activate(&mut self) -> Result<&Offer, OfferError> {
+    pub fn activate(&mut self) -> Result<&Offer, GuardError> {
         match self.offer.state {
             OfferState::Paused => {
                 self.offer.state = OfferState::Active;
                 OfferModel::store(self.storage, &self.offer).unwrap();
                 Ok(&self.offer)
             }
-            OfferState::Active => Err(OfferError::InvalidStateChange {
+            OfferState::Active => Err(GuardError::InvalidStateChange {
                 from: self.offer.state.clone(),
                 to: OfferState::Active,
             }),
         }
     }
 
-    pub fn pause(&mut self) -> Result<&Offer, OfferError> {
+    pub fn pause(&mut self) -> Result<&Offer, GuardError> {
         match self.offer.state {
             OfferState::Active => {
                 self.offer.state = OfferState::Paused;
                 OfferModel::store(self.storage, &self.offer).unwrap();
                 Ok(&self.offer)
             }
-            OfferState::Paused => Err(OfferError::InvalidStateChange {
+            OfferState::Paused => Err(GuardError::InvalidStateChange {
                 from: self.offer.state.clone(),
                 to: OfferState::Paused,
             }),
@@ -393,16 +414,24 @@ pub struct TradeAddr {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Arbitrator {
+    pub arbitrator: Addr,
+    pub asset: FiatCurrency,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum OfferType {
     Buy,
     Sell,
 }
+
 impl fmt::Display for OfferType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
 }
+
 impl fmt::Display for OfferState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)

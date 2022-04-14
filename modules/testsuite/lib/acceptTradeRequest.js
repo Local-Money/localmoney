@@ -1,9 +1,9 @@
 import { MsgExecuteContract } from "@terra-money/terra.js";
 import { executeMsg } from "./executeMsg.js";
 
-async function releaseTradeEscrow(client, tradeAddr, user) {
+async function acceptTradeRequest(client, tradeAddr, user) {
   const releaseMsg = new MsgExecuteContract(user.address, tradeAddr, {
-    release_escrow: {},
+    accept_request: {},
   });
 
   const result = await executeMsg(client, releaseMsg, user.wallet);
@@ -11,4 +11,4 @@ async function releaseTradeEscrow(client, tradeAddr, user) {
   return result;
 }
 
-export { releaseTradeEscrow };
+export { acceptTradeRequest };
