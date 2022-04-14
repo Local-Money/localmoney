@@ -7,10 +7,10 @@ import {
   StdSignMsg,
   StdTx,
 } from "@terra-money/terra.js";
-import { FACTORY_CONTRACT } from "@/constants";
+import {FACTORY_CONTRACT} from "@/constants";
 import router from "@/router";
-import { updateTrade } from "@/store/firebase"
-import { newTrade } from "../firebase";
+import {updateTrade} from "@/store/firebase"
+import {newTrade} from "../firebase";
 
 const lcdOptions = {
   URL: 'http://143.244.190.1:3060',
@@ -28,7 +28,6 @@ const state = {
   walletAddress: '',
   offers: [],
   tradeInfos: [],
-  fiatCurrency: "BRL",
   lunaUstPrice: 0,
   ustUsdPrice: 0,
   factoryConfig: {
@@ -44,7 +43,7 @@ const state = {
 
 // eslint-disable-next-line no-unused-vars
 function prepareTransaction(signedMsg) {
-  const { public_key, signature, stdSignMsgData } = signedMsg;
+  const {public_key, signature, stdSignMsgData} = signedMsg;
   const sig = StdSignature.fromData({
     signature,
     pub_key: {
@@ -73,7 +72,7 @@ const getters = {
 };
 
 const actions = {
-  async initWallet({ commit, dispatch }) {
+  async initWallet({commit, dispatch}) {
     const ext = new Extension()
     const res = await ext.request('connect')
     const info = await ext.request('info')
@@ -88,21 +87,20 @@ const actions = {
   /**
    * Fetch Factory Contract config
    */
-  async fetchFactoryConfig({ commit, dispatch }) {
-    const cfgQuery = { config: {} };
+  async fetchFactoryConfig({commit, dispatch}) {
+    const cfgQuery = {config: {}};
     const factoryConfig = await terra.wasm.contractQuery(
       FACTORY_CONTRACT,
       cfgQuery
     );
     commit("setFactoryConfig", factoryConfig);
-    dispatch("fetchOffers");
     dispatch("fetchTradeInfos")
   },
   /**
    * Fetch Offer by Id
    */
-  async fetchOffer({ commit }, { id }) {
-    const offerQuery = { load_offer: { id } };
+  async fetchOffer({commit}, {id}) {
+    const offerQuery = {offer: {id}};
     const offer = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr,
       offerQuery
@@ -112,18 +110,28 @@ const actions = {
   /**
    * Fetch Offers.
    */
-  async fetchOffers({ commit }) {
-    const offersQuery = { offers: { fiat_currency: state.fiatCurrency } };
-    const offers = await terra.wasm.contractQuery(
+  async fetchOffers({commit, getters}, {fiatCurrency, offerType, paginated = false}) {
+    const offers = paginated ? getters.offers : []
+    const last_offer_id = offers.length > 0 && paginated ? offers[offers.length -1].id : 0
+
+    const offersQuery = {
+      offers_by_type_fiat: {
+        fiat_currency: fiatCurrency,
+        offer_type: offerType,
+        last_value: last_offer_id,
+        limit: 10
+      }
+    };
+    const loadedOffers = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr,
       offersQuery
     );
-    commit("setOffers", offers);
+    commit("setOffers", offers.concat(loadedOffers));
   },
   /**
    * Create Offer
    */
-  async newOffer({ commit, getters, dispatch }, { offer }) {
+  async newOffer({commit, getters, dispatch}, {offer}) {
     const offerMsg = new MsgExecuteContract(
       getters.walletAddress,
       state.factoryConfig.offers_addr,
@@ -131,20 +139,19 @@ const actions = {
     );
 
     await executeMsg(commit, getters, dispatch, offerMsg);
-    dispatch("fetchOffers");
     router.push(`/`);
   },
   /**
    * Fetch a specific Trade
    */
-  async fetchTradeInfo({ commit, getters, dispatch }, {addr, tradeData}) {
+  async fetchTradeInfo({commit, getters, dispatch}, {addr, tradeData}) {
     const tradeInfo = {}
-    const trade = await terra.wasm.contractQuery(addr, { state: {} });
+    const trade = await terra.wasm.contractQuery(addr, {state: {}});
     tradeInfo.trade = trade
 
     tradeInfo.offer = getters.getOfferById(trade.offer_id);
     if (!tradeInfo.offer) {
-      await dispatch("fetchOffer", { id: trade.offer_id });
+      await dispatch("fetchOffer", {id: trade.offer_id});
       tradeInfo.offer = getters.getOfferById(trade.offer_id);
     }
 
@@ -159,13 +166,13 @@ const actions = {
   /**
    * Fetches all trades for given Trader (maker or taker) address.
    */
-  async fetchTradeInfos({ commit, getters }, redirect = false) {
+  async fetchTradeInfos({commit, getters}, redirect = false) {
     const wallet = getters.walletAddress;
     const trades_as_seller = await terra.wasm.contractQuery(
-      state.factoryConfig.offers_addr, { trades_query: { user: wallet, index: "seller", limit: 10} }
+      state.factoryConfig.offers_addr, {trades_query: {user: wallet, index: "seller", limit: 10}}
     );
     const trades_as_buyer = await terra.wasm.contractQuery(
-      state.factoryConfig.offers_addr, { trades_query: { user: wallet, index: "buyer", limit: 10} }
+      state.factoryConfig.offers_addr, {trades_query: {user: wallet, index: "buyer", limit: 10}}
     );
 
     const trades = trades_as_buyer.concat(trades_as_seller);
@@ -181,7 +188,7 @@ const actions = {
    * @param {*} amount Amount of UST to be traded.
    */
   // eslint-disable-next-line no-unused-vars
-  async openTrade({ commit, getters, dispatch }, { offer, ustAmount }) {
+  async openTrade({commit, getters, dispatch}, {offer, ustAmount}) {
     let sender = getters.walletAddress
     const amount = ustAmount * 1000000;
     const newTradeMsg = {
@@ -205,12 +212,12 @@ const actions = {
     dispatch("fetchTradeInfos", true);
     newTrade(offer.owner, newTradeMsg)
   },
-  async fundEscrow({ commit, getters, dispatch }, tradeAddr) {
+  async fundEscrow({commit, getters, dispatch}, tradeAddr) {
     let tradeInfo = getters.getTradeInfo(tradeAddr)
     const ustAmount = tradeInfo.trade.ust_amount
-    const ust = Coin.fromData({ denom: 'uusd', amount: ustAmount })
+    const ust = Coin.fromData({denom: 'uusd', amount: ustAmount})
 
-    const localTerraFee = Coin.fromData({ denom: 'uusd', amount: ustAmount * 0.01 })
+    const localTerraFee = Coin.fromData({denom: 'uusd', amount: ustAmount * 0.01})
     let ltFeeTax = await terra.utils.calculateTax(localTerraFee)
     let releaseTax = await terra.utils.calculateTax(ust)
     ltFeeTax = parseInt(ltFeeTax.toData().amount)
@@ -219,46 +226,46 @@ const actions = {
     //TODO: issue with diveregence between cosmwasm and terrajs posted on tg channel, awaiting response. Adding 1UST
     let oneUST = 1000000;
     let fundEscrowAmount = parseInt(ustAmount) + parseInt(localTerraFee.amount) + ltFeeTax + releaseTax + oneUST;
-    fundEscrowAmount = Coin.fromData({ denom: 'uusd', amount: fundEscrowAmount })
+    fundEscrowAmount = Coin.fromData({denom: 'uusd', amount: fundEscrowAmount})
     const coins = new Coins([fundEscrowAmount])
-    const fundMsg = { "fund_escrow": {} }
+    const fundMsg = {"fund_escrow": {}}
     const fundEscrowMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, fundMsg, coins)
     await executeMsg(commit, getters, dispatch, fundEscrowMsg)
 
     tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr})
     await updateTrade(tradeInfo.trade)
   },
-  async releaseEscrow({ commit, getters, dispatch }, tradeAddr) {
+  async releaseEscrow({commit, getters, dispatch}, tradeAddr) {
     const releaseMsg = new MsgExecuteContract(
       getters.walletAddress,
       tradeAddr,
-      { release: {} }
+      {release: {}}
     );
     await executeMsg(commit, getters, dispatch, releaseMsg);
     //TODO: Error handling
     let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
     await updateTrade(tradeInfo.trade)
   },
-  async refundEscrow({ commit, getters, dispatch }, tradeAddr) {
+  async refundEscrow({commit, getters, dispatch}, tradeAddr) {
     const refundMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
       refund: {},
     });
     await executeMsg(commit, getters, dispatch, refundMsg);
     await dispatch("fetchTradeInfo", {addr: tradeAddr});
   },
-  async fetchLunaPrice({ commit }) {
+  async fetchLunaPrice({commit}) {
     const res = await fetch(`${lcdOptions.URL}/v1/market/swaprate/uluna`)
     const priceData = await res.json()
     const lunaUstPrice = priceData.find(p => p.denom === "uusd").swaprate
     commit('setLunaUstPrice', parseFloat(lunaUstPrice).toFixed(2))
   },
-  async fetchUstUsdPrice({ commit }) {
+  async fetchUstUsdPrice({commit}) {
     const res = await fetch("https://api.coinpaprika.com/v1/tickers/ust-terrausd?quotes=USD")
     const ustPriceData = await res.json()
     const ustUsdPrice = ustPriceData.quotes["USD"].price
     commit('setUstUsdPrice', ustUsdPrice.toFixed(2))
   },
-  async setTradeAsPaid({ commit }, {tradeAddr, paid}) {
+  async setTradeAsPaid({commit}, {tradeAddr, paid}) {
     const tradeInfoIdx = state.tradeInfos.findIndex((t) => t.trade.addr === tradeAddr);
     state.tradeInfos[tradeInfoIdx].trade.paid = paid
     //TODO: create method to update a single tradeInfo

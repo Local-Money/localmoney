@@ -488,7 +488,7 @@ pub fn query_trades(
     };
 
     let trade_results: Vec<TradeAddr> = prefix
-        .range(deps.storage, range_from, None, Order::Ascending)
+        .range(deps.storage, range_from, None, Order::Descending)
         .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
         .take(limit as usize)
         .collect();

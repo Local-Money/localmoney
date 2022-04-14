@@ -1,7 +1,7 @@
 <template>
   <header>
     <div class="wrap">
-      <router-link :to="{ path: '/' }" @click="this.fetchOffers()">
+      <router-link :to="{ path: '/' }" @click="this.fetchOffers('ARS', 'sell')">
         <div className="logo"></div>
       </router-link>
 

@@ -49,7 +49,7 @@ export default defineComponent({
       return this.walletAddress === trade.seller ? trade.buyer: trade.seller;
     },
     isBuying: function () {
-      return this.tradeInfo.trade.recipient === this.walletAddress
+      return this.tradeInfo.trade.seller !== this.walletAddress
     },
     buyOrSell: function () {
       return this.isBuying ? "Buy" : "Sell"

@@ -26,10 +26,10 @@
         </div>
         <div class="filter">
           <label for="currency">Currency (FIAT)</label>
-          <select name="currency" id="currency">
-            <option value="UST">COP</option>
-            <option value="UST">BRL</option>
-            <option value="UST">USD</option>
+          <select name="currency" id="currency" v-model="fiatCurrency">
+            <option value="ARS">ARS</option>
+            <option value="BRL">BRL</option>
+            <option value="COP">COP</option>
           </select>
         </div>
       </div>
@@ -92,6 +92,7 @@ export default defineComponent({
       minAmount: 0,
       maxAmount: 0,
       offerType: 0,
+      fiatCurrency: 'ARS',
     };
   },
   methods: {
@@ -104,7 +105,7 @@ export default defineComponent({
         create: {
           offer: {
             offer_type: offerType,
-            fiat_currency: "BRL",
+            fiat_currency: this.fiatCurrency,
             min_amount: parseInt(this.minAmount * 1000000) + "",
             max_amount: parseInt(this.maxAmount * 1000000) + "",
             maker_contact: "TODO",
