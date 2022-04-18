@@ -13,6 +13,8 @@ pub struct InstantiateMsg {
     pub trade_code_id: u64,
     pub fee_collector_threshold: Uint128,
     pub local_ust_pool_addr: String,
+    pub staking_code_id: u64,
+    pub local_token_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -34,4 +36,5 @@ pub struct Config {
     pub offers_addr: Addr,
     pub fee_collector_addr: Addr,
     pub trading_incentives_addr: Addr,
+    pub staking_addr: Addr,
 }

@@ -37,6 +37,8 @@ async function instantiateFactory(client, user, options = {}) {
     trade_code_id: codeIds.trade,
     fee_collector_threshold: "1000000",
     local_ust_pool_addr: user.address,
+    staking_code_id: codeIds.localterra_staking,
+    local_token_addr: process.env.LOCAL_TOKEN_ADDR,
   };
 
   const instantiateFactoryMsg = new MsgInstantiateContract(
@@ -69,7 +71,7 @@ async function instantiateFactory(client, user, options = {}) {
 
   if (options.cache) _storeFactory(factory);
 
-  // console.log("factory :>> ", factory);
+  console.log("factory :>> ", factory);
 
   return factory;
 }

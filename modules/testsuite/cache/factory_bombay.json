@@ -1,1 +1,14 @@
-{"factoryAddr":"terra1rslcagz7tdwrtfpntwlkcxkpaln63nh755tu53","factoryCfg":{"trade_code_id":66488,"token_addr":"terra1xg5mmf0mxwtfpu9seuu9u979wal47yvnyp8dkk","local_ust_pool_addr":"terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk","gov_addr":"terra1z00t8q5sanwlk7l2vlddrkm589xjgdw89yz270","offers_addr":"terra1q3l8dt9vfmcgc6wu9p973qg6fcsmq8l5mjw55y","fee_collector_addr":"terra1scf3vgy3g0gkdtd3fdu3wxqjj323p3w58lamfd","trading_incentives_addr":"terra1wqgnfmyj8jlmc8nh0kmx6tc5a8jh4lez9k8hc6"}}
+{
+  "factoryAddr": "terra1zl837zun0rflp0guyrsa3etsm7ysmlu5a9f4wv",
+  "factoryCfg": {
+    "trade_code_id": 65949,
+    "token_addr": "",
+    "local_ust_pool_addr": "terra1vpy55n57punft83gsa9gte7rhruzm9sehav2wp",
+    "gov_addr": "terra1cy03cdepeuzyezthmehzwdtq969atdzkrknqp4",
+    "offers_addr": "terra13r0pdr89m3trh2rvr5mke8rnz8dzsued2xphdu",
+    "fee_collector_addr": "terra18yw7nn3rv65er48f6vsh88uhhvph8uzkhx67wy",
+    "trading_incentives_addr": "terra1myekzaswfnx7qek6ypsmt0fnqxw8el5qvgmcvk",
+    "staking_addr": "terra1wpwnk35v3tpqndzyxsyrry08mnstth2qg065vd",
+    "xlocal_addr": "terra1540y066cxkjnjj3lleyz5lupg3prm4jayfcm0d"
+  }
+}

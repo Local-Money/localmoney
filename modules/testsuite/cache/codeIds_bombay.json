@@ -1,1 +1,10 @@
-{"factory":62798,"fee_collector":66484,"governance":66485,"offer":66497,"trade":66488,"trading_incentives":66489,"localterra_staking":66432,"localterra_xlocal_token":66433}
+{
+  "factory": 65942,
+  "fee_collector": 65943,
+  "governance": 65944,
+  "localterra_staking": 66374,
+  "localterra_xlocal_token": 65946,
+  "offer": 65947,
+  "trade": 65949,
+  "trading_incentives": 65950
+}

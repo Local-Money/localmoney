@@ -13,6 +13,7 @@
     "test:bombay:tradeFlow": "NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js'",
     "test:bombay:queryInterfaces": "NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js'",
     "test:bombay:arbitrationInterface": "NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
+    "test:bombay:staking": "NETWORK_ENV=bombay mocha './test/staking.spec.js'",
     "test:mainnet:disputeResolution": "NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js'",
     "upload": "npm run upload:terrarium ; npm run git-commit",
     "upload:terrarium": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js' ; npm run git-commit",
