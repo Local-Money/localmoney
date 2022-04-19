@@ -187,7 +187,6 @@ const actions = {
    * @param {*} offerId Id of the Offer provided by the Offers Smart Contract.
    * @param {*} amount Amount of UST to be traded.
    */
-  // eslint-disable-next-line no-unused-vars
   async openTrade({commit, getters, dispatch}, {offer, ustAmount}) {
     let sender = getters.walletAddress
     const amount = ustAmount * 1000000;
@@ -198,7 +197,7 @@ const actions = {
         counterparty: sender,
         taker: sender, //TODO
         taker_contact: "@TODO",
-        arbitrator: sender, //TODO
+        //arbitrator: TODO,
       },
     };
     const createTradeMsg = new MsgExecuteContract(
@@ -206,11 +205,20 @@ const actions = {
       state.factoryConfig.offers_addr,
       newTradeMsg
     );
-
     //TODO: Error handling.
     await executeMsg(commit, getters, dispatch, createTradeMsg);
+
     dispatch("fetchTradeInfos", true);
     newTrade(offer.owner, newTradeMsg)
+  },
+  async acceptTradeRequest({commit, getters, dispatch}, tradeAddr) {
+    const fiatDeposited = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
+      accept_request: {},
+    });
+    await executeMsg(commit, getters, dispatch, fiatDeposited);
+
+    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    await updateTrade(tradeInfo.trade)
   },
   async fundEscrow({commit, getters, dispatch}, tradeAddr) {
     let tradeInfo = getters.getTradeInfo(tradeAddr)
@@ -223,35 +231,14 @@ const actions = {
     ltFeeTax = parseInt(ltFeeTax.toData().amount)
     releaseTax = parseInt(releaseTax.toData().amount)
 
-    //TODO: issue with diveregence between cosmwasm and terrajs posted on tg channel, awaiting response. Adding 1UST
-    let oneUST = 1000000;
-    let fundEscrowAmount = parseInt(ustAmount) + parseInt(localTerraFee.amount) + ltFeeTax + releaseTax + oneUST;
+    let fundEscrowAmount = parseInt(ustAmount) + parseInt(localTerraFee.amount) + ltFeeTax + releaseTax;
     fundEscrowAmount = Coin.fromData({denom: 'uusd', amount: fundEscrowAmount})
     const coins = new Coins([fundEscrowAmount])
-    const fundMsg = {"fund_escrow": {}}
+    const fundMsg = {fund_escrow: {}};
     const fundEscrowMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, fundMsg, coins)
     await executeMsg(commit, getters, dispatch, fundEscrowMsg)
 
     tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr})
-    await updateTrade(tradeInfo.trade)
-  },
-  async releaseEscrow({commit, getters, dispatch}, tradeAddr) {
-    const releaseMsg = new MsgExecuteContract(
-      getters.walletAddress,
-      tradeAddr,
-      {release_escrow: {}}
-    );
-    await executeMsg(commit, getters, dispatch, releaseMsg);
-    //TODO: Error handling
-    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
-    await updateTrade(tradeInfo.trade)
-  },
-  async acceptTradeRequest({commit, getters, dispatch}, tradeAddr) {
-    const fiatDeposited = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
-      accept_request: {},
-    });
-    await executeMsg(commit, getters, dispatch, fiatDeposited);
-    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
     await updateTrade(tradeInfo.trade)
   },
   async setFiatDeposited({commit, getters, dispatch}, tradeAddr) {
@@ -259,12 +246,23 @@ const actions = {
       fiat_deposited: {},
     });
     await executeMsg(commit, getters, dispatch, fiatDeposited);
+
+    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    await updateTrade(tradeInfo.trade)
+  },
+  async releaseEscrow({commit, getters, dispatch}, tradeAddr) {
+    const releaseMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
+      release_escrow: {}
+    });
+    //TODO: Error handling
+    await executeMsg(commit, getters, dispatch, releaseMsg);
+
     let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
     await updateTrade(tradeInfo.trade)
   },
   async refundEscrow({commit, getters, dispatch}, tradeAddr) {
     const refundMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
-      refund: {},
+      refund_escrow: {},
     });
     await executeMsg(commit, getters, dispatch, refundMsg);
     let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
