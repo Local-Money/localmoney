@@ -197,7 +197,7 @@ const actions = {
         ust_amount: amount + "",
         counterparty: sender,
         taker: sender, //TODO
-        taker_contact: "USTKing",
+        taker_contact: "@TODO",
         arbitrator: sender, //TODO
       },
     };
@@ -239,10 +239,26 @@ const actions = {
     const releaseMsg = new MsgExecuteContract(
       getters.walletAddress,
       tradeAddr,
-      {release: {}}
+      {release_escrow: {}}
     );
     await executeMsg(commit, getters, dispatch, releaseMsg);
     //TODO: Error handling
+    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    await updateTrade(tradeInfo.trade)
+  },
+  async acceptTradeRequest({commit, getters, dispatch}, tradeAddr) {
+    const fiatDeposited = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
+      accept_request: {},
+    });
+    await executeMsg(commit, getters, dispatch, fiatDeposited);
+    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    await updateTrade(tradeInfo.trade)
+  },
+  async setFiatDeposited({commit, getters, dispatch}, tradeAddr) {
+    const fiatDeposited = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
+      fiat_deposited: {},
+    });
+    await executeMsg(commit, getters, dispatch, fiatDeposited);
     let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
     await updateTrade(tradeInfo.trade)
   },
@@ -251,7 +267,8 @@ const actions = {
       refund: {},
     });
     await executeMsg(commit, getters, dispatch, refundMsg);
-    await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    await updateTrade(tradeInfo.trade)
   },
   async fetchLunaPrice({commit}) {
     const res = await fetch(`${lcdOptions.URL}/v1/market/swaprate/uluna`)
@@ -265,12 +282,14 @@ const actions = {
     const ustUsdPrice = ustPriceData.quotes["USD"].price
     commit('setUstUsdPrice', ustUsdPrice.toFixed(2))
   },
+
+  // @TODO delete this method
   async setTradeAsPaid({commit}, {tradeAddr, paid}) {
     const tradeInfoIdx = state.tradeInfos.findIndex((t) => t.trade.addr === tradeAddr);
     state.tradeInfos[tradeInfoIdx].trade.paid = paid
     //TODO: create method to update a single tradeInfo
     await commit("setTradeInfos", state.tradeInfos)
-  }
+  },
 };
 
 async function executeMsg(commit, getters, dispatch, msg) {

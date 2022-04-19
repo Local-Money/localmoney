@@ -83,12 +83,12 @@
             <p class="label">Transaction summary</p>
             <div class="transaction">
               <div class="list-item">
-                <p class="list-item-label" v-if="isBuying">You will get</p>
+                <p class="list-item-label" v-if="isBuyer">You will get</p>
                 <p class="list-item-label" v-else>You will send</p>
                 <p class="value">{{ formatAmount(trade.ust_amount) }}UST</p>
               </div>
               <div class="list-item">
-                <p class="list-item-label" v-if="isBuying">You will send</p>
+                <p class="list-item-label" v-if="isBuyer">You will send</p>
                 <p class="list-item-label" v-else>You will get</p>
                 <p class="value fiat">{{ fiatAmountStr }}</p>
               </div>
@@ -96,74 +96,78 @@
           </div>
         </section>
         <section class="actions card">
-
-          <!-- Step 1 -->
-          <!-- Fund Escrow -->
-          <div class="wrap" v-if="tradeCanBeFunded(tradeInfo, this.walletAddress)">
-            <div class="icon">
-              <RightArrow/>
+          <div v-if="isBuyer">
+            <div v-if="this.tradeInfo.offer.offer_type === 'sell'">
+              <TradeAction
+                  v-if="trade.state === 'request_created'"
+                  :message="'Waiting for the escrow to be funded'"
+              />
             </div>
-            <p>To begin the transaction you have to fund the escrow</p>
-            <button @click="this.fundEscrow(trade.addr)">
-              fund escrow
-            </button>
-          </div>
-          <div class="wrap" v-else-if="trade.state === 'created'">
-            <div class="icon">
-              <RightArrow/>
+            <div v-else>
+              <TradeAction
+                  v-if="trade.state === 'request_created'"
+                  :message="'Wating for trade to start'"
+                  :button-label="'accept trade request'"
+                  @actionClick="this.acceptTradeRequest(trade.addr)"
+              />
+              <TradeAction
+                  v-if="trade.state === 'request_accepted'"
+                  :message="'Waiting for the escrow to be funded'"
+              />
             </div>
-            <p>Wait until the trader funds the escrow</p>
-          </div>
 
-          <!-- Step 2 -->
-          <!-- Mark as Paid -->
-          <div class="wrap" v-if="trade.state === 'escrow_funded' && this.isBuying && !trade.paid">
-            <div class="icon">
-              <RightArrow/>
+            <TradeAction
+                v-if="trade.state === 'escrow_funded'"
+                :message="'Notify the trader that you made the off-chain payment'"
+                :button-label="'mark as paid'"
+                @actionClick="this.setFiatDeposited(trade.addr)"
+            />
+            <TradeAction
+                v-if="trade.state === 'fiat_deposited'"
+                :message="'Waiting for funds to be released.'"
+            />
+            <TradeAction
+                v-if="trade.state === 'escrow_released'"
+                :message="'Trade finished successfully.'"
+            />
+          </div>
+          <div v-if="isSeller">
+            <div v-if="this.tradeInfo.offer.offer_type === 'sell'">
+              <TradeAction
+                  v-if="trade.state === 'request_created'"
+                  :message="'To begin the transaction you have to fund the escrow'"
+                  :button-label="'fund escrow'"
+                  @actionClick="this.fundEscrow(trade.addr)"
+              />
             </div>
-            <p v-if="trade.paid">You notified the trade about the off-chain payment</p>
-            <p v-else>Notify the trader that you made the off-chain payment</p>
-            <button @click="this.markAsPaid(trade)" v-if="!trade.paid">
-              mark as paid
-            </button>
-          </div>
-
-          <!-- Wait for Off-chain Payment -->
-          <div class="wrap" v-if="trade.state === 'escrow_funded' && !this.isBuying && !trade.paid">
-            <div class="icon">
-              <RightArrow/>
+            <div v-else>
+              <TradeAction
+                  v-if="trade.state === 'request_created'"
+                  :message="'Wating for trade to start'"
+              />
+              <TradeAction
+                  v-if="trade.state === 'request_accepted'"
+                  :message="'To begin the transaction you have to fund the escrow'"
+                  :button-label="'fund escrow'"
+                  @actionClick="this.fundEscrow(trade.addr)"
+              />
             </div>
-            <p @click="log(trade)">Wait until the trader makes the off-chain payment</p>
-          </div>
 
-          <!-- Step 3 -->
-          <!-- Release Escrow -->
-          <div class="wrap" v-if="tradeCanBeReleased(tradeInfo, this.walletAddress) && trade.paid">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p>Check if you received the off-chain payment before releasing the escrow</p>
-            <button @click="this.releaseEscrow(trade.addr)">
-              release escrow
-            </button>
+            <TradeAction
+                v-if="trade.state === 'escrow_funded'"
+                :message="'Waiting for fiat payment'"
+            />
+            <TradeAction
+                v-if="trade.state === 'fiat_deposited'"
+                :message="'Check if you received the off-chain payment before releasing the escrow'"
+                :button-label="'release escrow'"
+                @actionClick="this.releaseEscrow(trade.addr)"
+            />
+            <TradeAction
+                v-if="trade.state === 'escrow_released'"
+                :message="'Trade finished successfully.'"
+            />
           </div>
-
-          <!-- Wait for Escrow Release -->
-          <div class="wrap" v-else-if="trade.paid && trade.state === 'escrow_funded'">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p>Wait until trader releases the escrow, you'll receive it on your wallet</p>
-          </div>
-
-          <!-- Trade Closed -->
-          <div class="wrap" v-if="trade.state === 'closed'">
-            <div class="icon">
-              <IconDone/>
-            </div>
-            <p>Trade finished</p>
-          </div>
-
         </section>
       </div>
     </section>
@@ -172,49 +176,49 @@
 
 <script>
 import IconDone from "@/components/commons/IconDone";
-import RightArrow from "@/components/commons/RightArrow";
 import {defineComponent} from "vue";
-import {mapGetters, mapActions} from "vuex";
-import {tradesCollection, updateTrade} from "../store/firebase";
+import {mapActions, mapGetters} from "vuex";
+import {tradesCollection} from "../store/firebase";
 import {onSnapshot} from "firebase/firestore"
-import {
-  formatAmount,
-  formatAddress,
-  tradeCanBeFunded,
-  tradeCanBeReleased,
-  tradeCanBeRefunded,
-} from "../shared";
+import {formatAddress, formatAmount} from "../shared";
+import TradeAction from "@/components/trades/TradeAction";
 
 export default defineComponent({
   name: "TradeDetail",
   components: {
+    TradeAction,
     IconDone,
-    RightArrow
   },
   methods: {
-    ...mapActions(["fundEscrow", "releaseEscrow", "fetchTradeInfo", "fetchUsdRates", "setTradeAsPaid"]),
+    ...mapActions([
+      "fundEscrow",
+      "acceptTradeRequest",
+      "releaseEscrow",
+      "fetchTradeInfo",
+      "fetchUsdRates",
+      "setTradeAsPaid",
+      "setFiatDeposited"
+    ]),
     formatAmount,
-    formatAddress,
-    tradeCanBeFunded,
-    tradeCanBeReleased,
-    tradeCanBeRefunded,
-    markAsPaid: function () {
-      const trade = this.tradeInfo.trade
-      trade.paid = true
-      this.setTradeAsPaid({tradeAddr: trade.addr, paid: true})
-      updateTrade(this.tradeInfo.trade)
-    },
+    formatAddress
   },
   computed: {
-    ...mapGetters(["getTradeInfo", "walletAddress", "getUsdRate"]),
+    ...mapGetters([
+      "getTradeInfo",
+      "walletAddress",
+      "getUsdRate"
+    ]),
     tradeInfo: function () {
       return this.getTradeInfo(this.$route.params.addr)
     },
-    isBuying: function () {
-      return this.tradeInfo.trade.seller !== this.walletAddress
+    isBuyer: function () {
+      return this.tradeInfo.trade.buyer === this.walletAddress
+    },
+    isSeller: function () {
+      return this.tradeInfo.trade.seller === this.walletAddress
     },
     buyOrSell: function () {
-      return this.isBuying ? "Buy" : "Sell"
+      return this.isBuyer ? "Buy" : "Sell"
     },
     counterparty: function () {
       const trade = this.tradeInfo.trade
