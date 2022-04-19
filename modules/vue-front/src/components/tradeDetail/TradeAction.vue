@@ -1,7 +1,7 @@
 <template>
   <div class="wrap">
     <div class="icon">
-      <RightArrow/>
+      <RightArrow />
     </div>
     <p>{{ message }}</p>
     <button v-if="buttonLabel" @click="$emit('actionClick')">
