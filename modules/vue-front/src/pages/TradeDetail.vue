@@ -122,7 +122,10 @@ export default defineComponent({
       "fetchUsdRates",
     ]),
     formatAmount,
-    formatAddress
+    formatAddress,
+    fetchTrade: async function() {
+      await this.fetchTradeInfo({addr: this.$route.params.addr});
+    },
   },
   computed: {
     ...mapGetters([
@@ -167,24 +170,19 @@ export default defineComponent({
       await this.fetchTradeInfo({addr: this.$route.params.addr});
     }
   },
-  fetchTrade: async function() {
-    await this.fetchTradeInfo({addr: this.$route.params.addr});
-  },
   mounted: async function () {
     if (this.tradeInfo && this.tradeInfo.trade) {
       const trade = this.tradeInfo.trade
       const tradeAddr = trade.addr
       this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
         let data = doc.data()
-        if (data && data.state !== trade.state) {
-          this.$nextTick(() => {
-            this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-          })
-        }
+        this.$nextTick(() => {
+          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+        })
       })
 
-      this.refreshInterval = setInterval(() => {
-        this.fetchTrade();
+      this.refreshInterval = setInterval( () => {
+         this.fetchTrade();
       }, 5000);
     }
   },
