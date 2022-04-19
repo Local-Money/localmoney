@@ -8,7 +8,7 @@
           v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
           :message="'Accept the trade request to start.'"
           :button-label="'accept trade request'"
-          @actionClick="this.acceptTradeRequest(trade.addr)"
+          @actionClick="this.acceptTradeRequest(tradeInfo.trade.addr)"
       />
       <!-- #2 step or #1 step-->
       <!-- if #2 step: The Buyer accepted the request and needs to wait for the Seller to deposit UST on escrow-->
@@ -24,7 +24,7 @@
           v-if="tradeInfo.trade.state === 'escrow_funded'"
           :message="'Notify the trader that you made the off-chain payment'"
           :button-label="'mark as paid'"
-          @actionClick="this.setFiatDeposited(trade.addr)"
+          @actionClick="this.setFiatDeposited(tradeInfo.trade.addr)"
       />
       <!-- #4 step or #3 step-->
       <!-- After the off-chain payment, the Buyer needs to wait for the Seller to release the funds on escrow -->
@@ -56,7 +56,7 @@
                 (tradeInfo.trade.state === 'request_accepted')"
           :message="'To begin the transaction you have to fund the escrow'"
           :button-label="'fund escrow'"
-          @actionClick="this.fundEscrow(trade.addr)"
+          @actionClick="this.fundEscrow(tradeInfo.trade.addr)"
       />
       <!-- #3 step or #2 step-->
       <!-- The UST is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
@@ -70,7 +70,7 @@
           v-if="tradeInfo.trade.state === 'fiat_deposited'"
           :message="'Check if you received the off-chain payment before releasing the escrow'"
           :button-label="'release escrow'"
-          @actionClick="this.releaseEscrow(trade.addr)"
+          @actionClick="this.releaseEscrow(tradeInfo.trade.addr)"
       />
       <!-- #5 step or #4 step-->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
