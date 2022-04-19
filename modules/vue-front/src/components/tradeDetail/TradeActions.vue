@@ -80,6 +80,12 @@
       />
     </div>
   </section>
+
+  <section class="wrap">
+    <button>
+      cancel
+    </button>
+  </section>
 </template>
 
 <script>
