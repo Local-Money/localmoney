@@ -130,4 +130,11 @@ export default  defineComponent({
 .actions {
   margin-top: 24px;
 }
+
+button {
+  background-color: $gray300;
+  color: $primary;
+  margin-left: auto;
+  margin-top: 12px;
+}
 </style>
