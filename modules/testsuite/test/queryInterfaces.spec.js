@@ -10,13 +10,14 @@ import { createTrade } from "../lib/createTrade.js";
 import { disputeTrade } from "../lib/disputeTrade.js";
 import { releaseTradeEscrow } from "../lib/releaseTradeEscrow.js";
 import { fundTradeEscrow } from "../lib/fundTradeEscrow.js";
+import { fiatDeposited } from "../lib/fiatDeposited.js";
 import { sleep } from "../lib/sleep.js";
 import { before } from "mocha";
 
 (async () => {
   const terra = await createLCDClient();
-  const maker = createUser(terra, process.env.MAKER_MNEMONIC2);
-  const maker_contact = process.env.MAKER_CONTACT2;
+  const maker = createUser(terra, process.env.MAKER_MNEMONIC3);
+  const maker_contact = process.env.MAKER_CONTACT3;
 
   const taker = createUser(terra, process.env.TAKER_MNEMONIC6);
   const taker_contact = process.env.TAKER_CONTACT6;
@@ -37,18 +38,6 @@ import { before } from "mocha";
       }
     });
     describe("Maker", function () {
-      it("should create a BUY offer in COP", async function () {
-        const offer = {
-          offer_type: "buy",
-          fiat_currency: "COP",
-          min_amount,
-          max_amount,
-          maker_contact,
-        };
-
-        return await createOffer(terra, offer, maker);
-      });
-
       it("should create a SELL offer in BRL", async function () {
         const offer = {
           offer_type: "sell",
@@ -60,7 +49,17 @@ import { before } from "mocha";
 
         return await createOffer(terra, offer, maker);
       });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
 
+        return await createOffer(terra, offer, maker);
+      });
       it("should create a BUY offer in USD", async function () {
         const offer = {
           offer_type: "buy",
@@ -70,7 +69,8 @@ import { before } from "mocha";
           maker_contact,
         };
 
-        return await createOffer(terra, offer, maker);
+        const result = await createOffer(terra, offer, maker);
+        return result;
       });
     });
     describe("Query Offers", async function () {
@@ -98,18 +98,81 @@ import { before } from "mocha";
         return result;
       });
     });
-    describe("Taker", async function () {
-      it("should create a trade", async function () {
+
+    describe("Trade -> SELL.EscrowDisputed", function () {
+      before(async function () {
+        global.factoryCfg = await getFactoryCfg(terra, maker);
+
+        global.tradeFlow = { offerId: undefined };
+      });
+      it("Maker creates a SELL offer in COP", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "COP",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        const offerResult = await createOffer(terra, offer, maker); // TODO set offerId directly from the offerResult and remove factory instantiation / taker listing offer
+
+        return offerResult;
+      });
+
+      // Suit variables
+      this.tradeAddr = undefined;
+
+      it("Taker lists an offer", async function () {
+        const query = {
+          offers_query: {
+            limit: 1,
+            last_value: 0,
+          },
+        };
+
+        const offers = await queryOffers(terra, query);
+
+        if (offers.length === 0) throw Error("No offers found.");
+
+        global.tradeFlow.offerId = offers[0].id;
+
+        return;
+      });
+
+      it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: 1,
+          offer_id: parseInt(global.tradeFlow.offerId),
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,
-          arbitrator: arbitrator.address,
         };
-        const tradeAddr = await createTrade(terra, new_trade, taker);
-        // console.log("tradeAddr :>> ", tradeAddr);
-        return tradeAddr;
+
+        this.tradeAddr = await createTrade(terra, new_trade, taker);
+
+        return this.tradeAddr;
+      });
+
+      it("Maker funds the trade escrow (TradeState::EscrowFunded)", async function () {
+        await fundTradeEscrow(
+          terra,
+          {
+            offerId: global.tradeFlow.offerId,
+            tradeAddr: this.tradeAddr,
+          },
+          maker
+        );
+      });
+      it("Taker clicks `mark paid` (TradeState::FiatDeposited)", async function () {
+        await fiatDeposited(
+          terra,
+          {
+            tradeAddr: this.tradeAddr,
+          },
+          taker
+        );
+      });
+      it("Taker should disputes the trade (TadeState::EscrowDisputed)", async function () {
+        await disputeTrade(terra, this.tradeAddr, maker);
       });
     });
     describe("Query trades", async function () {
@@ -118,19 +181,7 @@ import { before } from "mocha";
           trades_query: {
             user: arbitrator.address,
             index: "arbitrator_state",
-            state: "created",
-            limit: 10,
-          },
-        };
-        const result = await queryOffers(terra, query);
-        expect(result.length).to.equal(1);
-        return result;
-      });
-      it("by index 'seller' should return 1 trade", async function () {
-        const query = {
-          trades_query: {
-            user: taker.address,
-            index: "seller",
+            state: "request_created",
             limit: 10,
           },
         };
@@ -141,8 +192,20 @@ import { before } from "mocha";
       it("by index 'buyer' should return 1 trade", async function () {
         const query = {
           trades_query: {
-            user: maker.address,
+            user: taker.address,
             index: "buyer",
+            limit: 10,
+          },
+        };
+        const result = await queryOffers(terra, query);
+        expect(result.length).to.equal(1);
+        return result;
+      });
+      it("by index 'seller' should return 1 trade", async function () {
+        const query = {
+          trades_query: {
+            user: maker.address,
+            index: "seller",
             limit: 10,
           },
         };
