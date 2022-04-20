@@ -168,11 +168,13 @@ const actions = {
    */
   async fetchTradeInfos({commit, getters}, redirect = false) {
     const wallet = getters.walletAddress;
+    // TODO Add pagination
     const trades_as_seller = await terra.wasm.contractQuery(
-      state.factoryConfig.offers_addr, {trades_query: {user: wallet, index: "seller", limit: 10}}
+      state.factoryConfig.offers_addr, {trades_query: {user: wallet, index: "seller", limit: 100}}
     );
+    // TODO Add pagination
     const trades_as_buyer = await terra.wasm.contractQuery(
-      state.factoryConfig.offers_addr, {trades_query: {user: wallet, index: "buyer", limit: 10}}
+      state.factoryConfig.offers_addr, {trades_query: {user: wallet, index: "buyer", limit: 100}}
     );
 
     const trades = trades_as_buyer.concat(trades_as_seller);
@@ -214,6 +216,15 @@ const actions = {
   async acceptTradeRequest({commit, getters, dispatch}, tradeAddr) {
     const fiatDeposited = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
       accept_request: {},
+    });
+    await executeMsg(commit, getters, dispatch, fiatDeposited);
+
+    let tradeInfo = await dispatch("fetchTradeInfo", {addr: tradeAddr});
+    await updateTrade(tradeInfo.trade)
+  },
+  async cancelTradeRequest({commit, getters, dispatch}, tradeAddr) {
+    const fiatDeposited = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
+      cancel_request: {},
     });
     await executeMsg(commit, getters, dispatch, fiatDeposited);
 

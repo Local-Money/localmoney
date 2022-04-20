@@ -1,7 +1,7 @@
 <template>
   <section class="actions card">
     <!-- # If the user is buying UST (Buyer) -->
-    <div v-if="isBuyer">
+    <div v-if="isBuyer && !this.tradeInfo.expired">
       <!-- #1 step (Optional) -->
       <!-- # A Seller requested a trade with the Buyer and it should be accepted first. -->
       <TradeAction
@@ -41,7 +41,7 @@
     </div>
 
     <!-- # If the user is selling UST (Seller) -->
-    <div v-if="isSeller">
+    <div v-if="isSeller && !this.tradeInfo.expired">
       <!-- #1 step (Optional) -->
       <!-- # The Seller opens the trade with the Buyer and it should be accepted first. So the Seller needs to wait. -->
       <TradeAction
@@ -79,12 +79,30 @@
           :message="'Trade finished successfully.'"
       />
     </div>
+
+    <!-- Trade canceled -->
+    <TradeAction
+        v-if="tradeInfo.trade.state === 'request_canceled'  && !this.tradeInfo.expired"
+        :message="'This trade has been canceled.'"
+    />
+
+    <!-- Trade expired -->
+    <!-- TODO the expired will change to a TradeState-->
+    <TradeAction
+        v-if="this.tradeInfo.expired"
+        :message="'This trade has expired.'"
+    />
   </section>
 
-  <section class="wrap">
-    <button>
-      cancel
-    </button>
+  <section class="wrap sub-actions">
+      <button
+          v-if="tradeInfo.trade.state === 'request_created' ||
+          tradeInfo.trade.state === 'request_accepted' ||
+          (tradeInfo.trade.state === 'escrow_funded' && isBuyer)"
+          @click="this.cancelTradeRequest(tradeInfo.trade.addr)"
+      >
+        cancel
+      </button>
   </section>
 </template>
 
@@ -109,6 +127,7 @@ export default  defineComponent({
   methods: {
     ...mapActions([
       "acceptTradeRequest",
+      "cancelTradeRequest",
       "fundEscrow",
       "setFiatDeposited",
       "releaseEscrow"
@@ -129,6 +148,10 @@ export default  defineComponent({
 
 .actions {
   margin-top: 24px;
+}
+
+.sub-actions {
+  height: 52px;
 }
 
 button {
