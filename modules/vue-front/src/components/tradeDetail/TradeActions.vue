@@ -82,14 +82,14 @@
     <!-- Trade expired -->
     <!-- TODO the expired will change to a TradeState-->
     <TradeAction
-        v-if="this.tradeInfo.expired && this.tradeInfo.state !== 'escrow_refunded'"
+        v-if="this.tradeInfo.expired && this.tradeInfo.trade.state !== 'escrow_refunded'"
         :message="'This trade has expired.'"
     />
 
     <!-- Trade refunded -->
     <!-- TODO the expired will change to a TradeState-->
     <TradeAction
-        v-if="this.tradeInfo.expired && this.tradeInfo.state === 'escrow_refunded'"
+        v-if="this.tradeInfo.expired && this.tradeInfo.trade.state === 'escrow_refunded'"
         :message="'The funds have been refunded.'"
     />
 
