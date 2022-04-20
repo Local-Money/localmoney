@@ -79,30 +79,50 @@
           :message="'Trade finished successfully.'"
       />
     </div>
+    <!-- Trade expired -->
+    <!-- TODO the expired will change to a TradeState-->
+    <TradeAction
+        v-if="this.tradeInfo.expired && this.tradeInfo.state !== 'escrow_refunded'"
+        :message="'This trade has expired.'"
+    />
+
+    <!-- Trade refunded -->
+    <!-- TODO the expired will change to a TradeState-->
+    <TradeAction
+        v-if="this.tradeInfo.expired && this.tradeInfo.state === 'escrow_refunded'"
+        :message="'The funds have been refunded.'"
+    />
 
     <!-- Trade canceled -->
     <TradeAction
         v-if="tradeInfo.trade.state === 'request_canceled'  && !this.tradeInfo.expired"
         :message="'This trade has been canceled.'"
     />
-
-    <!-- Trade expired -->
-    <!-- TODO the expired will change to a TradeState-->
-    <TradeAction
-        v-if="this.tradeInfo.expired"
-        :message="'This trade has expired.'"
-    />
   </section>
 
   <section class="wrap sub-actions">
-      <button
-          v-if="tradeInfo.trade.state === 'request_created' ||
-          tradeInfo.trade.state === 'request_accepted' ||
-          (tradeInfo.trade.state === 'escrow_funded' && isBuyer)"
-          @click="this.cancelTradeRequest(tradeInfo.trade.addr)"
-      >
-        cancel
-      </button>
+    <button
+        v-if="(tradeInfo.trade.state === 'request_created' ||
+        tradeInfo.trade.state === 'request_accepted' ||
+        (tradeInfo.trade.state === 'escrow_funded' && isBuyer)) && !tradeInfo.expired"
+        @click="this.cancelTradeRequest(tradeInfo.trade.addr)"
+    >
+      cancel
+    </button>
+
+    <button
+        v-if="isSeller && tradeInfo.trade.state === 'escrow_funded' && tradeInfo.expired"
+        @click="this.refundEscrow(tradeInfo.trade.addr)"
+    >
+      refund escrow
+    </button>
+
+    <button disabled
+        v-if="tradeInfo.trade.state === 'fiat_deposited'"
+        @click="this.openDispute(tradeInfo.trade.addr)"
+    >
+      open dispute
+    </button>
   </section>
 </template>
 
@@ -130,7 +150,9 @@ export default  defineComponent({
       "cancelTradeRequest",
       "fundEscrow",
       "setFiatDeposited",
-      "releaseEscrow"
+      "releaseEscrow",
+      "refundEscrow",
+      "openDispute",
     ]),
   },
   computed: {
