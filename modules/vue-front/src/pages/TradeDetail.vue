@@ -265,7 +265,7 @@ export default defineComponent({
 .chat {
   width: 30%;
   margin-right: 24px;
-  margin-bottom: 52px;
+  margin-bottom: 64px;
 }
 
 .inner-wrap {
