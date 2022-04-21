@@ -4,7 +4,7 @@
       <RightArrow />
     </div>
     <p>{{ message }}</p>
-    <button v-if="buttonLabel" @click="$emit('actionClick')">
+    <button class="primary" v-if="buttonLabel" @click="$emit('actionClick')">
       {{ buttonLabel }}
     </button>
   </div>
@@ -48,8 +48,6 @@ export default defineComponent({
 }
 
 button {
-  background-color: $gray300;
-  color: $primary;
   margin-left: auto;
 }
 </style>
