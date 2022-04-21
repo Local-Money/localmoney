@@ -6,8 +6,8 @@
       <!-- # A Seller requested a trade with the Buyer and it should be accepted first. -->
       <TradeAction
           v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
-          :message="'Accept the trade request to start.'"
-          :button-label="'accept trade request'"
+          :message="'Review the request and accept the trade'"
+          :button-label="'accept trade'"
           @actionClick="this.acceptTradeRequest(tradeInfo.trade.addr)"
       />
       <!-- #2 step or #1 step-->
@@ -16,13 +16,13 @@
       <TradeAction
           v-if="(tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
                 (tradeInfo.trade.state === 'request_accepted')"
-          :message="'Waiting for the escrow to be funded'"
+          :message="'Waiting for the trade to be funded'"
       />
       <!-- #3 step or #2 step-->
       <!-- The UST is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
       <TradeAction
           v-if="tradeInfo.trade.state === 'escrow_funded'"
-          :message="'Notify the trader that you made the off-chain payment'"
+          :message="'Only press the mark as paid after you made the payment'"
           :button-label="'mark as paid'"
           @actionClick="this.setFiatDeposited(tradeInfo.trade.addr)"
       />
@@ -30,13 +30,13 @@
       <!-- After the off-chain payment, the Buyer needs to wait for the Seller to release the funds on escrow -->
       <TradeAction
           v-if="tradeInfo.trade.state === 'fiat_deposited'"
-          :message="'Waiting for funds to be released.'"
+          :message="'Waiting for funds to be released'"
       />
       <!-- #5 step or #4 step-->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
       <TradeAction
           v-if="tradeInfo.trade.state === 'escrow_released'"
-          :message="'Trade finished successfully.'"
+          :message="'Trade finished successfully'"
       />
     </div>
 
@@ -46,7 +46,7 @@
       <!-- # The Seller opens the trade with the Buyer and it should be accepted first. So the Seller needs to wait. -->
       <TradeAction
           v-if="this.tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
-          :message="'Wating for the Buyer to accept the trade request'"
+          :message="'Waiting for the buyer to accept the trade'"
       />
       <!-- #2 step or #1 step-->
       <!-- if #2 step: The Seller needs to deposit UST on escrow to enable the Buyer to transfer the Fiat-->
@@ -54,54 +54,55 @@
       <TradeAction
           v-if="(this.tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
                 (tradeInfo.trade.state === 'request_accepted')"
-          :message="'To begin the transaction you have to fund the escrow'"
-          :button-label="'fund escrow'"
+          :message="'Please fund the trade'"
+          :button-label="'fund trade'"
           @actionClick="this.fundEscrow(tradeInfo.trade.addr)"
       />
       <!-- #3 step or #2 step-->
       <!-- The UST is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
       <TradeAction
           v-if="tradeInfo.trade.state === 'escrow_funded'"
-          :message="'Waiting for fiat payment'"
+          :message="'Waiting for payment from the buyer'"
       />
       <!-- #4 step or #3 step-->
       <!-- After the off-chain payment, the Seller needs to check the off-chain payment and release the UST on the escrow to the Buyer -->
       <TradeAction
           v-if="tradeInfo.trade.state === 'fiat_deposited'"
-          :message="'Check if you received the off-chain payment before releasing the escrow'"
-          :button-label="'release escrow'"
+          :message="'Only release the funds after confirming the payment'"
+          :button-label="'release funds'"
           @actionClick="this.releaseEscrow(tradeInfo.trade.addr)"
       />
       <!-- #5 step or #4 step-->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
       <TradeAction
           v-if="tradeInfo.trade.state === 'escrow_released'"
-          :message="'Trade finished successfully.'"
+          :message="'Trade finished successfully'"
       />
     </div>
     <!-- Trade expired -->
     <!-- TODO the expired will change to a TradeState-->
     <TradeAction
         v-if="this.tradeInfo.expired && this.tradeInfo.trade.state !== 'escrow_refunded'"
-        :message="'This trade has expired.'"
+        :message="'This trade has expired'"
     />
 
     <!-- Trade refunded -->
     <!-- TODO the expired will change to a TradeState-->
     <TradeAction
         v-if="this.tradeInfo.expired && this.tradeInfo.trade.state === 'escrow_refunded'"
-        :message="'The funds have been refunded.'"
+        :message="'The funds have been refunded'"
     />
 
     <!-- Trade canceled -->
     <TradeAction
         v-if="tradeInfo.trade.state === 'request_canceled'  && !this.tradeInfo.expired"
-        :message="'This trade has been canceled.'"
+        :message="'This trade has been canceled'"
     />
   </section>
 
   <section class="wrap sub-actions">
     <button
+        class="tertiary"
         v-if="(tradeInfo.trade.state === 'request_created' ||
         tradeInfo.trade.state === 'request_accepted' ||
         (tradeInfo.trade.state === 'escrow_funded' && isBuyer)) && !tradeInfo.expired"
@@ -111,15 +112,16 @@
     </button>
 
     <button
+        class="tertiary"
         v-if="isSeller && tradeInfo.trade.state === 'escrow_funded' && tradeInfo.expired"
         @click="this.refundEscrow(tradeInfo.trade.addr)"
     >
       refund escrow
     </button>
 
-    <button disabled
+    <button class="tertiary"
         v-if="tradeInfo.trade.state === 'fiat_deposited'"
-        @click="this.openDispute(tradeInfo.trade.addr)"
+        @click="this.openDispute(tradeInfo.trade.addr)" disabled
     >
       open dispute
     </button>
@@ -173,13 +175,13 @@ export default  defineComponent({
 }
 
 .sub-actions {
-  height: 52px;
+  height: 64px;
 }
 
 button {
   background-color: $gray300;
   color: $primary;
   margin-left: auto;
-  margin-top: 12px;
+  margin-top: 24px;
 }
 </style>
