@@ -4,42 +4,42 @@
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
-        <IconDone v-if="trade.state === 'escrow_funded' || trade.state === 'closed'"/>
+        <IconDone v-if="stepOneChecked"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>1</p>
           </div>
         </div>
-        <p>seller puts UST in escrow</p>
+        <p :class="stepOneChecked? 'step-checked' : ''">waiting for funds</p>
       </div>
 
       <!-- Step 2 -->
       <div class="step-item">
-        <IconDone v-if="trade.paid || trade.state === 'closed'"/>
+        <IconDone v-if="stepTwoChecked"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>2</p>
           </div>
         </div>
-        <p>buyer pays seller directly</p>
+        <p :class="stepTwoChecked? 'step-checked' : ''">waiting for payment</p>
       </div>
 
       <!-- Step 3 -->
       <div class="step-item">
-        <IconDone v-if="trade.state === 'closed'"/>
+        <IconDone v-if="stepThreeChecked"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>3</p>
           </div>
         </div>
-        <p>escrow released to buyer</p>
+        <p :class="stepThreeChecked? 'step-checked' : ''">waiting for funds release</p>
       </div>
 
       <div class="step-status">
         <div class="separator"></div>
         <div class="wrap">
           <p>time remaining</p>
-          <p class="step-time-left">30 min</p>
+          <p class="step-time-left">?? min</p>
         </div>
         <div class="icon">
           <svg
@@ -105,9 +105,9 @@
 import IconDone from "@/components/commons/IconDone";
 import {defineComponent} from "vue";
 import {mapActions, mapGetters} from "vuex";
-import {tradesCollection} from "../store/firebase";
+import {tradesCollection} from "@/store/firebase";
 import {onSnapshot} from "firebase/firestore"
-import {formatAddress, formatAmount} from "../shared";
+import {formatAddress, formatAmount} from "@/shared";
 import TradeActions from "@/components/tradeDetail/TradeActions";
 
 export default defineComponent({
@@ -133,6 +133,18 @@ export default defineComponent({
       "walletAddress",
       "getUsdRate"
     ]),
+    stepOneChecked: function () {
+      return this.tradeInfo.trade.state === 'escrow_funded' ||
+          this.tradeInfo.trade.state === 'fiat_deposited' ||
+          this.tradeInfo.trade.state === 'escrow_released'
+    },
+    stepTwoChecked: function () {
+      return this.tradeInfo.trade.state === 'fiat_deposited' ||
+          this.tradeInfo.trade.state === 'escrow_released'
+    },
+    stepThreeChecked: function () {
+      return this.tradeInfo.trade.state === 'escrow_released'
+    },
     tradeInfo: function () {
       return this.getTradeInfo(this.$route.params.addr)
     },
@@ -232,6 +244,10 @@ export default defineComponent({
 
   p {
     font-size: 14px;
+  }
+
+  .step-checked {
+    opacity: 30%;
   }
 }
 
