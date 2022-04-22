@@ -126,26 +126,17 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions(["setTradeAsPaid", "fetchTradeInfo"]),
+    ...mapActions(["fetchTradeInfo"]),
     formatAmount,
     formatAddress,
   },
   mounted: async function () {
     const tradeAddr = this.$props.tradeAddr
-    const trade = this.tradeInfo.trade
     this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
       let data = doc.data()
-      if (data && data.state === "closed" && trade.state !== "closed") {
-        this.$nextTick(() => {
-          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-        })
-      } else if (data && data.paid !== undefined && trade.paid !== data.paid) {
-        this.setTradeAsPaid({tradeAddr, paid: data.paid})
-      } else {
-        this.$nextTick(() => {
-          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-        })
-      }
+      this.$nextTick(() => {
+        this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+      })
     })
   },
   unmounted: function () {

@@ -358,16 +358,6 @@ const actions = {
     const ustPriceData = await res.json();
     const ustUsdPrice = ustPriceData.quotes["USD"].price;
     commit("setUstUsdPrice", ustUsdPrice.toFixed(2));
-  },
-
-  // @TODO delete this method
-  async setTradeAsPaid({ commit }, { tradeAddr, paid }) {
-    const tradeInfoIdx = state.tradeInfos.findIndex(
-      t => t.trade.addr === tradeAddr
-    );
-    state.tradeInfos[tradeInfoIdx].trade.paid = paid;
-    //TODO: create method to update a single tradeInfo
-    await commit("setTradeInfos", state.tradeInfos);
   }
 };
 
