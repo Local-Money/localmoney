@@ -5,12 +5,12 @@
     <span class="separator"></span>
     <div class="wrap-status">
       <div class="column-1">
-        <p class="step">Step {{ step }} of {{ totalStep }}</p>
+        <p class="step">Status</p>
         <p class="status">{{ stepLabel }}</p>
       </div>
       <div class="column-2">
         <p class="time-label">Time remaining</p>
-        <p class="time">30 min</p>
+        <p class="time">?? min</p>
       </div>
     </div>
     <router-link :to="`/trade/${trade.addr}`">
@@ -114,9 +114,6 @@ export default defineComponent({
             return 0;
         }
       }
-    },
-    totalStep: function () {
-      return this.tradeInfo.offer.offer_type === "buy" ? 5 : 4
     },
     stepLabel: function () {
       const labelIdx = this.step - 1
