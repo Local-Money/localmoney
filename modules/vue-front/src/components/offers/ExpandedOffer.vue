@@ -81,7 +81,7 @@
           cancel
         </button>
         <button class="primary" @click="newTrade()" :disabled="!valid">
-          open transaction
+          open trade
         </button>
       </div>
     </div>

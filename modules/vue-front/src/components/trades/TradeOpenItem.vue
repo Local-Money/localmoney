@@ -5,12 +5,12 @@
     <span class="separator"></span>
     <div class="wrap-status">
       <div class="column-1">
-        <p class="step">Step {{ step }} of 4</p>
+        <p class="step">Status</p>
         <p class="status">{{ stepLabel }}</p>
       </div>
       <div class="column-2">
         <p class="time-label">Time remaining</p>
-        <p class="time">30 min</p>
+        <p class="time">?? min</p>
       </div>
     </div>
     <router-link :to="`/trade/${trade.addr}`">
@@ -32,10 +32,36 @@ export default defineComponent({
   data: function () {
     return {
       stepLabels: {
-        buyer: ['Wait for the escrow', 'Notify about the off-chain payment',
-          'Wait for escrow release', 'Trade finished'],
-        seller: ['Fund the escrow', 'Wait the off-chain payment',
-          'Confirm the receipt by releasing the escrow', 'Trade finished']
+        buy: {
+          buyer: [
+            'Review trade request',
+            'Waiting for funds',
+            'Please make the payment',
+            'Waiting for funds release',
+            'Trade finished'
+          ],
+          seller: [
+            'Waiting for buyer',
+            'Please fund the trade',
+            'Waiting for payment',
+            'Please release the funds',
+            'Trade finished'
+          ]
+        },
+        sell: {
+          buyer: [
+            'Waiting for funds',
+            'Please make the payment',
+            'Waiting for funds release',
+            'Trade finished'
+          ],
+          seller: [
+            'Please fund the trade',
+            'Waiting for payment',
+            'Please release the funds',
+            'Trade finished'
+          ]
+        }
       }
     }
   },
@@ -59,45 +85,58 @@ export default defineComponent({
     },
     step: function () {
       const trade = this.tradeInfo.trade
-      if (trade.state === "created") {
-        return 1
-      } else if ((trade.state === "escrow_funded")) {
-        if (trade.paid) {
-          return 3
-        } else {
-          return 2
+      if (this.tradeInfo.offer.offer_type === "buy") {
+        switch (trade.state) {
+          case "request_created":
+            return 1;
+          case "request_accepted":
+            return 2;
+          case "escrow_funded":
+            return 3;
+          case "fiat_deposited":
+            return 4;
+          case "escrow_released":
+            return 5;
+          default:
+            return 0;
         }
       } else {
-        return 4
+        switch (trade.state) {
+          case "request_created":
+            return 1;
+          case "escrow_funded":
+            return 2;
+          case "fiat_deposited":
+            return 3;
+          case "escrow_released":
+            return 4;
+          default:
+            return 0;
+        }
       }
     },
     stepLabel: function () {
       const labelIdx = this.step - 1
-      return this.isBuying ? this.stepLabels.buyer[labelIdx] :
-          this.stepLabels.seller[labelIdx]
+      const type = this.tradeInfo.offer.offer_type
+      if (this.isBuying) {
+        return this.stepLabels[type].buyer[labelIdx];
+      } else {
+        return this.stepLabels[type].seller[labelIdx];
+      }
     }
   },
   methods: {
-    ...mapActions(["setTradeAsPaid", "fetchTradeInfo"]),
+    ...mapActions(["fetchTradeInfo"]),
     formatAmount,
     formatAddress,
   },
   mounted: async function () {
     const tradeAddr = this.$props.tradeAddr
-    const trade = this.tradeInfo.trade
     this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
       let data = doc.data()
-      if (data && data.state === "closed" && trade.state !== "closed") {
-        this.$nextTick(() => {
-          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-        })
-      } else if (data && data.paid !== undefined && trade.paid !== data.paid) {
-        this.setTradeAsPaid({tradeAddr, paid: data.paid})
-      } else {
-        this.$nextTick(() => {
-          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-        })
-      }
+      this.$nextTick(() => {
+        this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+      })
     })
   },
   unmounted: function () {

@@ -26,26 +26,29 @@ import { defineComponent } from "vue";
 import {
   formatAddress,
   formatAmount,
+  formatFiatAmount,
   formatTradeState,
   formatDate,
 } from "@/shared";
-import { mapGetters } from "vuex";
+import {mapActions, mapGetters} from "vuex";
 
 export default defineComponent({
   name: "TradeHistoryItem",
   props: ["tradeAddr"],
   methods: {
+    ...mapActions([
+      "fetchUsdRates",
+    ]),
     formatAmount,
     formatAddress,
     formatTradeState,
     formatDate,
     tradeState: function(state) {
-      if (state == "created") {
-        return "Expired";
-      } else {
-        return formatTradeState(state);
-      }
+      return formatTradeState(state);
     },
+  },
+  mounted() {
+    this.fetchUsdRates()
   },
   computed: {
     ...mapGetters(["walletAddress", "getUsdRate", "getTradeInfo"]),
@@ -53,24 +56,20 @@ export default defineComponent({
       return this.getTradeInfo(this.$props.tradeAddr);
     },
     currentDate: function() {
-      let date = new Date();
+      let date = new Date(this.tradeInfo.trade.created_at * 1000);
       return this.formatDate(date);
     },
     fiatCurrency: function() {
       return this.tradeInfo.offer.fiat_currency;
     },
     fiatAmountStr: function() {
-      const fiatAmount = formatAmount(
-        (this.tradeInfo.trade.ust_amount / 1000000) *
-          this.getUsdRate(this.fiatCurrency),
-        false
-      );
+      const fiatAmount = formatFiatAmount((this.tradeInfo.trade.ust_amount / 1000000) * this.getUsdRate(this.fiatCurrency));
       return `${this.fiatCurrency} ${fiatAmount}`;
     },
     tradeType: function() {
-      return this.tradeInfo.trade.recipient === this.walletAddress
-        ? "Buying"
-        : "Selling";
+      return this.tradeInfo.offer.offer_type === "buy"
+        ? "Buy"
+        : "Sell";
     },
     counterparty: function() {
       const trade = this.tradeInfo.trade;

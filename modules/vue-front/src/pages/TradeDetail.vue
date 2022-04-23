@@ -4,42 +4,42 @@
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
-        <IconDone v-if="trade.state === 'escrow_funded' || trade.state === 'closed'"/>
+        <IconDone v-if="stepOneChecked"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>1</p>
           </div>
         </div>
-        <p>seller puts UST in escrow</p>
+        <p :class="stepOneChecked? 'step-checked' : ''">waiting for funds</p>
       </div>
 
       <!-- Step 2 -->
       <div class="step-item">
-        <IconDone v-if="trade.paid || trade.state === 'closed'"/>
+        <IconDone v-if="stepTwoChecked"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>2</p>
           </div>
         </div>
-        <p>buyer pays seller directly</p>
+        <p :class="stepTwoChecked? 'step-checked' : ''">waiting for payment</p>
       </div>
 
       <!-- Step 3 -->
       <div class="step-item">
-        <IconDone v-if="trade.state === 'closed'"/>
+        <IconDone v-if="stepThreeChecked"/>
         <div class="icon" v-else>
           <div class="counter">
             <p>3</p>
           </div>
         </div>
-        <p>escrow released to buyer</p>
+        <p :class="stepThreeChecked? 'step-checked' : ''">waiting for funds release</p>
       </div>
 
       <div class="step-status">
         <div class="separator"></div>
         <div class="wrap">
           <p>time remaining</p>
-          <p class="step-time-left">30 min</p>
+          <p class="step-time-left">?? min</p>
         </div>
         <div class="icon">
           <svg
@@ -83,88 +83,19 @@
             <p class="label">Transaction summary</p>
             <div class="transaction">
               <div class="list-item">
-                <p class="list-item-label" v-if="isBuying">You will get</p>
+                <p class="list-item-label" v-if="isBuyer">You will get</p>
                 <p class="list-item-label" v-else>You will send</p>
                 <p class="value">{{ formatAmount(trade.ust_amount) }}UST</p>
               </div>
               <div class="list-item">
-                <p class="list-item-label" v-if="isBuying">You will send</p>
+                <p class="list-item-label" v-if="isBuyer">You will send</p>
                 <p class="list-item-label" v-else>You will get</p>
                 <p class="value fiat">{{ fiatAmountStr }}</p>
               </div>
             </div>
           </div>
         </section>
-        <section class="actions card">
-
-          <!-- Step 1 -->
-          <!-- Fund Escrow -->
-          <div class="wrap" v-if="tradeCanBeFunded(tradeInfo, this.walletAddress)">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p>To begin the transaction you have to fund the escrow</p>
-            <button @click="this.fundEscrow(trade.addr)">
-              fund escrow
-            </button>
-          </div>
-          <div class="wrap" v-else-if="trade.state === 'created'">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p>Wait until the trader funds the escrow</p>
-          </div>
-
-          <!-- Step 2 -->
-          <!-- Mark as Paid -->
-          <div class="wrap" v-if="trade.state === 'escrow_funded' && this.isBuying && !trade.paid">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p v-if="trade.paid">You notified the trade about the off-chain payment</p>
-            <p v-else>Notify the trader that you made the off-chain payment</p>
-            <button @click="this.markAsPaid(trade)" v-if="!trade.paid">
-              mark as paid
-            </button>
-          </div>
-
-          <!-- Wait for Off-chain Payment -->
-          <div class="wrap" v-if="trade.state === 'escrow_funded' && !this.isBuying && !trade.paid">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p @click="log(trade)">Wait until the trader makes the off-chain payment</p>
-          </div>
-
-          <!-- Step 3 -->
-          <!-- Release Escrow -->
-          <div class="wrap" v-if="tradeCanBeReleased(tradeInfo, this.walletAddress) && trade.paid">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p>Check if you received the off-chain payment before releasing the escrow</p>
-            <button @click="this.releaseEscrow(trade.addr)">
-              release escrow
-            </button>
-          </div>
-
-          <!-- Wait for Escrow Release -->
-          <div class="wrap" v-else-if="trade.paid && trade.state === 'escrow_funded'">
-            <div class="icon">
-              <RightArrow/>
-            </div>
-            <p>Wait until trader releases the escrow, you'll receive it on your wallet</p>
-          </div>
-
-          <!-- Trade Closed -->
-          <div class="wrap" v-if="trade.state === 'closed'">
-            <div class="icon">
-              <IconDone/>
-            </div>
-            <p>Trade finished</p>
-          </div>
-
-        </section>
+        <TradeActions :tradeInfo="this.tradeInfo" :walletAddress="this.walletAddress"/>
       </div>
     </section>
   </main>
@@ -172,49 +103,56 @@
 
 <script>
 import IconDone from "@/components/commons/IconDone";
-import RightArrow from "@/components/commons/RightArrow";
 import {defineComponent} from "vue";
-import {mapGetters, mapActions} from "vuex";
-import {tradesCollection, updateTrade} from "../store/firebase";
+import {mapActions, mapGetters} from "vuex";
+import {tradesCollection} from "@/store/firebase";
 import {onSnapshot} from "firebase/firestore"
-import {
-  formatAmount,
-  formatAddress,
-  tradeCanBeFunded,
-  tradeCanBeReleased,
-  tradeCanBeRefunded,
-} from "../shared";
+import {formatAddress, formatAmount} from "@/shared";
+import TradeActions from "@/components/tradeDetail/TradeActions";
 
 export default defineComponent({
   name: "TradeDetail",
   components: {
     IconDone,
-    RightArrow
+    TradeActions
   },
   methods: {
-    ...mapActions(["fundEscrow", "releaseEscrow", "fetchTradeInfo", "fetchUsdRates", "setTradeAsPaid"]),
+    ...mapActions([
+      "fetchTradeInfo",
+      "fetchUsdRates",
+    ]),
     formatAmount,
     formatAddress,
-    tradeCanBeFunded,
-    tradeCanBeReleased,
-    tradeCanBeRefunded,
-    markAsPaid: function () {
-      const trade = this.tradeInfo.trade
-      trade.paid = true
-      this.setTradeAsPaid({tradeAddr: trade.addr, paid: true})
-      updateTrade(this.tradeInfo.trade)
+    fetchTrade: async function() {
+      await this.fetchTradeInfo({addr: this.$route.params.addr});
     },
   },
   computed: {
-    ...mapGetters(["getTradeInfo", "walletAddress", "getUsdRate"]),
+    ...mapGetters([
+      "getTradeInfo",
+      "walletAddress",
+      "getUsdRate"
+    ]),
+    stepOneChecked: function () {
+      return this.tradeInfo.trade.state === 'escrow_funded' ||
+          this.tradeInfo.trade.state === 'fiat_deposited' ||
+          this.tradeInfo.trade.state === 'escrow_released'
+    },
+    stepTwoChecked: function () {
+      return this.tradeInfo.trade.state === 'fiat_deposited' ||
+          this.tradeInfo.trade.state === 'escrow_released'
+    },
+    stepThreeChecked: function () {
+      return this.tradeInfo.trade.state === 'escrow_released'
+    },
     tradeInfo: function () {
       return this.getTradeInfo(this.$route.params.addr)
     },
-    isBuying: function () {
-      return this.tradeInfo.trade.seller !== this.walletAddress
+    isBuyer: function () {
+      return this.tradeInfo.trade.buyer === this.walletAddress
     },
     buyOrSell: function () {
-      return this.isBuying ? "Buy" : "Sell"
+      return this.isBuyer ? "Buy" : "Sell"
     },
     counterparty: function () {
       const trade = this.tradeInfo.trade
@@ -244,30 +182,19 @@ export default defineComponent({
       await this.fetchTradeInfo({addr: this.$route.params.addr});
     }
   },
-  fetchTrade: async function() {
-    await this.fetchTradeInfo({addr: this.$route.params.addr});
-  },
   mounted: async function () {
     if (this.tradeInfo && this.tradeInfo.trade) {
       const trade = this.tradeInfo.trade
       const tradeAddr = trade.addr
       this.unsubscribe = onSnapshot(tradesCollection.doc(tradeAddr), (doc) => {
         let data = doc.data()
-        if (data && data.state === "closed" && trade.state !== "closed") {
-          this.$nextTick(() => {
-            this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-          })
-        } else if (data && data.paid !== undefined && trade.paid !== data.paid) {
-          this.setTradeAsPaid({tradeAddr, paid: data.paid})
-        } else {
-          this.$nextTick(() => {
-            this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
-          })
-        }
+        this.$nextTick(() => {
+          this.fetchTradeInfo({addr: tradeAddr, tradeData: data})
+        })
       })
 
-      this.refreshInterval = setInterval(() => {
-        this.fetchTrade();
+      this.refreshInterval = setInterval( () => {
+         this.fetchTrade();
       }, 5000);
     }
   },
@@ -318,6 +245,10 @@ export default defineComponent({
   p {
     font-size: 14px;
   }
+
+  .step-checked {
+    opacity: 30%;
+  }
 }
 
 .step-status {
@@ -350,6 +281,7 @@ export default defineComponent({
 .chat {
   width: 30%;
   margin-right: 24px;
+  margin-bottom: 64px;
 }
 
 .inner-wrap {
@@ -438,31 +370,5 @@ export default defineComponent({
       }
     }
   }
-}
-
-.actions {
-  margin-top: 24px;
-
-  .wrap {
-    display: flex;
-    align-items: center;
-
-    .icon {
-      stroke: $primary;
-    }
-
-    p {
-      width: 50%;
-      font-size: 16px;
-      font-weight: 700;
-      margin-left: 24px;
-    }
-  }
-}
-
-button {
-  background-color: $gray300;
-  color: $primary;
-  margin-left: auto;
 }
 </style>

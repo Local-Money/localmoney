@@ -91,6 +91,12 @@ button {
     color: $base-text;
   }
 
+  &.tertiary {
+    font-size: 16px;
+    background-color: $surface;
+    color: $base-text;
+  }
+
   &:disabled {
     opacity: 0.5;
     color: $gray600;
