@@ -27,22 +27,6 @@ pub fn assert_caller_is_buyer_or_seller(
     }
 }
 
-pub fn assert_caller_is_seller_or_arbitrator(
-    caller: Addr,
-    seller: Addr,
-    arbitrator: Addr,
-) -> Result<(), GuardError> {
-    if caller.eq(&seller) || caller.eq(&arbitrator) {
-        Ok(())
-    } else {
-        Err(GuardError::UnauthorizedRelease {
-            caller,
-            seller,
-            arbitrator,
-        })
-    }
-}
-
 pub fn assert_trade_state_change_is_valid(
     from: TradeState,
     from_allowed: TradeState,

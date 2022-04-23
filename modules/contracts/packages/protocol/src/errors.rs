@@ -29,12 +29,6 @@ pub enum GuardError {
         buyer: Addr,
         seller: Addr,
     },
-    #[error("Unauthorized Release.")]
-    UnauthorizedRelease {
-        caller: Addr,
-        seller: Addr,
-        arbitrator: Addr,
-    },
     #[error("Governance not found.")]
     GovernanceNotFound { gov_addr: Addr },
     #[error("Invalid reply message id.")]

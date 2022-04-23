@@ -3,7 +3,7 @@ import { executeMsg } from "./executeMsg.js";
 
 async function cancelTradeRequest(client, tradeAddr, user) {
   const disputeMsg = new MsgExecuteContract(user.address, tradeAddr, {
-    cancel_request: {},
+    dispute_escrow: {},
   });
 
   const result = await executeMsg(client, disputeMsg, user.wallet);

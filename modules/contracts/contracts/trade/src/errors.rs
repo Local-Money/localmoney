@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, StdError, Uint128};
-use localterra_protocol::trade::TradeState;
 use thiserror::Error;
+use localterra_protocol::trade::TradeState;
 
 #[derive(Error, Debug)]
 pub enum TradeError {
@@ -26,12 +26,8 @@ pub enum TradeError {
     InstantiationError { message: String },
     #[error("Offer not found.")]
     OfferNotFound { offer_id: u64 },
-    #[error("Refund error: Not Expired")]
-    RefundErrorNotExpired { message: String, trade: String },
-    #[error("Refund error: Arbitration not allow.")]
-    RefundErrorNoArbitrationAllowed { message: String, trade: String },
-    #[error("Refund error: Contract has no funds.")]
-    RefundErrorNoFunds { message: String, trade: String },
+    #[error("Refund error.")]
+    RefundError { message: String, trade: String },
     #[error("Release error.")]
     ReleaseError { message: String },
     #[error("Swap error.")]

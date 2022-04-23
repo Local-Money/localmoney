@@ -23,7 +23,7 @@
     "upload:bombay:tradeFlow": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js' ; npm run git-commit",
     "upload:mainnet:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=mainnet mocha './test/disputeResolution.spec.js' ; npm run git-commit",
     "upload:terrarium:disputeResolution": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=terrarium mocha './test/disputeResolution.spec.js' ; npm run git-commit",
-    "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/**/*.spec.js' ",
+    "upload:bombay": "UPLOAD=true INSTANTIATE=TRUE NETWORK_ENV=bombay mocha './test/**/*.spec.js' ; npm run git-commit",
     "instantiate": "npm run instantiate:terrarium",
     "instantiate:terrarium": "INSTANTIATE=true NETWORK_ENV=terrarium mocha --parallel './test/**/*.spec.js'",
     "instantiate:bombay": "INSTANTIATE=true NETWORK_ENV=bombay mocha --parallel './test/**/*.spec.js'"

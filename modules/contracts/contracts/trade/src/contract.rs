@@ -2,19 +2,17 @@ use std::ops::{Add, Sub};
 
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
-    WasmMsg, WasmQuery,
+    MessageInfo, QuerierWrapper, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    WasmQuery,
 };
 
 use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT};
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{
-    assert_caller_is_buyer_or_seller, assert_caller_is_seller_or_arbitrator, assert_ownership,
-    assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
-    trade_request_is_expired,
+    assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
+    assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
-use localterra_protocol::offer::ExecuteMsg::UpdateTradeArbitrator;
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
@@ -24,8 +22,6 @@ use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 use crate::errors::TradeError;
 use crate::state::{state as state_storage, state_read};
 use crate::taxation::{compute_tax, deduct_tax};
-
-const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
 
 #[entry_point]
 pub fn instantiate(
@@ -257,7 +253,6 @@ fn dispute_escrow(
     trade.state = TradeState::EscrowDisputed;
 
     // Assign a pseudo random arbitrator to the trade
-    // TODO this needs to update the TradeAddr::arbitrator field in the trades() indexedmap of the offer contract
     let arbitrator: Arbitrator = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: trade.offer_contract.clone().to_string(),
         msg: to_binary(&OfferQueryMsg::ArbitratorRandom {
@@ -270,27 +265,10 @@ fn dispute_escrow(
     trade.arbitrator = Some(arbitrator.arbitrator);
 
     state_storage(deps.storage).save(&trade).unwrap();
-    // Update TradeAddr::Arbitrator in offer contract storage to enable querying by arbirator
-    let execute_msg = WasmMsg::Execute {
-        contract_addr: trade.offer_contract.to_string(),
-        funds: vec![],
-        msg: to_binary(&UpdateTradeArbitrator {
-            arbitrator: trade.arbitrator.clone().unwrap(),
-        })
-        .unwrap(),
-    };
-    let sub_message = SubMsg {
-        id: EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID,
-        msg: CosmosMsg::Wasm(execute_msg),
-        gas_limit: None,
-        reply_on: ReplyOn::Never, // TODO should we throw an error if the execution fails ?
-    };
 
     let res = Response::new()
-        .add_submessage(sub_message)
         .add_attribute("state", trade.state.to_string())
         .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string());
-
     Ok(res)
 }
 
@@ -375,47 +353,22 @@ fn release_escrow(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    let arbitrator = match trade.arbitrator.clone() {
-        Some(one) => one,
-        None => Addr::unchecked(""), // So we can compare Addr Types
-    };
-    // Only seller and arbitrator can release the escrow
-    assert_caller_is_seller_or_arbitrator(
-        info.sender.clone(),
-        trade.seller.clone(),
-        arbitrator.clone(),
-    )
-    .unwrap();
+    // TODO support arbitrator option
+    // let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
+    //     & (trade.state == TradeState::EscrowDisputed);
+    let arbitration_mode = false;
 
-    // The seller can only release the escrow if the trade.state is FiatDeposited
-    if &info.sender == &trade.seller {
-        assert_trade_state_change_is_valid(
-            trade.state.clone(),
-            TradeState::FiatDeposited,
-            TradeState::EscrowReleased,
-        )
-        .unwrap();
-    }
-
-    // The arbitrator can only release the escrow if the trade.state is EscrowDisputed
-    let arbitration_mode =
-        (info.sender.clone() == arbitrator) & (trade.state == TradeState::EscrowDisputed);
-    // let arbitration_mode = false;
-
-    // If the sender is not the seller
-    // and the sender is not the arbitrator while the trade.state is EscrowDisputed
-    // throw Unauthorized
-    if !(info.sender == trade.seller) & !arbitration_mode {
+    // Check if seller can release
+    if (info.sender != trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
             owner: trade.seller,
-            arbitrator: arbitrator,
+            arbitrator: trade.arbitrator.clone().unwrap(),
             caller: info.sender,
         });
     }
 
     // TODO test funding timeout case
-    // throws error if state is expired BUT arbitrator can release expired trades that have trade.state EscrowDisputed
-    // If the escrow funding has expired, the Seller can only refund the escrow to himself, not release it to the Buyer
+    // throws error if state is expired BUT arbitrator can release expired trades
     if (env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT) & !arbitration_mode {
         // TODO handle different expiration options
         return Err(TradeError::Expired {
@@ -533,42 +486,27 @@ fn release_escrow(
 fn refund_escrow(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    // Refund can only happen if:
-    // 1) By anyone: TradeState::EscrowFunded and FundingTimeout is expired
-    // 2) By assigned arbitrator: TradeState::EscrowDisputed
-
-    let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
-        & (trade.state == TradeState::EscrowDisputed);
+    // TODO support arbitration option
+    // let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
+    // & (trade.state == TradeState::EscrowDisputed);
+    let arbitration_mode = false;
 
     // anyone can try to refund, as long as the contract is expired
     // noone except arbitrator can refund if the trade is in arbitration
     let expired = env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT; // TODO test expiration case
 
-    // TODO move to guard
-    if !(expired || arbitration_mode)
-    // If either is true, skip guard
-    // TODO test this case
+    if !expired
+    // & ((trade.state != TradeState::EscrowDisputed) & !arbitration_mode) // TODO test this case
     {
-        if !expired {
-            return Err(TradeError::RefundErrorNotExpired {
-                message:
-                    "Only expired trades that are not disputed can be refunded by non-arbitrators."
-                        .to_string(),
-                trade: trade.state.to_string(),
-            });
-        }
-
-        if !arbitration_mode {
-            return Err(TradeError::RefundErrorNoArbitrationAllowed {
-                message:
-                    "Only expired trades that are not disputed can be refunded by non-arbitrators."
-                        .to_string(),
-                trade: trade.state.to_string(),
-            });
-        }
+        return Err(TradeError::RefundError {
+            message:
+                "Only expired trades that are not disputed can be refunded by non-arbitrators."
+                    .to_string(),
+            trade: trade.state.to_string(),
+        });
     }
 
     let balance_result = deps.querier.query_all_balances(&env.contract.address);
@@ -614,7 +552,7 @@ fn refund_escrow(
             Ok(res)
         }
     } else {
-        Err(TradeError::RefundErrorNoFunds {
+        Err(TradeError::RefundError {
             message: "Contract has no funds.".to_string(),
             trade: trade.state.to_string(),
         })

@@ -7,7 +7,6 @@ async function getFactoryCfg(client, user) {
     // run against existing live factory, don't bother uploading or initiating
     return await queryFactoryCfg(client, process.env.FACTORY_ADDR);
 
-  // If requested run against a dirty cached factory, otherwise instantiate a fresh fixture
   const factory =
     process.env.DIRTY_RUN === "true"
       ? loadCachedFactory()

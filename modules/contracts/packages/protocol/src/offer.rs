@@ -103,9 +103,6 @@ pub enum ExecuteMsg {
         arbitrator: Addr,
         asset: FiatCurrency,
     },
-    UpdateTradeArbitrator {
-        arbitrator: Addr,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -409,7 +406,7 @@ pub struct TradeInfo {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeAddr {
-    pub trade: Addr, // TODO rename to tradeAddr
+    pub trade: Addr,
     pub seller: Addr,
     pub buyer: Addr,
     pub arbitrator: Addr,
