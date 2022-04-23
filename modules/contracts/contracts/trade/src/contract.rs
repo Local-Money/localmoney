@@ -174,7 +174,7 @@ fn fund_escrow(
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
 
     // TODO only accept exact funding amounts, return otherwise
-    let ust_amount = if !info.funds.is_empty() {
+    let sent_ust_amount = if !info.funds.is_empty() {
         get_ust_amount(info.clone())
     } else {
         let ust_balance = deps
@@ -188,34 +188,20 @@ fn fund_escrow(
             .amount
     };
 
-    let ust = Coin::new(ust_amount.clone().u128(), "uusd");
-
-    let fund_escrow_amount: Uint128 = match offer.offer_type {
-        OfferType::Sell => {
-            let ltfee = localterra_fee(trade.ust_amount);
-            let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
-            let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
-            let release_tax = compute_tax(&deps.querier, &ust).unwrap();
-            trade
-                .ust_amount
-                .add(ltfee.add(&ltfee_tax).add(&release_tax))
-        }
-        OfferType::Buy => trade.ust_amount,
-    };
-    if ust_amount >= fund_escrow_amount {
+    if sent_ust_amount >= trade.ust_amount {
         trade.state = TradeState::EscrowFunded;
     } else {
         return Err(TradeError::FundEscrowError {
-            required_amount: fund_escrow_amount.clone(),
-            sent_amount: ust_amount.clone(),
+            required_amount: trade.ust_amount.clone(),
+            sent_amount: sent_ust_amount.clone(),
         });
     }
 
     state_storage(deps.storage).save(&trade).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
-        .add_attribute("fund_amount", fund_escrow_amount.to_string())
-        .add_attribute("ust_amount", ust_amount.to_string())
+        .add_attribute("trade.ust_amount", trade.ust_amount.to_string())
+        .add_attribute("sent_ust_amount", sent_ust_amount.to_string())
         .add_attribute("seller", info.sender)
         .add_attribute("state", trade.state.to_string());
 
@@ -455,56 +441,58 @@ fn release_escrow(
         get_factory_config(&deps.querier, trade.factory_addr.to_string());
 
     //Collect Fee
-    let local_terra_fee = Coin::new(localterra_fee(trade.ust_amount.clone()).u128(), "uusd");
-    let fee_collector = factory_cfg.fee_collector_addr.clone();
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: fee_collector.into_string(),
-        amount: vec![local_terra_fee],
-    })));
+    // let local_terra_fee = Coin::new(localterra_fee(trade.ust_amount.clone()).u128(), "uusd");
+    // let fee_collector = factory_cfg.fee_collector_addr.clone();
+    // send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+    // to_address: fee_collector.into_string(),
+    // amount: vec![local_terra_fee],
+    // })));
 
     let ust = Coin::new(trade.ust_amount.u128(), "uusd");
     //Release amount
     let release_amount = if offer.offer_type == OfferType::Buy {
-        //TODO: Move to a method
-        let ltfee = localterra_fee(trade.ust_amount);
-        let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
-        let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
+        // //TODO: Move to a method
+        // let ltfee = localterra_fee(trade.ust_amount);
+        // let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
+        // let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
 
-        let mut arbitration_fee_inc_tax = Uint128::zero();
-        if arbitration_mode {
-            // Pay arbitration fee
-            let arbitration_rate = 10u128; // TODO move fee to constant
-            let arbitration_coin = Coin::new(
-                trade
-                    .ust_amount
-                    .u128()
-                    .clone()
-                    .checked_div(arbitration_rate)
-                    .unwrap(),
-                "uusd",
-            );
+        // let mut arbitration_fee_inc_tax = Uint128::zero();
+        // if arbitration_mode {
+        //     // Pay arbitration fee
+        //     let arbitration_rate = 10u128; // TODO move fee to constant
+        //     let arbitration_coin = Coin::new(
+        //         trade
+        //             .ust_amount
+        //             .u128()
+        //             .clone()
+        //             .checked_div(arbitration_rate)
+        //             .unwrap(),
+        //         "uusd",
+        //     );
 
-            arbitration_fee_inc_tax =
-                arbitration_coin.amount + compute_tax(&deps.querier, &arbitration_coin).unwrap();
+        //     arbitration_fee_inc_tax =
+        //         arbitration_coin.amount + compute_tax(&deps.querier, &arbitration_coin).unwrap();
 
-            send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                to_address: trade.arbitrator.clone().unwrap().to_string(),
-                amount: vec![arbitration_coin],
-            })));
-        }
+        //     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        //         to_address: trade.arbitrator.clone().unwrap().to_string(),
+        //         amount: vec![arbitration_coin],
+        //     })));
+        // }
 
-        let release_amount = trade
-            .ust_amount
-            .sub(ltfee)
-            .sub(ltfee_tax)
-            .sub(arbitration_fee_inc_tax);
+        // let release_amount = trade
+        //     .ust_amount
+        //     .sub(ltfee)
+        //     .sub(ltfee_tax)
+        //     .sub(arbitration_fee_inc_tax);
 
-        let release_tax =
-            compute_tax(&deps.querier, &Coin::new(release_amount.u128(), "uusd")).unwrap();
+        // let release_tax =
+        //     compute_tax(&deps.querier, &Coin::new(release_amount.u128(), "uusd")).unwrap();
 
-        let deduction = ltfee.add(&ltfee_tax).add(&release_tax);
+        // let deduction = ltfee.add(&ltfee_tax).add(&release_tax);
 
-        Coin::new(trade.ust_amount.sub(deduction).u128(), "uusd")
+        // Coin::new(trade.ust_amount.sub(deduction).u128(), "uusd")
+
+        ust
     } else {
         ust
     };

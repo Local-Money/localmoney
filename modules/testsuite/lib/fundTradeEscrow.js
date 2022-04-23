@@ -1,7 +1,7 @@
 import { Coin, Coins, MsgExecuteContract } from "@terra-money/terra.js";
 import { executeMsg } from "./executeMsg.js";
 
-async function fundTradeEscrow(client, { tradeAddr, offerId }, user) {
+async function fundTradeEscrow(client, { tradeAddr, offerId, amount }, user) {
   console.log(
     "Funding Escrow:",
     `https://terrasco.pe/testnet/address/${tradeAddr}`
@@ -9,7 +9,7 @@ async function fundTradeEscrow(client, { tradeAddr, offerId }, user) {
 
   const coin = Coin.fromData({
     denom: "uusd",
-    amount: parseInt(process.env.MIN_AMOUNT) * 2 + "",
+    amount: parseInt(amount) + "",
   });
 
   const coins = new Coins([coin]);

@@ -156,6 +156,7 @@ import { before } from "mocha";
         await fundTradeEscrow(
           terra,
           {
+            amount: process.env.MIN_AMOUNT,
             offerId: global.tradeFlow.offerId,
             tradeAddr: this.tradeAddr,
           },
