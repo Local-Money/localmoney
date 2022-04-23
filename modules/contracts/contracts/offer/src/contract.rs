@@ -20,6 +20,8 @@ use localterra_protocol::trade::{
 use crate::state::{arbitrators, config_read, config_storage, state_read, state_storage, trades};
 use localterra_protocol::errors::GuardError;
 
+const INSTANTIATE_TRADE_REPLY_ID: u64 = 0u64;
+
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
@@ -81,6 +83,10 @@ pub fn execute(
         }
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
             delete_arbitrator(deps, env, info, arbitrator, asset)
+        }
+        ExecuteMsg::UpdateTradeArbitrator { arbitrator } => {
+            // TODO merge this call with the query random arbitrator call
+            execute_update_trade_arbitrator(deps, env, info, arbitrator)
         }
     }
 }
@@ -162,7 +168,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, GuardError> {
     match msg.id {
-        0 => trade_instance_reply(deps, env, msg.result),
+        INSTANTIATE_TRADE_REPLY_ID => trade_instance_reply(deps, env, msg.result),
         _ => Err(GuardError::InvalidReply {}),
     }
 }
@@ -264,6 +270,29 @@ pub fn create_offer(
     Ok(res)
 }
 
+pub fn execute_update_trade_arbitrator(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    arbitrator: Addr,
+) -> Result<Response, GuardError> {
+    // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set
+    let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
+
+    trade.arbitrator = arbitrator.clone();
+
+    trades()
+        .save(deps.storage, trade.trade.as_str(), &trade)
+        .unwrap();
+
+    let res = Response::new()
+        .add_attribute("action", "execute_update_trade_arbitrator")
+        .add_attribute("tradeAddr", info.sender)
+        .add_attribute("arbitrator", arbitrator)
+        .add_attribute("timestamp", _env.block.time.seconds().to_string());
+
+    Ok(res)
+}
 pub fn create_arbitrator(
     deps: DepsMut,
     _env: Env,
@@ -419,10 +448,10 @@ fn create_trade(
         label: "new-trade".to_string(),
     };
     let sub_message = SubMsg {
-        id: 0,
+        id: INSTANTIATE_TRADE_REPLY_ID,
         msg: CosmosMsg::Wasm(instantiate_msg),
         gas_limit: None,
-        reply_on: ReplyOn::Success,
+        reply_on: ReplyOn::Success, // TODO should we throw an error if the trade instantiation fails ?
     };
 
     let res = Response::new()

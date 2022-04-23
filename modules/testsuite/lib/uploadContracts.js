@@ -36,7 +36,8 @@ async function uploadContracts(client, user) {
 
   const newContractList = findNewContractFiles(contractPath); // findFilesInDir("../contracts/artifacts/", ".wasm");
 
-  console.log("** Found new contracts:", newContractList);
+  if (newContractList.length > 0)
+    console.log("** Found new contracts:", newContractList);
 
   for (const idx in newContractList) {
     const [contract, checksum] = newContractList[idx];
