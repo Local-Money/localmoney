@@ -273,6 +273,7 @@ fn execute_claim(
     claim_id: u64,
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
+    let mut state: State = STATE.load(deps.storage)?;
 
     let claim = claims()
         .may_load(deps.storage, &claim_id.to_string())
@@ -291,6 +292,10 @@ fn execute_claim(
     claims()
         .remove(deps.storage, &claim_id.to_string())
         .unwrap();
+
+    // Reduce the total local warming amount so total deposits are calculated correctly
+    state.total_local_warming -= claim.amount;
+    STATE.save(deps.storage, &state)?;
 
     // Transfer matured LOCAL
     let res = Response::new().add_message(CosmosMsg::Wasm(WasmMsg::Execute {

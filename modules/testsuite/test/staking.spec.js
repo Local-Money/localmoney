@@ -110,14 +110,23 @@ import { before } from "mocha";
 
         return claimResult;
       });
-    });
-    describe("Query Claims", function () {
-      it("should show 1 LOCAL maturing.", async function () {
-        const queryClaimsResult = await queryClaims(terra);
+      describe("Query Claims", function () {
+        it("should show 1 LOCAL maturing.", async function () {
+          const queryClaimsResult = await queryClaims(terra);
 
-        console.log("queryClaimsResult :>> ", queryClaimsResult);
+          console.log("queryClaimsResult :>> ", queryClaimsResult);
 
-        return queryClaimsResult;
+          return queryClaimsResult;
+        });
+      });
+      describe("Query Staking Totals", function () {
+        it("should return totals", async function () {
+          const resultStakingTotals = await queryStakingTotals(terra);
+
+          console.log("resultStakingTotals :>> ", resultStakingTotals);
+
+          return resultStakingTotals;
+        });
       });
     });
   });
