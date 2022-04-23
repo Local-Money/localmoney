@@ -42,6 +42,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "sell",
           fiat_currency: "BRL",
+          rate: "48000",
           min_amount,
           max_amount,
           maker_contact,
@@ -53,6 +54,31 @@ import { before } from "mocha";
         const offer = {
           offer_type: "buy",
           fiat_currency: "COP",
+          rate: "37842000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842007",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842001",
           min_amount,
           max_amount,
           maker_contact,
@@ -64,6 +90,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "buy",
           fiat_currency: "USD",
+          rate: "10000",
           min_amount,
           max_amount,
           maker_contact,
@@ -71,6 +98,114 @@ import { before } from "mocha";
 
         const result = await createOffer(terra, offer, maker);
         return result;
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842001",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842002",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842006",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a BUY offer in COP", async function () {
+        const offer = {
+          offer_type: "buy",
+          fiat_currency: "COP",
+          rate: "37842005",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
       });
     });
     describe("Query Offers", async function () {
@@ -86,14 +221,15 @@ import { before } from "mocha";
         expect(result.length).to.equal(1);
         return result;
       });
-      it("with pagination should return 2 offers", async function () {
+      it("with pagination should return 14 offers sorted by rate", async function () {
         const query = {
           offers_query: {
-            limit: 5,
+            limit: 15,
             last_value: 1,
           },
         };
         const result = await queryOffers(terra, query);
+        console.log("sorted by rate result :>> ", result);
         expect(result.length).to.equal(2);
         return result;
       });
@@ -109,6 +245,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "sell",
           fiat_currency: "COP",
+          rate: "37842001",
           min_amount,
           max_amount,
           maker_contact,
@@ -141,7 +278,7 @@ import { before } from "mocha";
 
       it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: parseInt(global.tradeFlow.offerId),
+          offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,

@@ -36,8 +36,12 @@ pub fn instantiate(
 ) -> Result<Response, TradeError> {
     //Load Offer
     let offer_contract = deps.api.addr_validate(msg.offers_addr.as_str()).unwrap();
-    let offer_id = msg.offer_id;
-    let offer = load_offer(deps.querier, msg.offer_id, offer_contract.to_string());
+    let offer_id = msg.offer_id.clone();
+    let offer = load_offer(
+        deps.querier,
+        msg.offer_id.clone(),
+        offer_contract.to_string(),
+    );
     if offer.is_none() {
         return Err(TradeError::OfferNotFound {
             offer_id: msg.offer_id,
@@ -126,7 +130,7 @@ fn query_state(deps: Deps) -> StdResult<TradeData> {
     Ok(state)
 }
 
-fn load_offer(querier: QuerierWrapper, offer_id: u64, offer_contract: String) -> Option<Offer> {
+fn load_offer(querier: QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {
     let load_offer_result: StdResult<Offer> =
         querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: offer_contract.clone(),
@@ -148,7 +152,7 @@ fn fund_escrow(
 ) -> Result<Response, TradeError> {
     let offer = load_offer(
         deps.querier.clone(),
-        trade.offer_id,
+        trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
     .unwrap(); //at this stage, offer is guaranteed to exists.

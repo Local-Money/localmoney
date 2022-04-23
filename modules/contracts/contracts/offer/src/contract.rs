@@ -237,9 +237,9 @@ pub fn create_offer(
 
     let mut state = state_storage(deps.storage).load()?;
 
-    let offer_id = state.offers_count + 1;
+    state.offers_count += 1;
 
-    state.offers_count = offer_id;
+    let offer_id = [msg.rate.clone().to_string(), state.offers_count.to_string()].join("_");
 
     let offer = OfferModel::create(
         deps.storage,
@@ -249,6 +249,7 @@ pub fn create_offer(
             maker_contact: msg.maker_contact,
             offer_type: msg.offer_type,
             fiat_currency: msg.fiat_currency.clone(),
+            rate: msg.rate,
             min_amount: msg.min_amount,
             max_amount: msg.max_amount,
             state: OfferState::Active,
@@ -263,6 +264,7 @@ pub fn create_offer(
         .add_attribute("action", "create_offer")
         .add_attribute("type", offer.offer_type.to_string())
         .add_attribute("id", offer.id.to_string())
+        .add_attribute("rate", offer.rate.to_string())
         .add_attribute("min_amount", offer.min_amount.to_string())
         .add_attribute("max_amount", offer.max_amount.to_string())
         .add_attribute("owner", offer.owner);
@@ -357,7 +359,7 @@ pub fn activate_offer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    id: u64,
+    id: String,
 ) -> Result<Response, GuardError> {
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
@@ -377,7 +379,7 @@ pub fn pause_offer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    id: u64,
+    id: String,
 ) -> Result<Response, GuardError> {
     let mut offer_model = OfferModel::may_load(deps.storage, &id);
 
@@ -397,7 +399,7 @@ pub fn update_offer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    id: u64,
+    id: String,
     msg: OfferMsg,
 ) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
@@ -409,7 +411,7 @@ pub fn update_offer(
     let offer = offer_model.update(msg);
 
     let res = Response::new()
-        .add_attribute("action", "pause_offer")
+        .add_attribute("action", "update_offer")
         .add_attribute("id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string());
 
@@ -420,7 +422,7 @@ fn create_trade(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    offer_id: u64,
+    offer_id: String,
     ust_amount: Uint128,
     taker: String,
     taker_contact: String,
@@ -474,7 +476,7 @@ fn query_state(deps: Deps) -> StdResult<State> {
     Ok(state)
 }
 
-pub fn load_offer_by_id(storage: &dyn Storage, id: u64) -> StdResult<Offer> {
+pub fn load_offer_by_id(storage: &dyn Storage, id: String) -> StdResult<Offer> {
     let offer = offers()
         .may_load(storage, &id.to_string())
         .unwrap_or_default()
@@ -535,7 +537,7 @@ pub fn query_trades(
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: trade_state.offer_contract.to_string(),
                 msg: to_binary(&QueryMsg::Offer {
-                    id: trade_state.offer_id,
+                    id: trade_state.offer_id.clone(),
                 })
                 .unwrap(),
             }))

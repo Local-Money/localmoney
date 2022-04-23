@@ -25,7 +25,7 @@ pub enum TradeError {
     #[error("Failed to instantiate contract.")]
     InstantiationError { message: String },
     #[error("Offer not found.")]
-    OfferNotFound { offer_id: u64 },
+    OfferNotFound { offer_id: String },
     #[error("Refund error: Not Expired")]
     RefundErrorNotExpired { message: String, trade: String },
     #[error("Refund error: Arbitration not allow.")]

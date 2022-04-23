@@ -68,6 +68,7 @@ pub struct InstantiateMsg {}
 pub struct OfferMsg {
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
+    pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
     pub maker_contact: String,
@@ -80,17 +81,17 @@ pub enum ExecuteMsg {
         offer: OfferMsg,
     },
     Pause {
-        id: u64,
+        id: String,
     },
     Activate {
-        id: u64,
+        id: String,
     },
     Update {
-        id: u64,
+        id: String,
         offer: OfferMsg,
     },
     NewTrade {
-        offer_id: u64,
+        offer_id: String,
         ust_amount: Uint128,
         taker: String, // TODO should be Addr
         taker_contact: String,
@@ -147,7 +148,7 @@ pub enum QueryMsg {
         limit: u32,
     },
     Offer {
-        id: u64,
+        id: String,
     },
     TradesQuery {
         user: Addr,
@@ -185,11 +186,12 @@ pub struct State {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Offer {
-    pub id: u64,
+    pub id: String,
     pub owner: Addr,
     pub maker_contact: String,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
+    pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
     pub state: OfferState,
@@ -203,10 +205,10 @@ pub struct OfferModel<'a> {
 
 impl OfferModel<'_> {
     pub fn store(storage: &mut dyn Storage, offer: &Offer) -> StdResult<()> {
-        offers().save(storage, &offer.id.to_string(), &offer)
+        offers().save(storage, &offer.id, &offer)
     }
 
-    pub fn from_store(storage: &mut dyn Storage, id: &u64) -> Offer {
+    pub fn from_store(storage: &mut dyn Storage, id: &String) -> Offer {
         offers()
             .may_load(storage, &id.to_string())
             .unwrap_or_default()
@@ -223,7 +225,7 @@ impl OfferModel<'_> {
         self.offer
     }
 
-    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &u64) -> OfferModel<'a> {
+    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &String) -> OfferModel<'a> {
         let offer_model = OfferModel {
             offer: OfferModel::from_store(storage, &id),
             storage,
@@ -262,6 +264,7 @@ impl OfferModel<'_> {
     pub fn update(&mut self, msg: OfferMsg) -> &Offer {
         self.offer.offer_type = msg.offer_type;
         self.offer.fiat_currency = msg.fiat_currency;
+        self.offer.rate = msg.rate;
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
         OfferModel::store(self.storage, &self.offer).unwrap();
@@ -275,7 +278,7 @@ impl OfferModel<'_> {
         fiat_currency: FiatCurrency,
     ) -> StdResult<Vec<Offer>> {
         let result: Vec<Offer> = offers()
-            .range(storage, None, None, Order::Descending)
+            .range(storage, None, None, Order::Ascending)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .filter(|offer| offer.fiat_currency == fiat_currency)
             .collect();
@@ -300,7 +303,7 @@ impl OfferModel<'_> {
             .idx
             .offer_type
             .prefix(offer_type.to_string())
-            .range(storage, range_from, None, Order::Descending)
+            .range(storage, range_from, None, Order::Ascending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -329,7 +332,7 @@ impl OfferModel<'_> {
                 offer_type.to_string(),
                 fiat_currency.to_string() + &*OfferState::Active.to_string(),
             ))
-            .range(storage, range_from, None, Order::Descending)
+            .range(storage, range_from, None, Order::Ascending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -354,7 +357,7 @@ impl OfferModel<'_> {
             .idx
             .fiat
             .prefix(fiat_currency.to_string())
-            .range(storage, range_from, None, Order::Descending)
+            .range(storage, range_from, None, Order::Ascending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -378,7 +381,7 @@ impl OfferModel<'_> {
 
         // Handle optional owner address query parameter
         let range = match owner {
-            None => offers().range(storage, range_from, None, Order::Descending),
+            None => offers().range(storage, range_from, None, Order::Ascending),
             Some(unchecked_addr) => {
                 let owner_addr = deps.api.addr_validate(unchecked_addr.as_str()).unwrap();
 
@@ -386,7 +389,7 @@ impl OfferModel<'_> {
                     storage,
                     range_from,
                     None,
-                    Order::Descending,
+                    Order::Ascending,
                 )
             }
         };

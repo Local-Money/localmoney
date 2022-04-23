@@ -42,6 +42,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "sell",
           fiat_currency: "COP",
+          rate: "37842000",
           min_amount,
           max_amount,
           maker_contact,
@@ -74,9 +75,9 @@ import { before } from "mocha";
 
       it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: parseInt(global.tradeFlow.offerId),
+          offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
-          taker: taker.address,
+          taker: taker.addres,
           taker_contact,
         };
 
@@ -119,6 +120,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "sell",
           fiat_currency: "COP",
+          rate: "37842000",
           min_amount,
           max_amount,
           maker_contact,
@@ -151,7 +153,7 @@ import { before } from "mocha";
 
       it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: parseInt(global.tradeFlow.offerId),
+          offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,
@@ -177,6 +179,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "sell",
           fiat_currency: "COP",
+          rate: "37842000",
           min_amount,
           max_amount,
           maker_contact,
@@ -209,7 +212,7 @@ import { before } from "mocha";
 
       it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: parseInt(global.tradeFlow.offerId),
+          offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,
@@ -236,6 +239,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "sell",
           fiat_currency: "COP",
+          rate: "37842000",
           min_amount,
           max_amount,
           maker_contact,
@@ -268,7 +272,7 @@ import { before } from "mocha";
 
       it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: parseInt(global.tradeFlow.offerId),
+          offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,
@@ -304,6 +308,7 @@ import { before } from "mocha";
         const offer = {
           offer_type: "buy",
           fiat_currency: "BRL",
+          rate: "48000",
           min_amount,
           max_amount,
           maker_contact,
@@ -335,7 +340,7 @@ import { before } from "mocha";
 
       it("Taker requests a trade (TadeState::RequestCreated)", async function () {
         const new_trade = {
-          offer_id: parseInt(global.tradeFlow.offerId),
+          offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
           taker: taker.address,
           taker_contact,

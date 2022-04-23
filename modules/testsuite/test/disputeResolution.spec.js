@@ -72,7 +72,7 @@ import { before } from "mocha";
 
           it("Taker requests a trade (TadeState::RequestCreated)", async function () {
             const new_trade = {
-              offer_id: parseInt(global.tradeFlow.offerId),
+              offer_id: global.tradeFlow.offerId,
               ust_amount: process.env.MIN_AMOUNT,
               taker: taker.address,
               taker_contact,
@@ -170,7 +170,7 @@ import { before } from "mocha";
 
           it("Taker requests a trade (TadeState::RequestCreated)", async function () {
             const new_trade = {
-              offer_id: parseInt(global.tradeFlow.offerId),
+              offer_id: global.tradeFlow.offerId,
               ust_amount: process.env.MIN_AMOUNT,
               taker: taker.address,
               taker_contact,
