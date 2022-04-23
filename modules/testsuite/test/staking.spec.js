@@ -7,6 +7,7 @@ import { enterStaking } from "../lib/enterStaking.js";
 import { leaveStaking } from "../lib/leaveStaking.js";
 import { queryClaims } from "../lib/queryClaims.js";
 import { claimStaking } from "../lib/claimStaking.js";
+import { queryStakingTotals } from "../lib/queryStakingTotals.js";
 import { before } from "mocha";
 
 (async () => {
@@ -28,6 +29,34 @@ import { before } from "mocha";
       });
       // TODO list yLOCAL balance
     });
+    describe("Query Staking Totals", function () {
+      it("should return totals", async function () {
+        const resultStakingTotals = await queryStakingTotals(terra);
+
+        console.log("resultStakingTotals :>> ", resultStakingTotals);
+
+        return resultStakingTotals;
+      });
+    });
+    describe("Enter", function () {
+      it("should deposit 2 LOCAL", async function () {
+        const stakingResult = await enterStaking(terra, "2000000", staker);
+
+        console.log("stakingResult :>> ", stakingResult);
+
+        return stakingResult;
+      });
+      // TODO list yLOCAL balance
+    });
+    describe("Query Staking Totals", function () {
+      it("should return totals", async function () {
+        const resultStakingTotals = await queryStakingTotals(terra);
+
+        console.log("resultStakingTotals :>> ", resultStakingTotals);
+
+        return resultStakingTotals;
+      });
+    });
     describe("Leave", function () {
       it("should withdraw 1 LOCAL", async function () {
         const leaveStakingResult = await leaveStaking(terra, "1000000", staker);
@@ -35,6 +64,33 @@ import { before } from "mocha";
         console.log("leaveStakingResult :>> ", leaveStakingResult);
 
         return leaveStakingResult;
+      });
+    });
+    describe("Query Staking Totals", function () {
+      it("should return totals", async function () {
+        const resultStakingTotals = await queryStakingTotals(terra);
+
+        console.log("resultStakingTotals :>> ", resultStakingTotals);
+
+        return resultStakingTotals;
+      });
+    });
+    describe("Leave", function () {
+      it("should withdraw 0.5 LOCAL", async function () {
+        const leaveStakingResult = await leaveStaking(terra, "500000", staker);
+
+        console.log("leaveStakingResult :>> ", leaveStakingResult);
+
+        return leaveStakingResult;
+      });
+    });
+    describe("Query Staking Totals", function () {
+      it("should return totals", async function () {
+        const resultStakingTotals = await queryStakingTotals(terra);
+
+        console.log("resultStakingTotals :>> ", resultStakingTotals);
+
+        return resultStakingTotals;
       });
     });
     describe("Query Claims", function () {
@@ -53,6 +109,15 @@ import { before } from "mocha";
         console.log("claimResult :>> ", claimResult);
 
         return claimResult;
+      });
+    });
+    describe("Query Claims", function () {
+      it("should show 1 LOCAL maturing.", async function () {
+        const queryClaimsResult = await queryClaims(terra);
+
+        console.log("queryClaimsResult :>> ", queryClaimsResult);
+
+        return queryClaimsResult;
       });
     });
   });

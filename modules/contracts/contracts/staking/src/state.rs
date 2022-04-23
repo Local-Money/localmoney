@@ -24,6 +24,7 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub struct State {
     /// The claims count, used e.g. for indexing
     pub claims_count: u64,
+    pub total_local_warming: Uint128,
 }
 
 /// ## Description

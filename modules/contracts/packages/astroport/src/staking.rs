@@ -33,6 +33,7 @@ pub enum QueryMsg {
     Config {},
     TotalShares {},
     TotalDeposit {},
+    TotalWarming {},
     Claims {
         recipient: Addr,
     },

@@ -62,7 +62,13 @@ pub fn instantiate(
     )?;
 
     // Store claims count
-    STATE.save(deps.storage, &State { claims_count: 0 })?;
+    STATE.save(
+        deps.storage,
+        &State {
+            claims_count: 0,
+            total_local_warming: Uint128::from(0u32),
+        },
+    )?;
 
     // Create the xLOCAL token
     let sub_msg: Vec<SubMsg> = vec![SubMsg {
@@ -172,6 +178,10 @@ fn receive_cw20(
     let amount = cw20_msg.amount;
 
     let mut total_deposit = get_total_deposit(deps.as_ref(), env.clone(), config.clone())?;
+    // We need to subtract the total local warming (locals waiting for maturity to be claimed)
+    // so we don't reissue shares for them a second time
+    let mut state: State = STATE.load(deps.storage)?;
+    total_deposit -= state.total_local_warming; // TODO test this / try to break it
     let total_shares = get_total_shares(deps.as_ref(), config.clone())?;
 
     match from_binary(&cw20_msg.msg)? {
@@ -182,6 +192,7 @@ fn receive_cw20(
             // In a CW20 `send`, the total balance of the recipient is already increased.
             // To properly calculate the total amount of LOCAL deposited in staking, we should subtract the user deposit from the pool
             total_deposit -= amount;
+
             let mint_amount: Uint128 = if total_shares.is_zero() || total_deposit.is_zero() {
                 amount
             } else {
@@ -206,11 +217,6 @@ fn receive_cw20(
             if info.sender != config.xlocal_token_addr {
                 return Err(ContractError::Unauthorized {});
             }
-            let mut state: State = STATE.load(deps.storage)?;
-
-            let claim_id = state.claims_count + 1;
-
-            state.claims_count = claim_id;
 
             // The LOCAL amount to transfer after reaching maturity
             let what = amount
@@ -233,9 +239,17 @@ fn receive_cw20(
             //     funds: vec![],
             // }));
 
-            // save sender and `what` to data storage
+            // Update state with claim_id and total_local_warming
+
+            let claim_id = state.claims_count + 1;
+
+            state.claims_count = claim_id;
+
+            state.total_local_warming += what;
 
             STATE.save(deps.storage, &state)?;
+
+            // Save this claim so it can be queried and transferred upon reaching maturity.
             claims().save(
                 deps.storage,
                 &claim_id.to_string(),
@@ -265,9 +279,6 @@ fn execute_claim(
         .unwrap_or_default()
         .unwrap(); // TODO handle error if claim doesn't exist
 
-    // load data by idx
-    // check data is owned by sender
-    // pull out amount
     if info.sender != claim.recipient {
         return Err(ContractError::Unauthorized {});
     }
@@ -275,6 +286,11 @@ fn execute_claim(
     if env.block.time.seconds() < claim.created_at + VAULT_TIMEOUT {
         return Err(ContractError::Immature {});
     }
+
+    // Remove claim so it can't be replayed
+    claims()
+        .remove(deps.storage, &claim_id.to_string())
+        .unwrap();
 
     // Transfer matured LOCAL
     let res = Response::new().add_message(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -337,6 +353,16 @@ pub fn get_total_deposit(deps: Deps, env: Env, config: Config) -> StdResult<Uint
 }
 
 /// ## Description
+/// Returns the total amount of LOCAL warming until maturity is reach and they can be claimed.
+/// ## Params
+/// * **deps** is an object of type [`Deps`].
+pub fn get_total_local_warming(deps: Deps) -> StdResult<Uint128> {
+    let state: State = STATE.load(deps.storage)?;
+
+    Ok(state.total_local_warming)
+}
+
+/// ## Description
 /// Exposes all the queries available in the contract.
 /// # Params
 /// * **deps** is an object of type [`DepsMut`].
@@ -361,6 +387,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         })?),
         QueryMsg::TotalShares {} => to_binary(&get_total_shares(deps, config)?),
         QueryMsg::TotalDeposit {} => to_binary(&get_total_deposit(deps, env, config)?),
+        QueryMsg::TotalWarming {} => to_binary(&get_total_local_warming(deps)?),
         QueryMsg::Claims { recipient } => to_binary(&query_claims(deps, recipient)?),
     }
 }
