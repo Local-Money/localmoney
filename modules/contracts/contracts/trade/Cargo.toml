@@ -28,9 +28,9 @@ serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
 terra-cosmwasm = { version = "2.2.0" }
 localterra-protocol = { path = "../../packages/protocol" }
-terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
 cw20 = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
 cw20-base = { git = "https://github.com/CosmWasm/cosmwasm-plus", branch = "main" }
+astroport = { path = "../../packages/astroport", default-features = false }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }

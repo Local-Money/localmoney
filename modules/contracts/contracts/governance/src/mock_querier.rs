@@ -16,7 +16,7 @@ use localterra_protocol::offer::{Config as OfferConfig, Offer, OfferState, Offer
 use localterra_protocol::trade::{TradeData as TradeState, TradeState as TradeTradeState};
 use std::collections::HashMap;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
-use terraswap::asset::{AssetInfo, PairInfo};
+// use terraswap::asset::{AssetInfo, PairInfo};
 
 // mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
 // this uses our CustomQuerier.

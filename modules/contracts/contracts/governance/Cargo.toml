@@ -28,7 +28,6 @@ serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
 terra-cosmwasm = { version = "2.2.0" }
 offer = { path = "../offer" }
-terraswap = { git = "https://github.com/terraswap/terraswap", branch = "main" }
 localterra-protocol = { path = "../../packages/protocol" }
 cw20 = { version = "0.8.0" }
 

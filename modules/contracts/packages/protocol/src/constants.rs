@@ -1,5 +1,9 @@
 pub const OFFERS_KEY: &str = "offers";
-pub const WARCHEST_ADDR: &str = "terra1xs97fuxkg5e3ray8vkqdalu0c7l5ydg9y77g3t"; // TODO replace with mainnet addr
+pub const WARCHEST_ADDR: &str = "terra1xs97fuxkg5e3ray8vkqdalu0c7l5ydg9y77g3t"; // TODO replace with mainnet addr, move to config
+pub const ASTROPORT_POOL_ADDR: &str = "terra1vczj87j7lsjewm7mlf8j07gxjemz5gf6thq0nn"; // TODO replace with mainnet addr, move to config
 pub const REQUEST_TIMEOUT: u64 = 20 * 60; // 20 mins
 pub const FUNDING_TIMEOUT: u64 = 140 * 60; // 2hrs 20 mins
 pub const VAULT_TIMEOUT: u64 = 2 * 60; // 2 mins
+pub const LOCAL_TERRA_FEE: u128 = 100;
+pub const WARCHEST_FEE: u128 = 3;
+pub const ARBITRATOR_FEE: u128 = 10;

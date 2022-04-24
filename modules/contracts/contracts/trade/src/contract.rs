@@ -1,12 +1,14 @@
-use std::ops::{Add, Sub};
-
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
     WasmMsg, WasmQuery,
 };
 
-use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT};
+use astroport::asset::{Asset, AssetInfo};
+use localterra_protocol::constants::{
+    ARBITRATOR_FEE, ASTROPORT_POOL_ADDR, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT,
+    WARCHEST_ADDR, WARCHEST_FEE,
+};
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{
@@ -18,14 +20,17 @@ use localterra_protocol::offer::ExecuteMsg::UpdateTradeArbitrator;
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
-use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
+use localterra_protocol::trade::{
+    Astroport, ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState,
+};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::state::{state as state_storage, state_read};
-use crate::taxation::{compute_tax, deduct_tax};
+use crate::taxation::deduct_tax;
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
+const SEND_AND_SWAP_STAKING_SHARE_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
 pub fn instantiate(
@@ -444,66 +449,67 @@ fn release_escrow(
     let factory_cfg: FactoryConfig =
         get_factory_config(&deps.querier, trade.factory_addr.to_string());
 
-    //Collect Fee
-    // let local_terra_fee = Coin::new(localterra_fee(trade.ust_amount.clone()).u128(), "uusd");
-    // let fee_collector = factory_cfg.fee_collector_addr.clone();
-    // send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-    // to_address: fee_collector.into_string(),
-    // amount: vec![local_terra_fee],
-    // })));
+    // Collect Fee
+    // Caclulate Fees
+    let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
+    let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
+    let staking_share = local_terra_fee - warchest_share;
+    // TODO check that staking_share is > 0
 
-    let ust = Coin::new(trade.ust_amount.u128(), "uusd");
-    //Release amount
-    let release_amount = if offer.offer_type == OfferType::Buy {
-        // //TODO: Move to a method
-        // let ltfee = localterra_fee(trade.ust_amount);
-        // let ltfee_coin = Coin::new(ltfee.u128(), "uusd");
-        // let ltfee_tax = compute_tax(&deps.querier, &ltfee_coin).unwrap();
+    let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
+    // TODO check that release_amount is > 0
 
-        // let mut arbitration_fee_inc_tax = Uint128::zero();
-        // if arbitration_mode {
-        //     // Pay arbitration fee
-        //     let arbitration_rate = 10u128; // TODO move fee to constant
-        //     let arbitration_coin = Coin::new(
-        //         trade
-        //             .ust_amount
-        //             .u128()
-        //             .clone()
-        //             .checked_div(arbitration_rate)
-        //             .unwrap(),
-        //         "uusd",
-        //     );
+    // Pay arbitration fee
+    if arbitration_mode {
+        let arbitration_amount = get_fee_amount(trade.ust_amount.clone(), ARBITRATOR_FEE);
+        release_amount -= arbitration_amount;
+        // TODO check that release_amount is > 0
 
-        //     arbitration_fee_inc_tax =
-        //         arbitration_coin.amount + compute_tax(&deps.querier, &arbitration_coin).unwrap();
+        // Send arbitration fee share
+        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: trade.arbitrator.unwrap().to_string(), // TODO make sure unwrap doesn't crash this, but releases without arbitrator msg if needed
+            amount: vec![Coin::new(warchest_share.u128(), "uusd")],
+        })));
+    }
 
-        //     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        //         to_address: trade.arbitrator.clone().unwrap().to_string(),
-        //         amount: vec![arbitration_coin],
-        //     })));
-        // }
+    // Send warchest fee share
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: WARCHEST_ADDR.to_string(),
+        amount: vec![Coin::new(warchest_share.u128(), "uusd")],
+    })));
 
-        // let release_amount = trade
-        //     .ust_amount
-        //     .sub(ltfee)
-        //     .sub(ltfee_tax)
-        //     .sub(arbitration_fee_inc_tax);
-
-        // let release_tax =
-        //     compute_tax(&deps.querier, &Coin::new(release_amount.u128(), "uusd")).unwrap();
-
-        // let deduction = ltfee.add(&ltfee_tax).add(&release_tax);
-
-        // Coin::new(trade.ust_amount.sub(deduction).u128(), "uusd")
-
-        ust
-    } else {
-        ust
+    // Send staking fee share as via Astroport as LOCAL to staking contract
+    let swap_msg = Astroport::Swap {
+        offer_asset: Asset {
+            info: AssetInfo::NativeToken {
+                denom: "uusd".to_string(),
+            },
+            amount: staking_share,
+        },
+        belief_price: None,
+        max_spread: None,
+        to: Some(factory_cfg.staking_addr.to_string()),
+    };
+    let staking_share_msg = SubMsg {
+        id: SEND_AND_SWAP_STAKING_SHARE_REPLY_ID,
+        msg: CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: ASTROPORT_POOL_ADDR.to_string(),
+            msg: to_binary(&swap_msg).unwrap(),
+            funds: vec![Coin {
+                denom: "uusd".to_string(),
+                amount: staking_share,
+            }],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Never,
     };
 
+    send_msgs.push(staking_share_msg);
+
+    // Send released trade funds to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
         to_address: trade.buyer.into_string(),
-        amount: vec![release_amount],
+        amount: vec![Coin::new(release_amount.u128(), "uusd")],
     })));
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
@@ -621,8 +627,8 @@ fn get_ust_amount(info: MessageInfo) -> Uint128 {
     };
 }
 
-pub fn localterra_fee(amount: Uint128) -> Uint128 {
-    amount.clone().checked_div(Uint128::new(100u128)).unwrap()
+pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
+    amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO use constant / config
 }
 
 fn create_send_msg(deps: &DepsMut, to_address: Addr, coins: Vec<Coin>) -> CosmosMsg {

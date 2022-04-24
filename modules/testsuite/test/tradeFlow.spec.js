@@ -32,7 +32,7 @@ import { before } from "mocha";
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
   describe("Trade LifeCycle Endpoints", function () {
-    describe("SELL.EscrowReleased", function () {
+    describe.only("SELL.EscrowReleased", function () {
       before(async function () {
         global.factoryCfg = await getFactoryCfg(terra, maker);
 
@@ -77,7 +77,7 @@ import { before } from "mocha";
         const new_trade = {
           offer_id: global.tradeFlow.offerId,
           ust_amount: process.env.MIN_AMOUNT,
-          taker: taker.addres,
+          taker: taker.address,
           taker_contact,
         };
 

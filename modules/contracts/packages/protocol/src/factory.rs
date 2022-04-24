@@ -7,11 +7,9 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub cw20_code_id: u64,
     pub gov_contract_code_id: u64,
-    pub fee_collector_code_id: u64,
     pub trading_incentives_code_id: u64,
     pub offer_code_id: u64,
     pub trade_code_id: u64,
-    pub fee_collector_threshold: Uint128,
     pub local_ust_pool_addr: String,
     pub staking_code_id: u64,
     pub local_token_addr: String,
@@ -34,7 +32,6 @@ pub struct Config {
     pub local_ust_pool_addr: Addr,
     pub gov_addr: Addr,
     pub offers_addr: Addr,
-    pub fee_collector_addr: Addr,
     pub trading_incentives_addr: Addr,
     pub staking_addr: Addr,
 }
