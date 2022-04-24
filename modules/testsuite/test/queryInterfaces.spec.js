@@ -230,7 +230,7 @@ import { before } from "mocha";
         };
         const result = await queryOffers(terra, query);
         console.log("sorted by rate result :>> ", result);
-        expect(result.length).to.equal(2);
+        expect(result.length).to.equal(14);
         return result;
       });
     });

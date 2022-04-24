@@ -149,6 +149,7 @@ fn send_local_token_to_gov(
 }
 
 fn update_config(deps: DepsMut, conversion_threshold: Uint128) -> Result<Response, ContractError> {
+    // TODO authorize access
     let cfg = config_read(deps.storage).load().unwrap();
     let cfg = Config {
         factory_addr: cfg.factory_addr,
