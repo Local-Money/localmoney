@@ -696,7 +696,7 @@ pub fn query_all_accounts(
     let start = start_after.map(Bound::exclusive);
 
     let accounts: Result<Vec<_>, _> = BALANCES
-        .range(deps.storage, start, None, Order::Ascending)
+        .range(deps.storage, start, None, Order::Descending)
         .take(limit)
         .map(deserialize_pair)
         .collect();

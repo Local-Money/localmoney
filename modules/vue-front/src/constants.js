@@ -1,1 +1,1 @@
-export const FACTORY_CONTRACT = "terra1rslcagz7tdwrtfpntwlkcxkpaln63nh755tu53";
+export const FACTORY_CONTRACT = "terra1wnf78gcc298ey95d2lf797fwwg2sgm4c428tuy";

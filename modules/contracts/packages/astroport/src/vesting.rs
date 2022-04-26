@@ -134,7 +134,7 @@ pub struct VestingAccountsResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum OrderBy {
-    /// Ascending
+    /// Descending
     Asc,
     /// Descending
     Desc,
@@ -146,7 +146,7 @@ pub enum OrderBy {
 impl Into<Order> for OrderBy {
     fn into(self) -> Order {
         if self == OrderBy::Asc {
-            Order::Ascending
+            Order::Descending
         } else {
             Order::Descending
         }

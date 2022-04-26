@@ -278,7 +278,7 @@ impl OfferModel<'_> {
         fiat_currency: FiatCurrency,
     ) -> StdResult<Vec<Offer>> {
         let result: Vec<Offer> = offers()
-            .range(storage, None, None, Order::Ascending)
+            .range(storage, None, None, Order::Descending)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .filter(|offer| offer.fiat_currency == fiat_currency)
             .collect();
@@ -303,7 +303,7 @@ impl OfferModel<'_> {
             .idx
             .offer_type
             .prefix(offer_type.to_string())
-            .range(storage, range_from, None, Order::Ascending)
+            .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -332,7 +332,7 @@ impl OfferModel<'_> {
                 offer_type.to_string(),
                 fiat_currency.to_string() + &*OfferState::Active.to_string(),
             ))
-            .range(storage, range_from, None, Order::Ascending)
+            .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -357,7 +357,7 @@ impl OfferModel<'_> {
             .idx
             .fiat
             .prefix(fiat_currency.to_string())
-            .range(storage, range_from, None, Order::Ascending)
+            .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -381,7 +381,7 @@ impl OfferModel<'_> {
 
         // Handle optional owner address query parameter
         let range = match owner {
-            None => offers().range(storage, range_from, None, Order::Ascending),
+            None => offers().range(storage, range_from, None, Order::Descending),
             Some(unchecked_addr) => {
                 let owner_addr = deps.api.addr_validate(unchecked_addr.as_str()).unwrap();
 
@@ -389,7 +389,7 @@ impl OfferModel<'_> {
                     storage,
                     range_from,
                     None,
-                    Order::Ascending,
+                    Order::Descending,
                 )
             }
         };

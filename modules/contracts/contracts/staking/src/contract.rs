@@ -317,7 +317,7 @@ pub fn query_claims(deps: Deps, recipient: Addr) -> StdResult<Vec<Claim>> {
         .idx
         .recipient
         .prefix(recipient)
-        .range(storage, None, None, Order::Ascending)
+        .range(storage, None, None, Order::Descending)
         // .take(10) // set defaults
         .flat_map(|item| item.and_then(|(_, recipient)| Ok(recipient)))
         .collect();

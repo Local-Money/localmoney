@@ -563,7 +563,7 @@ pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrato
         .idx
         .arbitrator
         .prefix(arbitrator)
-        .range(storage, None, None, Order::Ascending)
+        .range(storage, None, None, Order::Descending)
         .take(10)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
@@ -584,7 +584,7 @@ pub fn query_arbitrators(
     };
 
     let result = arbitrators()
-        .range(storage, range_from, None, Order::Ascending)
+        .range(storage, range_from, None, Order::Descending)
         .take(limit as usize)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
@@ -599,7 +599,7 @@ pub fn query_arbitrator_asset(deps: Deps, asset: FiatCurrency) -> StdResult<Vec<
         .idx
         .asset
         .prefix(asset.clone().to_string())
-        .range(storage, None, None, Order::Ascending)
+        .range(storage, None, None, Order::Descending)
         .take(10)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
@@ -620,7 +620,7 @@ pub fn query_arbitrator_random(
         .idx
         .asset
         .prefix(asset.to_string())
-        .range(storage, None, None, Order::Ascending)
+        .range(storage, None, None, Order::Descending)
         .take(10)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
