@@ -352,6 +352,16 @@ fn cancel_request(
     // Only the buyer or seller can cancel the trade.
     assert_caller_is_buyer_or_seller(info.sender, state.buyer, state.seller).unwrap(); // TODO test this case
 
+    // You can only cancel the trade if the current TradeState is Created or Accepted
+    if !((state.state == TradeState::RequestCreated)
+        || (state.state == TradeState::RequestAccepted))
+    {
+        return Err(TradeError::InvalidStateChange {
+            from: state.state,
+            to: TradeState::RequestCanceled,
+        });
+    }
+
     // Update trade State to TradeState::RequestCanceled
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
 
