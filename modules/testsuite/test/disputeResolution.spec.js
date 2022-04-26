@@ -40,6 +40,7 @@ import { before } from "mocha";
             const offer = {
               offer_type: "sell",
               fiat_currency: "COP",
+              rate: "1",
               min_amount,
               max_amount,
               maker_contact,
@@ -138,6 +139,7 @@ import { before } from "mocha";
             const offer = {
               offer_type: "sell",
               fiat_currency: "COP",
+              rate: "1",
               min_amount,
               max_amount,
               maker_contact,

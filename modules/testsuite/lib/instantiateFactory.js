@@ -31,11 +31,9 @@ async function instantiateFactory(client, user, options = {}) {
   const factoryInstantiateMsg = {
     cw20_code_id: parseInt(process.env.CW20_CODE_ID),
     gov_contract_code_id: codeIds.governance,
-    fee_collector_code_id: codeIds.fee_collector,
     trading_incentives_code_id: codeIds.trading_incentives,
     offer_code_id: codeIds.offer,
     trade_code_id: codeIds.trade,
-    fee_collector_threshold: "1000000",
     local_ust_pool_addr: user.address,
     staking_code_id: codeIds.localterra_staking,
     local_token_addr: process.env.LOCAL_TOKEN_ADDR,
