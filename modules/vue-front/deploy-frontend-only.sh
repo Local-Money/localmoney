@@ -1,18 +1,5 @@
 set -e
 
-cd ../contracts
-
-./optimize.sh
-
-cd ../testsuite
-
-npm run upload:bombay:arbitrationInterface
-
-cd ../vue-front
-
-FACTORY=$(cat ../testsuite/cache/factory_bombay.json | jq '.factoryAddr') 
-
-echo "export const FACTORY_CONTRACT = $FACTORY;" > src/constants.js
 
 yarn build
 
