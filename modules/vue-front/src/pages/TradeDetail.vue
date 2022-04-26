@@ -247,7 +247,7 @@ export default defineComponent({
   }
 
   .step-checked {
-    opacity: 30%;
+    opacity: 0.3;
   }
 }
 
