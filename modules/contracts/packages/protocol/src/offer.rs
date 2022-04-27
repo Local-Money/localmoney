@@ -75,20 +75,22 @@ pub struct OfferMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct OfferUpdateMsg {
+    pub id: String,
+    pub rate: Uint128,
+    pub min_amount: Uint128,
+    pub max_amount: Uint128,
+    pub state: OfferState,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Create {
         offer: OfferMsg,
     },
-    Pause {
-        id: String,
-    },
-    Activate {
-        id: String,
-    },
-    Update {
-        id: String,
-        offer: OfferMsg,
+    UpdateOffer {
+        offer_update: OfferUpdateMsg,
     },
     NewTrade {
         offer_id: String,
@@ -233,37 +235,7 @@ impl OfferModel<'_> {
         return offer_model;
     }
 
-    pub fn activate(&mut self) -> Result<&Offer, GuardError> {
-        match self.offer.state {
-            OfferState::Paused => {
-                self.offer.state = OfferState::Active;
-                OfferModel::store(self.storage, &self.offer).unwrap();
-                Ok(&self.offer)
-            }
-            OfferState::Active => Err(GuardError::InvalidStateChange {
-                from: self.offer.state.clone(),
-                to: OfferState::Active,
-            }),
-        }
-    }
-
-    pub fn pause(&mut self) -> Result<&Offer, GuardError> {
-        match self.offer.state {
-            OfferState::Active => {
-                self.offer.state = OfferState::Paused;
-                OfferModel::store(self.storage, &self.offer).unwrap();
-                Ok(&self.offer)
-            }
-            OfferState::Paused => Err(GuardError::InvalidStateChange {
-                from: self.offer.state.clone(),
-                to: OfferState::Paused,
-            }),
-        }
-    }
-
-    pub fn update(&mut self, msg: OfferMsg) -> &Offer {
-        self.offer.offer_type = msg.offer_type;
-        self.offer.fiat_currency = msg.fiat_currency;
+    pub fn update(&mut self, msg: OfferUpdateMsg) -> &Offer {
         self.offer.rate = msg.rate;
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
@@ -449,4 +421,5 @@ impl fmt::Display for OfferState {
 pub enum OfferState {
     Active,
     Paused,
+    Archive,
 }
