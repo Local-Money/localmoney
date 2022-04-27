@@ -119,7 +119,7 @@ const actions = {
     const offers = paginated ? getters.myOffers : [];
 
     const last_offer_id =
-      offers.length > 0 && paginated ? offers[0].id : undefined;
+      offers.length > 0 && paginated ? offers[offers.length - 1].id : undefined;
 
     const offersQuery = {
       offers_query: {
@@ -148,7 +148,7 @@ const actions = {
     await dispatch("fetchFactoryConfig");
     const offers = paginated ? getters.offers : [];
     const last_offer_id =
-      offers.length > 0 && paginated ? offers[0].id : undefined;
+      offers.length > 0 && paginated ? offers[offers.length - 1].id : undefined;
 
     const offersQuery = {
       offers_by_type_fiat: {
