@@ -128,23 +128,23 @@ pub enum QueryMsg {
     },
     OffersQuery {
         owner: Option<Addr>,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     },
     OffersByType {
         offer_type: OfferType,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     },
     OffersByFiat {
         fiat_currency: FiatCurrency,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     },
     OffersByTypeFiat {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     },
     Offer {
@@ -289,7 +289,7 @@ impl OfferModel<'_> {
     pub fn query_by_type(
         deps: Deps,
         offer_type: OfferType,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
@@ -315,7 +315,7 @@ impl OfferModel<'_> {
         deps: Deps,
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
@@ -343,7 +343,7 @@ impl OfferModel<'_> {
     pub fn query_by_fiat(
         deps: Deps,
         fiat_currency: FiatCurrency,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
@@ -368,14 +368,14 @@ impl OfferModel<'_> {
     pub fn query(
         deps: Deps,
         owner: Option<Addr>,
-        last_value: Option<u64>,
+        last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
         // let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
         let range_from = match last_value {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
             None => None,
         };
 
