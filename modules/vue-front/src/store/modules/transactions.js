@@ -6,7 +6,7 @@ import {
   MsgExecuteContract,
   StdSignature,
   StdSignMsg,
-  StdTx,
+  StdTx
 } from "@terra-money/terra.js";
 import { FACTORY_CONTRACT } from "@/constants";
 import router from "@/router";
@@ -14,8 +14,8 @@ import { updateTrade } from "@/store/firebase";
 import { newTrade } from "../firebase";
 
 const lcdOptions = {
-  URL: "http://143.244.190.1:3060",
-  chainID: "localterra",
+  URL: "https://bombay-lcd.terra.dev", // URL: "http://143.244.190.1:3060",
+  chainID: "bombay-12" // chainID: "localterra"
 };
 let terra = new LCDClient(lcdOptions);
 const ext = new Extension();
@@ -24,7 +24,7 @@ const state = {
   loading: {
     isLoading: false,
     label: "Processing...",
-    transaction: "Follow the transaction",
+    transaction: "Follow the transaction"
   },
   walletAddress: "",
   offers: [],
@@ -39,8 +39,8 @@ const state = {
     gov_addr: "",
     offers_addr: "",
     fee_collector_addr: "",
-    trading_incentives_addr: "",
-  },
+    trading_incentives_addr: ""
+  }
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -50,8 +50,8 @@ function prepareTransaction(signedMsg) {
     signature,
     pub_key: {
       type: "tendermint/PubKeySecp256k1",
-      value: public_key,
-    },
+      value: public_key
+    }
   });
 
   const stdSignMsg = StdSignMsg.fromData(stdSignMsgData);
@@ -59,21 +59,21 @@ function prepareTransaction(signedMsg) {
 }
 
 const getters = {
-  walletAddress: (state) => state.walletAddress,
-  offers: (state) => state.offers,
-  myOffers: (state) => state.myOffers,
-  getOfferById: (state) => (id) => {
-    return state.offers.find((offer) => offer.id === id);
+  walletAddress: state => state.walletAddress,
+  offers: state => state.offers,
+  myOffers: state => state.myOffers,
+  getOfferById: state => id => {
+    return state.offers.find(offer => offer.id === id);
   },
-  trades: (state) => state.tradeInfos,
-  getTradeInfo: (state) => (tradeAddr) => {
+  trades: state => state.tradeInfos,
+  getTradeInfo: state => tradeAddr => {
     return state.tradeInfos.find(
-      (tradeInfo) => tradeInfo.trade.addr === tradeAddr
+      tradeInfo => tradeInfo.trade.addr === tradeAddr
     );
   },
-  lunaUstPrice: (state) => state.lunaUstPrice,
-  ustUsdPrice: (state) => state.ustUsdPrice,
-  loading: (state) => state.loading,
+  lunaUstPrice: state => state.lunaUstPrice,
+  ustUsdPrice: state => state.ustUsdPrice,
+  loading: state => state.loading
 };
 
 const actions = {
@@ -83,7 +83,7 @@ const actions = {
     const info = await ext.request("info");
     terra = new LCDClient({
       URL: info.payload.lcd,
-      chainID: info.payload.chainID,
+      chainID: info.payload.chainID
     });
     const walletAddress = res.payload.address;
     commit("setWalletAddress", walletAddress);
@@ -125,8 +125,8 @@ const actions = {
       offers_query: {
         owner: getters.walletAddress,
         last_value: last_offer_id,
-        limit: 10,
-      },
+        limit: 10
+      }
     };
     console.log("offersQuery :>> ", offersQuery);
     const loadedOffers = await terra.wasm.contractQuery(
@@ -139,9 +139,13 @@ const actions = {
    * Fetch Offers.
    */
   async fetchOffers(
-    { commit, getters },
+    { commit, getters, dispatch },
     { fiatCurrency, offerType, paginated = false }
   ) {
+    // fetchOffers depends on the fetchFactoryConfig
+    // TODO we should call the fetchFactoryConfig on the start of the application,
+    //  but we need to fix the initWallet first.
+    await dispatch("fetchFactoryConfig");
     const offers = paginated ? getters.offers : [];
     const last_offer_id =
       offers.length > 0 && paginated ? offers[0].id : undefined;
@@ -151,8 +155,8 @@ const actions = {
         fiat_currency: fiatCurrency,
         offer_type: offerType,
         last_value: last_offer_id,
-        limit: 10,
-      },
+        limit: 10
+      }
     };
     const loadedOffers = await terra.wasm.contractQuery(
       state.factoryConfig.offers_addr,
@@ -184,7 +188,7 @@ const actions = {
       rate,
       min_amount,
       max_amount,
-      maker_contact,
+      maker_contact
     } = updatedOffer;
 
     /**
@@ -205,7 +209,7 @@ const actions = {
       rate,
       min_amount: min_amount * 1000000 + "",
       max_amount: max_amount * 1000000 + "",
-      maker_contact,
+      maker_contact
     };
 
     /**
@@ -218,7 +222,7 @@ const actions = {
     /** @type {ExecuteUpdateMsg} */
     const update = {
       id,
-      offer: offerMsg,
+      offer: offerMsg
     };
 
     console.log("update :>> ", update);
@@ -227,7 +231,7 @@ const actions = {
       getters.walletAddress,
       state.factoryConfig.offers_addr,
       {
-        update,
+        update
       }
     );
     console.log("offerMsg msg:>> ", msg);
@@ -294,9 +298,9 @@ const actions = {
         ust_amount: amount + "",
         counterparty: sender,
         taker: sender, //TODO
-        taker_contact: "@TODO",
+        taker_contact: "@TODO"
         //arbitrator: TODO,
-      },
+      }
     };
     const createTradeMsg = new MsgExecuteContract(
       sender,
@@ -314,7 +318,7 @@ const actions = {
       getters.walletAddress,
       tradeAddr,
       {
-        accept_request: {},
+        accept_request: {}
       }
     );
     await executeMsg(commit, getters, dispatch, fiatDeposited);
@@ -327,7 +331,7 @@ const actions = {
       getters.walletAddress,
       tradeAddr,
       {
-        cancel_request: {},
+        cancel_request: {}
       }
     );
     await executeMsg(commit, getters, dispatch, fiatDeposited);
@@ -340,7 +344,7 @@ const actions = {
       getters.walletAddress,
       tradeAddr,
       {
-        cancel_trade: {},
+        cancel_trade: {}
       }
     );
     await executeMsg(commit, getters, dispatch, fiatDeposited);
@@ -355,7 +359,7 @@ const actions = {
 
     const localTerraFee = Coin.fromData({
       denom: "uusd",
-      amount: ustAmount * 0.01,
+      amount: ustAmount * 0.01
     });
     let ltFeeTax = await terra.utils.calculateTax(localTerraFee);
     let releaseTax = await terra.utils.calculateTax(ust);
@@ -369,7 +373,7 @@ const actions = {
       releaseTax;
     fundEscrowAmount = Coin.fromData({
       denom: "uusd",
-      amount: fundEscrowAmount,
+      amount: fundEscrowAmount
     });
     const coins = new Coins([fundEscrowAmount]);
     const fundMsg = { fund_escrow: {} };
@@ -389,7 +393,7 @@ const actions = {
       getters.walletAddress,
       tradeAddr,
       {
-        fiat_deposited: {},
+        fiat_deposited: {}
       }
     );
     await executeMsg(commit, getters, dispatch, fiatDeposited);
@@ -402,7 +406,7 @@ const actions = {
       getters.walletAddress,
       tradeAddr,
       {
-        release_escrow: {},
+        release_escrow: {}
       }
     );
     //TODO: Error handling
@@ -413,7 +417,7 @@ const actions = {
   },
   async refundEscrow({ commit, getters, dispatch }, tradeAddr) {
     const refundMsg = new MsgExecuteContract(getters.walletAddress, tradeAddr, {
-      refund_escrow: {},
+      refund_escrow: {}
     });
     await executeMsg(commit, getters, dispatch, refundMsg);
     let tradeInfo = await dispatch("fetchTradeInfo", { addr: tradeAddr });
@@ -425,7 +429,7 @@ const actions = {
       getters.walletAddress,
       tradeAddr,
       {
-        dispute_escrow: {},
+        dispute_escrow: {}
       }
     );
     await executeMsg(commit, getters, dispatch, disputeEscrowMSg);
@@ -435,7 +439,7 @@ const actions = {
   async fetchLunaPrice({ commit }) {
     const res = await fetch(`${lcdOptions.URL}/v1/market/swaprate/uluna`);
     const priceData = await res.json();
-    const lunaUstPrice = priceData.find((p) => p.denom === "uusd").swaprate;
+    const lunaUstPrice = priceData.find(p => p.denom === "uusd").swaprate;
     commit("setLunaUstPrice", parseFloat(lunaUstPrice).toFixed(2));
   },
   async fetchUstUsdPrice({ commit }) {
@@ -445,7 +449,7 @@ const actions = {
     const ustPriceData = await res.json();
     const ustUsdPrice = ustPriceData.quotes["USD"].price;
     commit("setUstUsdPrice", ustUsdPrice.toFixed(2));
-  },
+  }
 };
 
 async function executeMsg(commit, getters, dispatch, msg) {
@@ -453,8 +457,8 @@ async function executeMsg(commit, getters, dispatch, msg) {
     dispatch("initWallet");
     return;
   }
-  return new Promise((resolve) => {
-    ext.once("onPost", async (res) => {
+  return new Promise(resolve => {
+    ext.once("onPost", async res => {
       if (res.success) {
         commit("setLoadingTransaction", res.result.txhash);
         commit("setIsLoading", true);
@@ -470,7 +474,7 @@ async function executeMsg(commit, getters, dispatch, msg) {
       }, 1000);
     });
     ext.post({
-      msgs: [msg],
+      msgs: [msg]
     });
     /*
     //Suddenly stopped working (at least on Terrarium, needs to be tested on TestNet, MainNet.
@@ -495,7 +499,7 @@ const mutations = {
   setMyOffers: (state, offers) => (state.myOffers = offers),
   addTradeInfo: (state, tradeInfo) => {
     const addedTradeInfo = state.tradeInfos.find(
-      (t) => t.trade.addr === tradeInfo.trade.addr
+      t => t.trade.addr === tradeInfo.trade.addr
     );
     if (addedTradeInfo) {
       Object.assign(addedTradeInfo, tradeInfo);
@@ -517,12 +521,12 @@ const mutations = {
     state.tradeInfos = [...tradeInfos];
   },
   setLunaUstPrice: (state, price) => (state.lunaUstPrice = price),
-  setUstUsdPrice: (state, price) => (state.ustUsdPrice = price),
+  setUstUsdPrice: (state, price) => (state.ustUsdPrice = price)
 };
 
 export default {
   state,
   getters,
   actions,
-  mutations,
+  mutations
 };
