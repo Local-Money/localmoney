@@ -14,8 +14,8 @@ import { updateTrade } from "@/store/firebase";
 import { newTrade } from "../firebase";
 
 const lcdOptions = {
-  URL: "http://143.244.190.1:3060",
-  chainID: "localterra"
+  URL: "https://bombay-lcd.terra.dev", // URL: "http://143.244.190.1:3060",
+  chainID: "bombay-12" // chainID: "localterra"
 };
 let terra = new LCDClient(lcdOptions);
 const ext = new Extension();
@@ -114,9 +114,13 @@ const actions = {
    * Fetch Offers.
    */
   async fetchOffers(
-    { commit, getters },
+    { commit, getters, dispatch },
     { fiatCurrency, offerType, paginated = false }
   ) {
+    // fetchOffers depends on the fetchFactoryConfig
+    // TODO we should call the fetchFactoryConfig on the start of the application,
+    //  but we need to fix the initWallet first.
+    await dispatch("fetchFactoryConfig");
     const offers = paginated ? getters.offers : [];
     const last_offer_id =
       offers.length > 0 && paginated ? offers[offers.length - 1].id : 0;
