@@ -8,7 +8,8 @@
     "bombay:queryInterfaces": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js' ; npm run git-commit",
     "bombay:arbitrationInterface": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js' ; npm run git-commit",
     "bombay:tradeFlow": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js' ; npm run git-commit",
-    "bombay": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/**/*.spec.js' "
+    "bombay": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/**/*.spec.js' ",
+    "bombay:deploy": "NETWORK_ENV=bombay node lib/deploy.js "
   },
   "repository": {
     "type": "git",
