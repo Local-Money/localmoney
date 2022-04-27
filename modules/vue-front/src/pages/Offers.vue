@@ -1,10 +1,7 @@
 <template>
   <main>
     <h3>My Offers</h3>
-    <div class="card offer-list">
-      <p>Nothing here for now.</p>
-    </div>
-    <p>You can create your own offers and earn fees.</p>
+    <ListMyOffers />
     <button @click="toggleModal">Create a new offer</button>
 
     <Modal @close="toggleModal" :modalActive="modalActive">
@@ -18,6 +15,7 @@
 <script>
 import { defineComponent } from "vue";
 import CreateOffer from "@/components/offers/CreateOffer.vue";
+import ListMyOffers from "@/components/offers/ListMyOffers.vue";
 import Modal from "@/components/commons/Modal.vue";
 import { ref } from "vue";
 
@@ -25,6 +23,7 @@ export default defineComponent({
   name: "Offers",
   components: {
     CreateOffer,
+    ListMyOffers,
     Modal,
   },
   setup() {
@@ -32,7 +31,7 @@ export default defineComponent({
     const toggleModal = () => {
       modalActive.value = !modalActive.value;
     };
-    return { modalActive, toggleModal };
+    return { modalActive, toggleModal, ListMyOffers };
   },
 });
 </script>
