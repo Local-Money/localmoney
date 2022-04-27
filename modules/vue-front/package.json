@@ -6,9 +6,10 @@
         "serve": "vue-cli-service serve",
         "build": "vue-cli-service build",
         "lint": "vue-cli-service lint",
+        "updateFactoryCfg": "./scripts/update-factoryCfg.sh",
         "deploy:frontend": "./scripts/deploy-frontend.sh",
         "deploy:contracts": "./scripts/deploy-contracts.sh",
-        "deploy": "npm run deploy:frontend && npm run deploy:contracts"
+        "deploy": "yarn deploy:contracts && yarn updateFactoryCfg && yarn deploy:contracts"
     },
     "dependencies": {
         "@terra-money/terra.js": "^2.1.23",
