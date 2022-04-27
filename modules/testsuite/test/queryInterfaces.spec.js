@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { createLCDClient } from "../lib/createLCDClient.js";
 import { createUser } from "../lib/createUser.js";
 import { createOffer } from "../lib/createOffer.js";
+import { updateOffer } from "../lib/updateOffer.js";
 import { queryOffers } from "../lib/queryOffers.js";
 import { queryTrades } from "../lib/queryTrades.js";
 import { getFactoryCfg } from "../lib/getFactoryCfg.js";
@@ -49,6 +50,18 @@ import { before } from "mocha";
         };
 
         return await createOffer(terra, offer, maker);
+      });
+      it("should UPDATE the SELL offer min/max/rate/state", async function () {
+        /** @type {OfferUpdateMsg} */
+        const offerUpdateMsg = {
+          id: "48000_1",
+          rate: "48000",
+          min_amount: parseInt(min_amount) * 2 + "",
+          max_amount: parseInt(max_amount) * 2 + "",
+          state: "paused",
+        };
+
+        return await updateOffer(terra, offerUpdateMsg, maker);
       });
       it("should create a BUY offer in COP", async function () {
         const offer = {
