@@ -185,22 +185,7 @@ const actions = {
      * Update Offer
      */
     async updateOffer({ commit, getters, dispatch }, { updatedOffer }) {
-        const {
-            id,
-            rate,
-            min_amount,
-            max_amount,
-            maker_contact,
-        } = updatedOffer;
-
-        /**
-         * @typedef OfferUpdateMsg
-         * @type {object}
-         * @property {string} id - The id is the rate concatenated with a auto inc number, e.g. 43500_1
-         * @property {string} rate - Exchange rate Fiat / Crypto e.g. 43500
-         * @property {string} min_amount - Minimum Amount in uusd
-         * @property {string} max_amount - Maximum Amount in uusd
-         */
+        const { id, rate, min_amount, max_amount } = updatedOffer;
 
         /** @type {OfferUpdateMsg} */
         const offerUpdateMsg = {
@@ -208,27 +193,21 @@ const actions = {
             rate,
             min_amount: min_amount * 1000000 + "",
             max_amount: max_amount * 1000000 + "",
-            maker_contact,
+            state: updatedOffer.state, // state is already in scope
         };
 
-        /**
-         * @typedef ExecuteUpdateMsg
-         * @type {object}
-         * @property {OfferUpdateMsg} offer_update - The OfferUpdateMsg payload
-         */
-
         /** @type {ExecuteUpdateMsg} */
-        const update = {
+        const update_offer = {
             offer_update: offerUpdateMsg,
         };
 
-        console.log("update :>> ", update);
+        console.log("update_offer :>> ", update_offer);
 
         const msg = new MsgExecuteContract(
             getters.walletAddress,
             state.factoryConfig.offers_addr,
             {
-                update,
+                update_offer,
             },
         );
         console.log("offerMsg msg:>> ", msg);
@@ -541,4 +520,20 @@ export default {
  * @property {string} min_amount - Minimum Amount in uusd
  * @property {string} max_amount - Maximum Amount in uusd
  * @property {string} maker_contact - Contact information for Maker
+ */
+
+/**
+ * @typedef OfferUpdateMsg
+ * @type {object}
+ * @property {string} id - The id is the rate concatenated with a auto inc number, e.g. 43500_1
+ * @property {string} rate - Exchange rate Fiat / Crypto e.g. 43500
+ * @property {string} min_amount - Minimum Amount in uusd
+ * @property {string} max_amount - Maximum Amount in uusd
+ * @property {string} state -  Amount in uusd
+ */
+
+/**
+ * @typedef ExecuteUpdateMsg
+ * @type {object}
+ * @property {OfferUpdateMsg} offer_update - The OfferUpdateMsg payload
  */

@@ -3,6 +3,6 @@
 6759ef7b8c260e9f14e889089b4bca885dfcaa0b6c95c8680e5e003c4d0844c5  ./target/wasm32-unknown-unknown/release/governance.wasm
 502676ea0079df7c23cbfba33d1ed28507ace896504cc20dd1572ddd3694d845  ./target/wasm32-unknown-unknown/release/localterra_staking.wasm
 03082117895ccd0de462ad8b90ec74619c395f33be2f3a8ae9efea3310068188  ./target/wasm32-unknown-unknown/release/localterra_xlocal_token.wasm
-fa1a6a6e847b1835deafd528280f4534531c7e047980e43c0b3aa4f96a5080f8  ./target/wasm32-unknown-unknown/release/offer.wasm
+6f58f7ff20656bd08c6a5fcc6318df64f51d34f9c8201371f8d2ad476f6850c3  ./target/wasm32-unknown-unknown/release/offer.wasm
 2473a2f0e83378cf0dc6e047e120ba281dbeaaedb02293208bcf65c96b148627  ./target/wasm32-unknown-unknown/release/trade.wasm
 ed778408ad0a373d2001a45ae5fc459298cb8884ad36bc163c46394da5c3466f  ./target/wasm32-unknown-unknown/release/trading_incentives.wasm
