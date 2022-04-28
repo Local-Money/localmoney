@@ -51,6 +51,114 @@ import { before } from "mocha";
 
         return await createOffer(terra, offer, maker);
       });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
+      it("should create a SELL offer in BRL", async function () {
+        const offer = {
+          offer_type: "sell",
+          fiat_currency: "BRL",
+          rate: "48000",
+          min_amount,
+          max_amount,
+          maker_contact,
+        };
+
+        return await createOffer(terra, offer, maker);
+      });
       it("should UPDATE the SELL offer min/max/rate/state", async function () {
         /** @type {OfferUpdateMsg} */
         const offerUpdateMsg = {
@@ -226,8 +334,9 @@ import { before } from "mocha";
         const query = {
           offers_query: {
             limit: 1,
-            last_value: 0,
+            min: "0",
             owner: maker.address,
+            order: "asc",
           },
         };
         const result = await queryOffers(terra, query);
@@ -238,7 +347,8 @@ import { before } from "mocha";
         const query = {
           offers_query: {
             limit: 15,
-            last_value: 1,
+            min: "1",
+            order: "asc",
           },
         };
         const result = await queryOffers(terra, query);
@@ -276,7 +386,8 @@ import { before } from "mocha";
         const query = {
           offers_query: {
             limit: 1,
-            last_value: 0,
+            min: "0",
+            order: "asc",
           },
         };
 

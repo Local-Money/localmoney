@@ -121,6 +121,13 @@ pub enum TradesIndex {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub enum QueryOrder {
+    Asc,
+    Desc,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
     State {},
@@ -130,8 +137,10 @@ pub enum QueryMsg {
     },
     OffersQuery {
         owner: Option<Addr>,
-        last_value: Option<String>,
+        min: Option<String>,
+        max: Option<String>,
         limit: u32,
+        order: QueryOrder,
     },
     OffersByType {
         offer_type: OfferType,
@@ -146,8 +155,10 @@ pub enum QueryMsg {
     OffersByTypeFiat {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
-        last_value: Option<String>,
+        min: Option<String>,
+        max: Option<String>,
         limit: u32,
+        order: QueryOrder,
     },
     Offer {
         id: String,
@@ -288,13 +299,24 @@ impl OfferModel<'_> {
         deps: Deps,
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
-        last_value: Option<String>,
+        min: Option<String>,
+        max: Option<String>,
         limit: u32,
+        order: QueryOrder,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
 
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+        let std_order = match order {
+            QueryOrder::Asc => Order::Ascending,
+            QueryOrder::Desc => Order::Descending,
+        };
+        let range_min = match min {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
+            None => None,
+        };
+
+        let range_max = match max {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
             None => None,
         };
 
@@ -305,7 +327,7 @@ impl OfferModel<'_> {
                 offer_type.to_string(),
                 fiat_currency.to_string() + &*OfferState::Active.to_string(),
             ))
-            .range(storage, range_from, None, Order::Descending)
+            .range(storage, range_min, range_max, std_order)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -341,29 +363,40 @@ impl OfferModel<'_> {
     pub fn query(
         deps: Deps,
         owner: Option<Addr>,
-        last_value: Option<String>,
+        min: Option<String>,
+        max: Option<String>,
         limit: u32,
+        order: QueryOrder,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
         // let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
-        let range_from = match last_value {
+        let range_min = match min {
             Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
             None => None,
         };
 
+        let range_max = match max {
+            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
+            None => None,
+        };
+
+        let std_order = match order {
+            QueryOrder::Asc => Order::Ascending,
+            QueryOrder::Desc => Order::Descending,
+        };
+
         // Handle optional owner address query parameter
         let range = match owner {
-            None => offers().range(storage, range_from, None, Order::Descending),
+            None => offers().range(storage, range_min, range_max, std_order),
             Some(unchecked_addr) => {
                 let owner_addr = deps.api.addr_validate(unchecked_addr.as_str()).unwrap();
 
-                offers().idx.owner.prefix(owner_addr).range(
-                    storage,
-                    range_from,
-                    None,
-                    Order::Descending,
-                )
+                offers()
+                    .idx
+                    .owner
+                    .prefix(owner_addr)
+                    .range(storage, range_min, range_max, std_order)
             }
         };
 
