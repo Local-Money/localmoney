@@ -3,7 +3,7 @@
         <div class="owner">
             <div class="wrap">
                 <p class="wallet">
-                    {{ formatAddress(offer.owner) }}{{ offer.id }}
+                    {{ formatAddress(offer.owner) }}
                 </p>
                 <p class="n-trades">0 trades</p>
             </div>

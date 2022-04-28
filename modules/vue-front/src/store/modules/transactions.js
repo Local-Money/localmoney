@@ -138,7 +138,7 @@ const actions = {
         const offersQuery = {
             offers_query: {
                 owner: getters.walletAddress,
-                limit: 4,
+                limit: 10,
                 min,
                 max,
                 order,
@@ -183,7 +183,7 @@ const actions = {
                 offer_type: offerType,
                 min,
                 max,
-                limit: 3,
+                limit: 10,
                 order,
             },
         };
