@@ -11,7 +11,7 @@ use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
     offers, Arbitrator, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg,
-    OfferState, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
+    OfferState, OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData, TradeState,
@@ -69,9 +69,7 @@ pub fn execute(
 ) -> Result<Response, GuardError> {
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
-        ExecuteMsg::Activate { id } => activate_offer(deps, env, info, id),
-        ExecuteMsg::Pause { id } => pause_offer(deps, env, info, id),
-        ExecuteMsg::Update { id, offer } => update_offer(deps, env, info, id, offer),
+        ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
         ExecuteMsg::NewTrade {
             offer_id,
             ust_amount,
@@ -355,56 +353,15 @@ pub fn delete_arbitrator(
     Ok(res)
 }
 
-pub fn activate_offer(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    id: String,
-) -> Result<Response, GuardError> {
-    let mut offer_model = OfferModel::may_load(deps.storage, &id);
-
-    assert_ownership(info.sender, offer_model.offer.owner.clone())?;
-
-    let offer = offer_model.activate()?;
-
-    let res = Response::new()
-        .add_attribute("action", "activate_offer")
-        .add_attribute("id", offer.id.to_string())
-        .add_attribute("owner", offer.owner.to_string());
-
-    Ok(res)
-}
-
-pub fn pause_offer(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    id: String,
-) -> Result<Response, GuardError> {
-    let mut offer_model = OfferModel::may_load(deps.storage, &id);
-
-    assert_ownership(info.sender, offer_model.offer.owner.clone())?;
-
-    let offer = offer_model.pause()?;
-
-    let res = Response::new()
-        .add_attribute("action", "pause_offer")
-        .add_attribute("id", offer.id.to_string())
-        .add_attribute("owner", offer.owner.to_string());
-
-    Ok(res)
-}
-
 pub fn update_offer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    id: String,
-    msg: OfferMsg,
+    msg: OfferUpdateMsg,
 ) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
-    let mut offer_model = OfferModel::may_load(deps.storage, &id);
+    let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
 
     assert_ownership(info.sender, offer_model.offer.owner.clone())?;
 
@@ -412,7 +369,7 @@ pub fn update_offer(
 
     let res = Response::new()
         .add_attribute("action", "update_offer")
-        .add_attribute("id", offer.id.to_string())
+        .add_attribute("id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string());
 
     Ok(res)

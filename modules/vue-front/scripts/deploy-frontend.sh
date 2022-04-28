@@ -1,6 +1,5 @@
 set -e
 
-
 yarn build
 
 git add -A

@@ -29,4 +29,6 @@ export const mochaGlobalSetup = async () => {
   const arbitrator = createUser(terra, process.env.ARBITRATOR_MNEMONIC);
 
   if (process.env.UPLOAD) await uploadContracts(terra, arbitrator);
+  if (process.env.INSTANTIATE)
+    await instantiateFactory(terra, arbitrator, { cache: true });
 };
