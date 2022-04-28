@@ -32,6 +32,10 @@ const state = {
     tradeInfos: [],
     lunaUstPrice: 0,
     ustUsdPrice: 0,
+    stakingTotalDeposit: "0",
+    stakingTotalShares: "0",
+    stakingTotalWarming: "0",
+    stakingClaims: [],
     factoryConfig: {
         trade_code_id: 0,
         token_addr: "",
@@ -62,6 +66,10 @@ const getters = {
     walletAddress: (state) => state.walletAddress,
     offers: (state) => state.offers,
     myOffers: (state) => state.myOffers,
+    stakingTotalDeposit: (state) => state.stakingTotalDeposit,
+    stakingTotalShares: (state) => state.stakingTotalShares,
+    stakingTotalWarming: (state) => state.stakingTotalWarming,
+    stakingClaims: (state) => state.stakingClaims,
     getOfferById: (state) => (id) => {
         return state.offers.find((offer) => offer.id === id);
     },
@@ -98,8 +106,156 @@ const actions = {
             FACTORY_CONTRACT,
             cfgQuery,
         );
+        console.log("factoryConfig :>> ", factoryConfig);
         commit("setFactoryConfig", factoryConfig);
         dispatch("fetchTradeInfos");
+    },
+    /**
+     *
+     * @param {*} VuexContext
+     * @param {String} amount - The amount to stake in uLOCAL
+     * @returns
+     */
+    async enterStaking({ commit, getters, dispatch }, amount) {
+        const enterStakingMsg = new MsgExecuteContract(
+            getters.walletAddress,
+            "terra1j5xyaw8pjg665juf4rwgtn6wvkrvph3lzvwzer", // LOCAL_TOKEN_ADDR
+            {
+                send: {
+                    contract: state.factoryConfig.staking_addr,
+                    amount,
+                    msg: "ewogICJlbnRlciI6IHt9Cn0=", // { Enter: {}}
+                },
+            },
+        );
+
+        console.log("enterStakingMsg :>> ", enterStakingMsg);
+        const result = await executeMsg(
+            commit,
+            getters,
+            dispatch,
+            enterStakingMsg,
+        );
+        console.log("result :>> ", result);
+
+        return result;
+    },
+    /**
+     *
+     * @param {*} VuexContext
+     * @param {String} amount - The amount to stake in uLOCAL
+     * @returns
+     */
+    async leaveStaking({ commit, getters, dispatch }, amount) {
+        const leaveStakingMsg = new MsgExecuteContract(
+            getters.walletAddress,
+            "terra1qj8a5cl4mamxkp9hjv42esy2cv5r0t0e9wnu7a",
+            {
+                send: {
+                    contract: state.factoryConfig.staking_addr,
+                    amount,
+                    msg: "ewogICJsZWF2ZSI6IHt9Cn0=", // {Leave:{}}
+                },
+            },
+        );
+
+        console.log("leaveStakingMsg :>> ", leaveStakingMsg);
+        const result = await executeMsg(
+            commit,
+            getters,
+            dispatch,
+            leaveStakingMsg,
+        );
+        console.log("result :>> ", result);
+        return result;
+    },
+
+    /**
+     *
+     * @param {*} VuexContext
+     * @param {Number} claim_id - The id of the claim
+     * @returns
+     */
+    async claimStaking({ commit, getters, dispatch }, claim_id) {
+        const claimStakingMsg = new MsgExecuteContract(
+            getters.walletAddress,
+            state.factoryConfig.staking_addr,
+            {
+                claim: {
+                    claim_id,
+                },
+            },
+        );
+
+        console.log("claimStakingMsg :>> ", claimStakingMsg);
+        const result = await executeMsg(
+            commit,
+            getters,
+            dispatch,
+            claimStakingMsg,
+        );
+        console.log("result :>> ", result);
+        return result;
+    },
+    /**
+     * Fetch Staking Total Deposit
+     */
+    async fetchStakingTotalDeposit({ commit }) {
+        const msg = {
+            total_deposit: {},
+        };
+
+        const stakingTotalDeposit = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        console.log("stakingTotalDeposit :>> ", stakingTotalDeposit);
+        commit("setStakingTotalDeposit", stakingTotalDeposit);
+    },
+    /**
+     * Fetch Staking Total Shares
+     */
+    async fetchStakingTotalShares({ commit }) {
+        const msg = {
+            total_shares: {},
+        };
+
+        const stakingTotalShares = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        console.log("state :>> ", state);
+        commit("setStakingTotalShares", stakingTotalShares);
+    },
+    /**
+     * Fetch Staking Total Warming
+     */
+    async fetchStakingTotalWarming({ commit }) {
+        const msg = {
+            total_warming: {},
+        };
+
+        const stakingTotalWarming = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        commit("setStakingTotalWarming", stakingTotalWarming);
+    },
+    /**
+     * Fetch Staking Claims
+     */
+    async fetchStakingClaims({ commit, getters }) {
+        const msg = {
+            claims: {
+                recipient: getters.walletAddress,
+            },
+        };
+
+        const stakingClaims = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        commit("setStakingClaims", stakingClaims);
     },
     /**
      * Fetch Offer by Id
@@ -500,6 +656,14 @@ const mutations = {
         (state.walletAddress = walletAddress),
     setFactoryConfig: (state, factoryConfig) =>
         (state.factoryConfig = factoryConfig),
+    setStakingTotalDeposit: (state, stakingTotalDeposit) =>
+        (state.stakingTotalDeposit = stakingTotalDeposit),
+    setStakingTotalShares: (state, stakingTotalShares) =>
+        (state.stakingTotalShares = stakingTotalShares),
+    setStakingTotalWarming: (state, stakingTotalWarming) =>
+        (state.stakingTotalWarming = stakingTotalWarming),
+    setStakingClaims: (state, stakingClaims) =>
+        (state.stakingClaims = stakingClaims),
     addOffer: (state, offer) => state.offers.push(offer),
     setOffers: (state, offers) => (state.offers = offers),
     setMyOffers: (state, offers) => (state.myOffers = offers),
