@@ -11,7 +11,7 @@ use localterra_protocol::factory_util::get_factory_config;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
     offers, Arbitrator, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg,
-    OfferState, OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
+    OfferState, OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesCount, TradesIndex,
 };
 use localterra_protocol::trade::{
     InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData, TradeState,
@@ -459,13 +459,7 @@ pub fn query_trades(
     let mut trades_infos: Vec<TradeInfo> = vec![];
 
     // Pagination range (TODO pagination doesn't work with Addr as pk)
-    let range_from = match last_value {
-        Some(addr) => {
-            let valid_addr = deps.api.addr_validate(addr.as_str()).unwrap();
-            Some(Bound::Exclusive(Vec::from(valid_addr.to_string())))
-        }
-        None => None,
-    };
+    let range_from = addr_range(&deps, user.clone(), last_value);
 
     // Select correct index for data lookup
     // * The `state<TradeState>` filter only supported for `user == arbitrator` queries
@@ -517,6 +511,49 @@ pub fn query_trades(
         })
     });
     Ok(trades_infos)
+}
+
+fn addr_range(deps: &Deps, addr: Addr, last_value: Option<Addr>) -> Option<Bound> {
+    match last_value {
+        Some(addr) => {
+            let valid_addr = deps.api.addr_validate(addr.as_str()).unwrap();
+            Some(Bound::Exclusive(Vec::from(valid_addr.to_string())))
+        }
+        None => None,
+    }
+}
+
+///Queries how many trades a user made. It returns a struct with {as_buyer,as_seller,total}.
+pub fn query_trades_count(
+    env: Env,
+    deps: Deps,
+    user: Addr,
+    state: Option<TradeState>,
+    index: TradesIndex,
+    last_value: Option<Addr>,
+    limit: u32,
+) -> StdResult<TradesCount> {
+    // Pagination range (TODO pagination doesn't work with Addr as pk)
+    let range_from = addr_range(&deps, user.clone(), last_value);
+
+    // Select correct index for data lookup
+    // * The `state<TradeState>` filter only supported for `user == arbitrator` queries
+    let prefix = match index {
+        TradesIndex::Seller => trades().idx.seller.prefix(user),
+        TradesIndex::Buyer => trades().idx.buyer.prefix(user),
+        TradesIndex::ArbitratorState => trades().idx.arbitrator_state.sub_prefix(user),
+    };
+
+    let trades_count: usize = prefix
+        .range(deps.storage, range_from, None, Order::Descending)
+        .count();
+
+    let trades_count = TradesCount {
+        as_buyer: 0,
+        as_seller: 0,
+        total: trades_count,
+    };
+    Ok(trades_count)
 }
 
 pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrator>> {

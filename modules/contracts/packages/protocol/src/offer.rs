@@ -410,6 +410,13 @@ impl OfferModel<'_> {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct TradesCount {
+    pub as_buyer: usize,
+    pub as_seller: usize,
+    pub total: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeInfo {
     pub trade: TradeData,
     pub offer: Offer,
