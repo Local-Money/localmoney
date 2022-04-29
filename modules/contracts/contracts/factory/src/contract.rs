@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     entry_point, Addr, Binary, ContractResult, Deps, Reply, ReplyOn, StdError, StdResult,
-    SubMsgExecutionResponse, Uint128,
+    SubMsgExecutionResponse,
 };
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 

@@ -115,7 +115,10 @@ const actions = {
     /**
      * Fetch Offers.
      */
-    async fetchMyOffers({ commit, getters }, { paginated = false }) {
+    async fetchMyOffers(
+        { commit, getters },
+        { paginated = false, order = "desc" },
+    ) {
         const offers = paginated ? getters.myOffers : [];
 
         const last_offer_id =
@@ -123,14 +126,25 @@ const actions = {
                 ? offers[offers.length - 1].id
                 : undefined;
 
+        // For correct pagination we max set the Bound depending on order direction
+        let min, max;
+        if (order === "asc") {
+            min = last_offer_id;
+        } else {
+            // order === "desc"
+            max = last_offer_id;
+        }
+
         const offersQuery = {
             offers_query: {
                 owner: getters.walletAddress,
-                last_value: last_offer_id,
                 limit: 10,
+                min,
+                max,
+                order,
             },
         };
-        console.log("offersQuery :>> ", offersQuery);
+
         const loadedOffers = await terra.wasm.contractQuery(
             state.factoryConfig.offers_addr,
             offersQuery,
@@ -142,7 +156,7 @@ const actions = {
      */
     async fetchOffers(
         { commit, getters, dispatch },
-        { fiatCurrency, offerType, paginated = false },
+        { fiatCurrency, offerType, paginated = false, order = "desc" },
     ) {
         // fetchOffers depends on the fetchFactoryConfig
         // TODO we should call the fetchFactoryConfig on the start of the application,
@@ -154,14 +168,26 @@ const actions = {
                 ? offers[offers.length - 1].id
                 : undefined;
 
+        // For correct pagination we max set the Bound depending on order direction
+        let min, max;
+        if (order === "asc") {
+            min = last_offer_id;
+        } else {
+            // order === "desc"
+            max = last_offer_id;
+        }
+
         const offersQuery = {
             offers_by_type_fiat: {
                 fiat_currency: fiatCurrency,
                 offer_type: offerType,
-                last_value: last_offer_id,
+                min,
+                max,
                 limit: 10,
+                order,
             },
         };
+        console.log("offersQuery :>> ", offersQuery);
         const loadedOffers = await terra.wasm.contractQuery(
             state.factoryConfig.offers_addr,
             offersQuery,

@@ -45,6 +45,7 @@ async function instantiateFactory(client, user, options = {}) {
     codeIds.factory,
     factoryInstantiateMsg
   );
+  console.log(instantiateFactoryMsg);
 
   // console.log("instantiateFactoryMsg :>> ", instantiateFactoryMsg);
   let result;
