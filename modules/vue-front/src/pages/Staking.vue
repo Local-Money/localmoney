@@ -29,7 +29,7 @@
                     <p>{{ claim.amount }}</p>
                 </div>
                 <div class="col-2">
-                    <p>{{ new Date(claim.created_at * 1000) }}</p>
+                    <p>{{ new Date(claim.created_at * 1000 + 2 * 60) }}</p>
                 </div>
                 <div class="col-3">
                     <button
