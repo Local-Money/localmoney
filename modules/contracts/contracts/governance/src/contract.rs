@@ -88,7 +88,7 @@ fn withdraw_tokens(
 
     //Send Tokens
     send_tokens(
-        &factory_cfg.token_addr,
+        &factory_cfg.local_token_addr,
         &info.sender,
         withdraw_token_amount.u128(),
         "withdraw",
@@ -138,7 +138,7 @@ pub fn receive_cw20(
     let cfg: Config = config_read(deps.storage).load().unwrap();
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
-    if factory_cfg.token_addr != info.sender {
+    if factory_cfg.local_token_addr != info.sender {
         return Err(GovernanceError::ExecutionError {
             message: "unauthorized".to_string(),
         });
@@ -157,7 +157,7 @@ fn get_token_balance(deps: &Deps, cfg: &Config, env: &Env) -> Uint128 {
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
     load_token_balance(
         &deps.querier,
-        factory_cfg.token_addr.to_string(),
+        factory_cfg.local_token_addr.to_string(),
         &env.contract.address,
     )
     .unwrap()
@@ -209,7 +209,7 @@ pub fn deposit_rewards(
     cfg: Config,
 ) -> Result<Response, GovernanceError> {
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
-    if info.sender.eq(&factory_cfg.token_addr) {
+    if info.sender.eq(&factory_cfg.local_token_addr) {
         Ok(Response::default())
     } else {
         Err(GovernanceError::ExecutionError {
