@@ -12,7 +12,7 @@
         <div class="info">
             <div class="divider"></div>
             <p class="min-max">
-                Min ${{ formatAmount(offer.min_amount) }} - Max ${{
+                Limit ${{ formatAmount(offer.min_amount) }} - ${{
                     formatAmount(offer.max_amount)
                 }}
             </p>
