@@ -9,10 +9,42 @@
 
         <form action="">
             <div class="input">
-                <label for="buy">I want to pay</label>
+                <label for="from">{{ fromLabel() }}</label>
+                <CurrencyInput
+                    @focus="
+                        watchingCrypto = true;
+                        watchingFiat = false;
+                    "
+                    v-model="cryptoAmount"
+                    :placeholder="this.cryptoPlaceholder"
+                    :options="{
+                        currency: 'UST',
+                        currencyDisplay: 'code',
+                        hideCurrencySymbolOnFocus: false,
+                        hideGroupingSeparatorOnFocus: false,
+                        precision: 2,
+                        valueRange: {
+                            min: minAmountInCrypto(offer),
+                            max: maxAmountInCrypto(offer),
+                        },
+                    }"
+                    ref="cryptoAmountInput"
+                />
+                <p>
+                    Limit
+                    <b @click="useMinCrypto()">{{ minMaxCryptoStr[0] }}</b> -
+                    <b @click="useMaxCrypto()">{{ minMaxCryptoStr[1] }}</b>
+                </p>
+            </div>
+
+            <div class="input">
+                <label for="to">{{ toLabel() }}</label>
                 <CurrencyInput
                     v-model="fiatAmount"
-                    @focus="watchingCrypto === false && watchingFiat === true"
+                    @focus="
+                        watchingCrypto = false;
+                        watchingFiat = true;
+                    "
                     :placeholder="this.fiatPlaceholder"
                     :options="{
                         currency: offer.fiat_currency.toUpperCase(),
@@ -24,30 +56,11 @@
                             max: maxAmountInFiat(offer),
                         },
                     }"
+                    ref="fiatAmountInput"
                 />
                 <p>
-                    Limit <b @click="useMin()">{{ minMaxFiatStr[0] }}</b> -
-                    <b @click="useMax()">{{ minMaxFiatStr[1] }}</b>
-                </p>
-            </div>
-            <div class="input">
-                <label for="sell">I want to receive</label>
-                <CurrencyInput
-                    @focus="watchingCrypto === true && watchingFiat === false"
-                    v-model="cryptoAmount"
-                    :placeholder="this.cryptoPlaceholder"
-                    :options="{
-                        currency: 'UST',
-                        currencyDisplay: 'code',
-                        hideCurrencySymbolOnFocus: false,
-                        hideGroupingSeparatorOnFocus: false,
-                        precision: 2,
-                    }"
-                    ref="receiveAmountInput"
-                />
-                <p>
-                    Limit <b @click="useMin()">{{ minMaxCryptoStr[0] }}</b> -
-                    <b @click="useMax()">{{ minMaxCryptoStr[1] }}</b>
+                    Limit <b @click="useMinFiat()">{{ minMaxFiatStr[0] }}</b> -
+                    <b @click="useMaxFiat()">{{ minMaxFiatStr[1] }}</b>
                 </p>
             </div>
         </form>
@@ -105,8 +118,8 @@ export default defineComponent({
             cryptoAmount: 0,
             fiatAmount: 0,
             tradingFee: 0.0,
-            watchingFiat: true,
-            watchingCrypto: false,
+            watchingCrypto: true,
+            watchingFiat: false,
             secondsUntilRateRefresh: 0,
             refreshRateInterval: -1,
         };
@@ -125,6 +138,15 @@ export default defineComponent({
         scrollToElement,
         newTrade: function() {
             this.openTrade({ offer: this.offer, ustAmount: this.cryptoAmount });
+        },
+        isOfferTypeBuy: function() {
+            return this.offer.offer_type === "buy";
+        },
+        fromLabel: function() {
+            return this.isOfferTypeBuy() ? "I want to sell" : "I want to buy";
+        },
+        toLabel: function() {
+            return this.isOfferTypeBuy() ? "I will receive" : "I will pay";
         },
         focus: function() {
             let card = this.$refs.expandedCard;
@@ -146,6 +168,12 @@ export default defineComponent({
         },
         formatAddress,
         formatAmount,
+        minAmountInCrypto: function() {
+            return parseInt(this.offer.min_amount) / 1000000;
+        },
+        maxAmountInCrypto: function() {
+            return parseInt(this.offer.max_amount) / 1000000;
+        },
         minAmountInFiat: function() {
             let fiatCurrency = this.offer.fiat_currency.toUpperCase();
             let usdRate = this.getUsdRate(fiatCurrency);
@@ -156,13 +184,26 @@ export default defineComponent({
             let usdRate = this.getUsdRate(fiatCurrency);
             return usdRate * (parseInt(this.offer.max_amount) / 1000000);
         },
-        useMin: function() {
+        useMinCrypto: function() {
+            this.watchingFiat = false;
             this.watchingCrypto = true;
-            this.cryptoAmount = parseInt(this.offer.min_amount) / 1000000;
+            this.$refs.cryptoAmountInput.update(this.minAmountInCrypto());
         },
-        useMax: function() {
+        useMaxCrypto: function() {
+            this.watchingFiat = false;
             this.watchingCrypto = true;
-            this.cryptoAmount = parseInt(this.offer.max_amount) / 1000000;
+            this.cryptoAmount = this.maxAmountInCrypto();
+            this.$refs.cryptoAmountInput.update(this.maxAmountInCrypto());
+        },
+        useMinFiat: function() {
+            this.watchingCrypto = false;
+            this.watchingFiat = true;
+            this.$refs.fiatAmountInput.update(this.minAmountInFiat());
+        },
+        useMaxFiat: function() {
+            this.watchingCrypto = false;
+            this.watchingFiat = true;
+            this.$refs.fiatAmountInput.update(this.maxAmountInFiat());
         },
     },
     computed: {
@@ -217,7 +258,7 @@ export default defineComponent({
                 let cryptoAmount = parseFloat(val) / usdRate;
                 this.tradingFee = cryptoAmount * 0.01;
                 this.$nextTick(() => {
-                    this.$refs.receiveAmountInput.update(cryptoAmount);
+                    this.$refs.cryptoAmountInput.update(cryptoAmount);
                 });
             }
         },
@@ -228,7 +269,7 @@ export default defineComponent({
                 this.tradingFee = parseFloat(val) * 0.01;
                 this.$nextTick(() => {
                     let fiatAmount = parseFloat(val) * usdRate;
-                    this.$refs.buyAmountInput.update(fiatAmount);
+                    this.$refs.fiatAmountInput.update(fiatAmount);
                 });
             }
         },
