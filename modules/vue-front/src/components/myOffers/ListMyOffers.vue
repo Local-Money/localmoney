@@ -1,6 +1,7 @@
 <template>
     <section>
-        <section class="offers-list">
+        <!-- My Offers section-->
+        <section v-if="hasOffers" class="offers-list">
             <!-- Offers for -->
             <ul>
                 <li class="card" v-for="offer in offers" v-bind:key="offer.id">
@@ -24,8 +25,15 @@
                 </button>
             </div>
         </section>
-        <h3>Archived Offers</h3>
-        <section class="archived-offers-table card">
+        <section v-else class="card">
+            <p>
+                Nothing here yet
+            </p>
+        </section>
+        <!-- End My Offers section -->
+        <!-- Archived offers table -->
+        <h3 v-if="hasArchivedOffers">Archived Offers</h3>
+        <section v-if="hasArchivedOffers" class="archived-offers-table card">
             <div class="table-header">
                 <div class="col-1"><p>Type</p></div>
                 <div class="col-2"><p>Date</p></div>
@@ -40,6 +48,7 @@
                 :key="offer.id"
             />
         </section>
+        <!--End Archived offers table-->
     </section>
 
     <!-- Expanded Offer Mobile -->
@@ -167,8 +176,14 @@ export default defineComponent({
             });
             return offers;
         },
+        hasOffers: function() {
+            return this.offers.length > 0;
+        },
         archivedOffers: function() {
             return this.myOffers.filter((offer) => offer.state === "archive");
+        },
+        hasArchivedOffers: function() {
+            return this.archivedOffers.length > 0;
         },
     },
     created: function() {
