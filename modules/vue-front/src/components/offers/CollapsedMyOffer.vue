@@ -29,7 +29,11 @@
                 {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }}
             </p>
 
-            <button type="button" v-on:click="$emit('select', offer)">
+            <button
+                type="button"
+                v-on:click="$emit('select', offer)"
+                class="tertiary"
+            >
                 edit
             </button>
         </div>
@@ -146,10 +150,10 @@ export default defineComponent({
 
         button {
             background-color: $gray300;
-            color: $primary;
+            color: $base-text;
             border: none;
             font-family: inherit;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 16px;
             text-transform: lowercase;
             padding: 8px 24px;
