@@ -24,6 +24,22 @@
                 </button>
             </div>
         </section>
+        <h3>Archived Offers</h3>
+        <section class="archived-offers-table card">
+            <div class="table-header">
+                <div class="col-1"><p>Type</p></div>
+                <div class="col-2"><p>Date</p></div>
+                <div class="col-3"><p>Fiat</p></div>
+                <div class="col-4"><p>Limits</p></div>
+                <div class="col-5"><p>Price</p></div>
+                <div class="col-6"></div>
+            </div>
+            <ArchivedOfferItem
+                v-for="offer in archivedOffers"
+                :offer="offer"
+                :key="offer.id"
+            />
+        </section>
     </section>
 
     <!-- Expanded Offer Mobile -->
@@ -94,30 +110,24 @@
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import { formatAddress, formatAmount } from "@/shared";
-import ExpandedMyOffer from "@/components/offers/ExpandedMyOffer.vue";
-import CollapsedMyOffer from "@/components/offers/CollapsedMyOffer.vue";
+import ExpandedMyOffer from "@/components/myOffers/ExpandedMyOffer.vue";
+import CollapsedMyOffer from "@/components/myOffers/CollapsedMyOffer.vue";
+import ArchivedOfferItem from "@/components/myOffers/AchivedOfferItem.vue";
 
 export default defineComponent({
-    name: "Offers",
+    name: "ListMyOffers",
     components: {
         ExpandedMyOffer,
         CollapsedMyOffer,
+        ArchivedOfferItem,
     },
     data() {
         return {
             ExpandedMyOffer: null,
         };
     },
-    mounted() {
-        // Wait for iniWallet to provide us the walletAddress, then fetchmyOffers
-        // This fixes loading the /offers route directly without first going through /home
-        this.$watch(
-            "walletAddress",
-            (newWalletAddress) => {
-                if (newWalletAddress !== "") this.fetchMyOffers({});
-            },
-            { immediate: true },
-        );
+    mounted: async function() {
+        await this.fetchMyOffers({});
     },
     methods: {
         ...mapActions(["fetchMyOffers", "fetchUsdRates", "openTrade"]),
@@ -145,14 +155,20 @@ export default defineComponent({
         },
     },
     computed: {
-        ...mapGetters(["myOffers", "getUsdRate", "walletAddress"]),
+        ...mapGetters(["myOffers", "getUsdRate"]),
         offers: function() {
             let offers = [];
-            this.myOffers.forEach((offer) => {
+            let myOffers = this.myOffers.filter(
+                (offer) => offer.state !== "archive",
+            );
+            myOffers.forEach((offer) => {
                 offer["isExpanded"] = false;
                 offers.push(offer);
             });
             return offers;
+        },
+        archivedOffers: function() {
+            return this.myOffers.filter((offer) => offer.state === "archive");
         },
     },
     created: function() {
@@ -165,7 +181,6 @@ export default defineComponent({
 @import "@/style/tokens.scss";
 
 /* ----------- BUY SELL ROW */
-
 .separator {
     margin: 0 auto 42px;
     display: flex;
@@ -220,7 +235,6 @@ export default defineComponent({
 }
 
 /* ----------- OFFER LIST */
-
 .offers-list {
     h3 {
         color: $base-text;
@@ -442,4 +456,53 @@ export default defineComponent({
         padding: 8px 24px;
     }
 }
+
+/* ----------- ARCHIVED OFFERS TABLE */
+.archived-offers-table {
+    .table-header {
+        display: flex;
+        flex-direction: row;
+        border-bottom: 1px solid $border;
+        padding: 16px;
+        margin-bottom: 16px;
+
+        p {
+            font-size: 14px;
+            font-weight: $semi-bold;
+            color: $gray700;
+        }
+    }
+}
+
+.col-1,
+:deep(.col-1) {
+    width: 12.5%;
+}
+
+.col-2,
+:deep(.col-2) {
+    width: 16%;
+}
+
+.col-3,
+:deep(.col-3) {
+    width: 12.5%;
+}
+
+.col-4,
+:deep(.col-4) {
+    width: 25%;
+}
+
+.col-5,
+:deep(.col-5) {
+    width: 24%;
+}
+
+.col-6,
+:deep(.col-6) {
+    width: 10%;
+}
+
+/* ----------- END ARCHIVED OFFERS TABLE */
 </style>
