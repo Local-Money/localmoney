@@ -8,9 +8,10 @@ import {
     StdSignMsg,
     StdTx,
 } from "@terra-money/terra.js";
-import { FACTORY_CONTRACT } from "@/constants";
+import { FACTORY_CFG } from "../../constants/factoryCfg.js";
 import router from "@/router";
 import { updateTrade } from "@/store/firebase";
+// import { sleep } from "../../shared.js";
 import { newTrade } from "../firebase";
 
 const lcdOptions = {
@@ -37,15 +38,11 @@ const state = {
     tradeInfos: [],
     lunaUstPrice: 0,
     ustUsdPrice: 0,
-    factoryConfig: {
-        trade_code_id: 0,
-        token_addr: "",
-        local_ust_pool_addr: "",
-        gov_addr: "",
-        offers_addr: "",
-        fee_collector_addr: "",
-        trading_incentives_addr: "",
-    },
+    stakingTotalDeposit: "0",
+    stakingTotalShares: "0",
+    stakingTotalWarming: "0",
+    stakingClaims: [],
+    factoryConfig: FACTORY_CFG.factoryCfg,
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -69,6 +66,10 @@ const getters = {
     offers: (state) => state.offers,
     offersFilter: (state) => state.offersFilter,
     myOffers: (state) => state.myOffers,
+    stakingTotalDeposit: (state) => state.stakingTotalDeposit,
+    stakingTotalShares: (state) => state.stakingTotalShares,
+    stakingTotalWarming: (state) => state.stakingTotalWarming,
+    stakingClaims: (state) => state.stakingClaims,
     getOfferById: (state) => (id) => {
         return state.offers.find((offer) => offer.id === id);
     },
@@ -84,7 +85,8 @@ const getters = {
 };
 
 const actions = {
-    async initWallet({ commit, dispatch }) {
+    async initWallet({ commit }) {
+        console.log("initWallet");
         const ext = new Extension();
         const res = await ext.request("connect");
         const info = await ext.request("info");
@@ -94,19 +96,167 @@ const actions = {
         });
         const walletAddress = res.payload.address;
         commit("setWalletAddress", walletAddress);
-        dispatch("fetchFactoryConfig");
+        // dispatch("fetchFactoryConfig");
     },
     /**
      * Fetch Factory Contract config
      */
-    async fetchFactoryConfig({ commit, dispatch }) {
-        const cfgQuery = { config: {} };
-        const factoryConfig = await terra.wasm.contractQuery(
-            FACTORY_CONTRACT,
-            cfgQuery,
+    // async fetchFactoryConfig({ commit, dispatch }) {
+    //     const cfgQuery = { config: {} };
+    //     const factoryConfig = await terra.wasm.contractQuery(
+    //         FACTORY_CONTRACT,
+    //         cfgQuery,
+    //     );
+    //     console.log("factoryConfig :>> ", factoryConfig);
+    //     commit("setFactoryConfig", factoryConfig);
+    //     dispatch("fetchTradeInfos");
+    // },
+    /**
+     *
+     * @param {*} VuexContext
+     * @param {String} amount - The amount to stake in uLOCAL
+     * @returns
+     */
+    async enterStaking({ commit, getters, dispatch }, amount) {
+        const enterStakingMsg = new MsgExecuteContract(
+            getters.walletAddress,
+            getters.factoryCfg.local_token_addr, // LOCAL_TOKEN_ADDR
+            {
+                send: {
+                    contract: state.factoryConfig.staking_addr,
+                    amount,
+                    msg: "ewogICJlbnRlciI6IHt9Cn0=", // { Enter: {}}
+                },
+            },
         );
-        commit("setFactoryConfig", factoryConfig);
-        dispatch("fetchTradeInfos");
+
+        console.log("enterStakingMsg :>> ", enterStakingMsg);
+        const result = await executeMsg(
+            commit,
+            getters,
+            dispatch,
+            enterStakingMsg,
+        );
+        console.log("result :>> ", result);
+
+        return result;
+    },
+    /**
+     *
+     * @param {*} VuexContext
+     * @param {String} amount - The amount to stake in uLOCAL
+     * @returns
+     */
+    async leaveStaking({ commit, getters, dispatch }, amount) {
+        const leaveStakingMsg = new MsgExecuteContract(
+            getters.walletAddress,
+            getters.factoryCfg.xlocal_addr,
+            {
+                send: {
+                    contract: state.factoryConfig.staking_addr,
+                    amount,
+                    msg: "ewogICJsZWF2ZSI6IHt9Cn0=", // {Leave:{}}
+                },
+            },
+        );
+
+        console.log("leaveStakingMsg :>> ", leaveStakingMsg);
+        const result = await executeMsg(
+            commit,
+            getters,
+            dispatch,
+            leaveStakingMsg,
+        );
+        console.log("result :>> ", result);
+        return result;
+    },
+
+    /**
+     *
+     * @param {*} VuexContext
+     * @param {Number} claim_id - The id of the claim
+     * @returns
+     */
+    async claimStaking({ commit, getters, dispatch }, claim_id) {
+        const claimStakingMsg = new MsgExecuteContract(
+            getters.walletAddress,
+            state.factoryConfig.staking_addr,
+            {
+                claim: {
+                    claim_id,
+                },
+            },
+        );
+
+        console.log("claimStakingMsg :>> ", claimStakingMsg);
+        const result = await executeMsg(
+            commit,
+            getters,
+            dispatch,
+            claimStakingMsg,
+        );
+        console.log("result :>> ", result);
+        return result;
+    },
+    /**
+     * Fetch Staking Total Deposit
+     */
+    async fetchStakingTotalDeposit({ commit }) {
+        const msg = {
+            total_deposit: {},
+        };
+
+        const stakingTotalDeposit = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        console.log("stakingTotalDeposit :>> ", stakingTotalDeposit);
+        commit("setStakingTotalDeposit", stakingTotalDeposit);
+    },
+    /**
+     * Fetch Staking Total Shares
+     */
+    async fetchStakingTotalShares({ commit }) {
+        const msg = {
+            total_shares: {},
+        };
+
+        const stakingTotalShares = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        console.log("state :>> ", state);
+        commit("setStakingTotalShares", stakingTotalShares);
+    },
+    /**
+     * Fetch Staking Total Warming
+     */
+    async fetchStakingTotalWarming({ commit }) {
+        const msg = {
+            total_warming: {},
+        };
+
+        const stakingTotalWarming = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        commit("setStakingTotalWarming", stakingTotalWarming);
+    },
+    /**
+     * Fetch Staking Claims
+     */
+    async fetchStakingClaims({ commit, getters }) {
+        const msg = {
+            claims: {
+                recipient: getters.walletAddress,
+            },
+        };
+
+        const stakingClaims = await terra.wasm.contractQuery(
+            state.factoryConfig.staking_addr,
+            msg,
+        );
+        commit("setStakingClaims", stakingClaims);
     },
     /**
      * Fetch Offer by Id
@@ -120,12 +270,14 @@ const actions = {
         commit("addOffer", offer);
     },
     /**
-     * Fetch Offers.
+     * Fetch My Offers.
      */
     async fetchMyOffers(
         { commit, getters },
         { paginated = false, order = "desc" },
     ) {
+        console.log("fetchMyOffers walletAddress", getters.walletAddress);
+
         const offers = paginated ? getters.myOffers : [];
 
         const last_offer_id =
@@ -162,7 +314,7 @@ const actions = {
      * Fetch Offers.
      */
     async fetchOffers(
-        { commit, getters, dispatch },
+        { commit, getters },
         { fiatCurrency, offerType, paginated = false, order = "desc" },
     ) {
         commit("setLoadingOffers", true);
@@ -175,7 +327,7 @@ const actions = {
         // fetchOffers depends on the fetchFactoryConfig
         // TODO we should call the fetchFactoryConfig on the start of the application,
         //  but we need to fix the initWallet first.
-        await dispatch("fetchFactoryConfig");
+        // await dispatch("fetchFactoryConfig");
         const offers = paginated ? getters.offers : [];
         const last_offer_id =
             offers.length > 0 && paginated
@@ -518,6 +670,14 @@ const mutations = {
         (state.walletAddress = walletAddress),
     setFactoryConfig: (state, factoryConfig) =>
         (state.factoryConfig = factoryConfig),
+    setStakingTotalDeposit: (state, stakingTotalDeposit) =>
+        (state.stakingTotalDeposit = stakingTotalDeposit),
+    setStakingTotalShares: (state, stakingTotalShares) =>
+        (state.stakingTotalShares = stakingTotalShares),
+    setStakingTotalWarming: (state, stakingTotalWarming) =>
+        (state.stakingTotalWarming = stakingTotalWarming),
+    setStakingClaims: (state, stakingClaims) =>
+        (state.stakingClaims = stakingClaims),
     addOffer: (state, offer) => state.offers.push(offer),
     setLoadingOffers: (state, showLoadingOffers) =>
         (state.showLoadingOffers = showLoadingOffers),

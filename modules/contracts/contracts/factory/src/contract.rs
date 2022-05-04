@@ -28,8 +28,9 @@ pub fn instantiate(
 ) -> Result<Response, FactoryError> {
     let cfg = Config {
         trade_code_id: msg.trade_code_id,
-        token_addr: Addr::unchecked(""), // TODO refactor to local_token_addr
+        local_token_addr: deps.api.addr_validate(&msg.local_token_addr).unwrap(),
         local_ust_pool_addr: deps.api.addr_validate(&msg.local_ust_pool_addr).unwrap(),
+        warchest_addr: deps.api.addr_validate(&msg.warchest_addr).unwrap(),
         gov_addr: Addr::unchecked(""),
         offers_addr: Addr::unchecked(""),
         trading_incentives_addr: Addr::unchecked(""),
@@ -196,7 +197,7 @@ fn instantiate_staking_reply(
 //     }
 
 //     let mut cfg = CONFIG.load(deps.storage).unwrap();
-//     cfg.token_addr = get_contract_address_from_reply(deps.as_ref(), result);
+//     cfg.local_token_addr = get_contract_address_from_reply(deps.as_ref(), result);
 //     CONFIG.save(deps.storage, &cfg).unwrap();
 //     let res = Response::new().add_attribute("instantiate_contract", "token");
 //     Ok(res)

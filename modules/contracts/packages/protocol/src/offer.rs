@@ -1,6 +1,6 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
-use crate::errors::GuardError;
+// use crate::errors::GuardError;
 use crate::trade::{TradeData, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
@@ -30,18 +30,18 @@ pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
     let indexes = OfferIndexes {
         owner: MultiIndex::new(
             |d: &Offer, k: Vec<u8>| (d.owner.clone(), k),
-            "offers",        // TODO replace with OFFERS_KEY
-            "offers__owner", // TODO replace with OFFERS_KEY and concat
+            "offers",
+            "offers__owner",
         ),
         offer_type: MultiIndex::new(
             |d: &Offer, k: Vec<u8>| (d.offer_type.to_string(), k),
-            "offers",             // TODO replace with OFFERS_KEY
-            "offers__offer_type", // TODO replace with OFFERS_KEY and concat
+            "offers",
+            "offers__offer_type",
         ),
         fiat: MultiIndex::new(
             |d: &Offer, k: Vec<u8>| (d.fiat_currency.to_string(), k),
-            "offers",       // TODO replace with OFFERS_KEY
-            "offers__fiat", // TODO replace with OFFERS_KEY and concat
+            "offers",
+            "offers__fiat",
         ),
         filter: MultiIndex::new(
             |d: &Offer, k: Vec<u8>| {
@@ -51,8 +51,8 @@ pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
                     k,
                 )
             },
-            "offers",         // TODO replace with OFFERS_KEY
-            "offers__filter", // TODO replace with OFFERS_KEY and concat
+            "offers",
+            "offers__filter",
         ),
     };
     IndexedMap::new(OFFERS_KEY, indexes)

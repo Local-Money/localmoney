@@ -10,7 +10,7 @@ pub struct InstantiateMsg {
     /// Address allowed to change contract parameters
     pub owner: String,
     /// The address of the token that's being vested
-    pub token_addr: String,
+    pub local_token_addr: String,
 }
 
 /// This structure describes the execute messages available in the contract.
@@ -111,7 +111,7 @@ pub struct ConfigResponse {
     /// Address allowed to set contract parameters
     pub owner: Addr,
     /// The address of the token being vested
-    pub token_addr: Addr,
+    pub local_token_addr: Addr,
 }
 
 /// This structure describes a custom struct used to return vesting data about a specific vesting target.

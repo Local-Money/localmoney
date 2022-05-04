@@ -248,7 +248,7 @@
 //                     if contract_addr.contains("factory") {
 //                         SystemResult::Ok(ContractResult::from(to_binary(&FactoryConfig {
 //                             trade_code_id: 0,
-//                             token_addr: Addr::unchecked("local"),
+//                             local_token_addr: Addr::unchecked("local"),
 //                             local_ust_pool_addr: Addr::unchecked("local-ust"),
 //                             gov_addr: Addr::unchecked("gov"),
 //                             offers_addr: Addr::unchecked("offers"),

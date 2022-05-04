@@ -30,23 +30,23 @@ pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
     let indexes = TradeIndexes {
         seller: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.seller.clone(), k),
-            "trades",         // TODO replace with TRADES_KEY
-            "trades__seller", // TODO replace with TRADES_KEY and concat
+            "trades",
+            "trades__seller",
         ),
         buyer: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.buyer.clone(), k),
-            "trades",        // TODO replace with TRADES_KEY
-            "trades__buyer", // TODO replace with TRADES_KEY and concat
+            "trades",
+            "trades__buyer",
         ),
         arbitrator: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.arbitrator.clone(), k),
-            "trades",             // TODO replace with TRADES_KEY
-            "trades__arbitrator", // TODO replace with TRADES_KEY and concat
+            "trades",
+            "trades__arbitrator",
         ),
         arbitrator_state: MultiIndex::new(
             |d: &TradeAddr, k: Vec<u8>| (d.arbitrator.clone(), d.state.clone().to_string(), k),
-            "trades",                   // TODO replace with TRADES_KEY
-            "trades__arbitrator_state", // TODO replace with TRADES_KEY and concat
+            "trades",
+            "trades__arbitrator_state",
         ),
     };
     IndexedMap::new("trades", indexes)
@@ -69,13 +69,13 @@ pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexe
     let indexes = ArbitratorIndexes {
         arbitrator: MultiIndex::new(
             |d: &Arbitrator, k: Vec<u8>| (d.arbitrator.clone(), k),
-            "arbitrators",             // TODO replace with arbitrators_KEY
-            "arbitrators__arbitrator", // TODO replace with arbitrators_KEY and concat
+            "arbitrators",
+            "arbitrators__arbitrator",
         ),
         asset: MultiIndex::new(
             |d: &Arbitrator, k: Vec<u8>| (d.asset.clone().to_string(), k),
-            "arbitrators",        // TODO replace with arbitrators_KEY
-            "arbitrators__asset", // TODO replace with arbitrators_KEY and concat
+            "arbitrators",
+            "arbitrators__asset",
         ),
     };
     IndexedMap::new("arbitrators", indexes)

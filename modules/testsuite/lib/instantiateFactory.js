@@ -34,8 +34,9 @@ async function instantiateFactory(client, user, options = {}) {
     trading_incentives_code_id: codeIds.trading_incentives,
     offer_code_id: codeIds.offer,
     trade_code_id: codeIds.trade,
-    local_ust_pool_addr: user.address,
     staking_code_id: codeIds.localterra_staking,
+    local_ust_pool_addr: process.env.LOCAL_UST_POOL_ADDR,
+    warchest_addr: process.env.WARCHEST_ADDR,
     local_token_addr: process.env.LOCAL_TOKEN_ADDR,
   };
 
@@ -45,7 +46,6 @@ async function instantiateFactory(client, user, options = {}) {
     codeIds.factory,
     factoryInstantiateMsg
   );
-  console.log(instantiateFactoryMsg);
 
   // console.log("instantiateFactoryMsg :>> ", instantiateFactoryMsg);
   let result;
