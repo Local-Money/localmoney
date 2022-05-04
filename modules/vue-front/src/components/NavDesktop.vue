@@ -46,7 +46,7 @@
                     <p>My Trades</p>
                 </router-link>
             </li>
-            <li class="item">
+            <!-- <li class="item">
                 <router-link to="/staking">
                     <svg class="icon-24" viewBox="0 0 24 24" fill="none">
                         <path
@@ -56,7 +56,7 @@
                     </svg>
                     <p>Staking</p>
                 </router-link>
-            </li>
+            </li> -->
         </ul>
     </nav>
 </template>
