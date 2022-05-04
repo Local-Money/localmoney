@@ -1,8 +1,27 @@
 <template>
     <main>
         <div class="wrap-title">
-            <h3>My Offers</h3>
-            <button @click="toggleModal">Create a new offer</button>
+            <div class="inner-wrap">
+                <h3>My Offers</h3>
+                <div class="btn-add" @click="toggleModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path
+                            d="M12 5V19"
+                            stroke="inherit"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M5 12L19 12"
+                            stroke="inherit"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- <button @click="toggleModal">Create a new offer</button> -->
 
             <Modal @close="toggleModal" :modalActive="modalActive">
                 <div class="modal-content card">
@@ -44,6 +63,28 @@ export default defineComponent({
 .wrap-title {
     display: flex;
     justify-content: space-between;
+
+    .inner-wrap {
+        display: flex;
+        align-items: center;
+
+        .btn-add {
+            width: 40px;
+            height: 40px;
+            background-color: $surface;
+            border-radius: 56px;
+            margin-left: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+
+            svg {
+                stroke: $primary;
+                vertical-align: middle;
+            }
+        }
+    }
 }
 
 button {

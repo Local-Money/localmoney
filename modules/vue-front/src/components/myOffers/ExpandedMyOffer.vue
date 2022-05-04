@@ -1,11 +1,37 @@
 <template>
     <div class="expanded" :key="`${offer.id}-expanded`" ref="expandedCard">
-        <div class="owner">
-            <p class="wallet">{{ formatAddress(offer.owner) }}</p>
-            <p class="n-trades">0 trades</p>
+        <div class="offer-type">
+            <p class="type">{{ offer.offer_type }}ing</p>
         </div>
 
-        <div class="form-separator"></div>
+        <div class="horizontal-separator"></div>
+
+        <div class="wrap-status">
+            <select name="select-status" class="select-status">
+                <option value="">Active</option>
+                <option value="">Pause</option>
+                <option value="">Archive</option>
+            </select>
+        </div>
+
+        <div class="price">
+            <p class="label">Offer Status</p>
+            <div class="buy-sell">
+                <button
+                    v-on:click="updatedOffer.state = 'active'"
+                    v-bind:class="{ focus: updatedOffer.state == 'active' }"
+                >
+                    Active
+                </button>
+                <div class="separator"></div>
+                <button
+                    v-on:click="updatedOffer.state = 'paused'"
+                    v-bind:class="{ focus: updatedOffer.state == 'paused' }"
+                >
+                    Paused
+                </button>
+            </div>
+        </div>
 
         <form action="">
             <div class="min-max">
@@ -42,25 +68,6 @@
         </form>
 
         <div class="receipt">
-            <div class="price">
-                <p class="label">Offer Status</p>
-                <div class="buy-sell">
-                    <button
-                        v-on:click="updatedOffer.state = 'active'"
-                        v-bind:class="{ focus: updatedOffer.state == 'active' }"
-                    >
-                        Active
-                    </button>
-                    <div class="separator"></div>
-                    <button
-                        v-on:click="updatedOffer.state = 'paused'"
-                        v-bind:class="{ focus: updatedOffer.state == 'paused' }"
-                    >
-                        Paused
-                    </button>
-                </div>
-            </div>
-
             <div class="wrap-btns">
                 <button class="secondary" @click="$emit('cancel', offer)">
                     close
@@ -231,54 +238,31 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "@/style/tokens.scss";
 
-.owner {
-    grid-column: 1/2;
-    grid-row: 1;
+.expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 
-    .wallet {
-        font-size: 18px;
-        font-weight: 600;
-        color: $base-text;
-    }
+    .offer-type {
+        display: flex;
+        align-items: center;
 
-    .n-trades {
-        font-size: 14px;
-        color: $gray600;
-    }
-
-    @media only screen and (max-width: 550px) {
-        .owner {
-            display: inline-flex;
+        .type {
+            font-size: 18px;
+            font-weight: $semi-bold;
+            color: $base-text;
+            text-transform: capitalize;
         }
     }
-}
 
-.expanded {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    gap: 16px;
-
-    @media only screen and (max-width: 1050px) {
-        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    }
-
-    @media only screen and (max-width: 550px) {
-        grid-template-columns: 1fr 1fr;
-        padding: 24px 24px;
-    }
-
-    .form-separator {
+    .horizontal-separator {
         width: 100%;
         height: 1px;
         background-color: $border;
         margin: 8px 0;
-        grid-column: 1/7;
-        grid-row: 2;
     }
 
     form {
-        grid-column: 1/3;
-        grid-row: 3;
         margin-top: 16px;
         padding-right: 56px;
 
@@ -312,8 +296,6 @@ export default defineComponent({
     }
 
     .receipt {
-        grid-column: 3/7;
-        grid-row: 3;
         margin-top: 16px;
 
         .price {

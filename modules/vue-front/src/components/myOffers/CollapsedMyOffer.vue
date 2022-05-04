@@ -1,43 +1,40 @@
 <template>
     <div class="collapsed" :key="`${offer.id}-collapsed`">
-        <div class="owner">
-            <div class="wrap">
-                <p class="wallet">
-                    {{ formatAddress(offer.owner) }}
-                </p>
-                <p class="n-trades">0 trades</p>
-            </div>
+        <div class="offer-type">
+            <p class="type">{{ offer.offer_type }}ing</p>
         </div>
 
         <div class="info">
-            <div class="divider"></div>
-            <p class="min-max">
-                Min ${{ formatAmount(offer.min_amount) }} - Max ${{
-                    formatAmount(offer.max_amount)
-                }}
+            <p class="state">
+                {{ offer.state }}
             </p>
+            <div class="divider"></div>
+            <div class="wrap">
+                <p class="label">Limits</p>
+                <p class="limit">
+                    ${{ formatAmount(offer.min_amount) }} - ${{
+                        formatAmount(offer.max_amount)
+                    }}
+                </p>
+            </div>
+            <div class="divider"></div>
+            <div class="wrap">
+                <p class="label">Price</p>
+                <p class="margin">??% above market</p>
+            </div>
         </div>
 
         <div class="price">
-            <div class="wrap-value">
-                <p class="value">
-                    {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }}
-                </p>
-                <p class="margin">0% above market</p>
-            </div>
-            <div>
-                <p class="value">
-                    {{ offer.state }}
-                </p>
-            </div>
-            <div>
-                <p class="value">
-                    {{ offer.offer_type }}
-                </p>
-            </div>
+            <p class="value">
+                {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }}
+            </p>
 
-            <button type="button" v-on:click="$emit('select', offer)">
-                View
+            <button
+                type="button"
+                v-on:click="$emit('select', offer)"
+                class="tertiary"
+            >
+                edit
             </button>
         </div>
     </div>
@@ -71,144 +68,92 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "@/style/tokens.scss";
 
-.owner {
-    grid-column: 1/2;
-    grid-row: 1;
-    display: flex;
-    flex-direction: row;
-
-    .avatar {
-        width: 48px;
-        height: 48px;
-        margin-right: 24px;
-
-        img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            border-radius: 100px;
-        }
-    }
-
-    .wrap {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .wallet {
-        font-size: 18px;
-        font-weight: 600;
-        color: $base-text;
-    }
-
-    .n-trades {
-        font-size: 14px;
-        color: $gray600;
-    }
-
-    @media only screen and (max-width: 550px) {
-        .owner {
-            display: inline-flex;
-        }
-    }
-}
-
-.info {
-    grid-column: 2/5;
-    grid-row: 1;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-
-    .currency {
-        text-align: center;
-        font-size: 12px;
-        font-weight: 600;
-        color: $gray600;
-        text-transform: uppercase;
-
-        img {
-            width: 24px;
-        }
-    }
-
-    .divider {
-        height: 40px;
-        width: 1px;
-        background-color: $border;
-    }
-
-    .note {
-        font-size: 14px;
-        color: $gray600;
-        max-width: 200px;
-    }
-
-    .min-max {
-        font-size: 14px;
-        color: $gray600;
-    }
-
-    @media only screen and (max-width: 550px) {
-        grid-column: 1/7;
-        grid-row: 2;
-
-        .note {
-            grid-row: 3;
-        }
-        .divider {
-            display: none;
-        }
-        .min-max {
-            padding: 8px 16px;
-            margin-bottom: 4px;
-            border-radius: 8px;
-            background-color: $gray150;
-        }
-    }
-}
-
 .collapsed {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    gap: 16px;
+    display: flex;
+    justify-content: space-between;
 
-    @media only screen and (max-width: 1050px) {
-        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-    }
-
-    @media only screen and (max-width: 550px) {
-        grid-template-columns: 1fr 1fr;
-        padding: 24px 24px;
-    }
-
-    .price {
-        grid-column: 1/7;
-        grid-row: 1;
-        justify-self: end;
-        text-align: right;
+    .offer-type {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 24px;
 
-        .value {
-            font-size: 20px;
-            font-weight: 800;
+        .type {
+            font-size: 18px;
+            font-weight: $semi-bold;
             color: $base-text;
+            text-transform: capitalize;
+        }
+    }
+
+    .info {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+
+        .divider {
+            height: 40px;
+            width: 1px;
+            background-color: $border;
+        }
+
+        .state {
+            padding: 8px 16px;
+            background-color: $gray150;
+            border-radius: 8px;
+            font-size: 14px;
+            text-transform: capitalize;
+            color: $gray900;
+        }
+
+        .wrap {
+            .label {
+                margin-bottom: 4px;
+                font-size: 12px;
+                color: $gray700;
+            }
+        }
+
+        .limit {
+            font-size: 16px;
+            color: $gray900;
         }
 
         .margin {
-            font-size: 14px;
-            color: $gray600;
+            font-size: 16px;
+            color: $gray900;
+        }
+
+        @media only screen and (max-width: 550px) {
+            .divider {
+                display: none;
+            }
+            .limit {
+                padding: 8px 16px;
+                margin-bottom: 4px;
+                border-radius: 8px;
+                background-color: $gray150;
+            }
+        }
+    }
+
+    .price {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 40px;
+
+        .value {
+            font-size: 18px;
+            font-weight: 600;
+            color: $base-text;
+            font-weight: $semi-bold;
         }
 
         button {
             background-color: $gray300;
-            color: $primary;
+            color: $base-text;
             border: none;
             font-family: inherit;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 16px;
             text-transform: lowercase;
             padding: 8px 24px;
