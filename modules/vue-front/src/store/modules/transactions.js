@@ -120,7 +120,7 @@ const actions = {
     async enterStaking({ commit, getters, dispatch }, amount) {
         const enterStakingMsg = new MsgExecuteContract(
             getters.walletAddress,
-            "terra1j5xyaw8pjg665juf4rwgtn6wvkrvph3lzvwzer", // LOCAL_TOKEN_ADDR
+            getters.factoryCfg.local_token_addr, // LOCAL_TOKEN_ADDR
             {
                 send: {
                     contract: state.factoryConfig.staking_addr,
@@ -150,7 +150,7 @@ const actions = {
     async leaveStaking({ commit, getters, dispatch }, amount) {
         const leaveStakingMsg = new MsgExecuteContract(
             getters.walletAddress,
-            "terra1qj8a5cl4mamxkp9hjv42esy2cv5r0t0e9wnu7a",
+            getters.factoryCfg.xlocal_addr,
             {
                 send: {
                     contract: state.factoryConfig.staking_addr,
