@@ -23,11 +23,16 @@ const ext = new Extension();
 const state = {
     loading: {
         isLoading: false,
-        label: "Processing...",
+        label: "Loading...",
         transaction: "Follow the transaction",
     },
     walletAddress: "",
+    showLoadingOffers: false,
     offers: [],
+    offersFilter: {
+        type: "",
+        fiatCurrency: "",
+    },
     myOffers: [],
     tradeInfos: [],
     lunaUstPrice: 0,
@@ -60,7 +65,9 @@ function prepareTransaction(signedMsg) {
 
 const getters = {
     walletAddress: (state) => state.walletAddress,
+    showLoadingOffers: (state) => state.showLoadingOffers,
     offers: (state) => state.offers,
+    offersFilter: (state) => state.offersFilter,
     myOffers: (state) => state.myOffers,
     getOfferById: (state) => (id) => {
         return state.offers.find((offer) => offer.id === id);
@@ -158,6 +165,13 @@ const actions = {
         { commit, getters, dispatch },
         { fiatCurrency, offerType, paginated = false, order = "desc" },
     ) {
+        commit("setLoadingOffers", true);
+        if (
+            getters.offersFilter.type !== offerType ||
+            getters.offersFilter.fiatCurrency !== fiatCurrency
+        ) {
+            commit("setOffers", []);
+        }
         // fetchOffers depends on the fetchFactoryConfig
         // TODO we should call the fetchFactoryConfig on the start of the application,
         //  but we need to fix the initWallet first.
@@ -187,12 +201,16 @@ const actions = {
                 order,
             },
         };
-        console.log("offersQuery :>> ", offersQuery);
         const loadedOffers = await terra.wasm.contractQuery(
             state.factoryConfig.offers_addr,
             offersQuery,
         );
         commit("setOffers", offers.concat(loadedOffers));
+        commit("setOffersFilter", {
+            type: offerType,
+            fiatCurrency: fiatCurrency,
+        });
+        commit("setLoadingOffers", false);
     },
     /**
      * Create Offer
@@ -501,7 +519,11 @@ const mutations = {
     setFactoryConfig: (state, factoryConfig) =>
         (state.factoryConfig = factoryConfig),
     addOffer: (state, offer) => state.offers.push(offer),
+    setLoadingOffers: (state, showLoadingOffers) =>
+        (state.showLoadingOffers = showLoadingOffers),
     setOffers: (state, offers) => (state.offers = offers),
+    setOffersFilter: (state, offersFilter) =>
+        (state.offersFilter = offersFilter),
     setMyOffers: (state, offers) => (state.myOffers = offers),
     addTradeInfo: (state, tradeInfo) => {
         const addedTradeInfo = state.tradeInfos.find(
