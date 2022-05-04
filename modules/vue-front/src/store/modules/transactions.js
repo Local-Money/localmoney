@@ -8,9 +8,10 @@ import {
     StdSignMsg,
     StdTx,
 } from "@terra-money/terra.js";
-import { FACTORY_CONTRACT } from "@/constants";
+import { FACTORY_CFG } from "../../constants/factoryCfg.js";
 import router from "@/router";
 import { updateTrade } from "@/store/firebase";
+// import { sleep } from "../../shared.js";
 import { newTrade } from "../firebase";
 
 const lcdOptions = {
@@ -41,15 +42,7 @@ const state = {
     stakingTotalShares: "0",
     stakingTotalWarming: "0",
     stakingClaims: [],
-    factoryConfig: {
-        trade_code_id: 0,
-        token_addr: "",
-        local_ust_pool_addr: "",
-        gov_addr: "",
-        offers_addr: "",
-        fee_collector_addr: "",
-        trading_incentives_addr: "",
-    },
+    factoryConfig: FACTORY_CFG.factoryCfg,
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -92,7 +85,8 @@ const getters = {
 };
 
 const actions = {
-    async initWallet({ commit, dispatch }) {
+    async initWallet({ commit }) {
+        console.log("initWallet");
         const ext = new Extension();
         const res = await ext.request("connect");
         const info = await ext.request("info");
@@ -102,21 +96,21 @@ const actions = {
         });
         const walletAddress = res.payload.address;
         commit("setWalletAddress", walletAddress);
-        dispatch("fetchFactoryConfig");
+        // dispatch("fetchFactoryConfig");
     },
     /**
      * Fetch Factory Contract config
      */
-    async fetchFactoryConfig({ commit, dispatch }) {
-        const cfgQuery = { config: {} };
-        const factoryConfig = await terra.wasm.contractQuery(
-            FACTORY_CONTRACT,
-            cfgQuery,
-        );
-        console.log("factoryConfig :>> ", factoryConfig);
-        commit("setFactoryConfig", factoryConfig);
-        dispatch("fetchTradeInfos");
-    },
+    // async fetchFactoryConfig({ commit, dispatch }) {
+    //     const cfgQuery = { config: {} };
+    //     const factoryConfig = await terra.wasm.contractQuery(
+    //         FACTORY_CONTRACT,
+    //         cfgQuery,
+    //     );
+    //     console.log("factoryConfig :>> ", factoryConfig);
+    //     commit("setFactoryConfig", factoryConfig);
+    //     dispatch("fetchTradeInfos");
+    // },
     /**
      *
      * @param {*} VuexContext
@@ -276,12 +270,14 @@ const actions = {
         commit("addOffer", offer);
     },
     /**
-     * Fetch Offers.
+     * Fetch My Offers.
      */
     async fetchMyOffers(
         { commit, getters },
         { paginated = false, order = "desc" },
     ) {
+        console.log("fetchMyOffers walletAddress", getters.walletAddress);
+
         const offers = paginated ? getters.myOffers : [];
 
         const last_offer_id =
@@ -318,7 +314,7 @@ const actions = {
      * Fetch Offers.
      */
     async fetchOffers(
-        { commit, getters, dispatch },
+        { commit, getters },
         { fiatCurrency, offerType, paginated = false, order = "desc" },
     ) {
         commit("setLoadingOffers", true);
@@ -331,7 +327,7 @@ const actions = {
         // fetchOffers depends on the fetchFactoryConfig
         // TODO we should call the fetchFactoryConfig on the start of the application,
         //  but we need to fix the initWallet first.
-        await dispatch("fetchFactoryConfig");
+        // await dispatch("fetchFactoryConfig");
         const offers = paginated ? getters.offers : [];
         const last_offer_id =
             offers.length > 0 && paginated

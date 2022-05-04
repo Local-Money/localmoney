@@ -7,7 +7,7 @@
         "serve:latest": "yarn updateFactoryCfg && vue-cli-service serve",
         "build": "vue-cli-service build",
         "lint": "vue-cli-service lint",
-        "updateFactoryCfg": "./scripts/update-factoryCfg.sh",
+        "updateFactoryCfgStaticStaking": "./scripts/update-factoryCfg-staticStaking.sh",
         "deploy:frontend": "./scripts/deploy-frontend.sh",
         "build:contracts": "./scripts/deploy-contracts.sh",
         "instantiate:contracts": "./scripts/deploy-contracts.sh",

@@ -205,7 +205,7 @@ fn claim(
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
     let res = Response::new()
         .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: factory_cfg.token_addr.to_string(),
+            contract_addr: factory_cfg.local_token_addr.to_string(),
             msg: to_binary(&transfer_tokens_msg).unwrap(),
             funds: vec![],
         })))
@@ -228,7 +228,7 @@ fn start_distribution(
     if !info
         .sender
         .to_string()
-        .eq(&factory_cfg.token_addr.to_string())
+        .eq(&factory_cfg.local_token_addr.to_string())
     {
         return Err(TradingIncentivesError::Unauthorized {});
     }

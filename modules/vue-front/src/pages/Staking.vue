@@ -50,7 +50,7 @@
 <script>
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import { sleep } from "../shared.js";
 
 export default defineComponent({
     name: "Staking",

@@ -6,8 +6,7 @@ use cosmwasm_std::{
 
 use astroport::asset::{Asset, AssetInfo};
 use localterra_protocol::constants::{
-    ARBITRATOR_FEE, ASTROPORT_POOL_ADDR, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT,
-    WARCHEST_ADDR, WARCHEST_FEE,
+    ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
 };
 use localterra_protocol::factory::Config as FactoryConfig;
 use localterra_protocol::factory_util::get_factory_config;
@@ -484,7 +483,7 @@ fn release_escrow(
 
     // Send warchest fee share
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: WARCHEST_ADDR.to_string(),
+        to_address: factory_cfg.warchest_addr.to_string(),
         amount: vec![Coin::new(warchest_share.u128(), "uusd")],
     })));
 
@@ -503,7 +502,7 @@ fn release_escrow(
     let staking_share_msg = SubMsg {
         id: SEND_AND_SWAP_STAKING_SHARE_REPLY_ID,
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: ASTROPORT_POOL_ADDR.to_string(),
+            contract_addr: factory_cfg.local_ust_pool_addr.to_string(),
             msg: to_binary(&swap_msg).unwrap(),
             funds: vec![Coin {
                 denom: "uusd".to_string(),
