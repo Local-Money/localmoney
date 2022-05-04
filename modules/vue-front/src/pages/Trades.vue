@@ -1,6 +1,7 @@
 <template>
     <main>
         <h3>Open Trades</h3>
+        <!-- Open Trades section-->
         <section v-if="hasOpenTrades">
             <TradeOpenItem
                 v-for="tradeInfo in openTrades"
@@ -11,6 +12,8 @@
         <section v-else class="card">
             <p>Nothing here yet</p>
         </section>
+        <!-- End Open Trades section-->
+        <!-- Trades History section-->
         <h3 v-if="hasClosedTrades">Trade History</h3>
         <section v-if="hasClosedTrades" class="trade-history-table card">
             <div class="table-header">
@@ -27,6 +30,7 @@
                 :key="tradeInfo.trade.addr"
             />
         </section>
+        <!-- End Trades History section -->
     </main>
 </template>
 
