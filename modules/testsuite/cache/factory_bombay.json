@@ -1,1 +1,13 @@
-{"factoryAddr":"terra13myzgf7qr2ayu8330mamr435txvvpsdht56n4s","factoryCfg":{"trade_code_id":68070,"token_addr":"","local_ust_pool_addr":"terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk","gov_addr":"terra15ygvcf37zhwz6ccmqv6zfhhjgufg45e38fjcyy","offers_addr":"terra1tgj7mnf77teagyjme5ugjwrz5x8g4qfm0pzve0","trading_incentives_addr":"terra1y8gjtw020uq3nn97rpjxxv6sw4dxcnal2xahj5","staking_addr":"terra10adys5qk7dpw0zd3u5fzxz0yehms3z5e9ujryy","xlocal_addr":"terra1x85vxe6dacvtuqrsx54avef6uc6ln3wzy72gna"}}
+{
+  "factoryAddr": "terra13myzgf7qr2ayu8330mamr435txvvpsdht56n4s",
+  "factoryCfg": {
+    "trade_code_id": 68070,
+    "token_addr": "",
+    "local_ust_pool_addr": "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk",
+    "gov_addr": "terra15ygvcf37zhwz6ccmqv6zfhhjgufg45e38fjcyy",
+    "offers_addr": "terra1tgj7mnf77teagyjme5ugjwrz5x8g4qfm0pzve0",
+    "trading_incentives_addr": "terra1y8gjtw020uq3nn97rpjxxv6sw4dxcnal2xahj5",
+    "staking_addr": "terra10adys5qk7dpw0zd3u5fzxz0yehms3z5e9ujryy",
+    "xlocal_addr": "terra1x85vxe6dacvtuqrsx54avef6uc6ln3wzy72gna"
+  }
+}
