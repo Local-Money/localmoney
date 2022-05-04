@@ -50,6 +50,8 @@ import { before } from "mocha";
 
         const offerResult = await createOffer(terra, offer, maker);
 
+        console.log("offerResult :>> ", offerResult);
+
         return offerResult;
       });
 
@@ -61,14 +63,20 @@ import { before } from "mocha";
           offers_query: {
             limit: 1,
             last_value: 0,
+            order: "asc",
           },
         };
+        console.log("query :>> ", query);
 
         const offers = await queryOffers(terra, query);
+
+        console.log("taker lists an offer offers  :>> ", offers);
 
         if (offers.length === 0) throw Error("No offers found.");
 
         global.tradeFlow.offerId = offers[0].id;
+
+        console.log(" global.tradeFlow.offerId :>> ", global.tradeFlow.offerId);
 
         return;
       });
@@ -108,6 +116,22 @@ import { before } from "mocha";
       });
       it("Maker releases the escrow (TradeState::EscrowReleased)", async function () {
         await releaseTradeEscrow(terra, this.tradeAddr, maker);
+      });
+      it("Taker lists the offer by id", async function () {
+        const query = {
+          offer: {
+            id: global.tradeFlow.offerId,
+          },
+        };
+        console.log("query :>> ", query);
+
+        const offer = await queryOffers(terra, query);
+
+        console.log("taker lists the offer by id:>> ", offer);
+
+        expect(offer.last_traded_at).greaterThan(0);
+
+        return;
       });
     });
     describe("SELL.RequestCanceled: Maker cancels", function () {

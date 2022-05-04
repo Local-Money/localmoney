@@ -86,6 +86,7 @@ pub fn execute(
             // TODO merge this call with the query random arbitrator call
             execute_update_trade_arbitrator(deps, env, info, arbitrator)
         }
+        ExecuteMsg::UpdateLastTraded {} => execute_update_last_traded(deps, env, info),
     }
 }
 
@@ -215,6 +216,7 @@ fn trade_instance_reply(
                 buyer: trade.buyer.clone(),
                 arbitrator: Addr::unchecked("None"), // We need a non-sensical Addr to create the indices, `None` won't work
                 state: trade.state.clone(),
+                offer_id: trade.offer_id.clone(),
             },
         )
         .unwrap();
@@ -258,6 +260,7 @@ pub fn create_offer(
             max_amount: msg.max_amount,
             state: OfferState::Active,
             timestamp: env.block.time.seconds(),
+            last_traded_at: 0,
         },
     )
     .offer;
@@ -299,6 +302,27 @@ pub fn execute_update_trade_arbitrator(
 
     Ok(res)
 }
+
+pub fn execute_update_last_traded(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+) -> Result<Response, GuardError> {
+    let trade = trades().load(deps.storage, &info.sender.as_str())?;
+
+    let mut offer_model = OfferModel::may_load(deps.storage, &trade.offer_id);
+
+    let offer = offer_model.update_last_traded(env.block.time.seconds());
+
+    let res = Response::new()
+        .add_attribute("action", "execute_update_last_traded")
+        .add_attribute("tradeAddr", info.sender)
+        .add_attribute("offer_id", &offer.id)
+        .add_attribute("last_traded_at", &offer.last_traded_at.to_string());
+
+    Ok(res)
+}
+
 pub fn create_arbitrator(
     deps: DepsMut,
     _env: Env,
