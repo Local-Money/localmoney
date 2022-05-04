@@ -108,10 +108,6 @@ export default defineComponent({
             ExpandedMyOffer: null,
         };
     },
-<<<<<<< HEAD
-    mounted: async function() {
-        await this.fetchMyOffers({});
-=======
     mounted() {
         // Wait for iniWallet to provide us the walletAddress, then fetchmyOffers
         // This fixes loading the /offers route directly without first going through /home
@@ -122,7 +118,6 @@ export default defineComponent({
             },
             { immediate: true },
         );
->>>>>>> main
     },
     methods: {
         ...mapActions(["fetchMyOffers", "fetchUsdRates", "openTrade"]),
@@ -150,11 +145,7 @@ export default defineComponent({
         },
     },
     computed: {
-<<<<<<< HEAD
-        ...mapGetters(["myOffers", "getUsdRate"]),
-=======
         ...mapGetters(["myOffers", "getUsdRate", "walletAddress"]),
->>>>>>> main
         offers: function() {
             let offers = [];
             this.myOffers.forEach((offer) => {
@@ -231,11 +222,6 @@ export default defineComponent({
 /* ----------- OFFER LIST */
 
 .offers-list {
-<<<<<<< HEAD
-=======
-    margin-top: 40px;
-
->>>>>>> main
     h3 {
         color: $base-text;
         font-size: 18px;
