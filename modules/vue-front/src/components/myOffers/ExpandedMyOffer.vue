@@ -90,7 +90,7 @@ import CurrencyInput from "../CurrencyInput.vue";
 import { formatAddress, formatAmount, scrollToElement } from "@/shared";
 
 export default defineComponent({
-    name: "ExpandedOffer",
+    name: "ExpandedMyOffer",
     props: ["offer"],
     components: {
         CurrencyInput,
@@ -321,10 +321,12 @@ export default defineComponent({
                     font-size: 12px;
                     color: $primary;
                 }
+
                 .margin {
                     font-size: 14px;
                     color: $gray600;
                 }
+
                 .value {
                     font-size: 16px;
                     font-weight: 600;
@@ -360,6 +362,7 @@ export default defineComponent({
                     .price-get {
                         font-weight: 800;
                     }
+
                     .price-pay {
                         font-weight: 800;
                         color: $primary;

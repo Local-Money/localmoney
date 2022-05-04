@@ -46,7 +46,7 @@ import { formatAddress, formatAmount } from "@/shared";
 import { mapGetters } from "vuex";
 
 export default defineComponent({
-    name: "CollapsedOffer",
+    name: "CollapsedMyOffer",
     props: ["offer"],
     setup() {},
     data() {

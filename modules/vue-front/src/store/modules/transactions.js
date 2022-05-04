@@ -412,6 +412,38 @@ const actions = {
         router.push(`/`);
     },
     /**
+     * Unachive Offer
+     */
+    async unarchiveOffer({ commit, getters, dispatch }, offer) {
+        const { id, rate, min_amount, max_amount } = offer;
+        /** @type {OfferUpdateMsg} */
+        const offerUpdateMsg = {
+            id,
+            rate,
+            min_amount,
+            max_amount,
+            state: "paused",
+        };
+
+        /** @type {ExecuteUpdateMsg} */
+        const update_offer = {
+            offer_update: offerUpdateMsg,
+        };
+
+        const msg = new MsgExecuteContract(
+            getters.walletAddress,
+            state.factoryConfig.offers_addr,
+            {
+                update_offer,
+            },
+        );
+        console.log(msg);
+        await executeMsg(commit, getters, dispatch, msg);
+        commit("setIsLoading", true);
+        await dispatch("fetchMyOffers", { paginated: false, order: "desc" });
+        commit("setIsLoading", false);
+    },
+    /**
      * Fetch a specific Trade
      */
     async fetchTradeInfo({ commit, getters, dispatch }, { addr, tradeData }) {

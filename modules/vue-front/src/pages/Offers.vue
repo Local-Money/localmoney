@@ -36,7 +36,7 @@
 <script>
 import { defineComponent } from "vue";
 import CreateOffer from "@/components/offers/CreateOffer.vue";
-import ListMyOffers from "@/components/offers/ListMyOffers.vue";
+import ListMyOffers from "@/components/myOffers/ListMyOffers.vue";
 import Modal from "@/components/commons/Modal.vue";
 import { ref } from "vue";
 
@@ -59,10 +59,6 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import "@/style/pages.scss";
-
-.offer-list {
-    margin-bottom: 32px;
-}
 
 .wrap-title {
     display: flex;
