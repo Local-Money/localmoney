@@ -109,6 +109,7 @@ pub enum ExecuteMsg {
     UpdateTradeArbitrator {
         arbitrator: Addr,
     },
+    UpdateLastTraded,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -209,6 +210,7 @@ pub struct Offer {
     pub max_amount: Uint128,
     pub state: OfferState,
     pub timestamp: u64,
+    pub last_traded_at: u64,
 }
 
 pub struct OfferModel<'a> {
@@ -255,6 +257,12 @@ impl OfferModel<'_> {
         &self.offer
         // self.save()
         //     ^^^^ move occurs because `*self` has type `OfferModel<'_>`, which does not implement the `Copy` trait
+    }
+
+    pub fn update_last_traded(&mut self, last_traded_at: u64) -> &Offer {
+        self.offer.last_traded_at = last_traded_at;
+        OfferModel::store(self.storage, &self.offer).unwrap();
+        &self.offer
     }
 
     pub fn query_all_offers(
@@ -423,6 +431,7 @@ pub struct TradeAddr {
     pub buyer: Addr,
     pub arbitrator: Addr,
     pub state: TradeState,
+    pub offer_id: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
