@@ -1,8 +1,5 @@
 <template>
-    <section v-if="this.showLoadingMyOffers" class="loading-content">
-        <Loading />
-    </section>
-    <section v-else>
+    <section>
         <!-- My Offers section-->
         <section v-if="hasOffers" class="offers-list">
             <!-- Offers for -->
@@ -23,7 +20,10 @@
                 </li>
             </ul>
         </section>
-        <section v-else class="card">
+        <section
+            v-else-if="!hasOffers && !this.showLoadingMyOffers"
+            class="card"
+        >
             <p>
                 Nothing here yet
             </p>
@@ -47,6 +47,18 @@
             />
         </section>
         <!--End Archived offers table-->
+
+        <div class="load-more">
+            <button
+                class="wallet"
+                @click="loadMore()"
+                v-if="!this.showLoadingMyOffers"
+            >
+                Load more offers
+            </button>
+
+            <Loading v-else />
+        </div>
     </section>
 
     <!-- Expanded Offer Mobile -->
@@ -155,6 +167,13 @@ export default defineComponent({
             offer.isExpanded = false;
             this.ExpandedMyOffer = null;
         },
+        loadMore: function() {
+            this.$nextTick(() => {
+                this.fetchMyOffers({
+                    paginated: true,
+                });
+            });
+        },
     },
     computed: {
         ...mapGetters(["myOffers", "getUsdRate", "showLoadingMyOffers"]),
@@ -255,15 +274,15 @@ export default defineComponent({
         list-style: none;
         margin-bottom: 24px;
     }
+}
 
-    .load-more {
-        display: flex;
-        justify-content: center;
-        margin-top: 32px;
+.load-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
 
-        button {
-            padding: 0 48px;
-        }
+    button {
+        padding: 0 48px;
     }
 }
 
