@@ -94,6 +94,9 @@ select {
     background-position-x: 95%;
     background-position-y: 8px;
 
+    &.bg-gray100 {
+        background-color: $gray100;
+    }
     &.bg-gray150 {
         background-color: $gray150;
     }

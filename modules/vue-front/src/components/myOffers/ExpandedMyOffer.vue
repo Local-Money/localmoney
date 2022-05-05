@@ -4,7 +4,7 @@
             <div class="inner-wrap">
                 <div class="wrap-status">
                     <!-- <p class="label">Offer Status</p> -->
-                    <select name="select-status" class="bg-gray300">
+                    <select name="select-status" class="bg-gray100">
                         <option value="">Active</option>
                         <option value="">Pause</option>
                         <option value="">Archive</option>
@@ -47,7 +47,7 @@
             <form action="">
                 <div class="input-wrap">
                     <label class="label">Margin</label>
-                    <select name="" class="bg-gray300">
+                    <select name="" class="bg-gray100">
                         <option value="">Above</option>
                         <option value="">Below</option>
                     </select>
@@ -310,6 +310,10 @@ export default defineComponent({
         display: flex;
         align-items: center;
         min-width: 150px;
+
+        select {
+            color: $primary;
+        }
     }
 
     .label {
