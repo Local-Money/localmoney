@@ -13,10 +13,7 @@
                 <p class="type">{{ offer.offer_type }}ing</p>
             </div>
             <div class="price">
-                <p class="value">
-                    COP 3935.00
-                    <!-- {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }} -->
-                </p>
+                <p class="value">{{ offerPrice }}</p>
             </div>
         </div>
         <div class="horizontal-separator"></div>
@@ -211,6 +208,15 @@ export default defineComponent({
             let min_amount = parseInt(this.offer.min_amount);
             let max_amount = parseInt(this.offer.max_amount);
             return total >= min_amount && total <= max_amount;
+        },
+        usdRate: function() {
+            return this.getUsdRate(this.$props.offer.fiat_currency);
+        },
+        offerPrice: function() {
+            return `${this.offer.fiat_currency} ${formatAmount(
+                this.usdRate,
+                false,
+            )}`;
         },
     },
     watch: {
