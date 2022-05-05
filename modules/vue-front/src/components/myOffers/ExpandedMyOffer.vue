@@ -1,20 +1,36 @@
 <template>
     <div class="expanded" :key="`${offer.id}-expanded`" ref="expandedCard">
         <div class="offer-type">
-            <p class="type">{{ offer.offer_type }}ing</p>
+            <div class="inner-wrap">
+                <p class="type">{{ offer.offer_type }}ing</p>
+                <div class="wrap-status">
+                    <!-- <p class="label">Offer Status</p> -->
+                    <select name="select-status" class="bg-gray300">
+                        <option value="">Active</option>
+                        <option value="">Pause</option>
+                        <option value="">Archive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="wrap-btns">
+                <button class="secondary" @click="$emit('cancel', offer)">
+                    cancel
+                </button>
+                <button
+                    class="primary"
+                    @click="updateOffer({ updatedOffer: this.updatedOffer })"
+                >
+                    update
+                </button>
+            </div>
         </div>
 
         <div class="horizontal-separator"></div>
 
-        <div class="wrap-status">
-            <select name="select-status" class="select-status">
-                <option value="">Active</option>
-                <option value="">Pause</option>
-                <option value="">Archive</option>
-            </select>
-        </div>
+        <!-- TODO - MOVE ACTIONS TO SELECT COMPONENT ABOVE
 
-        <div class="price">
+            <div class="price">
             <p class="label">Offer Status</p>
             <div class="buy-sell">
                 <button
@@ -31,12 +47,27 @@
                     Paused
                 </button>
             </div>
-        </div>
+        </div> -->
 
-        <form action="">
-            <div class="min-max">
-                <div class="wrap">
-                    <label>Min amount:</label>
+        <div class="form-wrap">
+            <form action="">
+                <div class="input-wrap">
+                    <label class="label">Margin</label>
+                    <select name="select-status" class="bg-gray300">
+                        <option value="">Above</option>
+                        <option value="">Below</option>
+                    </select>
+                </div>
+
+                <div class="input-wrap">
+                    <label class="label">Margin offset</label>
+                    <input type="text" />
+                </div>
+            </form>
+
+            <form action="">
+                <div class="input-wrap">
+                    <label class="label">Min amount:</label>
                     <CurrencyInput
                         v-model="updatedOffer.min_amount"
                         :placeholder="this.cryptoPlaceholder"
@@ -49,8 +80,10 @@
                         }"
                         ref="minAmount"
                     />
+                </div>
 
-                    <label>Max amount:</label>
+                <div class="input-wrap">
+                    <label class="label">Max amount:</label>
                     <CurrencyInput
                         v-model="updatedOffer.max_amount"
                         :placeholder="this.cryptoPlaceholder"
@@ -64,21 +97,7 @@
                         ref="maxAmount"
                     />
                 </div>
-            </div>
-        </form>
-
-        <div class="receipt">
-            <div class="wrap-btns">
-                <button class="secondary" @click="$emit('cancel', offer)">
-                    close
-                </button>
-                <button
-                    class="primary"
-                    @click="updateOffer({ updatedOffer: this.updatedOffer })"
-                >
-                    update
-                </button>
-            </div>
+            </form>
         </div>
     </div>
 </template>
@@ -241,39 +260,71 @@ export default defineComponent({
 .expanded {
     display: flex;
     flex-direction: column;
-    gap: 24px;
 
     .offer-type {
         display: flex;
+        justify-content: space-between;
         align-items: center;
 
-        .type {
-            font-size: 18px;
-            font-weight: $semi-bold;
-            color: $base-text;
-            text-transform: capitalize;
+        .inner-wrap {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 32px;
+
+            .type {
+                font-size: 18px;
+                font-weight: $semi-bold;
+                color: $base-text;
+                text-transform: capitalize;
+            }
         }
+    }
+
+    .wrap-btns {
+        display: flex;
+        justify-content: flex-end;
+        gap: 24px;
     }
 
     .horizontal-separator {
         width: 100%;
         height: 1px;
         background-color: $border;
-        margin: 8px 0;
+        margin: 32px 0 0px;
+    }
+
+    .wrap-status {
+        display: flex;
+        align-items: center;
+        min-width: 150px;
+    }
+
+    .label {
+        font-size: 14px;
+        color: $gray600;
+        margin-bottom: 8px;
+    }
+
+    .form-wrap {
+        display: flex;
+        gap: 24px;
     }
 
     form {
+        width: 100%;
         margin-top: 16px;
-        padding-right: 56px;
+        display: flex;
+        gap: 24px;
+        padding: 16px 8px;
 
-        .input {
-            margin-bottom: 24px;
+        .input-wrap {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
-        label {
-            font-size: 14px;
-            color: $gray600;
-            display: block;
+        .input {
         }
 
         input {
@@ -282,99 +333,11 @@ export default defineComponent({
             text-align: right;
         }
 
-        b {
-            cursor: pointer;
-            font-weight: 600;
-        }
-
         p {
             font-size: 12px;
             color: $gray600;
             text-align: right;
             margin-top: 8px;
-        }
-    }
-
-    .receipt {
-        margin-top: 16px;
-
-        .price {
-            margin-bottom: 24px;
-
-            .label {
-                font-size: 14px;
-                color: $gray600;
-            }
-
-            .wrap {
-                width: 100%;
-                display: inline-flex;
-                justify-content: space-between;
-                background-color: $gray150;
-                border-radius: 8px;
-                padding: 10px 24px;
-                margin-top: 8px;
-                align-items: center;
-                gap: 16px;
-
-                .ticker {
-                    font-size: 12px;
-                    color: $primary;
-                }
-
-                .margin {
-                    font-size: 14px;
-                    color: $gray600;
-                }
-
-                .value {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: $base-text;
-                }
-            }
-        }
-
-        .summary {
-            margin-bottom: 24px;
-
-            .label {
-                font-size: 14px;
-                color: $gray600;
-            }
-
-            .wrap {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                background-color: $gray150;
-                border-radius: 8px;
-                padding: 16px 24px;
-                margin-top: 8px;
-
-                gap: 8px;
-
-                .item {
-                    display: inline-flex;
-                    justify-content: space-between;
-
-                    .price-get {
-                        font-weight: 800;
-                    }
-
-                    .price-pay {
-                        font-weight: 800;
-                        color: $primary;
-                    }
-                }
-            }
-        }
-
-        .wrap-btns {
-            display: flex;
-            justify-content: flex-end;
-            gap: 24px;
         }
     }
 }

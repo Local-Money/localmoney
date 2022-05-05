@@ -69,7 +69,6 @@ input {
 
 select {
     width: 100%;
-    max-width: 200px;
     background-color: inherit;
     border-radius: 8px;
     border: 1px solid $border;
@@ -78,10 +77,21 @@ select {
     font-weight: 600;
     color: $base-text;
     padding: 10px 16px;
+    cursor: pointer;
     appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='none' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M6 9L12 15L18 9' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position-x: 95%;
+    background-position-y: 8px;
 
-    &.bg-gray600 {
-        background-color: $gray600;
+    &.bg-gray150 {
+        background-color: $gray150;
+    }
+    &.bg-gray300 {
+        background-color: $gray300;
     }
     &.bg-surface {
         background-color: $surface;

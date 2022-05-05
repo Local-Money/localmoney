@@ -72,7 +72,7 @@ export default defineComponent({
             width: 40px;
             height: 40px;
             background-color: $surface;
-            border-radius: 56px;
+            border-radius: 8px;
             margin-left: 24px;
             display: flex;
             align-items: center;
