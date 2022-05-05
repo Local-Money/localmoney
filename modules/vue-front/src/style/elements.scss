@@ -1,174 +1,181 @@
 @import "tokens.scss";
 
 .card {
-    padding: 24px;
-    background-color: $surface;
-    border: 1px solid $border;
-    border-radius: 8px;
-    box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
-    min-width: 256px;
+  padding: 24px;
+  background-color: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
+  min-width: 256px;
 }
 
 .card-active {
-    //TODO - MAKE EXPANDED CARD MORE VISIBLE
-    //background-color: $gray300;
-    //border: 1px solid $gray600;
-    //box-shadow: 0px 0px 15px rgba(239, 97, 0, 0.5);
+  //TODO - MAKE EXPANDED CARD MORE VISIBLE
+  //background-color: $gray300;
+  border: 1px solid $gray600;
+  //box-shadow: 0px 0px 15px rgba(239, 97, 0, 0.5);
 }
 
 .buy-sell {
-    display: inline-flex;
-    justify-content: space-evenly;
-    width: 100%;
-    max-width: 200px;
-    margin-top: 26px;
-    background-color: $surface;
-    border: 1px solid $border;
-    border-radius: 8px;
-    overflow: hidden;
+  display: inline-flex;
+  justify-content: space-evenly;
+  width: 100%;
+  max-width: 200px;
+  margin-top: 26px;
+  background-color: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
 
-    .separator {
-        width: 1px;
-        height: 40px;
-        background-color: $border;
-        margin: 0px;
-        z-index: 999;
-    }
+  .separator {
+    width: 1px;
+    height: 40px;
+    background-color: $border;
+    margin: 0px;
+    z-index: 999;
+  }
+
+  button {
+    width: 100%;
+    justify-content: center;
+    background-color: inherit;
+    border-radius: none;
+    color: $gray600;
+  }
+
+  .focus {
+    background-color: $gray300;
+    border-radius: 0px;
+    color: $primary;
+  }
+
+  @media only screen and (max-width: 550px) {
+    margin-top: 0;
+    max-width: none;
+    margin-bottom: 16px;
 
     button {
-        width: 100%;
-        justify-content: center;
-        background-color: inherit;
-        border-radius: none;
-        color: $gray600;
+      height: 48px;
     }
-    .focus {
-        background-color: $gray300;
-        border-radius: 0px;
-        color: $primary;
+    .separator {
+      height: 48px;
     }
-
-    @media only screen and (max-width: 550px) {
-        margin-top: 0;
-        max-width: none;
-        margin-bottom: 16px;
-
-        button {
-            height: 48px;
-        }
-        .separator {
-            height: 48px;
-        }
-    }
+  }
 }
 
 input {
-    width: 100%;
-    border-radius: 8px;
-    font-family: "Poppins", sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: $base-text;
-    padding: 10px 16px;
-    appearance: none;
-    outline: none;
+  width: 100%;
+  border-radius: 8px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: $base-text;
+  padding: 10px 16px;
+  appearance: none;
+  outline: none;
 }
 
 select {
-    width: 100%;
-    background-color: inherit;
-    border-radius: 8px;
-    border: 1px solid $border;
-    font-family: "Poppins", sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: $base-text;
-    padding: 10px 16px;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background: transparent;
-    background-image: url("data:image/svg+xml;utf8,<svg fill='none' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M6 9L12 15L18 9' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position-x: 95%;
-    background-position-y: 8px;
+  width: 100%;
+  background-color: inherit;
+  border-radius: 8px;
+  border: 1px solid $border;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: $base-text;
+  padding: 10px 16px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='none' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M6 9L12 15L18 9' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position-x: 95%;
+  background-position-y: 8px;
 
-    &.bg-gray100 {
-        background-color: $gray100;
-    }
-    &.bg-gray150 {
-        background-color: $gray150;
-    }
-    &.bg-gray300 {
-        background-color: $gray300;
-    }
-    &.bg-surface {
-        background-color: $surface;
-    }
+  &.bg-gray100 {
+    background-color: $gray100;
+  }
+
+  &.bg-gray150 {
+    background-color: $gray150;
+  }
+
+  &.bg-gray300 {
+    background-color: $gray300;
+  }
+
+  &.bg-surface {
+    background-color: $surface;
+  }
 }
 
 // BUTTONS
 
 button {
-    height: 40px;
-    font-size: 14px;
-    line-height: 0px;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
+  height: 40px;
+  font-size: 14px;
+  line-height: 0px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
 
-    // Button Types
-    &.primary {
-        font-size: 16px;
-        background-color: $gray300;
-        color: $primary;
-    }
-    &.secondary {
-        font-size: 16px;
-        background-color: inherit;
-        color: $base-text;
-    }
+  // Button Types
+  &.primary {
+    font-size: 16px;
+    background-color: $gray300;
+    color: $primary;
+  }
 
-    &.tertiary {
-        font-size: 16px;
-        background-color: $surface;
-        color: $base-text;
-    }
+  &.secondary {
+    font-size: 16px;
+    background-color: inherit;
+    color: $base-text;
+  }
 
-    &:disabled {
-        opacity: 0.5;
-        color: $gray600;
-    }
+  &.tertiary {
+    font-size: 16px;
+    background-color: $surface;
+    color: $base-text;
+  }
 
-    &.wallet {
-        font-size: 16px;
-        font-weight: 700;
-        background-color: $surface;
-        color: $base-text;
+  &:disabled {
+    opacity: 0.5;
+    color: $gray600;
+  }
 
-        p {
-            margin-right: 16px;
-        }
-    }
+  &.wallet {
+    font-size: 16px;
+    font-weight: 700;
+    background-color: $surface;
+    color: $base-text;
 
-    // Background Color
-    &.bg-gray600 {
-        background-color: $gray600;
+    p {
+      margin-right: 16px;
     }
-    &.bg-surface {
-        background-color: $surface;
-    }
+  }
 
-    // Text Color
-    &.clr-base-text,
-    &.clr-base-text p {
-        color: $base-text;
-    }
-    &.clr-primary,
-    &.clr-primary p {
-        color: $primary;
-    }
+  // Background Color
+  &.bg-gray600 {
+    background-color: $gray600;
+  }
+
+  &.bg-surface {
+    background-color: $surface;
+  }
+
+  // Text Color
+  &.clr-base-text,
+  &.clr-base-text p {
+    color: $base-text;
+  }
+
+  &.clr-primary,
+  &.clr-primary p {
+    color: $primary;
+  }
 }

@@ -50,6 +50,7 @@
             <ul>
                 <li
                     class="card"
+                    :class="offer.isExpanded ? 'card-active' : ''"
                     v-for="offer in allOffers"
                     v-bind:key="offer.id"
                 >
