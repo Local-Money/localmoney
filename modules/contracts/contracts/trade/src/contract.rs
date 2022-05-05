@@ -15,7 +15,7 @@ use localterra_protocol::guards::{
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
     trade_request_is_expired,
 };
-use localterra_protocol::offer::ExecuteMsg::UpdateTradeArbitrator;
+use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
@@ -532,6 +532,14 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(register_trade_msg);
+
+    // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
+    let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: factory_cfg.offers_addr.to_string(),
+        msg: to_binary(&UpdateLastTraded {}).unwrap(),
+        funds: vec![],
+    }));
+    send_msgs.push(update_last_traded_msg);
 
     let res = Response::new().add_submessages(send_msgs);
     Ok(res)
