@@ -1,14 +1,17 @@
 <template>
     <main>
         <h3>Staking</h3>
-        <p>Total LOCAL Deposited: {{ stakingTotalDeposit }}</p>
-        <p>Total xLOCAL Minted: {{ stakingTotalShares }}</p>
-        <p>Total LOCAL Warming: {{ stakingTotalWarming }}</p>
-        <div class="buy-sell">
-            <button @click="enterStaking('10000000')">
+        <div class="card top-info">
+            <p>Total LOCAL Deposited: {{ stakingTotalDeposit }}</p>
+            <p>Total xLOCAL Minted: {{ stakingTotalShares }}</p>
+            <p>Total LOCAL Warming: {{ stakingTotalWarming }}</p>
+        </div>
+
+        <div class="wrap-btns">
+            <button class="tertiary" @click="enterStaking('10000000')">
                 Stake
             </button>
-            <button @click="leaveStaking('5000000')">
+            <button class="tertiary" @click="leaveStaking('5000000')">
                 Unstake
             </button>
         </div>
@@ -107,6 +110,15 @@ h3 {
     margin: 32px 0;
     font-size: 18px;
     font-weight: $semi-bold;
+}
+
+.top-info {
+    margin-bottom: 32px;
+}
+
+.wrap-btns {
+    display: flex;
+    gap: 24px;
 }
 
 .trade-history-table {
