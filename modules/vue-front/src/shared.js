@@ -31,16 +31,19 @@ export function formatTradeState(state) {
     }[state];
 }
 
-export function formatDate(date) {
+export function formatDate(date, showTime = true) {
     let year = new Intl.DateTimeFormat("en", { year: "numeric" }).format(date);
     let month = new Intl.DateTimeFormat("en", { month: "short" }).format(date);
     let day = new Intl.DateTimeFormat("en", { day: "2-digit" }).format(date);
-    let time = new Intl.DateTimeFormat("en", {
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(date);
-
-    return `${day} ${month} ${year} - ${time}`;
+    if (showTime) {
+        let time = new Intl.DateTimeFormat("en", {
+            hour: "2-digit",
+            minute: "2-digit",
+        }).format(date);
+        return `${day} ${month} ${year} - ${time}`;
+    } else {
+        return `${day} ${month} ${year}`;
+    }
 }
 
 /** UI Elements **/
@@ -60,6 +63,7 @@ export function tradeCanBeReleased(tradeInfo, walletAddr) {
     const { trade } = tradeInfo;
     return trade.state === "escrow_funded" && trade.seller === walletAddr;
 }
+
 export function tradeCanBeRefunded(tradeInfo, walletAddr) {
     const { trade } = tradeInfo;
     return (

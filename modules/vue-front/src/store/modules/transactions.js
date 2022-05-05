@@ -34,6 +34,7 @@ const state = {
         type: "",
         fiatCurrency: "",
     },
+    showLoadingMyOffers: false,
     myOffers: [],
     tradeInfos: [],
     lunaUstPrice: 0,
@@ -65,6 +66,7 @@ const getters = {
     showLoadingOffers: (state) => state.showLoadingOffers,
     offers: (state) => state.offers,
     offersFilter: (state) => state.offersFilter,
+    showLoadingMyOffers: (state) => state.showLoadingMyOffers,
     myOffers: (state) => state.myOffers,
     stakingTotalDeposit: (state) => state.stakingTotalDeposit,
     stakingTotalShares: (state) => state.stakingTotalShares,
@@ -276,8 +278,7 @@ const actions = {
         { commit, getters },
         { paginated = false, order = "desc" },
     ) {
-        console.log("fetchMyOffers walletAddress", getters.walletAddress);
-
+        commit("setLoadingMyOffers", true);
         const offers = paginated ? getters.myOffers : [];
 
         const last_offer_id =
@@ -309,6 +310,7 @@ const actions = {
             offersQuery,
         );
         commit("setMyOffers", offers.concat(loadedOffers));
+        commit("setLoadingMyOffers", false);
     },
     /**
      * Fetch Offers.
@@ -406,10 +408,39 @@ const actions = {
                 update_offer,
             },
         );
-        console.log("offerMsg msg:>> ", msg);
-        const result = await executeMsg(commit, getters, dispatch, msg);
-        console.log("result :>> ", result);
-        router.push(`/`);
+
+        await executeMsg(commit, getters, dispatch, msg);
+        await dispatch("fetchMyOffers", { paginated: false, order: "desc" });
+    },
+    /**
+     * Unachive Offer
+     */
+    async unarchiveOffer({ commit, getters, dispatch }, offer) {
+        const { id, rate, min_amount, max_amount } = offer;
+        /** @type {OfferUpdateMsg} */
+        const offerUpdateMsg = {
+            id,
+            rate,
+            min_amount,
+            max_amount,
+            state: "paused",
+        };
+
+        /** @type {ExecuteUpdateMsg} */
+        const update_offer = {
+            offer_update: offerUpdateMsg,
+        };
+
+        const msg = new MsgExecuteContract(
+            getters.walletAddress,
+            state.factoryConfig.offers_addr,
+            {
+                update_offer,
+            },
+        );
+        console.log(msg);
+        await executeMsg(commit, getters, dispatch, msg);
+        await dispatch("fetchMyOffers", { paginated: false, order: "desc" });
     },
     /**
      * Fetch a specific Trade
@@ -681,6 +712,8 @@ const mutations = {
     addOffer: (state, offer) => state.offers.push(offer),
     setLoadingOffers: (state, showLoadingOffers) =>
         (state.showLoadingOffers = showLoadingOffers),
+    setLoadingMyOffers: (state, showLoadingMyOffers) =>
+        (state.showLoadingMyOffers = showLoadingMyOffers),
     setOffers: (state, offers) => (state.offers = offers),
     setOffersFilter: (state, offersFilter) =>
         (state.offersFilter = offersFilter),
