@@ -4,7 +4,7 @@
             <div class="inner-wrap">
                 <div class="wrap-status">
                     <!-- <p class="label">Offer Status</p> -->
-                    <select v-model="updatedOffer.state">
+                    <select class="bg-gray100" v-model="updatedOffer.state">
                         <option value="active">Active</option>
                         <option value="paused">Pause</option>
                         <option value="archive">Archive</option>

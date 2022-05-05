@@ -38,8 +38,8 @@
         <h3 v-if="hasArchivedOffers">Archived Offers</h3>
         <section v-if="hasArchivedOffers" class="archived-offers-table card">
             <div class="table-header">
-                <div class="col-1"><p>Type</p></div>
-                <div class="col-2"><p>Date</p></div>
+                <div class="col-1"><p>Date</p></div>
+                <div class="col-2"><p>Type</p></div>
                 <div class="col-3"><p>Fiat</p></div>
                 <div class="col-4"><p>Limits</p></div>
                 <div class="col-5"><p>Price</p></div>
@@ -519,7 +519,7 @@ export default defineComponent({
 
 .col-2,
 :deep(.col-2) {
-    width: 16%;
+    width: 12.5%;
 }
 
 .col-3,
@@ -529,12 +529,12 @@ export default defineComponent({
 
 .col-4,
 :deep(.col-4) {
-    width: 25%;
+    width: 33.5%;
 }
 
 .col-5,
 :deep(.col-5) {
-    width: 24%;
+    width: 20%;
 }
 
 .col-6,
