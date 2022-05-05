@@ -9,6 +9,13 @@
     min-width: 256px;
 }
 
+.card-active {
+    //TODO - MAKE EXPANDED CARD MORE VISIBLE
+    //background-color: $gray300;
+    //border: 1px solid $gray600;
+    //box-shadow: 0px 0px 15px rgba(239, 97, 0, 0.5);
+}
+
 .buy-sell {
     display: inline-flex;
     justify-content: space-evenly;

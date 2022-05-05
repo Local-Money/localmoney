@@ -4,7 +4,12 @@
         <section v-if="hasOffers" class="offers-list">
             <!-- Offers for -->
             <ul>
-                <li class="card" v-for="offer in offers" v-bind:key="offer.id">
+                <li
+                    class="card"
+                    :class="offer.isExpanded ? 'card-active' : ''"
+                    v-for="offer in offers"
+                    v-bind:key="offer.id"
+                >
                     <!-- Collapsed Offer -->
                     <CollapsedMyOffer
                         v-if="!offer.isExpanded"

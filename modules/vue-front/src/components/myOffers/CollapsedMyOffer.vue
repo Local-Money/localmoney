@@ -1,14 +1,17 @@
 <template>
     <div class="collapsed" :key="`${offer.id}-collapsed`">
         <div class="offer-type">
+            <p class="state">
+                {{ offer.state }}
+            </p>
             <p class="type">{{ offer.offer_type }}ing</p>
         </div>
 
         <div class="info">
-            <p class="state">
+            <!-- <p class="state">
                 {{ offer.state }}
             </p>
-            <div class="divider"></div>
+            <div class="divider"></div> -->
             <div class="wrap">
                 <p class="label">Limits</p>
                 <p class="limit">
@@ -82,6 +85,16 @@ export default defineComponent({
             color: $base-text;
             text-transform: capitalize;
         }
+
+        .state {
+            margin-right: 24px;
+            padding: 8px 16px;
+            background-color: $gray150;
+            border-radius: 8px;
+            font-size: 14px;
+            text-transform: capitalize;
+            color: $gray900;
+        }
     }
 
     .info {
@@ -93,15 +106,6 @@ export default defineComponent({
             height: 40px;
             width: 1px;
             background-color: $border;
-        }
-
-        .state {
-            padding: 8px 16px;
-            background-color: $gray150;
-            border-radius: 8px;
-            font-size: 14px;
-            text-transform: capitalize;
-            color: $gray900;
         }
 
         .wrap {

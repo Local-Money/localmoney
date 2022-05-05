@@ -2,7 +2,6 @@
     <div class="expanded" :key="`${offer.id}-expanded`" ref="expandedCard">
         <div class="offer-type">
             <div class="inner-wrap">
-                <p class="type">{{ offer.offer_type }}ing</p>
                 <div class="wrap-status">
                     <!-- <p class="label">Offer Status</p> -->
                     <select name="select-status" class="bg-gray300">
@@ -11,18 +10,13 @@
                         <option value="">Archive</option>
                     </select>
                 </div>
+                <p class="type">{{ offer.offer_type }}ing</p>
             </div>
-
-            <div class="wrap-btns">
-                <button class="secondary" @click="$emit('cancel', offer)">
-                    cancel
-                </button>
-                <button
-                    class="primary"
-                    @click="updateOffer({ updatedOffer: this.updatedOffer })"
-                >
-                    update
-                </button>
+            <div class="price">
+                <p class="value">
+                    COP 3935.00
+                    <!-- {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }} -->
+                </p>
             </div>
         </div>
 
@@ -53,7 +47,7 @@
             <form action="">
                 <div class="input-wrap">
                     <label class="label">Margin</label>
-                    <select name="select-status" class="bg-gray300">
+                    <select name="" class="bg-gray300">
                         <option value="">Above</option>
                         <option value="">Below</option>
                     </select>
@@ -61,7 +55,7 @@
 
                 <div class="input-wrap">
                     <label class="label">Margin offset</label>
-                    <input type="text" />
+                    <input type="text" placeholder="0%" />
                 </div>
             </form>
 
@@ -98,6 +92,17 @@
                     />
                 </div>
             </form>
+            <div class="wrap-btns">
+                <button class="secondary" @click="$emit('cancel', offer)">
+                    cancel
+                </button>
+                <button
+                    class="primary"
+                    @click="updateOffer({ updatedOffer: this.updatedOffer })"
+                >
+                    update
+                </button>
+            </div>
         </div>
     </div>
 </template>
@@ -279,12 +284,19 @@ export default defineComponent({
                 text-transform: capitalize;
             }
         }
+        .value {
+            font-size: 16px;
+            font-weight: 600;
+            color: $base-text;
+            font-weight: $semi-bold;
+        }
     }
 
     .wrap-btns {
         display: flex;
         justify-content: flex-end;
         gap: 24px;
+        margin-top: 32px;
     }
 
     .horizontal-separator {
@@ -308,20 +320,24 @@ export default defineComponent({
 
     .form-wrap {
         display: flex;
-        gap: 24px;
+        align-items: center;
+        gap: 32px;
     }
 
     form {
         width: 100%;
         margin-top: 16px;
         display: flex;
-        gap: 24px;
-        padding: 16px 8px;
+        gap: 16px;
+        padding: 8px 0px;
 
         .input-wrap {
-            width: 100%;
             display: flex;
             flex-direction: column;
+            width: 100%;
+
+            select {
+            }
         }
 
         .input {
