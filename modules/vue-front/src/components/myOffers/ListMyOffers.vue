@@ -1,5 +1,8 @@
 <template>
-    <section>
+    <section v-if="this.showLoadingMyOffers" class="loading-content">
+        <Loading />
+    </section>
+    <section v-else>
         <!-- My Offers section-->
         <section v-if="hasOffers" class="offers-list">
             <!-- Offers for -->
@@ -19,11 +22,6 @@
                     />
                 </li>
             </ul>
-            <div class="load-more">
-                <button class="wallet" @click="loadMore()">
-                    Load more offers
-                </button>
-            </div>
         </section>
         <section v-else class="card">
             <p>
@@ -122,10 +120,12 @@ import { formatAddress, formatAmount } from "@/shared";
 import ExpandedMyOffer from "@/components/myOffers/ExpandedMyOffer.vue";
 import CollapsedMyOffer from "@/components/myOffers/CollapsedMyOffer.vue";
 import ArchivedOfferItem from "@/components/myOffers/AchivedOfferItem.vue";
+import Loading from "@/components/commons/Loading.vue";
 
 export default defineComponent({
     name: "ListMyOffers",
     components: {
+        Loading,
         ExpandedMyOffer,
         CollapsedMyOffer,
         ArchivedOfferItem,
@@ -155,16 +155,9 @@ export default defineComponent({
             offer.isExpanded = false;
             this.ExpandedMyOffer = null;
         },
-        loadMore: function() {
-            this.$nextTick(() => {
-                this.fetchMyOffers({
-                    paginated: true,
-                });
-            });
-        },
     },
     computed: {
-        ...mapGetters(["myOffers", "getUsdRate"]),
+        ...mapGetters(["myOffers", "getUsdRate", "showLoadingMyOffers"]),
         offers: function() {
             let offers = [];
             let myOffers = this.myOffers.filter(
@@ -272,6 +265,12 @@ export default defineComponent({
             padding: 0 48px;
         }
     }
+}
+
+.loading-content {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
 }
 
 /* -------------- Expanded Mobile */
