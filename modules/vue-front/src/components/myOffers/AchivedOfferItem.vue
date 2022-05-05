@@ -1,10 +1,10 @@
 <template>
     <div class="wrap-table-item">
         <div class="col-1">
-            <p>{{ type }}</p>
+            <p>{{ currentDate }}</p>
         </div>
         <div class="col-2">
-            <p>{{ currentDate }}</p>
+            <p>{{ type }}</p>
         </div>
         <div class="col-3">
             <p>{{ fiatCurrency }}</p>

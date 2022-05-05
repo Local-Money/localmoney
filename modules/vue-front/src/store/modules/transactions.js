@@ -408,10 +408,9 @@ const actions = {
                 update_offer,
             },
         );
-        console.log("offerMsg msg:>> ", msg);
-        const result = await executeMsg(commit, getters, dispatch, msg);
-        console.log("result :>> ", result);
-        router.push(`/`);
+
+        await executeMsg(commit, getters, dispatch, msg);
+        await dispatch("fetchMyOffers", { paginated: false, order: "desc" });
     },
     /**
      * Unachive Offer
