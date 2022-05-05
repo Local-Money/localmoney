@@ -108,18 +108,14 @@ export default defineComponent({
             .label {
                 margin-bottom: 4px;
                 font-size: 12px;
-                color: $gray700;
+                color: $gray600;
             }
         }
 
-        .limit {
-            font-size: 16px;
-            color: $gray900;
-        }
-
+        .limit,
         .margin {
-            font-size: 16px;
-            color: $gray900;
+            font-size: 15px;
+            color: $gray700;
         }
 
         @media only screen and (max-width: 550px) {
@@ -142,7 +138,7 @@ export default defineComponent({
         gap: 40px;
 
         .value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: $base-text;
             font-weight: $semi-bold;
