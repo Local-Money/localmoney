@@ -34,6 +34,7 @@ const state = {
         type: "",
         fiatCurrency: "",
     },
+    showLoadingMyOffers: false,
     myOffers: [],
     tradeInfos: [],
     lunaUstPrice: 0,
@@ -65,6 +66,7 @@ const getters = {
     showLoadingOffers: (state) => state.showLoadingOffers,
     offers: (state) => state.offers,
     offersFilter: (state) => state.offersFilter,
+    showLoadingMyOffers: (state) => state.showLoadingMyOffers,
     myOffers: (state) => state.myOffers,
     stakingTotalDeposit: (state) => state.stakingTotalDeposit,
     stakingTotalShares: (state) => state.stakingTotalShares,
@@ -276,8 +278,7 @@ const actions = {
         { commit, getters },
         { paginated = false, order = "desc" },
     ) {
-        console.log("fetchMyOffers walletAddress", getters.walletAddress);
-
+        commit("setLoadingMyOffers", true);
         const offers = paginated ? getters.myOffers : [];
 
         const last_offer_id =
@@ -309,6 +310,7 @@ const actions = {
             offersQuery,
         );
         commit("setMyOffers", offers.concat(loadedOffers));
+        commit("setLoadingMyOffers", false);
     },
     /**
      * Fetch Offers.
@@ -439,9 +441,7 @@ const actions = {
         );
         console.log(msg);
         await executeMsg(commit, getters, dispatch, msg);
-        commit("setIsLoading", true);
         await dispatch("fetchMyOffers", { paginated: false, order: "desc" });
-        commit("setIsLoading", false);
     },
     /**
      * Fetch a specific Trade
@@ -713,6 +713,8 @@ const mutations = {
     addOffer: (state, offer) => state.offers.push(offer),
     setLoadingOffers: (state, showLoadingOffers) =>
         (state.showLoadingOffers = showLoadingOffers),
+    setLoadingMyOffers: (state, showLoadingMyOffers) =>
+        (state.showLoadingMyOffers = showLoadingMyOffers),
     setOffers: (state, offers) => (state.offers = offers),
     setOffersFilter: (state, offersFilter) =>
         (state.offersFilter = offersFilter),
