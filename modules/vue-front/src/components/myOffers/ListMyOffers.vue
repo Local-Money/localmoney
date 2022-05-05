@@ -24,13 +24,11 @@
                     />
                 </li>
             </ul>
-            <div class="load-more">
-                <button class="wallet" @click="loadMore()">
-                    Load more offers
-                </button>
-            </div>
         </section>
-        <section v-else class="card">
+        <section
+            v-else-if="!hasOffers && !this.showLoadingMyOffers"
+            class="card"
+        >
             <p>
                 Nothing here yet
             </p>
@@ -54,6 +52,18 @@
             />
         </section>
         <!--End Archived offers table-->
+
+        <div class="load-more">
+            <button
+                class="wallet"
+                @click="loadMore()"
+                v-if="!this.showLoadingMyOffers"
+            >
+                Load more offers
+            </button>
+
+            <Loading v-else />
+        </div>
     </section>
 
     <!-- Expanded Offer Mobile -->
@@ -127,10 +137,12 @@ import { formatAddress, formatAmount } from "@/shared";
 import ExpandedMyOffer from "@/components/myOffers/ExpandedMyOffer.vue";
 import CollapsedMyOffer from "@/components/myOffers/CollapsedMyOffer.vue";
 import ArchivedOfferItem from "@/components/myOffers/AchivedOfferItem.vue";
+import Loading from "@/components/commons/Loading.vue";
 
 export default defineComponent({
     name: "ListMyOffers",
     components: {
+        Loading,
         ExpandedMyOffer,
         CollapsedMyOffer,
         ArchivedOfferItem,
@@ -169,7 +181,7 @@ export default defineComponent({
         },
     },
     computed: {
-        ...mapGetters(["myOffers", "getUsdRate"]),
+        ...mapGetters(["myOffers", "getUsdRate", "showLoadingMyOffers"]),
         offers: function() {
             let offers = [];
             let myOffers = this.myOffers.filter(
@@ -267,16 +279,22 @@ export default defineComponent({
         list-style: none;
         margin-bottom: 24px;
     }
+}
 
-    .load-more {
-        display: flex;
-        justify-content: center;
-        margin-top: 32px;
+.load-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
 
-        button {
-            padding: 0 48px;
-        }
+    button {
+        padding: 0 48px;
     }
+}
+
+.loading-content {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
 }
 
 /* -------------- Expanded Mobile */
