@@ -4,10 +4,10 @@
             <div class="inner-wrap">
                 <div class="wrap-status">
                     <!-- <p class="label">Offer Status</p> -->
-                    <select name="select-status" class="bg-gray100">
-                        <option value="">Active</option>
-                        <option value="">Pause</option>
-                        <option value="">Archive</option>
+                    <select v-model="updatedOffer.state">
+                        <option value="active">Active</option>
+                        <option value="paused">Pause</option>
+                        <option value="archive">Archive</option>
                     </select>
                 </div>
                 <p class="type">{{ offer.offer_type }}ing</p>
@@ -19,30 +19,7 @@
                 </p>
             </div>
         </div>
-
         <div class="horizontal-separator"></div>
-
-        <!-- TODO - MOVE ACTIONS TO SELECT COMPONENT ABOVE
-
-            <div class="price">
-            <p class="label">Offer Status</p>
-            <div class="buy-sell">
-                <button
-                    v-on:click="updatedOffer.state = 'active'"
-                    v-bind:class="{ focus: updatedOffer.state == 'active' }"
-                >
-                    Active
-                </button>
-                <div class="separator"></div>
-                <button
-                    v-on:click="updatedOffer.state = 'paused'"
-                    v-bind:class="{ focus: updatedOffer.state == 'paused' }"
-                >
-                    Paused
-                </button>
-            </div>
-        </div> -->
-
         <div class="form-wrap">
             <form action="">
                 <div class="input-wrap">
@@ -55,7 +32,11 @@
 
                 <div class="input-wrap">
                     <label class="label">Margin offset</label>
-                    <input type="text" placeholder="0%" />
+                    <input
+                        v-model="updatedOffer.rate"
+                        type="text"
+                        placeholder="0%"
+                    />
                 </div>
             </form>
 
@@ -132,13 +113,13 @@ export default defineComponent({
                 ...this.offer,
                 min_amount: formatAmount(this.offer.min_amount),
                 max_amount: formatAmount(this.offer.max_amount),
+                rate: this.offer.rate,
+                state: this.offer.state,
             },
         };
     },
     mounted() {
         this.startExchangeRateRefreshTimer();
-        console.log("this.offer :>> ", this.offer);
-        console.log("updatedOffer :>> ", this.updatedOffer);
         this.$nextTick(() => {
             this.focus();
         });
@@ -284,6 +265,7 @@ export default defineComponent({
                 text-transform: capitalize;
             }
         }
+
         .value {
             font-size: 16px;
             font-weight: 600;
