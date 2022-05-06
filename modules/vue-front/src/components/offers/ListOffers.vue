@@ -31,6 +31,7 @@
                 <label for="currency">Currency (FIAT)</label>
                 <select
                     name="currency"
+                    class="bg-surface"
                     id="currency"
                     v-model="fiatCurrency"
                     @change="fetchOffers({ fiatCurrency, offerType })"
@@ -49,6 +50,7 @@
             <ul>
                 <li
                     class="card"
+                    :class="offer.isExpanded ? 'card-active' : ''"
                     v-for="offer in allOffers"
                     v-bind:key="offer.id"
                 >
@@ -254,30 +256,6 @@ export default defineComponent({
         font-size: 12px;
         color: $gray600;
         margin-bottom: 8px;
-    }
-
-    select {
-        width: 100%;
-        max-width: 200px;
-        background-color: $surface;
-        border-radius: 8px;
-        border: 1px solid $border;
-        font-family: "Poppins", sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        color: $base-text;
-        padding: 10px 16px;
-        appearance: none;
-    }
-
-    @media only screen and (max-width: 550px) {
-        margin-left: 0;
-        max-width: none;
-
-        select {
-            max-width: none;
-            height: 48px;
-        }
     }
 }
 

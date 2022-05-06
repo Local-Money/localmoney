@@ -1,9 +1,15 @@
 <template>
     <section>
-        <section class="offers-list">
+        <!-- My Offers section-->
+        <section v-if="hasOffers" class="offers-list">
             <!-- Offers for -->
             <ul>
-                <li class="card" v-for="offer in offers" v-bind:key="offer.id">
+                <li
+                    class="card"
+                    :class="offer.isExpanded ? 'card-active' : ''"
+                    v-for="offer in offers"
+                    v-bind:key="offer.id"
+                >
                     <!-- Collapsed Offer -->
                     <CollapsedMyOffer
                         v-if="!offer.isExpanded"
@@ -18,12 +24,46 @@
                     />
                 </li>
             </ul>
-            <div class="load-more">
-                <button class="wallet" @click="loadMore()">
-                    Load more offers
-                </button>
-            </div>
         </section>
+        <section
+            v-else-if="!hasOffers && !this.showLoadingMyOffers"
+            class="card"
+        >
+            <p>
+                Nothing here yet
+            </p>
+        </section>
+        <!-- End My Offers section -->
+        <!-- Archived offers table -->
+        <h3 v-if="hasArchivedOffers">Archived Offers</h3>
+        <section v-if="hasArchivedOffers" class="archived-offers-table card">
+            <div class="table-header">
+                <div class="col-1"><p>Date</p></div>
+                <div class="col-2"><p>Type</p></div>
+                <div class="col-3"><p>Fiat</p></div>
+                <div class="col-4"><p>Limits</p></div>
+                <div class="col-5"><p>Price</p></div>
+                <div class="col-6"></div>
+            </div>
+            <ArchivedOfferItem
+                v-for="offer in archivedOffers"
+                :offer="offer"
+                :key="offer.id"
+            />
+        </section>
+        <!--End Archived offers table-->
+
+        <div class="load-more">
+            <button
+                class="wallet"
+                @click="loadMore()"
+                v-if="!this.showLoadingMyOffers"
+            >
+                Load more offers
+            </button>
+
+            <Loading v-else />
+        </div>
     </section>
 
     <!-- Expanded Offer Mobile -->
@@ -94,30 +134,26 @@
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import { formatAddress, formatAmount } from "@/shared";
-import ExpandedMyOffer from "@/components/offers/ExpandedMyOffer.vue";
-import CollapsedMyOffer from "@/components/offers/CollapsedMyOffer.vue";
+import ExpandedMyOffer from "@/components/myOffers/ExpandedMyOffer.vue";
+import CollapsedMyOffer from "@/components/myOffers/CollapsedMyOffer.vue";
+import ArchivedOfferItem from "@/components/myOffers/AchivedOfferItem.vue";
+import Loading from "@/components/commons/Loading.vue";
 
 export default defineComponent({
-    name: "Offers",
+    name: "ListMyOffers",
     components: {
+        Loading,
         ExpandedMyOffer,
         CollapsedMyOffer,
+        ArchivedOfferItem,
     },
     data() {
         return {
             ExpandedMyOffer: null,
         };
     },
-    mounted() {
-        // Wait for iniWallet to provide us the walletAddress, then fetchmyOffers
-        // This fixes loading the /offers route directly without first going through /home
-        this.$watch(
-            "walletAddress",
-            (newWalletAddress) => {
-                if (newWalletAddress !== "") this.fetchMyOffers({});
-            },
-            { immediate: true },
-        );
+    mounted: async function() {
+        await this.fetchMyOffers({});
     },
     methods: {
         ...mapActions(["fetchMyOffers", "fetchUsdRates", "openTrade"]),
@@ -145,14 +181,26 @@ export default defineComponent({
         },
     },
     computed: {
-        ...mapGetters(["myOffers", "getUsdRate", "walletAddress"]),
+        ...mapGetters(["myOffers", "getUsdRate", "showLoadingMyOffers"]),
         offers: function() {
             let offers = [];
-            this.myOffers.forEach((offer) => {
+            let myOffers = this.myOffers.filter(
+                (offer) => offer.state !== "archive",
+            );
+            myOffers.forEach((offer) => {
                 offer["isExpanded"] = false;
                 offers.push(offer);
             });
             return offers;
+        },
+        hasOffers: function() {
+            return this.offers.length > 0;
+        },
+        archivedOffers: function() {
+            return this.myOffers.filter((offer) => offer.state === "archive");
+        },
+        hasArchivedOffers: function() {
+            return this.archivedOffers.length > 0;
         },
     },
     created: function() {
@@ -165,7 +213,6 @@ export default defineComponent({
 @import "@/style/tokens.scss";
 
 /* ----------- BUY SELL ROW */
-
 .separator {
     margin: 0 auto 42px;
     display: flex;
@@ -220,10 +267,7 @@ export default defineComponent({
 }
 
 /* ----------- OFFER LIST */
-
 .offers-list {
-    margin-top: 40px;
-
     h3 {
         color: $base-text;
         font-size: 18px;
@@ -235,16 +279,22 @@ export default defineComponent({
         list-style: none;
         margin-bottom: 24px;
     }
+}
 
-    .load-more {
-        display: flex;
-        justify-content: center;
-        margin-top: 32px;
+.load-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
 
-        button {
-            padding: 0 48px;
-        }
+    button {
+        padding: 0 48px;
     }
+}
+
+.loading-content {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
 }
 
 /* -------------- Expanded Mobile */
@@ -444,4 +494,53 @@ export default defineComponent({
         padding: 8px 24px;
     }
 }
+
+/* ----------- ARCHIVED OFFERS TABLE */
+.archived-offers-table {
+    .table-header {
+        display: flex;
+        flex-direction: row;
+        border-bottom: 1px solid $border;
+        padding: 16px;
+        margin-bottom: 16px;
+
+        p {
+            font-size: 14px;
+            font-weight: $semi-bold;
+            color: $gray700;
+        }
+    }
+}
+
+.col-1,
+:deep(.col-1) {
+    width: 12.5%;
+}
+
+.col-2,
+:deep(.col-2) {
+    width: 12.5%;
+}
+
+.col-3,
+:deep(.col-3) {
+    width: 12.5%;
+}
+
+.col-4,
+:deep(.col-4) {
+    width: 33.5%;
+}
+
+.col-5,
+:deep(.col-5) {
+    width: 20%;
+}
+
+.col-6,
+:deep(.col-6) {
+    width: 10%;
+}
+
+/* ----------- END ARCHIVED OFFERS TABLE */
 </style>
