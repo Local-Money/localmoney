@@ -84,6 +84,7 @@ const getters = {
     lunaUstPrice: (state) => state.lunaUstPrice,
     ustUsdPrice: (state) => state.ustUsdPrice,
     loading: (state) => state.loading,
+    factoryCfg: (state) => state.factoryConfig,
 };
 
 const actions = {
