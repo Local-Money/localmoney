@@ -43,7 +43,7 @@ const state = {
     stakingTotalShares: "0",
     stakingTotalWarming: "0",
     stakingClaims: [],
-    factoryConfig: FACTORY_CFG.factoryCfg,
+    factoryCfg: FACTORY_CFG.factoryCfg,
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -84,6 +84,7 @@ const getters = {
     lunaUstPrice: (state) => state.lunaUstPrice,
     ustUsdPrice: (state) => state.ustUsdPrice,
     loading: (state) => state.loading,
+    factoryCfg: (state) => state.factoryCfg,
 };
 
 const actions = {
@@ -98,19 +99,19 @@ const actions = {
         });
         const walletAddress = res.payload.address;
         commit("setWalletAddress", walletAddress);
-        // dispatch("fetchFactoryConfig");
+        // dispatch("fetchfactoryCfg");
     },
     /**
      * Fetch Factory Contract config
      */
-    // async fetchFactoryConfig({ commit, dispatch }) {
+    // async fetchfactoryCfg({ commit, dispatch }) {
     //     const cfgQuery = { config: {} };
-    //     const factoryConfig = await terra.wasm.contractQuery(
+    //     const factoryCfg = await terra.wasm.contractQuery(
     //         FACTORY_CONTRACT,
     //         cfgQuery,
     //     );
-    //     console.log("factoryConfig :>> ", factoryConfig);
-    //     commit("setFactoryConfig", factoryConfig);
+    //     console.log("factoryCfg :>> ", factoryCfg);
+    //     commit("setfactoryCfg", factoryCfg);
     //     dispatch("fetchTradeInfos");
     // },
     /**
@@ -125,7 +126,7 @@ const actions = {
             getters.factoryCfg.local_token_addr, // LOCAL_TOKEN_ADDR
             {
                 send: {
-                    contract: state.factoryConfig.staking_addr,
+                    contract: state.factoryCfg.staking_addr,
                     amount,
                     msg: "ewogICJlbnRlciI6IHt9Cn0=", // { Enter: {}}
                 },
@@ -155,7 +156,7 @@ const actions = {
             getters.factoryCfg.xlocal_addr,
             {
                 send: {
-                    contract: state.factoryConfig.staking_addr,
+                    contract: state.factoryCfg.staking_addr,
                     amount,
                     msg: "ewogICJsZWF2ZSI6IHt9Cn0=", // {Leave:{}}
                 },
@@ -182,7 +183,7 @@ const actions = {
     async claimStaking({ commit, getters, dispatch }, claim_id) {
         const claimStakingMsg = new MsgExecuteContract(
             getters.walletAddress,
-            state.factoryConfig.staking_addr,
+            state.factoryCfg.staking_addr,
             {
                 claim: {
                     claim_id,
@@ -209,7 +210,7 @@ const actions = {
         };
 
         const stakingTotalDeposit = await terra.wasm.contractQuery(
-            state.factoryConfig.staking_addr,
+            state.factoryCfg.staking_addr,
             msg,
         );
         console.log("stakingTotalDeposit :>> ", stakingTotalDeposit);
@@ -224,7 +225,7 @@ const actions = {
         };
 
         const stakingTotalShares = await terra.wasm.contractQuery(
-            state.factoryConfig.staking_addr,
+            state.factoryCfg.staking_addr,
             msg,
         );
         console.log("state :>> ", state);
@@ -239,7 +240,7 @@ const actions = {
         };
 
         const stakingTotalWarming = await terra.wasm.contractQuery(
-            state.factoryConfig.staking_addr,
+            state.factoryCfg.staking_addr,
             msg,
         );
         commit("setStakingTotalWarming", stakingTotalWarming);
@@ -255,7 +256,7 @@ const actions = {
         };
 
         const stakingClaims = await terra.wasm.contractQuery(
-            state.factoryConfig.staking_addr,
+            state.factoryCfg.staking_addr,
             msg,
         );
         commit("setStakingClaims", stakingClaims);
@@ -266,7 +267,7 @@ const actions = {
     async fetchOffer({ commit }, { id }) {
         const offerQuery = { offer: { id } };
         const offer = await terra.wasm.contractQuery(
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             offerQuery,
         );
         commit("addOffer", offer);
@@ -306,7 +307,7 @@ const actions = {
         };
 
         const loadedOffers = await terra.wasm.contractQuery(
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             offersQuery,
         );
         commit("setMyOffers", offers.concat(loadedOffers));
@@ -326,10 +327,10 @@ const actions = {
         ) {
             commit("setOffers", []);
         }
-        // fetchOffers depends on the fetchFactoryConfig
-        // TODO we should call the fetchFactoryConfig on the start of the application,
+        // fetchOffers depends on the fetchfactoryCfg
+        // TODO we should call the fetchfactoryCfg on the start of the application,
         //  but we need to fix the initWallet first.
-        // await dispatch("fetchFactoryConfig");
+        // await dispatch("fetchfactoryCfg");
         const offers = paginated ? getters.offers : [];
         const last_offer_id =
             offers.length > 0 && paginated
@@ -356,7 +357,7 @@ const actions = {
             },
         };
         const loadedOffers = await terra.wasm.contractQuery(
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             offersQuery,
         );
         commit("setOffers", offers.concat(loadedOffers));
@@ -372,7 +373,7 @@ const actions = {
     async newOffer({ commit, getters, dispatch }, { offer }) {
         const offerMsg = new MsgExecuteContract(
             getters.walletAddress,
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             offer,
         );
 
@@ -403,7 +404,7 @@ const actions = {
 
         const msg = new MsgExecuteContract(
             getters.walletAddress,
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             {
                 update_offer,
             },
@@ -433,7 +434,7 @@ const actions = {
 
         const msg = new MsgExecuteContract(
             getters.walletAddress,
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             {
                 update_offer,
             },
@@ -471,12 +472,12 @@ const actions = {
         const wallet = getters.walletAddress;
         // TODO Add pagination
         const trades_as_seller = await terra.wasm.contractQuery(
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             { trades_query: { user: wallet, index: "seller", limit: 100 } },
         );
         // TODO Add pagination
         const trades_as_buyer = await terra.wasm.contractQuery(
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             { trades_query: { user: wallet, index: "buyer", limit: 100 } },
         );
 
@@ -507,7 +508,7 @@ const actions = {
         };
         const createTradeMsg = new MsgExecuteContract(
             sender,
-            state.factoryConfig.offers_addr,
+            state.factoryCfg.offers_addr,
             newTradeMsg,
         );
         //TODO: Error handling.
@@ -699,8 +700,7 @@ async function executeMsg(commit, getters, dispatch, msg) {
 const mutations = {
     setWalletAddress: (state, walletAddress) =>
         (state.walletAddress = walletAddress),
-    setFactoryConfig: (state, factoryConfig) =>
-        (state.factoryConfig = factoryConfig),
+    setfactoryCfg: (state, factoryCfg) => (state.factoryCfg = factoryCfg),
     setStakingTotalDeposit: (state, stakingTotalDeposit) =>
         (state.stakingTotalDeposit = stakingTotalDeposit),
     setStakingTotalShares: (state, stakingTotalShares) =>
