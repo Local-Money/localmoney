@@ -3,15 +3,15 @@
         <p>Create Offer</p>
         <div class="buy-sell">
             <button
-                v-on:click="offerType = 0"
-                v-bind:class="{ focus: offerType == 0 }"
+                v-on:click="offerType = 'buy'"
+                v-bind:class="{ focus: offerType === 'buy' }"
             >
                 Buy
             </button>
             <div class="separator"></div>
             <button
-                v-on:click="offerType = 1"
-                v-bind:class="{ focus: offerType == 1 }"
+                v-on:click="offerType = 'sell'"
+                v-bind:class="{ focus: offerType === 'sell' }"
             >
                 Sell
             </button>
@@ -42,14 +42,14 @@
             <div class="wrap-price">
                 <div class="margin">
                     <label for="">Margin</label>
-                    <select class="bg-gray300">
-                        <option value="ARS">Above</option>
-                        <option value="BRL">Below</option>
+                    <select class="bg-gray300" v-model="margin">
+                        <option value="above">Above</option>
+                        <option value="below">Below</option>
                     </select>
                 </div>
                 <div class="margin-offset">
                     <label for="currency">Margin Offset</label>
-                    <input type="text" placeholder="0%" />
+                    <input type="text" placeholder="0%" v-model="rate" />
                 </div>
             </div>
 
@@ -110,7 +110,9 @@ export default defineComponent({
         return {
             minAmount: 0,
             maxAmount: 0,
-            offerType: 0,
+            rate: 0,
+            margin: "above",
+            offerType: "buy",
             fiatCurrency: "ARS",
         };
     },
@@ -119,20 +121,20 @@ export default defineComponent({
         formatAmount,
         formatAddress,
         createOffer() {
-            let offerType = this.offerType === 0 ? "buy" : "sell";
             const newOffer = {
                 create: {
                     offer: {
-                        offer_type: offerType,
+                        offer_type: this.offerType,
                         fiat_currency: this.fiatCurrency,
-                        rate: "1", // TODO add real rate
+                        rate: this.rate,
                         min_amount: parseInt(this.minAmount * 1000000) + "",
                         max_amount: parseInt(this.maxAmount * 1000000) + "",
-                        maker_contact: "TODO",
+                        maker_contact: "TODO", // TODO we need to define if we'll have the maker's contact
                     },
                 },
             };
             this.newOffer({ offer: newOffer });
+            this.$emit("cancel");
         },
     },
     computed: {
@@ -230,6 +232,7 @@ export default defineComponent({
 
 .currency {
     display: flex;
+
     .filter {
         display: flex;
         flex-direction: column;
