@@ -20,10 +20,11 @@
 
         <div class="price">
             <div class="wrap-value">
-                <p class="value">
-                    {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }}
+                <p class="value">{{ offerPrice }}</p>
+                <p class="margin">
+                    {{ marginRate.marginOffset }}%
+                    {{ marginRate.margin }} market
                 </p>
-                <p class="margin">0% above market</p>
             </div>
             <button type="button" v-on:click="$emit('select', offer)">
                 {{ this.offerTypeLabels[offer.offer_type] }}
@@ -34,7 +35,12 @@
 
 <script>
 import { defineComponent } from "vue";
-import { formatAddress, formatAmount } from "@/shared";
+import {
+    calculateFiatPriceByRate,
+    convertOfferRateToMarginRate,
+    formatAddress,
+    formatAmount,
+} from "@/shared";
 import { mapGetters } from "vuex";
 
 export default defineComponent({
@@ -44,6 +50,7 @@ export default defineComponent({
     data() {
         return {
             offerTypeLabels: { buy: "Sell", sell: "Buy" },
+            marginRate: convertOfferRateToMarginRate(this.offer.rate),
         };
     },
     methods: {
@@ -53,7 +60,17 @@ export default defineComponent({
     computed: {
         ...mapGetters(["getUsdRate"]),
         usdRate: function() {
-            return this.getUsdRate(this.$props.offer.fiat_currency);
+            return this.getUsdRate(this.offer.fiat_currency);
+        },
+        offerPrice: function() {
+            const fiatPrice = calculateFiatPriceByRate(
+                this.usdRate,
+                this.offer.rate,
+            );
+            return `${this.offer.fiat_currency} ${formatAmount(
+                fiatPrice,
+                false,
+            )}`;
         },
     },
 });

@@ -41,13 +41,13 @@ export function calculateFiatPriceByRate(usdRate, offerRate) {
 export function convertOfferRateToMarginRate(offerRate) {
     if (offerRate > 100) {
         return {
-            margin: offerRate - 100,
-            marginOffset: "above",
+            marginOffset: offerRate - 100,
+            margin: "above",
         };
     } else {
         return {
-            margin: 100 - offerRate,
-            marginOffset: "bellow",
+            marginOffset: 100 - offerRate,
+            margin: "bellow",
         };
     }
 }
