@@ -31,6 +31,31 @@ export function formatTradeState(state) {
     }[state];
 }
 
+export function calculateFiatPriceByRate(usdRate, offerRate) {
+    if (offerRate === 0) {
+        return usdRate;
+    }
+    return usdRate * (offerRate / 100);
+}
+
+export function convertOfferRateToMarginRate(offerRate) {
+    if (offerRate > 100) {
+        return {
+            margin: offerRate - 100,
+            marginOffset: "above",
+        };
+    } else {
+        return {
+            margin: 100 - offerRate,
+            marginOffset: "bellow",
+        };
+    }
+}
+
+export function convertMarginRateToOfferRate(margin, marginOffset) {
+    return 100 + (margin === "above" ? +marginOffset : -marginOffset);
+}
+
 export function formatDate(date, showTime = true) {
     let year = new Intl.DateTimeFormat("en", { year: "numeric" }).format(date);
     let month = new Intl.DateTimeFormat("en", { month: "short" }).format(date);

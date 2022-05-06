@@ -1,21 +1,27 @@
 <template>
     <div class="main-wrap">
         <p>Create Offer</p>
-        <div class="buy-sell">
-            <button
-                v-on:click="offerType = 'buy'"
-                v-bind:class="{ focus: offerType === 'buy' }"
-            >
-                Buy
-            </button>
-            <div class="separator"></div>
-            <button
-                v-on:click="offerType = 'sell'"
-                v-bind:class="{ focus: offerType === 'sell' }"
-            >
-                Sell
-            </button>
+        <div class="header-wrap">
+            <div class="buy-sell">
+                <button
+                    v-on:click="offerType = 'buy'"
+                    v-bind:class="{ focus: offerType === 'buy' }"
+                >
+                    Buy
+                </button>
+                <div class="separator"></div>
+                <button
+                    v-on:click="offerType = 'sell'"
+                    v-bind:class="{ focus: offerType === 'sell' }"
+                >
+                    Sell
+                </button>
+            </div>
+            <div class="price">
+                <p class="value">{{ offerPrice }}</p>
+            </div>
         </div>
+
         <div class="card">
             <div class="currency">
                 <div class="filter">
@@ -49,7 +55,16 @@
                 </div>
                 <div class="margin-offset">
                     <label for="currency">Margin Offset</label>
-                    <input type="text" placeholder="0%" v-model="rate" />
+                    <input
+                        type="text"
+                        placeholder="0%"
+                        v-maska="['##%', '#%']"
+                        @maska="
+                            marginOffsetUnmasked =
+                                $event.target.dataset.maskRawValue
+                        "
+                        v-model="marginOffset"
+                    />
                 </div>
             </div>
 
@@ -98,11 +113,18 @@
 <script>
 import { defineComponent } from "vue";
 import CurrencyInput from "../CurrencyInput.vue";
-import { formatAddress, formatAmount } from "@/shared";
+import {
+    calculateFiatPriceByRate,
+    convertMarginRateToOfferRate,
+    formatAddress,
+    formatAmount,
+} from "@/shared";
 import { mapActions, mapGetters } from "vuex";
+import { maska } from "maska";
 
 export default defineComponent({
     name: "CreateOffer",
+    directives: { maska },
     components: {
         CurrencyInput,
     },
@@ -110,11 +132,21 @@ export default defineComponent({
         return {
             minAmount: 0,
             maxAmount: 0,
-            rate: 0,
             margin: "above",
+            marginOffset: "",
+            marginOffsetUnmasked: 0,
+            rate: 0,
             offerType: "buy",
             fiatCurrency: "ARS",
         };
+    },
+    watch: {
+        marginOffset: function() {
+            this.calculateMarginRate();
+        },
+        margin: function() {
+            this.calculateMarginRate();
+        },
     },
     methods: {
         ...mapActions(["initWallet", "newOffer"]),
@@ -126,7 +158,7 @@ export default defineComponent({
                     offer: {
                         offer_type: this.offerType,
                         fiat_currency: this.fiatCurrency,
-                        rate: this.rate,
+                        rate: this.rate + "",
                         min_amount: parseInt(this.minAmount * 1000000) + "",
                         max_amount: parseInt(this.maxAmount * 1000000) + "",
                         maker_contact: "TODO", // TODO we need to define if we'll have the maker's contact
@@ -136,11 +168,24 @@ export default defineComponent({
             this.newOffer({ offer: newOffer });
             this.$emit("cancel");
         },
+        calculateMarginRate() {
+            this.rate = convertMarginRateToOfferRate(
+                this.margin,
+                this.marginOffsetUnmasked,
+            );
+        },
     },
     computed: {
-        ...mapGetters(["walletAddress"]),
+        ...mapGetters(["walletAddress", "getUsdRate"]),
         valid: function() {
             return this.maxAmount > this.minAmount;
+        },
+        usdRate: function() {
+            return this.getUsdRate(this.fiatCurrency);
+        },
+        offerPrice: function() {
+            const fiatPrice = calculateFiatPriceByRate(this.usdRate, this.rate);
+            return `${this.fiatCurrency} ${formatAmount(fiatPrice, false)}`;
         },
     },
     created() {
@@ -161,6 +206,18 @@ export default defineComponent({
 .buy-sell {
     display: flex;
     margin: 24px 0 24px;
+}
+
+.header-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .value {
+        font-size: 16px;
+        color: $base-text;
+        font-weight: $semi-bold;
+    }
 }
 
 .divider {
