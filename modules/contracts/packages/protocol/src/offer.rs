@@ -170,6 +170,9 @@ pub enum QueryMsg {
         last_value: Option<Addr>,
         limit: u32,
     },
+    TradesCount {
+        user: Addr,
+    },
     Arbitrator {
         arbitrator: Addr,
     },

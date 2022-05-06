@@ -153,6 +153,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             last_value,
             limit,
         )?),
+        QueryMsg::TradesCount { user } => to_binary(&query_trades_count(deps, user)?),
         QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
         QueryMsg::Arbitrators { last_value, limit } => {
             to_binary(&query_arbitrators(deps, last_value, limit)?)
@@ -524,35 +525,29 @@ fn addr_range(deps: &Deps, addr: Addr, last_value: Option<Addr>) -> Option<Bound
 }
 
 ///Queries how many trades a user made. It returns a struct with {as_buyer,as_seller,total}.
-pub fn query_trades_count(
-    env: Env,
-    deps: Deps,
-    user: Addr,
-    state: Option<TradeState>,
-    index: TradesIndex,
-    last_value: Option<Addr>,
-    limit: u32,
-) -> StdResult<TradesCount> {
-    // Pagination range (TODO pagination doesn't work with Addr as pk)
-    let range_from = addr_range(&deps, user.clone(), last_value);
+pub fn query_trades_count(deps: Deps, user: Addr) -> StdResult<TradesCount> {
+    let range_from = addr_range(&deps, user.clone(), None);
 
-    // Select correct index for data lookup
-    // * The `state<TradeState>` filter only supported for `user == arbitrator` queries
-    let prefix = match index {
-        TradesIndex::Seller => trades().idx.seller.prefix(user),
-        TradesIndex::Buyer => trades().idx.buyer.prefix(user),
-        TradesIndex::ArbitratorState => trades().idx.arbitrator_state.sub_prefix(user),
-    };
+    let as_buyer_count: usize = trades()
+        .idx
+        .buyer
+        .prefix(user.clone())
+        .range(deps.storage, range_from.clone(), None, Order::Descending)
+        .count();
 
-    let trades_count: usize = prefix
+    let as_seller_count: usize = trades()
+        .idx
+        .seller
+        .prefix(user.clone())
         .range(deps.storage, range_from, None, Order::Descending)
         .count();
 
     let trades_count = TradesCount {
-        as_buyer: 0,
-        as_seller: 0,
-        total: trades_count,
+        as_buyer: as_buyer_count,
+        as_seller: as_seller_count,
+        total: as_buyer_count + as_seller_count,
     };
+
     Ok(trades_count)
 }
 
