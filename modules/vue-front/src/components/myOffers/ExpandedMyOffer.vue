@@ -21,18 +21,22 @@
             <form action="">
                 <div class="input-wrap">
                     <label class="label">Margin</label>
-                    <select name="" class="bg-gray100">
-                        <option value="">Above</option>
-                        <option value="">Below</option>
+                    <select v-model="marginRate.margin" class="bg-gray100">
+                        <option value="above">Above</option>
+                        <option value="bellow">Below</option>
                     </select>
                 </div>
 
                 <div class="input-wrap">
                     <label class="label">Margin offset</label>
                     <input
-                        v-model="updatedOffer.rate"
-                        type="text"
                         placeholder="0%"
+                        v-maska="['##%', '#%']"
+                        @maska="
+                            marginOffsetUnmasked =
+                                $event.target.dataset.maskRawValue
+                        "
+                        v-model="marginRate.marginOffset"
                     />
                 </div>
             </form>
@@ -74,10 +78,7 @@
                 <button class="secondary" @click="$emit('cancel', offer)">
                     cancel
                 </button>
-                <button
-                    class="primary"
-                    @click="updateOffer({ updatedOffer: this.updatedOffer })"
-                >
+                <button class="primary" @click="update()">
                     update
                 </button>
             </div>
@@ -89,11 +90,20 @@
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import CurrencyInput from "../CurrencyInput.vue";
-import { formatAddress, formatAmount, scrollToElement } from "@/shared";
+import {
+    calculateFiatPriceByRate,
+    convertMarginRateToOfferRate,
+    convertOfferRateToMarginRate,
+    formatAddress,
+    formatAmount,
+    scrollToElement,
+} from "@/shared";
+import { maska } from "maska";
 
 export default defineComponent({
     name: "ExpandedMyOffer",
     props: ["offer"],
+    directives: { maska },
     components: {
         CurrencyInput,
     },
@@ -106,11 +116,12 @@ export default defineComponent({
             watchingCrypto: false,
             secondsUntilRateRefresh: 0,
             refreshRateInterval: -1,
+            marginOffsetUnmasked: 0,
+            marginRate: convertOfferRateToMarginRate(this.offer.rate),
             updatedOffer: {
                 ...this.offer,
                 min_amount: formatAmount(this.offer.min_amount),
                 max_amount: formatAmount(this.offer.max_amount),
-                rate: this.offer.rate,
                 state: this.offer.state,
             },
         };
@@ -165,6 +176,14 @@ export default defineComponent({
             this.watchingCrypto = true;
             this.cryptoAmount = parseInt(this.offer.max_amount) / 1000000;
         },
+        update: function() {
+            this.updateOffer({
+                updatedOffer: {
+                    ...this.updatedOffer,
+                    rate: this.offerRate + "",
+                },
+            });
+        },
     },
     computed: {
         ...mapGetters(["getUsdRate"]),
@@ -212,9 +231,19 @@ export default defineComponent({
         usdRate: function() {
             return this.getUsdRate(this.$props.offer.fiat_currency);
         },
+        offerRate: function() {
+            return convertMarginRateToOfferRate(
+                this.marginRate.margin,
+                this.marginOffsetUnmasked,
+            );
+        },
+        fiatPriceByRate: function() {
+            return calculateFiatPriceByRate(this.usdRate, this.offerRate);
+        },
+
         offerPrice: function() {
             return `${this.offer.fiat_currency} ${formatAmount(
-                this.usdRate,
+                this.fiatPriceByRate,
                 false,
             )}`;
         },

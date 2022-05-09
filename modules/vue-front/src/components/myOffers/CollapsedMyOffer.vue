@@ -9,9 +9,9 @@
 
         <div class="info">
             <!-- <p class="state">
-                {{ offer.state }}
-            </p>
-            <div class="divider"></div> -->
+{{ offer.state }}
+</p>
+<div class="divider"></div> -->
             <div class="wrap">
                 <p class="label">Limits</p>
                 <p class="limit">
@@ -23,15 +23,15 @@
             <div class="divider"></div>
             <div class="wrap">
                 <p class="label">Price</p>
-                <p class="margin">??% above market</p>
+                <p class="margin">
+                    {{ marginRate.marginOffset }}%
+                    {{ marginRate.margin }} market
+                </p>
             </div>
         </div>
 
         <div class="price">
-            <p class="value">
-                {{ offer.fiat_currency }} {{ formatAmount(usdRate, false) }}
-            </p>
-
+            <p class="value">{{ offerPrice }}</p>
             <button
                 type="button"
                 v-on:click="$emit('select', offer)"
@@ -45,7 +45,12 @@
 
 <script>
 import { defineComponent } from "vue";
-import { formatAddress, formatAmount } from "@/shared";
+import {
+    calculateFiatPriceByRate,
+    convertOfferRateToMarginRate,
+    formatAddress,
+    formatAmount,
+} from "@/shared";
 import { mapGetters } from "vuex";
 
 export default defineComponent({
@@ -53,7 +58,9 @@ export default defineComponent({
     props: ["offer"],
     setup() {},
     data() {
-        return {};
+        return {
+            marginRate: convertOfferRateToMarginRate(this.offer.rate),
+        };
     },
     methods: {
         formatAddress,
@@ -62,7 +69,17 @@ export default defineComponent({
     computed: {
         ...mapGetters(["getUsdRate"]),
         usdRate: function() {
-            return this.getUsdRate(this.$props.offer.fiat_currency);
+            return this.getUsdRate(this.offer.fiat_currency);
+        },
+        offerPrice: function() {
+            const fiatPrice = calculateFiatPriceByRate(
+                this.usdRate,
+                this.offer.rate,
+            );
+            return `${this.offer.fiat_currency} ${formatAmount(
+                fiatPrice,
+                false,
+            )}`;
         },
     },
 });

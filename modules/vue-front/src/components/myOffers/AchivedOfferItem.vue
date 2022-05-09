@@ -23,7 +23,7 @@
 
 <script>
 import { defineComponent } from "vue";
-import { formatAmount, formatFiatAmount, formatDate } from "@/shared";
+import { formatAmount, formatDate, calculateFiatPriceByRate } from "@/shared";
 import { mapActions, mapGetters } from "vuex";
 
 export default defineComponent({
@@ -51,8 +51,14 @@ export default defineComponent({
         },
         price: function() {
             const usdRate = this.getUsdRate(this.offer.fiat_currency);
-            const price = this.offer.rate * usdRate;
-            return `${this.offer.fiat_currency} ${formatFiatAmount(price)}`;
+            const fiatPrice = calculateFiatPriceByRate(
+                usdRate,
+                this.offer.rate,
+            );
+            return `${this.offer.fiat_currency} ${formatAmount(
+                fiatPrice,
+                false,
+            )}`;
         },
         limit: function() {
             const min = formatAmount(this.offer.min_amount);

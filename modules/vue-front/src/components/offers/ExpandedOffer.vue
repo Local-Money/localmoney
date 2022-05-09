@@ -72,11 +72,11 @@
                     <p class="ticker">
                         Will refresh in {{ this.secondsUntilRateRefresh }}s
                     </p>
-                    <p class="margin">0% above market</p>
-                    <p class="value">
-                        1 UST = {{ offer.fiat_currency.toUpperCase() }}
-                        {{ cryptoFiatPrice.toFixed(2) }}
+                    <p class="margin">
+                        {{ marginRate.marginOffset }}%
+                        {{ marginRate.margin }} market
                     </p>
+                    <p class="value">1 UST = {{ offerPrice }}</p>
                 </div>
             </div>
 
@@ -105,7 +105,13 @@
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import CurrencyInput from "../CurrencyInput.vue";
-import { formatAddress, formatAmount, scrollToElement } from "@/shared";
+import {
+    calculateFiatPriceByRate,
+    convertOfferRateToMarginRate,
+    formatAddress,
+    formatAmount,
+    scrollToElement,
+} from "@/shared";
 
 export default defineComponent({
     name: "ExpandedOffer",
@@ -122,6 +128,7 @@ export default defineComponent({
             watchingFiat: false,
             secondsUntilRateRefresh: 0,
             refreshRateInterval: -1,
+            marginRate: convertOfferRateToMarginRate(this.offer.rate),
         };
     },
     mounted() {
@@ -175,13 +182,11 @@ export default defineComponent({
             return parseInt(this.offer.max_amount) / 1000000;
         },
         minAmountInFiat: function() {
-            let fiatCurrency = this.offer.fiat_currency.toUpperCase();
-            let usdRate = this.getUsdRate(fiatCurrency);
+            let usdRate = this.fiatPriceByRate;
             return usdRate * (parseInt(this.offer.min_amount) / 1000000);
         },
         maxAmountInFiat: function() {
-            let fiatCurrency = this.offer.fiat_currency.toUpperCase();
-            let usdRate = this.getUsdRate(fiatCurrency);
+            let usdRate = this.fiatPriceByRate;
             return usdRate * (parseInt(this.offer.max_amount) / 1000000);
         },
         useMinCrypto: function() {
@@ -249,12 +254,23 @@ export default defineComponent({
             let max_amount = parseInt(this.offer.max_amount);
             return total >= min_amount && total <= max_amount;
         },
+        usdRate: function() {
+            return this.getUsdRate(this.offer.fiat_currency);
+        },
+        fiatPriceByRate: function() {
+            return calculateFiatPriceByRate(this.usdRate, this.offer.rate);
+        },
+        offerPrice: function() {
+            return `${this.offer.fiat_currency} ${formatAmount(
+                this.fiatPriceByRate,
+                false,
+            )}`;
+        },
     },
     watch: {
         fiatAmount: function(val) {
             if (this.watchingFiat) {
-                let fiatCurrency = this.offer.fiat_currency.toUpperCase();
-                let usdRate = this.getUsdRate(fiatCurrency);
+                let usdRate = this.fiatPriceByRate;
                 let cryptoAmount = parseFloat(val) / usdRate;
                 this.tradingFee = cryptoAmount * 0.01;
                 this.$nextTick(() => {
@@ -264,8 +280,7 @@ export default defineComponent({
         },
         cryptoAmount: function(val) {
             if (this.watchingCrypto) {
-                let fiatCurrency = this.offer.fiat_currency.toUpperCase();
-                let usdRate = this.getUsdRate(fiatCurrency);
+                let usdRate = this.fiatPriceByRate;
                 this.tradingFee = parseFloat(val) * 0.01;
                 this.$nextTick(() => {
                     let fiatAmount = parseFloat(val) * usdRate;
