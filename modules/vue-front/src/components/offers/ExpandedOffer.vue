@@ -72,7 +72,10 @@
                     <p class="ticker">
                         Will refresh in {{ this.secondsUntilRateRefresh }}s
                     </p>
-                    <p class="margin">0% above market</p>
+                    <p class="margin">
+                        {{ marginRate.marginOffset }}%
+                        {{ marginRate.margin }} market
+                    </p>
                     <p class="value">1 UST = {{ offerPrice }}</p>
                 </div>
             </div>
@@ -104,6 +107,7 @@ import { mapActions, mapGetters } from "vuex";
 import CurrencyInput from "../CurrencyInput.vue";
 import {
     calculateFiatPriceByRate,
+    convertOfferRateToMarginRate,
     formatAddress,
     formatAmount,
     scrollToElement,
@@ -124,6 +128,7 @@ export default defineComponent({
             watchingFiat: false,
             secondsUntilRateRefresh: 0,
             refreshRateInterval: -1,
+            marginRate: convertOfferRateToMarginRate(this.offer.rate),
         };
     },
     mounted() {
