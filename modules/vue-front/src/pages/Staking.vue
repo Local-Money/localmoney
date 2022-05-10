@@ -1,10 +1,19 @@
 <template>
     <main>
         <h3>Staking</h3>
-        <div class="card top-info">
-            <p>Total LOCAL Deposited: {{ stakingTotalDeposit }}</p>
-            <p>Total xLOCAL Minted: {{ stakingTotalShares }}</p>
-            <p>Total LOCAL Warming: {{ stakingTotalWarming }}</p>
+        <div class="top-info-wrap">
+            <div class="card info-item">
+                <p class="label">Total LOCAL Deposited</p>
+                <p class="value">{{ stakingTotalDeposit }}</p>
+            </div>
+            <div class="card info-item">
+                <p class="label">Total xLOCAL Minted</p>
+                <p class="value">{{ stakingTotalShares }}</p>
+            </div>
+            <div class="card info-item">
+                <p class="label">Total LOCAL Warming</p>
+                <p class="value">{{ stakingTotalWarming }}</p>
+            </div>
         </div>
 
         <div class="wrap-btns">
@@ -112,8 +121,25 @@ h3 {
     font-weight: $semi-bold;
 }
 
-.top-info {
+.top-info-wrap {
     margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+
+    .info-item {
+        width: 100%;
+        text-align: center;
+
+        .label {
+            font-size: 14px;
+            color: $gray700;
+        }
+
+        .value {
+            font-size: 24px;
+        }
+    }
 }
 
 .wrap-btns {
