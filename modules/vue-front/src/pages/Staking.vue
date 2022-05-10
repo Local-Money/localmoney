@@ -36,20 +36,29 @@
             </div>
             <div class="wrap-btns">
                 <div class="switcher">
-                    <button class="one" :class="{ focus: isStake }">
+                    <button
+                        class="one"
+                        :class="{ focus: isStake }"
+                        @click="isStake = true"
+                    >
                         stake
                     </button>
                     <div class="separator"></div>
                     <button
                         class="two"
-                        :class="{ focus: offerType === 'buy' }"
-                        @click="setOfferType('buy')"
+                        :class="{ focus: !isStake }"
+                        @click="isStake = false"
                     >
                         unstake
                     </button>
                 </div>
-                <input class="bg-gray100" type="text" placeholder="0.000" />
-                <button class="primary bg-gray300">
+                <input
+                    class="bg-gray100"
+                    type="text"
+                    placeholder="0.000"
+                    v-model="stakingAmount"
+                />
+                <button class="primary bg-gray300" @click="executeStaking()">
                     <svg
                         class="icon-24"
                         width="24"
@@ -115,6 +124,7 @@ export default defineComponent({
         return {
             isPolling: true,
             isStake: true,
+            stakingAmount: 0,
         };
     },
     methods: {
@@ -127,6 +137,13 @@ export default defineComponent({
             "leaveStaking",
             "claimStaking",
         ]),
+        executeStaking: function() {
+            if (this.isStake) {
+                this.enterStaking(this.stakingAmount);
+            } else {
+                this.leaveStaking(this.stakingAmount);
+            }
+        },
         polling: async function() {
             if (this.isPolling) {
                 console.log("polling");
@@ -199,6 +216,7 @@ h3 {
             font-size: 12px;
             color: $gray700;
         }
+
         .separator {
             width: 1px;
             height: 100%;
@@ -236,6 +254,7 @@ h3 {
                 border-radius: none;
                 color: $gray600;
             }
+
             .focus {
                 background-color: $gray300;
                 border-radius: 0px;
