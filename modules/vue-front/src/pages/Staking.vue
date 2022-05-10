@@ -35,45 +35,23 @@
                 </div>
             </div>
             <div class="wrap-btns">
-                <div class="switcher">
-                    <button
-                        class="one"
-                        :class="{ focus: isStake }"
-                        @click="isStake = true"
-                    >
-                        stake
-                    </button>
-                    <div class="separator"></div>
-                    <button
-                        class="two"
-                        :class="{ focus: !isStake }"
-                        @click="isStake = false"
-                    >
-                        unstake
-                    </button>
-                </div>
                 <input
                     class="bg-gray100"
                     type="text"
                     placeholder="0.000"
                     v-model="stakingAmount"
                 />
-                <button class="primary bg-gray300" @click="executeStaking()">
-                    <svg
-                        class="icon-24"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                    >
-                        <path
-                            d="M9 18L15 12L9 6"
-                            stroke="inherit"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    </svg>
+                <button
+                    class="secondary bg-gray300"
+                    @click="enterStaking(this.stakingAmount)"
+                >
+                    Stake
+                </button>
+                <button
+                    class="secondary bg-gray300"
+                    @click="leaveStaking(this.stakingAmount)"
+                >
+                    Unstake
                 </button>
             </div>
         </div>
@@ -137,13 +115,6 @@ export default defineComponent({
             "leaveStaking",
             "claimStaking",
         ]),
-        executeStaking: function() {
-            if (this.isStake) {
-                this.enterStaking(this.stakingAmount);
-            } else {
-                this.leaveStaking(this.stakingAmount);
-            }
-        },
         polling: async function() {
             if (this.isPolling) {
                 console.log("polling");
