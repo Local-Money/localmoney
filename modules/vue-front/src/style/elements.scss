@@ -72,6 +72,19 @@ input {
     padding: 10px 16px;
     appearance: none;
     outline: none;
+
+    &.bg-gray100 {
+        background-color: $gray100;
+    }
+    &.bg-gray150 {
+        background-color: $gray150;
+    }
+    &.bg-gray300 {
+        background-color: $gray300;
+    }
+    &.bg-surface {
+        background-color: $surface;
+    }
 }
 
 select {
@@ -157,6 +170,9 @@ button {
     // Background Color
     &.bg-gray600 {
         background-color: $gray600;
+    }
+    &.bg-gray300 {
+        background-color: $gray300;
     }
     &.bg-surface {
         background-color: $surface;

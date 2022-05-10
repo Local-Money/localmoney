@@ -7,6 +7,10 @@
                 <p class="value">{{ stakingTotalDeposit }}</p>
             </div>
             <div class="card info-item">
+                <p class="label">APY</p>
+                <p class="value">??%</p>
+            </div>
+            <div class="card info-item">
                 <p class="label">Total xLOCAL Minted</p>
                 <p class="value">{{ stakingTotalShares }}</p>
             </div>
@@ -16,13 +20,44 @@
             </div>
         </div>
 
-        <div class="wrap-btns">
-            <button class="tertiary" @click="enterStaking('10000000')">
-                Stake
-            </button>
-            <button class="tertiary" @click="leaveStaking('5000000')">
-                Unstake
-            </button>
+        <h3>My LOCAL</h3>
+
+        <div class=" card controls-wrap">
+            <div class="my-local-wrap">
+                <div class="local">
+                    <p class="label">LOCAL</p>
+                    <p>$9999.000</p>
+                </div>
+                <div class="separator"></div>
+                <div class="xlocal">
+                    <p class="label">xLOCAL</p>
+                    <p>$9999.000</p>
+                </div>
+            </div>
+            <div class="wrap-btns">
+                <div class="buy-sell">
+                    <button class="buy">
+                        buy
+                    </button>
+                    <div class="separator"></div>
+                    <button class="sell">
+                        sell
+                    </button>
+                </div>
+                <input class="bg-gray100" type="text" placeholder="0.000" />
+                <button
+                    class="secondary bg-gray300"
+                    @click="enterStaking('10000000')"
+                >
+                    Stake
+                </button>
+                <button
+                    class="secondary bg-gray300"
+                    @click="leaveStaking('5000000')"
+                >
+                    Unstake
+                </button>
+            </div>
         </div>
 
         <h3>My warming LOCAL</h3>
@@ -142,9 +177,30 @@ h3 {
     }
 }
 
-.wrap-btns {
+.controls-wrap {
     display: flex;
-    gap: 24px;
+    justify-content: space-between;
+
+    .my-local-wrap {
+        display: flex;
+        gap: 32px;
+
+        .label {
+            font-size: 12px;
+            color: $gray700;
+        }
+        .separator {
+            width: 1px;
+            height: 100%;
+            border: 1px solid $border;
+        }
+    }
+
+    .wrap-btns {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
 }
 
 .trade-history-table {
