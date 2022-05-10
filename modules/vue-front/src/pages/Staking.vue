@@ -26,12 +26,12 @@
             <div class="my-local-wrap">
                 <div class="local">
                     <p class="label">LOCAL</p>
-                    <p>$9999.000</p>
+                    <p>$????.???</p>
                 </div>
                 <div class="separator"></div>
                 <div class="xlocal">
                     <p class="label">xLOCAL</p>
-                    <p>$9999.000</p>
+                    <p>$????.???</p>
                 </div>
             </div>
             <div class="wrap-btns">
@@ -45,23 +45,23 @@
                     class="secondary bg-gray300"
                     @click="enterStaking(this.stakingAmount)"
                 >
-                    Stake
+                    stake
                 </button>
                 <button
                     class="secondary bg-gray300"
                     @click="leaveStaking(this.stakingAmount)"
                 >
-                    Unstake
+                    unstake
                 </button>
             </div>
         </div>
 
-        <h3>My warming LOCAL</h3>
+        <h3>Unstaking</h3>
         <section class="trade-history-table card">
             <div class="table-header">
                 <div class="col-1"><p>Amount</p></div>
                 <div class="col-2"><p>Ready</p></div>
-                <div class="col-3"><p>Claim</p></div>
+                <div class="col-3"><p></p></div>
             </div>
             <div
                 class="wrap-table-item"
@@ -76,13 +76,14 @@
                 </div>
                 <div class="col-3">
                     <button
+                        class="secondary claim"
                         @click="claimStaking(claim.id)"
                         :disabled="
                             claim.created_at * 1000 + 2 * 60 * 1000 >=
                                 Date.now()
                         "
                     >
-                        Claim
+                        claim
                     </button>
                 </div>
             </div>
@@ -216,15 +217,36 @@ h3 {
             color: $gray700;
         }
     }
-}
 
-.col-1,
-:deep(.col-1) {
-    width: 17.5%;
-}
+    .col-1,
+    :deep(.col-1) {
+        width: 20%;
+    }
 
-.col-2,
-:deep(.col-2) {
-    width: 12.5%;
+    .col-2,
+    :deep(.col-2) {
+        width: 70%;
+    }
+
+    .col-3,
+    :deep(.col-3) {
+        width: 10%;
+    }
+
+    .wrap-table-item {
+        display: flex;
+        flex-direction: row;
+        padding: 16px;
+
+        p {
+            font-size: 14px;
+            font-weight: $regular;
+        }
+
+        .claim {
+            font-size: 14px;
+            color: $primary;
+        }
+    }
 }
 </style>
