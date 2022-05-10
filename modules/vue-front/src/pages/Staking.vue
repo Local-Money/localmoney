@@ -199,52 +199,6 @@ h3 {
         display: flex;
         align-items: center;
         gap: 24px;
-
-        .switcher {
-            display: inline-flex;
-            justify-content: space-evenly;
-            width: 100%;
-            max-width: 200px;
-            background-color: $surface;
-            border: 1px solid $border;
-            border-radius: 8px;
-            overflow: hidden;
-
-            .separator {
-                width: 1px;
-                height: 40px;
-                background-color: $border;
-                margin: 0px;
-                z-index: 999;
-            }
-
-            button {
-                width: 100%;
-                justify-content: center;
-                background-color: inherit;
-                border-radius: none;
-                color: $gray600;
-            }
-
-            .focus {
-                background-color: $gray300;
-                border-radius: 0px;
-                color: $primary;
-            }
-
-            @media only screen and (max-width: 550px) {
-                margin-top: 0;
-                max-width: none;
-                margin-bottom: 16px;
-
-                button {
-                    height: 48px;
-                }
-                .separator {
-                    height: 48px;
-                }
-            }
-        }
     }
 }
 
