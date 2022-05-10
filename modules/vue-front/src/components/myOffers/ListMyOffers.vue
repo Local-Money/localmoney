@@ -152,8 +152,16 @@ export default defineComponent({
             ExpandedMyOffer: null,
         };
     },
-    mounted: async function() {
-        await this.fetchMyOffers({});
+    mounted() {
+        // Wait for iniWallet to provide us the walletAddress, then fetchmyOffers
+        // This fixes loading the /offers route directly without first going through /home
+        this.$watch(
+            "walletAddress",
+            (newWalletAddress) => {
+                if (newWalletAddress !== "") this.fetchMyOffers({});
+            },
+            { immediate: true },
+        );
     },
     methods: {
         ...mapActions(["fetchMyOffers", "fetchUsdRates", "openTrade"]),
@@ -181,7 +189,12 @@ export default defineComponent({
         },
     },
     computed: {
-        ...mapGetters(["myOffers", "getUsdRate", "showLoadingMyOffers"]),
+        ...mapGetters([
+            "myOffers",
+            "getUsdRate",
+            "showLoadingMyOffers",
+            "walletAddress",
+        ]),
         offers: function() {
             let offers = [];
             let myOffers = this.myOffers.filter(

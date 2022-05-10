@@ -371,6 +371,9 @@ const actions = {
      * Create Offer
      */
     async newOffer({ commit, getters, dispatch }, { offer }) {
+        commit("setLoadingTransaction", "");
+        commit("setLoadingLabel", "Please wait for the wallet...");
+        commit("setIsLoading", true);
         const offerMsg = new MsgExecuteContract(
             getters.walletAddress,
             state.factoryCfg.offers_addr,
@@ -378,7 +381,7 @@ const actions = {
         );
 
         await executeMsg(commit, getters, dispatch, offerMsg);
-        router.push(`/`);
+        await dispatch("fetchMyOffers", { paginated: false, order: "desc" });
     },
     /**
      * Update Offer
@@ -668,6 +671,7 @@ async function executeMsg(commit, getters, dispatch, msg) {
     return new Promise((resolve) => {
         ext.once("onPost", async (res) => {
             if (res.success) {
+                commit("setLoadingLabel", "");
                 commit("setLoadingTransaction", res.result.txhash);
                 commit("setIsLoading", true);
             }
