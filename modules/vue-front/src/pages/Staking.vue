@@ -35,27 +35,36 @@
                 </div>
             </div>
             <div class="wrap-btns">
-                <div class="buy-sell">
-                    <button class="buy">
-                        buy
+                <div class="switcher">
+                    <button class="one" :class="{ focus: isStake }">
+                        stake
                     </button>
                     <div class="separator"></div>
-                    <button class="sell">
-                        sell
+                    <button
+                        class="two"
+                        :class="{ focus: offerType === 'buy' }"
+                        @click="setOfferType('buy')"
+                    >
+                        unstake
                     </button>
                 </div>
                 <input class="bg-gray100" type="text" placeholder="0.000" />
-                <button
-                    class="secondary bg-gray300"
-                    @click="enterStaking('10000000')"
-                >
-                    Stake
-                </button>
-                <button
-                    class="secondary bg-gray300"
-                    @click="leaveStaking('5000000')"
-                >
-                    Unstake
+                <button class="primary bg-gray300">
+                    <svg
+                        class="icon-24"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                    >
+                        <path
+                            d="M9 18L15 12L9 6"
+                            stroke="inherit"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -105,6 +114,7 @@ export default defineComponent({
     data: function() {
         return {
             isPolling: true,
+            isStake: true,
         };
     },
     methods: {
@@ -200,6 +210,51 @@ h3 {
         display: flex;
         align-items: center;
         gap: 24px;
+
+        .switcher {
+            display: inline-flex;
+            justify-content: space-evenly;
+            width: 100%;
+            max-width: 200px;
+            background-color: $surface;
+            border: 1px solid $border;
+            border-radius: 8px;
+            overflow: hidden;
+
+            .separator {
+                width: 1px;
+                height: 40px;
+                background-color: $border;
+                margin: 0px;
+                z-index: 999;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+                background-color: inherit;
+                border-radius: none;
+                color: $gray600;
+            }
+            .focus {
+                background-color: $gray300;
+                border-radius: 0px;
+                color: $primary;
+            }
+
+            @media only screen and (max-width: 550px) {
+                margin-top: 0;
+                max-width: none;
+                margin-bottom: 16px;
+
+                button {
+                    height: 48px;
+                }
+                .separator {
+                    height: 48px;
+                }
+            }
+        }
     }
 }
 
