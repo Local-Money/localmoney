@@ -4,7 +4,7 @@
         <div class="top-info-wrap">
             <div class="card info-item">
                 <p class="label">Total LOCAL Deposited</p>
-                <p class="value">{{ stakingTotalDeposit }}</p>
+                <p class="value">{{ prettyStakingTotalDeposit }}</p>
             </div>
             <div class="card info-item">
                 <p class="label">APY</p>
@@ -12,11 +12,11 @@
             </div>
             <div class="card info-item">
                 <p class="label">Total xLOCAL Minted</p>
-                <p class="value">{{ stakingTotalShares }}</p>
+                <p class="value">{{ prettyStakingTotalShares }}</p>
             </div>
             <div class="card info-item">
                 <p class="label">Total LOCAL Warming</p>
-                <p class="value">{{ stakingTotalWarming }}</p>
+                <p class="value">{{ prettyStakingTotalWarming }}</p>
             </div>
         </div>
 
@@ -65,14 +65,22 @@
             </div>
             <div
                 class="wrap-table-item"
-                v-for="claim in stakingClaims"
+                v-for="claim in sortedStakingClaims"
                 :key="claim.id"
             >
                 <div class="col-1">
                     <p>{{ claim.amount }}</p>
                 </div>
                 <div class="col-2">
-                    <p>{{ new Date(claim.created_at * 1000 + 2 * 60) }}</p>
+                    <p>
+                        {{
+                            fuzzy(
+                                new Date(
+                                    claim.created_at * 1000 + 2 * 60 * 1000,
+                                ),
+                            )
+                        }}
+                    </p>
                 </div>
                 <div class="col-3">
                     <button
@@ -95,6 +103,8 @@
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 import { sleep } from "../shared.js";
+import numeral from "numeral";
+import * as timeago from "timeago.js";
 
 export default defineComponent({
     name: "Staking",
@@ -127,6 +137,9 @@ export default defineComponent({
                 this.polling();
             }
         },
+        fuzzy: function(time) {
+            return timeago.format(time);
+        },
     },
     computed: {
         ...mapGetters([
@@ -136,6 +149,21 @@ export default defineComponent({
             "stakingTotalWarming",
             "stakingClaims",
         ]),
+        prettyStakingTotalDeposit: function() {
+            return numeral(this.stakingTotalDeposit).format("0,0");
+        },
+        prettyStakingTotalShares: function() {
+            return numeral(this.stakingTotalShares).format("0,0");
+        },
+        prettyStakingTotalWarming: function() {
+            return numeral(this.stakingTotalWarming).format("0,0");
+        },
+        prettyStakingClaims: function() {
+            return numeral(this.stakingClaims).format("0,0");
+        },
+        sortedStakingClaims: function() {
+            return [...this.stakingClaims].sort((a, b) => a.id - b.id);
+        },
     },
     async mounted() {
         this.polling();
