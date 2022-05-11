@@ -43,13 +43,15 @@
                 />
                 <button
                     class="secondary bg-gray300 primary-action"
-                    @click="enterStaking(this.stakingAmount)"
+                    @click="enterStaking(parseInt(this.stakingAmount))"
+                    :disabled="!(parseInt(this.stakingAmount) > 0)"
                 >
                     stake
                 </button>
                 <button
                     class="secondary bg-gray300"
-                    @click="leaveStaking(this.stakingAmount)"
+                    @click="leaveStaking(parseInt(this.stakingAmount))"
+                    :disabled="!(parseInt(this.stakingAmount) > 0)"
                 >
                     unstake
                 </button>
