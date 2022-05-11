@@ -28,6 +28,8 @@ const state = {
         transaction: "Follow the transaction",
     },
     walletAddress: "",
+    myLocalBalance: "",
+    myxLocalBalance: "",
     showLoadingOffers: false,
     offers: [],
     offersFilter: {
@@ -63,6 +65,8 @@ function prepareTransaction(signedMsg) {
 
 const getters = {
     walletAddress: (state) => state.walletAddress,
+    myLocalBalance: (state) => state.myLocalBalance,
+    myxLocalBalance: (state) => state.myxLocalBalance,
     showLoadingOffers: (state) => state.showLoadingOffers,
     offers: (state) => state.offers,
     offersFilter: (state) => state.offersFilter,
@@ -100,6 +104,30 @@ const actions = {
         const walletAddress = res.payload.address;
         commit("setWalletAddress", walletAddress);
         // dispatch("fetchfactoryCfg");
+    },
+    async fetchMyLocalBalance({ getters, commit }) {
+        const response = await terra.wasm.contractQuery(
+            getters.factoryCfg.local_token_addr,
+            {
+                balance: { address: getters.walletAddress },
+            },
+        );
+
+        console.log(response);
+        commit("setMyLocalBalance", response.balance); // TODO handle errors
+        return response.balance;
+    },
+    async fetchMyxLocalBalance({ getters, commit }) {
+        const response = await terra.wasm.contractQuery(
+            getters.factoryCfg.xlocal_addr,
+            {
+                balance: { address: getters.walletAddress },
+            },
+        );
+
+        console.log(response);
+        commit("setMyxLocalBalance", response.balance); // TODO handle errors
+        return response.balance;
     },
     /**
      * Fetch Factory Contract config
@@ -704,6 +732,8 @@ async function executeMsg(commit, getters, dispatch, msg) {
 const mutations = {
     setWalletAddress: (state, walletAddress) =>
         (state.walletAddress = walletAddress),
+    setMyLocalBalance: (state, balance) => (state.myLocalBalance = balance),
+    setMyxLocalBalance: (state, balance) => (state.myxLocalBalance = balance),
     setfactoryCfg: (state, factoryCfg) => (state.factoryCfg = factoryCfg),
     setStakingTotalDeposit: (state, stakingTotalDeposit) =>
         (state.stakingTotalDeposit = stakingTotalDeposit),

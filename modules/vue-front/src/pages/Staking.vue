@@ -26,12 +26,12 @@
             <div class="my-local-wrap">
                 <div class="local">
                     <p class="label">LOCAL</p>
-                    <p>$????.???</p>
+                    <p>{{ prettyBalance(myLocalBalance) }}</p>
                 </div>
                 <div class="separator"></div>
                 <div class="xlocal">
                     <p class="label">xLOCAL</p>
-                    <p>$????.???</p>
+                    <p>{{ prettyBalance(myxLocalBalance) }}</p>
                 </div>
             </div>
             <div class="wrap-btns">
@@ -60,7 +60,7 @@
         <section class="trade-history-table card">
             <div class="table-header">
                 <div class="col-1"><p>Amount</p></div>
-                <div class="col-2"><p>Ready</p></div>
+                <div class="col-2"><p>Release On</p></div>
                 <div class="col-3"><p></p></div>
             </div>
             <div
@@ -69,17 +69,11 @@
                 :key="claim.id"
             >
                 <div class="col-1">
-                    <p>{{ claim.amount }}</p>
+                    <p>{{ prettyBalance(claim.amount) }} LOCAL</p>
                 </div>
                 <div class="col-2">
                     <p>
-                        {{
-                            fuzzy(
-                                new Date(
-                                    claim.created_at * 1000 + 2 * 60 * 1000,
-                                ),
-                            )
-                        }}
+                        {{ prettyReleaseOn(claim.created_at) }}
                     </p>
                 </div>
                 <div class="col-3">
@@ -121,6 +115,8 @@ export default defineComponent({
             "fetchStakingTotalWarming",
             "fetchStakingTotalDeposit",
             "fetchStakingTotalShares",
+            "fetchMyLocalBalance",
+            "fetchMyxLocalBalance",
             "fetchStakingClaims",
             "enterStaking",
             "leaveStaking",
@@ -132,6 +128,9 @@ export default defineComponent({
                 await this.fetchStakingTotalWarming();
                 await this.fetchStakingTotalDeposit();
                 await this.fetchStakingTotalShares();
+                await this.fetchStakingClaims();
+                await this.fetchMyLocalBalance();
+                await this.fetchMyxLocalBalance();
                 await this.fetchStakingClaims();
                 await sleep(5000);
                 this.polling();
@@ -148,6 +147,8 @@ export default defineComponent({
             "stakingTotalShares",
             "stakingTotalWarming",
             "stakingClaims",
+            "myLocalBalance",
+            "myxLocalBalance",
         ]),
         prettyStakingTotalDeposit: function() {
             return numeral(this.stakingTotalDeposit).format("0,0");
@@ -160,6 +161,17 @@ export default defineComponent({
         },
         prettyStakingClaims: function() {
             return numeral(this.stakingClaims).format("0,0");
+        },
+        prettyBalance: () => (balance) => numeral(balance).format("0,0"),
+        prettyReleaseOn() {
+            return (timestamp) => {
+                const date = new Date(timestamp * 1000 + 2 * 60 * 1000);
+                if (date < new Date()) {
+                    return "ready";
+                } else {
+                    return this.fuzzy(date);
+                }
+            };
         },
         sortedStakingClaims: function() {
             return [...this.stakingClaims].sort((a, b) => a.id - b.id);
