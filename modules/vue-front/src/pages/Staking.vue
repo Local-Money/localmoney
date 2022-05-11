@@ -26,7 +26,7 @@
             <div class="my-local-wrap">
                 <div
                     class="local pointer"
-                    @click="this.stakingAmount = myLocalBalance"
+                    @click="stakingAmount = myLocalBalance"
                 >
                     <p class="label">LOCAL</p>
                     <p>{{ prettyBalance(myLocalBalance) }}</p>
@@ -34,7 +34,7 @@
                 <div class="separator"></div>
                 <div
                     class="xlocal pointer"
-                    @click="this.stakingAmount = myxLocalBalance"
+                    @click="stakingAmount = myxLocalBalance"
                 >
                     <p class="label">xLOCAL</p>
                     <p>{{ prettyBalance(myxLocalBalance) }}</p>
@@ -44,19 +44,15 @@
                 <input class="bg-gray100" v-model="stakingAmount" />
                 <button
                     class="secondary bg-gray300 primary-action"
-                    @click="
-                        enterStaking(parseInt(this.stakingAmount).toString())
-                    "
-                    :disabled="!(parseInt(this.stakingAmount) > 0)"
+                    @click="enterStaking(parseInt(stakingAmount).toString())"
+                    :disabled="!(parseInt(stakingAmount) > 0)"
                 >
                     stake
                 </button>
                 <button
                     class="secondary bg-gray300"
-                    @click="
-                        leaveStaking(parseInt(this.stakingAmount).toString())
-                    "
-                    :disabled="!(parseInt(this.stakingAmount) > 0)"
+                    @click="leaveStaking(parseInt(stakingAmount).toString())"
+                    :disabled="!(parseInt(stakingAmount) > 0)"
                 >
                     unstake
                 </button>
