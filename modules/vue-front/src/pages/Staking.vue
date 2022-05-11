@@ -42,7 +42,7 @@
                     v-model="stakingAmount"
                 />
                 <button
-                    class="secondary bg-gray300"
+                    class="secondary bg-gray300 primary-action"
                     @click="enterStaking(this.stakingAmount)"
                 >
                     stake
@@ -79,6 +79,7 @@
                 <div class="col-3">
                     <button
                         class="secondary claim"
+                        :class="disabled"
                         @click="claimStaking(claim.id)"
                         :disabled="
                             claim.created_at * 1000 + 2 * 60 * 1000 >=
@@ -241,6 +242,9 @@ h3 {
         align-items: center;
         gap: 24px;
     }
+    .primary-action {
+        color: $primary;
+    }
 }
 
 .trade-history-table {
@@ -286,6 +290,9 @@ h3 {
         .claim {
             font-size: 14px;
             color: $primary;
+        }
+        :disabled {
+            color: $gray700;
         }
     }
 }
