@@ -24,33 +24,38 @@
 
         <div class=" card controls-wrap">
             <div class="my-local-wrap">
-                <div class="local">
+                <div
+                    class="local pointer"
+                    @click="this.stakingAmount = myLocalBalance"
+                >
                     <p class="label">LOCAL</p>
                     <p>{{ prettyBalance(myLocalBalance) }}</p>
                 </div>
                 <div class="separator"></div>
-                <div class="xlocal">
+                <div
+                    class="xlocal pointer"
+                    @click="this.stakingAmount = myxLocalBalance"
+                >
                     <p class="label">xLOCAL</p>
                     <p>{{ prettyBalance(myxLocalBalance) }}</p>
                 </div>
             </div>
             <div class="wrap-btns">
-                <input
-                    class="bg-gray100"
-                    type="text"
-                    placeholder="0.000"
-                    v-model="stakingAmount"
-                />
+                <input class="bg-gray100" v-model="stakingAmount" />
                 <button
                     class="secondary bg-gray300 primary-action"
-                    @click="enterStaking(parseInt(this.stakingAmount))"
+                    @click="
+                        enterStaking(parseInt(this.stakingAmount).toString())
+                    "
                     :disabled="!(parseInt(this.stakingAmount) > 0)"
                 >
                     stake
                 </button>
                 <button
                     class="secondary bg-gray300"
-                    @click="leaveStaking(parseInt(this.stakingAmount))"
+                    @click="
+                        leaveStaking(parseInt(this.stakingAmount).toString())
+                    "
                     :disabled="!(parseInt(this.stakingAmount) > 0)"
                 >
                     unstake
@@ -191,7 +196,9 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import "../style/pages.scss";
-
+.pointer {
+    cursor: pointer;
+}
 h3 {
     margin: 32px 0;
     font-size: 18px;
