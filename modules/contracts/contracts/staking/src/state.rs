@@ -38,7 +38,7 @@ pub struct Claim {
     pub id: u64, // PK
     pub recipient: Addr,
     pub amount: Uint128,
-    pub created_at: u64,
+    pub released_at: u64,
 }
 
 pub struct ClaimIndexes<'a> {

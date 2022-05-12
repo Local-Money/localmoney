@@ -1,7 +1,6 @@
 98a214e9592dd9f153436311069dcc45e70a8aff0095433a1e21333c01ad06f2  ./target/wasm32-unknown-unknown/release/factory.wasm
-0d772aa846ddae3148837212895de08b010c23d7d434f0cf103996df96eeccc9  ./target/wasm32-unknown-unknown/release/fee_collector.wasm
 49b264f25e7f3065fb6f7bd318228c7b4676a82cd7c940362e179138607d572d  ./target/wasm32-unknown-unknown/release/governance.wasm
-502676ea0079df7c23cbfba33d1ed28507ace896504cc20dd1572ddd3694d845  ./target/wasm32-unknown-unknown/release/localterra_staking.wasm
+661413d3f7e1d63114a4f53e521d0648b30f280eb7f706677832456720c6ed43  ./target/wasm32-unknown-unknown/release/localterra_staking.wasm
 03082117895ccd0de462ad8b90ec74619c395f33be2f3a8ae9efea3310068188  ./target/wasm32-unknown-unknown/release/localterra_xlocal_token.wasm
 bfda4e793aaa22cf229fca49e8f05f79f9d4eb20f218ffdd201f154c0a1c7b86  ./target/wasm32-unknown-unknown/release/offer.wasm
 fb29b1af737028a1bcdf0e4e6ff6d274dbea482efc1a0d5f32e69b5525087771  ./target/wasm32-unknown-unknown/release/trade.wasm

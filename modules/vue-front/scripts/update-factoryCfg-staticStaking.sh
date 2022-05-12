@@ -1,6 +1,6 @@
 set -e
 
-FACTORY=$(cat ../testsuite/cache/factory_bombay.json | jq '.factoryCfg.staking_addr = "terra1hepfmtzj3uulgap59ygn2pae86lxnq4knwcg3g" | .factoryCfg.xlocal_addr = "terra1q0ynhurhgpc2vcqhhv36g3qcqlyy8mvptg4xt4"') 
+FACTORY=$(cat ../testsuite/cache/factory_bombay.json | jq '.factoryCfg.staking_addr = "terra1kjdz87qagw32cgmjduvv5q54728dm8ql27av6q" | .factoryCfg.xlocal_addr = "terra13j525m8yx9ts9gt7h98wm0c57d2hcu4apqafpq"') 
 
 echo "Updated FactoryCfg to:"
 

@@ -7,8 +7,12 @@
                 <p class="value">{{ prettyStakingTotalDeposit }}</p>
             </div>
             <div class="card info-item">
-                <p class="label">APY</p>
-                <p class="value">??%</p>
+                <p class="label">xLOCAL:LOCAL</p>
+                <p class="value">
+                    1:{{
+                        prettyRatio(stakingTotalDeposit / stakingTotalShares)
+                    }}
+                </p>
             </div>
             <div class="card info-item">
                 <p class="label">Total xLOCAL Minted</p>
@@ -26,7 +30,7 @@
             <div class="my-local-wrap">
                 <div
                     class="local pointer"
-                    @click="stakingAmount = myLocalBalance"
+                    @click="stakingAmount = parseInt(myLocalBalance) / 1e6"
                 >
                     <p class="label">LOCAL</p>
                     <p>{{ prettyBalance(myLocalBalance) }}</p>
@@ -34,7 +38,7 @@
                 <div class="separator"></div>
                 <div
                     class="xlocal pointer"
-                    @click="stakingAmount = myxLocalBalance"
+                    @click="stakingAmount = parseInt(myxLocalBalance) / 1e6"
                 >
                     <p class="label">xLOCAL</p>
                     <p>{{ prettyBalance(myxLocalBalance) }}</p>
@@ -44,15 +48,15 @@
                 <input class="bg-gray100" v-model="stakingAmount" />
                 <button
                     class="secondary bg-gray300 primary-action"
-                    @click="enterStaking(parseInt(stakingAmount).toString())"
-                    :disabled="!(parseInt(stakingAmount) > 0)"
+                    @click="enter(stakingAmount)"
+                    :disabled="!isStakingAmountValid(stakingAmount)"
                 >
                     stake
                 </button>
                 <button
                     class="secondary bg-gray300"
-                    @click="leaveStaking(parseInt(stakingAmount).toString())"
-                    :disabled="!(parseInt(stakingAmount) > 0)"
+                    @click="leave(stakingAmount)"
+                    :disabled="!isStakingAmountValid(stakingAmount)"
                 >
                     unstake
                 </button>
@@ -76,7 +80,7 @@
                 </div>
                 <div class="col-2">
                     <p>
-                        {{ prettyReleaseOn(claim.created_at) }}
+                        {{ prettyReleaseOn(claim.released_at) }}
                     </p>
                 </div>
                 <div class="col-3">
@@ -84,10 +88,7 @@
                         class="secondary claim"
                         :class="disabled"
                         @click="claimStaking(claim.id)"
-                        :disabled="
-                            claim.created_at * 1000 + 2 * 60 * 1000 >=
-                                Date.now()
-                        "
+                        :disabled="!isClaimReady(claim.released_at)"
                     >
                         claim
                     </button>
@@ -126,6 +127,14 @@ export default defineComponent({
             "leaveStaking",
             "claimStaking",
         ]),
+        enter: async function(amount) {
+            await this.enterStaking(parseInt(amount * 1e6).toString());
+            this.stakingAmount = "";
+        },
+        leave: async function(amount) {
+            await this.leaveStaking(parseInt(amount * 1e6).toString());
+            this.stakingAmount = "";
+        },
         polling: async function() {
             if (this.isPolling) {
                 console.log("polling");
@@ -155,21 +164,27 @@ export default defineComponent({
             "myxLocalBalance",
         ]),
         prettyStakingTotalDeposit: function() {
-            return numeral(this.stakingTotalDeposit).format("0,0");
+            return numeral(this.stakingTotalDeposit / 1e6).format("0,0.0");
         },
         prettyStakingTotalShares: function() {
-            return numeral(this.stakingTotalShares).format("0,0");
+            return numeral(this.stakingTotalShares / 1e6).format("0,0.0");
         },
         prettyStakingTotalWarming: function() {
-            return numeral(this.stakingTotalWarming).format("0,0");
+            return numeral(this.stakingTotalWarming / 1e6).format("0,0.0");
         },
         prettyStakingClaims: function() {
-            return numeral(this.stakingClaims).format("0,0");
+            return numeral(this.stakingClaims / 1e6).format("0,0");
         },
-        prettyBalance: () => (balance) => numeral(balance).format("0,0"),
+        isClaimReady: () => (claim_released_at) =>
+            new Date(claim_released_at * 1000) < new Date(),
+        isStakingAmountValid: () => (stakingAmount) =>
+            parseInt(stakingAmount * 1e6) > 0,
+        prettyBalance: () => (balance) =>
+            numeral(balance / 1e6).format("0,0.00"),
+        prettyRatio: () => (ratio) => numeral(ratio).format("0.00"),
         prettyReleaseOn() {
             return (timestamp) => {
-                const date = new Date(timestamp * 1000 + 2 * 60 * 1000);
+                const date = new Date(timestamp * 1000);
                 if (date < new Date()) {
                     return "ready";
                 } else {

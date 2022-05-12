@@ -181,7 +181,6 @@ fn receive_cw20(
     // We need to subtract the total local warming (locals waiting for maturity to be claimed)
     // so we don't reissue shares for them a second time
     let mut state: State = STATE.load(deps.storage)?;
-    total_deposit -= state.total_local_warming; // TODO test this / try to break it
     let total_shares = get_total_shares(deps.as_ref(), config.clone())?;
 
     match from_binary(&cw20_msg.msg)? {
@@ -257,7 +256,7 @@ fn receive_cw20(
                     id: claim_id,
                     recipient: deps.api.addr_validate(&recipient)?,
                     amount: what,
-                    created_at: env.block.time.seconds(),
+                    released_at: env.block.time.seconds() + VAULT_TIMEOUT,
                 },
             )?;
 
@@ -284,7 +283,7 @@ fn execute_claim(
         return Err(ContractError::Unauthorized {});
     }
 
-    if env.block.time.seconds() < claim.created_at + VAULT_TIMEOUT {
+    if env.block.time.seconds() < claim.released_at {
         return Err(ContractError::Immature {});
     }
 
@@ -354,7 +353,9 @@ pub fn get_total_deposit(deps: Deps, env: Env, config: Config) -> StdResult<Uint
             address: env.contract.address.to_string(),
         },
     )?;
-    Ok(result.balance)
+    // TODO test this subtraction and try to break it
+    let total_local_warming = get_total_local_warming(deps)?; // The warming local have essentially left the deposits and shouldn't be counted in share calculations
+    Ok(result.balance - total_local_warming)
 }
 
 /// ## Description
