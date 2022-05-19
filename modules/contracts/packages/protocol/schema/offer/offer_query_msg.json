@@ -1,0 +1,576 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "offer_query_msg",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "config"
+      ],
+      "properties": {
+        "config": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "offers"
+      ],
+      "properties": {
+        "offers": {
+          "type": "object",
+          "required": [
+            "fiat_currency"
+          ],
+          "properties": {
+            "fiat_currency": {
+              "$ref": "#/definitions/FiatCurrency"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "offers_query"
+      ],
+      "properties": {
+        "offers_query": {
+          "type": "object",
+          "required": [
+            "limit",
+            "order"
+          ],
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "max": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "min": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "order": {
+              "$ref": "#/definitions/QueryOrder"
+            },
+            "owner": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Addr"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "offers_by_type"
+      ],
+      "properties": {
+        "offers_by_type": {
+          "type": "object",
+          "required": [
+            "limit",
+            "offer_type"
+          ],
+          "properties": {
+            "last_value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "offer_type": {
+              "$ref": "#/definitions/OfferType"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "offers_by_fiat"
+      ],
+      "properties": {
+        "offers_by_fiat": {
+          "type": "object",
+          "required": [
+            "fiat_currency",
+            "limit"
+          ],
+          "properties": {
+            "fiat_currency": {
+              "$ref": "#/definitions/FiatCurrency"
+            },
+            "last_value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "offers_by_type_fiat"
+      ],
+      "properties": {
+        "offers_by_type_fiat": {
+          "type": "object",
+          "required": [
+            "fiat_currency",
+            "limit",
+            "offer_type",
+            "order"
+          ],
+          "properties": {
+            "fiat_currency": {
+              "$ref": "#/definitions/FiatCurrency"
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "max": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "min": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "offer_type": {
+              "$ref": "#/definitions/OfferType"
+            },
+            "order": {
+              "$ref": "#/definitions/QueryOrder"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "offer"
+      ],
+      "properties": {
+        "offer": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "trades_query"
+      ],
+      "properties": {
+        "trades_query": {
+          "type": "object",
+          "required": [
+            "index",
+            "limit",
+            "user"
+          ],
+          "properties": {
+            "index": {
+              "$ref": "#/definitions/TradesIndex"
+            },
+            "last_value": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Addr"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "state": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TradeState"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "user": {
+              "$ref": "#/definitions/Addr"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "arbitrator"
+      ],
+      "properties": {
+        "arbitrator": {
+          "type": "object",
+          "required": [
+            "arbitrator"
+          ],
+          "properties": {
+            "arbitrator": {
+              "$ref": "#/definitions/Addr"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "arbitrators"
+      ],
+      "properties": {
+        "arbitrators": {
+          "type": "object",
+          "required": [
+            "limit"
+          ],
+          "properties": {
+            "last_value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "arbitrator_asset"
+      ],
+      "properties": {
+        "arbitrator_asset": {
+          "type": "object",
+          "required": [
+            "asset"
+          ],
+          "properties": {
+            "asset": {
+              "$ref": "#/definitions/FiatCurrency"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "arbitrator_random"
+      ],
+      "properties": {
+        "arbitrator_random": {
+          "type": "object",
+          "required": [
+            "asset",
+            "random_value"
+          ],
+          "properties": {
+            "asset": {
+              "$ref": "#/definitions/FiatCurrency"
+            },
+            "random_value": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "FiatCurrency": {
+      "type": "string",
+      "enum": [
+        "AED",
+        "AFN",
+        "ALL",
+        "AMD",
+        "ANG",
+        "AOA",
+        "ARS",
+        "AUD",
+        "AWG",
+        "AZN",
+        "BAM",
+        "BBD",
+        "BDT",
+        "BGN",
+        "BHD",
+        "BIF",
+        "BMD",
+        "BND",
+        "BOB",
+        "BRL",
+        "BSD",
+        "BTN",
+        "BWP",
+        "BYR",
+        "BZD",
+        "CAD",
+        "CDF",
+        "CHF",
+        "CLP",
+        "CNY",
+        "COP",
+        "COU",
+        "CRC",
+        "CUC",
+        "CUP",
+        "CVE",
+        "CZK",
+        "DJF",
+        "DKK",
+        "DOP",
+        "DZD",
+        "EGP",
+        "ERN",
+        "ETB",
+        "EUR",
+        "FJD",
+        "FKP",
+        "GBP",
+        "GEL",
+        "GHS",
+        "GIP",
+        "GMD",
+        "GNF",
+        "GTQ",
+        "GYD",
+        "HKD",
+        "HNL",
+        "HRK",
+        "HTG",
+        "HUF",
+        "IDR",
+        "ILS",
+        "INR",
+        "IQD",
+        "IRR",
+        "ISK",
+        "JMD",
+        "JOD",
+        "JPY",
+        "KES",
+        "KGS",
+        "KHR",
+        "KMF",
+        "KPW",
+        "KRW",
+        "KWD",
+        "KYD",
+        "KZT",
+        "LAK",
+        "LBP",
+        "LKR",
+        "LRD",
+        "LSL",
+        "LTL",
+        "LVL",
+        "LYD",
+        "MAD",
+        "MDL",
+        "MGA",
+        "MKD",
+        "MMK",
+        "MNT",
+        "MOP",
+        "MRO",
+        "MUR",
+        "MVR",
+        "MWK",
+        "MXN",
+        "MYR",
+        "MZN",
+        "NAD",
+        "NGN",
+        "NIO",
+        "NOK",
+        "NPR",
+        "NZD",
+        "OMR",
+        "PAB",
+        "PEN",
+        "PGK",
+        "PHP",
+        "PKR",
+        "PLN",
+        "PYG",
+        "QAR",
+        "RON",
+        "RSD",
+        "RUB",
+        "RWF",
+        "SAR",
+        "SBD",
+        "SCR",
+        "SDG",
+        "SEK",
+        "SGD",
+        "SHP",
+        "SLL",
+        "SOS",
+        "SRD",
+        "SSP",
+        "STD",
+        "SYP",
+        "SZL",
+        "THB",
+        "TJS",
+        "TMT",
+        "TND",
+        "TOP",
+        "TRY",
+        "TTD",
+        "TWD",
+        "TZS",
+        "UAH",
+        "UGX",
+        "USD",
+        "UYU",
+        "UZS",
+        "VES",
+        "VND",
+        "VUV",
+        "WST",
+        "XCD",
+        "YER",
+        "ZAR",
+        "ZMW"
+      ]
+    },
+    "OfferType": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "sell"
+      ]
+    },
+    "QueryOrder": {
+      "type": "string",
+      "enum": [
+        "asc",
+        "desc"
+      ]
+    },
+    "TradeState": {
+      "type": "string",
+      "enum": [
+        "request_created",
+        "request_accepted",
+        "request_canceled",
+        "request_expired",
+        "escrow_funded",
+        "escrow_refunded",
+        "fiat_deposited",
+        "escrow_released",
+        "escrow_disputed",
+        "settled_for_maker",
+        "settled_for_taker"
+      ]
+    },
+    "TradesIndex": {
+      "type": "string",
+      "enum": [
+        "seller",
+        "buyer",
+        "arbitrator_state"
+      ]
+    }
+  }
+}

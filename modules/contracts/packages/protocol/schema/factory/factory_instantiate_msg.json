@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "factory_instantiate_msg",
+  "description": "Messages",
+  "type": "object",
+  "required": [
+    "cw20_code_id",
+    "gov_contract_code_id",
+    "local_token_addr",
+    "local_ust_pool_addr",
+    "offer_code_id",
+    "staking_code_id",
+    "trade_code_id",
+    "trading_incentives_code_id",
+    "warchest_addr"
+  ],
+  "properties": {
+    "cw20_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "gov_contract_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "local_token_addr": {
+      "type": "string"
+    },
+    "local_ust_pool_addr": {
+      "type": "string"
+    },
+    "offer_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "staking_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "trade_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "trading_incentives_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "warchest_addr": {
+      "type": "string"
+    }
+  }
+}
