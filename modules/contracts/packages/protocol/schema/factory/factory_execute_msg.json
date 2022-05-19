@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "factory_execute_msg",
+  "type": "string",
+  "enum": []
+}
