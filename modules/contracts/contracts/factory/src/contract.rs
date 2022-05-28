@@ -6,7 +6,6 @@ use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, Su
 
 use crate::errors::FactoryError;
 use crate::state::CONFIG;
-use astroport::staking::InstantiateMsg as StakingInstantiateMsg;
 use localterra_protocol::factory::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
 use localterra_protocol::offer::InstantiateMsg as OfferInstantiate;
 use localterra_protocol::trading_incentives::InstantiateMsg as TradingIncentivesInstantiateMsg;
@@ -96,24 +95,6 @@ fn instantiate_offer_reply(
     CONFIG.save(deps.storage, &cfg).unwrap();
     let res = Response::new().add_attribute("instantiate_contract", "offers");
     Ok(res)
-}
-
-fn instantiate_staking_msg(
-    local_token_addr: String,
-    staking_code_id: u64,
-    cw20_code_id: u64,
-) -> SubMsg {
-    create_instantiate_msg(
-        staking_code_id,
-        to_binary(&StakingInstantiateMsg {
-            owner: "terra1vpy55n57punft83gsa9gte7rhruzm9sehav2wp".to_string(), // TODO make dynamic
-            token_code_id: cw20_code_id,
-            deposit_token_addr: local_token_addr,
-        })
-        .unwrap(),
-        STAKING_REPLY_ID,
-        "instantiate-staking".to_string(),
-    )
 }
 
 fn instantiate_trading_incentives_msg(trading_incentives_code_id: u64) -> SubMsg {

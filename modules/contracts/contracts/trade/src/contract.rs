@@ -1,10 +1,9 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
+    Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, entry_point, Env, MessageInfo,
+    QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, to_binary, Uint128,
     WasmMsg, WasmQuery,
 };
 
-use astroport::asset::{Asset, AssetInfo};
 use localterra_protocol::constants::{
     ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
 };
@@ -15,12 +14,12 @@ use localterra_protocol::guards::{
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
     trade_request_is_expired,
 };
-use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
+use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::trade::{
-    Astroport, ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState,
+    ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -29,7 +28,6 @@ use crate::state::{state as state_storage, state_read};
 use crate::taxation::deduct_tax;
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
-const SEND_AND_SWAP_STAKING_SHARE_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
 pub fn instantiate(

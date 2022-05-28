@@ -911,24 +911,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "localterra-staking"
-version = "1.0.0"
-dependencies = [
- "astroport",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 0.8.1",
- "cw2 0.8.1",
- "cw20 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "localterra-protocol",
- "protobuf",
- "schemars",
- "serde",
- "terra-multi-test",
- "thiserror",
-]
-
-[[package]]
 name = "localterra-xlocal-token"
 version = "1.0.0"
 dependencies = [
@@ -1162,15 +1144,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "protobuf"
-version = "2.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf7e6d18738ecd0902d30d1ad232c9125985a3422929b16c65517b38adc14f96"
-dependencies = [
- "bytes",
 ]
 
 [[package]]
