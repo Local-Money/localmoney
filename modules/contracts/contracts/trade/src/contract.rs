@@ -462,8 +462,6 @@ fn release_escrow(
     // Caclulate Fees
     let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
     let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
-    let staking_share = local_terra_fee - warchest_share;
-    // TODO check that staking_share is > 0
 
     let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
     // TODO check that release_amount is > 0
@@ -486,34 +484,6 @@ fn release_escrow(
         to_address: factory_cfg.warchest_addr.to_string(),
         amount: vec![Coin::new(warchest_share.u128(), "uusd")],
     })));
-
-    // Send staking fee share as via Astroport as LOCAL to staking contract
-    let swap_msg = Astroport::Swap {
-        offer_asset: Asset {
-            info: AssetInfo::NativeToken {
-                denom: "uusd".to_string(),
-            },
-            amount: staking_share,
-        },
-        belief_price: None,
-        max_spread: None,
-        to: Some(factory_cfg.staking_addr.to_string()),
-    };
-    let staking_share_msg = SubMsg {
-        id: SEND_AND_SWAP_STAKING_SHARE_REPLY_ID,
-        msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: factory_cfg.local_ust_pool_addr.to_string(),
-            msg: to_binary(&swap_msg).unwrap(),
-            funds: vec![Coin {
-                denom: "uusd".to_string(),
-                amount: staking_share,
-            }],
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    };
-
-    send_msgs.push(staking_share_msg);
 
     // Send released trade funds to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
