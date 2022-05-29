@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, entry_point, Env, MessageInfo,
-    QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, to_binary, Uint128,
+    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
     WasmMsg, WasmQuery,
 };
 
@@ -14,18 +14,15 @@ use localterra_protocol::guards::{
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
     trade_request_is_expired,
 };
+use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
-use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
-use localterra_protocol::trade::{
-    ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState,
-};
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::state::{state as state_storage, state_read};
-use crate::taxation::deduct_tax;
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
 
@@ -128,7 +125,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 fn query_state(deps: Deps) -> StdResult<TradeData> {
-    let state = state_read(deps.storage).load()?;
+    let state = state_read(deps.storage).load().unwrap();
     Ok(state)
 }
 
@@ -581,9 +578,9 @@ fn refund_escrow(
             fee[0].amount = fee_amount;
             balance[0].amount = balance[0].amount - fee_amount;
 
-            let seller_msg = create_send_msg(&deps, trade.seller, balance);
+            let seller_msg = create_send_msg(trade.seller, balance);
 
-            let arbitrator_msg = create_send_msg(&deps, trade.arbitrator.clone().unwrap(), fee);
+            let arbitrator_msg = create_send_msg(trade.arbitrator.clone().unwrap(), fee);
 
             let res = Response::new()
                 .add_submessage(SubMsg::new(seller_msg))
@@ -591,7 +588,7 @@ fn refund_escrow(
             Ok(res)
         } else {
             let balance = balance_result.unwrap();
-            let send_msg = create_send_msg(&deps, trade.seller, balance);
+            let send_msg = create_send_msg(trade.seller, balance);
             let res = Response::new().add_submessage(SubMsg::new(send_msg));
 
             Ok(res)
@@ -616,13 +613,9 @@ pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
     amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO use constant / config
 }
 
-fn create_send_msg(deps: &DepsMut, to_address: Addr, coins: Vec<Coin>) -> CosmosMsg {
-    let mut coins_without_tax: Vec<Coin> = Vec::new();
-    coins
-        .iter()
-        .for_each(|c| coins_without_tax.push(deduct_tax(&deps.querier, c.clone()).unwrap()));
+fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
     CosmosMsg::Bank(BankMsg::Send {
         to_address: to_address.to_string(),
-        amount: coins_without_tax,
+        amount,
     })
 }

@@ -1,6 +1,5 @@
 use crate::currencies::FiatCurrency;
-use astroport::asset::Asset;
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -69,15 +68,4 @@ impl fmt::Display for TradeState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum Astroport {
-    Swap {
-        offer_asset: Asset,
-        belief_price: Option<Decimal>,
-        max_spread: Option<Decimal>,
-        to: Option<String>,
-    },
 }

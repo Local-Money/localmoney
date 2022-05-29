@@ -8,45 +8,26 @@ pub static STATE_KEY: &[u8] = b"state";
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
-    pub seller: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
-    pub buyer: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
-    pub arbitrator: MultiIndex<'a, (Addr, Vec<u8>), TradeAddr>,
-    pub arbitrator_state: MultiIndex<'a, (Addr, String, Vec<u8>), TradeAddr>,
+    pub seller: MultiIndex<'a, Addr, TradeAddr, Vec<u8>>,
+    pub buyer: MultiIndex<'a, Addr, TradeAddr, Vec<u8>>,
+    pub arbitrator: MultiIndex<'a, Addr, TradeAddr, Vec<u8>>,
 }
 
 impl<'a> IndexList<TradeAddr> for TradeIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<TradeAddr>> + '_> {
-        let v: Vec<&dyn Index<TradeAddr>> = vec![
-            &self.seller,
-            &self.buyer,
-            &self.arbitrator,
-            &self.arbitrator_state,
-        ];
+        let v: Vec<&dyn Index<TradeAddr>> = vec![&self.seller, &self.buyer, &self.arbitrator];
         Box::new(v.into_iter())
     }
 }
 
 pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
     let indexes = TradeIndexes {
-        seller: MultiIndex::new(
-            |d: &TradeAddr, k: Vec<u8>| (d.seller.clone(), k),
-            "trades",
-            "trades__seller",
-        ),
-        buyer: MultiIndex::new(
-            |d: &TradeAddr, k: Vec<u8>| (d.buyer.clone(), k),
-            "trades",
-            "trades__buyer",
-        ),
+        seller: MultiIndex::new(|d: &TradeAddr| d.seller.clone(), "trades", "trades__seller"),
+        buyer: MultiIndex::new(|d: &TradeAddr| d.buyer.clone(), "trades", "trades__buyer"),
         arbitrator: MultiIndex::new(
-            |d: &TradeAddr, k: Vec<u8>| (d.arbitrator.clone(), k),
+            |d: &TradeAddr| d.arbitrator.clone(),
             "trades",
             "trades__arbitrator",
-        ),
-        arbitrator_state: MultiIndex::new(
-            |d: &TradeAddr, k: Vec<u8>| (d.arbitrator.clone(), d.state.clone().to_string(), k),
-            "trades",
-            "trades__arbitrator_state",
         ),
     };
     IndexedMap::new("trades", indexes)
@@ -54,8 +35,8 @@ pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
 
 pub struct ArbitratorIndexes<'a> {
     // pk goes to second tuple element
-    pub arbitrator: MultiIndex<'a, (Addr, Vec<u8>), Arbitrator>,
-    pub asset: MultiIndex<'a, (String, Vec<u8>), Arbitrator>,
+    pub arbitrator: MultiIndex<'a, Addr, Arbitrator, Vec<u8>>,
+    pub asset: MultiIndex<'a, String, Arbitrator, Vec<u8>>,
 }
 
 impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
@@ -68,12 +49,12 @@ impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
 pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexes<'a>> {
     let indexes = ArbitratorIndexes {
         arbitrator: MultiIndex::new(
-            |d: &Arbitrator, k: Vec<u8>| (d.arbitrator.clone(), k),
+            |d: &Arbitrator| d.arbitrator.clone(),
             "arbitrators",
             "arbitrators__arbitrator",
         ),
         asset: MultiIndex::new(
-            |d: &Arbitrator, k: Vec<u8>| (d.asset.clone().to_string(), k),
+            |d: &Arbitrator| d.asset.clone().to_string(),
             "arbitrators",
             "arbitrators__asset",
         ),

@@ -55,8 +55,10 @@ pub fn execute(
 #[entry_point]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, FactoryError> {
     match msg.id {
-        OFFER_REPLY_ID => instantiate_offer_reply(deps, msg.result),
-        TRADING_INCENTIVES_REPLY_ID => instantiate_trading_incentives_reply(deps, msg.result),
+        OFFER_REPLY_ID => instantiate_offer_reply(deps, ContractResult::Ok(msg.result.unwrap())),
+        TRADING_INCENTIVES_REPLY_ID => {
+            instantiate_trading_incentives_reply(deps, ContractResult::Ok(msg.result.unwrap()))
+        }
         _ => Err(FactoryError::Std(StdError::generic_err(
             "Unknown reply id.",
         ))),

@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
-    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    SubMsgResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw_storage_plus::Bound;
 
@@ -131,7 +131,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             order,
         } => to_binary(&OfferModel::query_by_type_fiat(
             deps,
-            offer_type,
             fiat_currency,
             min,
             max,
@@ -149,7 +148,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             env,
             deps,
             deps.api.addr_validate(user.as_str()).unwrap(),
-            state,
             index,
             last_value,
             limit,
@@ -173,7 +171,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, GuardError> {
     match msg.id {
-        INSTANTIATE_TRADE_REPLY_ID => trade_instance_reply(deps, env, msg.result),
+        INSTANTIATE_TRADE_REPLY_ID => {
+            trade_instance_reply(deps, env, ContractResult::Ok(msg.result.unwrap()))
+        }
         _ => Err(GuardError::InvalidReply {}),
     }
 }
@@ -181,7 +181,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, GuardError
 fn trade_instance_reply(
     deps: DepsMut,
     _env: Env,
-    result: ContractResult<SubMsgExecutionResponse>,
+    result: ContractResult<SubMsgResponse>,
 ) -> Result<Response, GuardError> {
     if result.is_err() {
         return Err(GuardError::InvalidReply {});
@@ -241,7 +241,7 @@ pub fn create_offer(
 ) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
-    let mut state = state_storage(deps.storage).load()?;
+    let mut state = state_storage(deps.storage).load().unwrap();
 
     state.offers_count += 1;
 
@@ -265,7 +265,7 @@ pub fn create_offer(
     )
     .offer;
 
-    state_storage(deps.storage).save(&state)?;
+    state_storage(deps.storage).save(&state).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "create_offer")
@@ -465,7 +465,7 @@ fn query_state(deps: Deps) -> StdResult<State> {
 
 pub fn load_offer_by_id(storage: &dyn Storage, id: String) -> StdResult<Offer> {
     let offer = offers()
-        .may_load(storage, &id.to_string())
+        .may_load(storage, id.to_string())
         .unwrap_or_default()
         .unwrap();
     Ok(offer)
@@ -475,7 +475,6 @@ pub fn query_trades(
     env: Env,
     deps: Deps,
     user: Addr,
-    state: Option<TradeState>,
     index: TradesIndex,
     last_value: Option<Addr>,
     limit: u32,
@@ -486,7 +485,7 @@ pub fn query_trades(
     let range_from = match last_value {
         Some(addr) => {
             let valid_addr = deps.api.addr_validate(addr.as_str()).unwrap();
-            Some(Bound::Exclusive(Vec::from(valid_addr.to_string())))
+            Some(Bound::exclusive(Vec::from(valid_addr.to_string())))
         }
         None => None,
     };
@@ -496,13 +495,6 @@ pub fn query_trades(
     let prefix = match index {
         TradesIndex::Seller => trades().idx.seller.prefix(user),
         TradesIndex::Buyer => trades().idx.buyer.prefix(user),
-        TradesIndex::ArbitratorState => match state {
-            Some(state) => trades()
-                .idx
-                .arbitrator_state
-                .prefix((user, state.to_string())),
-            None => trades().idx.arbitrator_state.sub_prefix(user),
-        },
     };
 
     let trade_results: Vec<TradeAddr> = prefix
@@ -566,7 +558,7 @@ pub fn query_arbitrators(
     let storage = deps.storage;
 
     let range_from = match last_value {
-        Some(addr) => Some(Bound::Exclusive(Vec::from(addr))),
+        Some(addr) => Some(Bound::ExclusiveRaw(addr.into())),
         None => None,
     };
 
