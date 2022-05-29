@@ -33,13 +33,16 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &cfg).unwrap();
 
+    /*
     let offer_msg = instantiate_offer_msg(msg.offer_code_id);
     let trading_incentives_msg = instantiate_trading_incentives_msg(msg.trading_incentives_code_id);
 
     let r = Response::new()
         .add_submessage(offer_msg)
         .add_submessage(trading_incentives_msg);
-    Ok(r)
+
+    */
+    Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
