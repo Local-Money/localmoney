@@ -3,7 +3,6 @@ pub mod currencies;
 pub mod errors;
 pub mod factory;
 pub mod factory_util;
-pub mod governance;
 pub mod guards;
 pub mod offer;
 pub mod trade;

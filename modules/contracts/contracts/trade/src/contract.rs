@@ -4,7 +4,6 @@ use cosmwasm_std::{
     WasmMsg, WasmQuery,
 };
 
-use astroport::asset::{Asset, AssetInfo};
 use localterra_protocol::constants::{
     ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
 };
@@ -19,17 +18,13 @@ use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitr
 use localterra_protocol::offer::{
     Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
 };
-use localterra_protocol::trade::{
-    Astroport, ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState,
-};
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::state::{state as state_storage, state_read};
-use crate::taxation::deduct_tax;
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
-const SEND_AND_SWAP_STAKING_SHARE_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
 pub fn instantiate(
@@ -130,7 +125,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 fn query_state(deps: Deps) -> StdResult<TradeData> {
-    let state = state_read(deps.storage).load()?;
+    let state = state_read(deps.storage).load().unwrap();
     Ok(state)
 }
 
@@ -462,8 +457,6 @@ fn release_escrow(
     // Caclulate Fees
     let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
     let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
-    let staking_share = local_terra_fee - warchest_share;
-    // TODO check that staking_share is > 0
 
     let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
     // TODO check that release_amount is > 0
@@ -486,34 +479,6 @@ fn release_escrow(
         to_address: factory_cfg.warchest_addr.to_string(),
         amount: vec![Coin::new(warchest_share.u128(), "uusd")],
     })));
-
-    // Send staking fee share as via Astroport as LOCAL to staking contract
-    let swap_msg = Astroport::Swap {
-        offer_asset: Asset {
-            info: AssetInfo::NativeToken {
-                denom: "uusd".to_string(),
-            },
-            amount: staking_share,
-        },
-        belief_price: None,
-        max_spread: None,
-        to: Some(factory_cfg.staking_addr.to_string()),
-    };
-    let staking_share_msg = SubMsg {
-        id: SEND_AND_SWAP_STAKING_SHARE_REPLY_ID,
-        msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: factory_cfg.local_ust_pool_addr.to_string(),
-            msg: to_binary(&swap_msg).unwrap(),
-            funds: vec![Coin {
-                denom: "uusd".to_string(),
-                amount: staking_share,
-            }],
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    };
-
-    send_msgs.push(staking_share_msg);
 
     // Send released trade funds to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
@@ -613,9 +578,9 @@ fn refund_escrow(
             fee[0].amount = fee_amount;
             balance[0].amount = balance[0].amount - fee_amount;
 
-            let seller_msg = create_send_msg(&deps, trade.seller, balance);
+            let seller_msg = create_send_msg(trade.seller, balance);
 
-            let arbitrator_msg = create_send_msg(&deps, trade.arbitrator.clone().unwrap(), fee);
+            let arbitrator_msg = create_send_msg(trade.arbitrator.clone().unwrap(), fee);
 
             let res = Response::new()
                 .add_submessage(SubMsg::new(seller_msg))
@@ -623,7 +588,7 @@ fn refund_escrow(
             Ok(res)
         } else {
             let balance = balance_result.unwrap();
-            let send_msg = create_send_msg(&deps, trade.seller, balance);
+            let send_msg = create_send_msg(trade.seller, balance);
             let res = Response::new().add_submessage(SubMsg::new(send_msg));
 
             Ok(res)
@@ -648,13 +613,9 @@ pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
     amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO use constant / config
 }
 
-fn create_send_msg(deps: &DepsMut, to_address: Addr, coins: Vec<Coin>) -> CosmosMsg {
-    let mut coins_without_tax: Vec<Coin> = Vec::new();
-    coins
-        .iter()
-        .for_each(|c| coins_without_tax.push(deduct_tax(&deps.querier, c.clone()).unwrap()));
+fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
     CosmosMsg::Bank(BankMsg::Send {
         to_address: to_address.to_string(),
-        amount: coins_without_tax,
+        amount,
     })
 }

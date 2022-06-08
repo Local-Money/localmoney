@@ -7,15 +7,16 @@ use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
+use std::ops::Add;
 
 pub static CONFIG_KEY: &[u8] = b"config";
 // pub const OFFERS: Map<&[u8], Offer> = Map::new(OFFERS_KEY);
 pub struct OfferIndexes<'a> {
     // pk goes to second tuple element
-    pub owner: MultiIndex<'a, (Addr, Vec<u8>), Offer>,
-    pub offer_type: MultiIndex<'a, (String, Vec<u8>), Offer>,
-    pub fiat: MultiIndex<'a, (String, Vec<u8>), Offer>,
-    pub filter: MultiIndex<'a, (String, String, Vec<u8>), Offer>,
+    pub owner: MultiIndex<'a, String, Offer, String>,
+    pub offer_type: MultiIndex<'a, String, Offer, String>,
+    pub fiat: MultiIndex<'a, String, Offer, String>,
+    pub filter: MultiIndex<'a, String, Offer, String>,
 }
 
 impl<'a> IndexList<Offer> for OfferIndexes<'a> {
@@ -26,30 +27,25 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
     }
 }
 
-pub fn offers<'a>() -> IndexedMap<'a, &'a str, Offer, OfferIndexes<'a>> {
+pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
     let indexes = OfferIndexes {
-        owner: MultiIndex::new(
-            |d: &Offer, k: Vec<u8>| (d.owner.clone(), k),
-            "offers",
-            "offers__owner",
-        ),
+        owner: MultiIndex::new(|d| d.owner.clone().to_string(), "offers", "offers__owner"),
         offer_type: MultiIndex::new(
-            |d: &Offer, k: Vec<u8>| (d.offer_type.to_string(), k),
+            |d: &Offer| d.offer_type.to_string(),
             "offers",
             "offers__offer_type",
         ),
         fiat: MultiIndex::new(
-            |d: &Offer, k: Vec<u8>| (d.fiat_currency.to_string(), k),
+            |d: &Offer| d.fiat_currency.to_string(),
             "offers",
             "offers__fiat",
         ),
         filter: MultiIndex::new(
-            |d: &Offer, k: Vec<u8>| {
-                (
-                    d.offer_type.to_string(),
-                    d.fiat_currency.to_string() + &*d.state.to_string(),
-                    k,
-                )
+            |d: &Offer| {
+                d.fiat_currency
+                    .to_string()
+                    .add(d.state.to_string().as_str())
+                    .to_string()
             },
             "offers",
             "offers__filter",
@@ -117,7 +113,6 @@ pub enum ExecuteMsg {
 pub enum TradesIndex {
     Seller,
     Buyer,
-    ArbitratorState,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -220,12 +215,12 @@ pub struct OfferModel<'a> {
 
 impl OfferModel<'_> {
     pub fn store(storage: &mut dyn Storage, offer: &Offer) -> StdResult<()> {
-        offers().save(storage, &offer.id, &offer)
+        offers().save(storage, offer.id.to_string(), &offer)
     }
 
     pub fn from_store(storage: &mut dyn Storage, id: &String) -> Offer {
         offers()
-            .may_load(storage, &id.to_string())
+            .may_load(storage, id.to_string())
             .unwrap_or_default()
             .unwrap()
     }
@@ -287,7 +282,7 @@ impl OfferModel<'_> {
         let storage = deps.storage;
 
         let range_from = match last_value {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
         };
 
@@ -305,7 +300,6 @@ impl OfferModel<'_> {
 
     pub fn query_by_type_fiat(
         deps: Deps,
-        offer_type: OfferType,
         fiat_currency: FiatCurrency,
         min: Option<String>,
         max: Option<String>,
@@ -319,22 +313,19 @@ impl OfferModel<'_> {
             QueryOrder::Desc => Order::Descending,
         };
         let range_min = match min {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
+            Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
         };
 
         let range_max = match max {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
+            Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
         };
 
         let result = offers()
             .idx
             .filter
-            .prefix((
-                offer_type.to_string(),
-                fiat_currency.to_string() + &*OfferState::Active.to_string(),
-            ))
+            .prefix(fiat_currency.to_string() + &*OfferState::Active.to_string())
             .range(storage, range_min, range_max, std_order)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
@@ -352,7 +343,7 @@ impl OfferModel<'_> {
         let storage = deps.storage;
 
         let range_from = match last_value {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing.to_string()))),
+            Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
         };
 
@@ -380,12 +371,12 @@ impl OfferModel<'_> {
         // let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
 
         let range_min = match min {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
+            Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
             None => None,
         };
 
         let range_max = match max {
-            Some(thing) => Some(Bound::Exclusive(Vec::from(thing))),
+            Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
             None => None,
         };
 
@@ -403,7 +394,7 @@ impl OfferModel<'_> {
                 offers()
                     .idx
                     .owner
-                    .prefix(owner_addr)
+                    .prefix(owner_addr.into_string())
                     .range(storage, range_min, range_max, std_order)
             }
         };
