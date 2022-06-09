@@ -1,7 +1,7 @@
 [package]
 name = "factory"
 version = "0.0.0"
-authors = ["Samuel Barbosa <sambarbosaa@gmail.com>"]
+authors = ["local devs <dev@localmoney.io>"]
 edition = "2018"
 
 exclude = [
@@ -28,13 +28,10 @@ thiserror = "1.0.25"
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
-terra-cosmwasm = { version = "2.1.0" }
 offer = { path = "../offer" }
 cw20 = { version = "0.13.1" }
 localterra-protocol = { path = "../../packages/protocol" }
 cw-storage-plus = { version = "0.13.1", features = ["iterator"] }
-astroport = { path = "../../packages/astroport", default-features = false }
-
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }
