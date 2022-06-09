@@ -14,7 +14,7 @@ use localterra_protocol::offer::{
     OfferState, OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
-    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData, TradeState,
+    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData,
 };
 
 use crate::state::{arbitrators, config_read, config_storage, state_read, state_storage, trades};
