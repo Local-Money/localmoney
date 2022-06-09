@@ -1,3 +1,6 @@
+import dotenv from 'dotenv'
+dotenv.config()
+
 import * as fs from "fs";
 import findFilesInDir from "./findFilesInDir.js";
 import {SigningCosmWasmClient} from "@cosmjs/cosmwasm-stargate";
@@ -41,7 +44,8 @@ async function instantiateFactory(codeIds) {
     // local_token_addr: process.env.LOCAL_TOKEN_ADDR,
   };
   const result = await makerClient.instantiate(makerAddr, codeIds.factory, factoryInstantiateMsg, "factory", "auto");
-  console.log("result = ", result);
+  console.log("instantiate result = ", result);
+  console.log("\n");
   return result;
 }
 
@@ -139,8 +143,8 @@ async function test(codeIds) {
       instantiateFactory(codeIds).then((r) => {
         const factoryAddr = getAttribute(
           r,
-          "instantiate_contract",
-          "contract_address"
+          "instantiate",
+          "_contract_address"
         );
         console.log("**Factory Addr:", factoryAddr);
         console.log("*Querying Factory Config*");
@@ -253,7 +257,6 @@ function timeout(ms) {
 }
 
 async function deploy(contract) {
-
   let codeIds = {};
   let contracts = findFilesInDir(process.env.CONTRACTS, ".wasm");
 
@@ -284,6 +287,7 @@ async function deploy(contract) {
         }
       }
     }
+    fs.writeFileSync("codeIds.json", JSON.stringify(codeIds), "utf8");
     console.log("Deploy Finished!", JSON.stringify(codeIds));
     await test(codeIds);
   }

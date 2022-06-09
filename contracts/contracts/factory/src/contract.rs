@@ -1,3 +1,4 @@
+use cosmwasm_std::OverflowOperation::Add;
 use cosmwasm_std::{
     entry_point, Addr, Binary, ContractResult, Deps, Reply, ReplyOn, StdError, StdResult,
     SubMsgResponse,
@@ -45,6 +46,7 @@ pub fn instantiate(
 
     let r = Response::new().add_submessage(offer_msg);
     Ok(r)
+    // Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -135,11 +137,11 @@ fn get_contract_address_from_reply(deps: Deps, result: ContractResult<SubMsgResp
         .unwrap()
         .events
         .into_iter()
-        .find(|e| e.ty == "instantiate_contract")
+        .find(|e| e.ty == "instantiate")
         .and_then(|ev| {
             ev.attributes
                 .into_iter()
-                .find(|attr| attr.key == "contract_address")
+                .find(|attr| attr.key == "_contract_address")
         })
         .map(|attr| deps.api.addr_validate(attr.value.as_str()).unwrap())
         .unwrap()

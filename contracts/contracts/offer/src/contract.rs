@@ -34,6 +34,7 @@ pub fn instantiate(
     })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
 
+    /*
     // TODO remove testing code
     let index = "terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz".to_string() + &"COP".to_string();
     arbitrators().save(
@@ -44,6 +45,7 @@ pub fn instantiate(
             asset: FiatCurrency::COP,
         },
     )?;
+     */
 
     // let index = "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk".to_string() + &"COP".to_string();
 
