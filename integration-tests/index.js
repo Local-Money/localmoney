@@ -147,10 +147,10 @@ async function test(codeIds) {
           "_contract_address"
         );
         console.log("**Factory Addr:", factoryAddr);
+
         console.log("*Querying Factory Config*");
-        terra.wasm.contractQuery(factoryAddr, { config: {} }).then((r) => {
-          resolve(r);
-        });
+        const queryResult = makerClient.queryContractSmart(factoryAddr, {"config":{}});
+        resolve(queryResult)
       });
     }
   });
