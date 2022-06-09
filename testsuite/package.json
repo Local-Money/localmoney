@@ -1,28 +1,27 @@
 {
-  "name": "localterra-testsuite",
+  "name": "integrations",
   "version": "0.0.1",
-  "description": "Providing coverage for localterra-contracts.",
+  "description": "Providing coverage for localmoney contracts.",
   "scripts": {
-    "git-commit": "./scripts/git-commit.sh",
-    "bombay:disputeResolution": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/disputeResolution.spec.js' ; npm run git-commit",
-    "bombay:queryInterfaces": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js' ; npm run git-commit",
-    "bombay:arbitrationInterface": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js' ; npm run git-commit",
-    "bombay:tradeFlow": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js' ; npm run git-commit",
-    "bombay:staking": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/staking.spec.js' ; npm run git-commit",
+    "bombay:disputeResolution": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/disputeResolution.spec.js'",
+    "bombay:queryInterfaces": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/queryInterfaces.spec.js'",
+    "bombay:arbitrationInterface": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/arbitrationInterface.spec.js'",
+    "bombay:tradeFlow": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/tradeFlow.spec.js'",
+    "bombay:staking": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/staking.spec.js'",
     "bombay": "UPLOAD=true  NETWORK_ENV=bombay mocha './test/**/*.spec.js' ",
     "bombay:deploy": "NETWORK_ENV=bombay node lib/deploy.js "
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/Local-Terra/localterra-testsuite.git"
+    "url": "git+ssh://git@github.com/Local-Money/localmoney.git"
   },
-  "author": "Lunarevolution1972",
+  "author": "LocalTeam",
   "type": "module",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/Local-Terra/localterra-testsuite/issues"
+    "url": "https://github.com/Local-Money/localmoney/issues"
   },
-  "homepage": "https://github.com/Local-Terra/localterra-testsuite#readme",
+  "homepage": "https://github.com/Local-Money/localmoney#readme",
   "dependencies": {
     "@terra-money/terra.js": "^3.0.6",
     "chai": "^4.3.4",
