@@ -1,9 +1,20 @@
 <p align="center">
-  <a href="http://interlocal.money/">
-    <img alt="interlocal" src="https://user-images.githubusercontent.com/92374012/156565929-f32e8186-c354-4454-840d-a8e3107c063d.png" width="248">
+  <a href="http://localp2p.money/">
+    <img alt="local money" src="https://user-images.githubusercontent.com/92374012/156565929-f32e8186-c354-4454-840d-a8e3107c063d.png" width="248">
   </a>
 </p>
 
-# InterLocal P2P marketplace
+# Local Money P2P marketplace
+Welcome to Local Money, Decentralized P2P marketplace for Interchain & IBC assets.
 
-Welcome to InterLocal, Decentralized P2P marketplace for Interchain & IBC assets.
+## Front
+[see more](vue-front/README.md)
+
+## Contracts
+[see more](contracts/README.md)
+
+## Integrations
+[see more](testsuite/README.md)
+
+
+#### License: [GPL V3.0](LICENSE)
