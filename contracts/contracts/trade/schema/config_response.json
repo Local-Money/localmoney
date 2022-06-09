@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConfigResponse",
+  "type": "object",
+  "required": [
+    "amount",
+    "buyer",
+    "offer",
+    "seller",
+    "state"
+  ],
+  "properties": {
+    "amount": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "buyer": {
+      "$ref": "#/definitions/CanonicalAddr"
+    },
+    "offer": {
+      "$ref": "#/definitions/CanonicalAddr"
+    },
+    "seller": {
+      "$ref": "#/definitions/CanonicalAddr"
+    },
+    "state": {
+      "$ref": "#/definitions/TradeState"
+    }
+  },
+  "definitions": {
+    "Binary": {
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>",
+      "type": "string"
+    },
+    "CanonicalAddr": {
+      "$ref": "#/definitions/Binary"
+    },
+    "TradeState": {
+      "type": "string",
+      "enum": [
+        "created",
+        "closed",
+        "canceled"
+      ]
+    }
+  }
+}

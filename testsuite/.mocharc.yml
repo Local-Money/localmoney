@@ -1,0 +1,5 @@
+exit: true
+timeout: 20000
+require:
+  - "fixtures/fixtures.js"
+parallel: false
