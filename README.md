@@ -13,7 +13,10 @@ Welcome to Local Money, Decentralized P2P marketplace for Interchain & IBC asset
 ## Contracts
 [see more](contracts/README.md)
 
-## Integrations
+## Integration Tests
+[see more](integration-tests/README.md)
+
+## Testsuite
 [see more](testsuite/README.md)
 
 
