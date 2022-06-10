@@ -79,7 +79,6 @@ pub fn instantiate(
         seller, // seller
         offer_contract: offer_contract.clone(),
         offer_id,
-        taker_contact: msg.taker_contact,
         arbitrator: None,
         state: TradeState::RequestCreated,
         created_at: env.block.time.seconds(),

@@ -76,8 +76,7 @@ pub fn execute(
             offer_id,
             ust_amount,
             taker,
-            taker_contact,
-        } => create_trade(deps, env, info, offer_id, ust_amount, taker, taker_contact),
+        } => create_trade(deps, env, info, offer_id, ust_amount, taker),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -254,7 +253,6 @@ pub fn create_offer(
         Offer {
             id: offer_id,
             owner: info.sender.clone(),
-            maker_contact: msg.maker_contact,
             offer_type: msg.offer_type,
             fiat_currency: msg.fiat_currency.clone(),
             rate: msg.rate,
@@ -414,7 +412,6 @@ fn create_trade(
     offer_id: String,
     ust_amount: Uint128,
     taker: String,
-    taker_contact: String,
 ) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
     // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
@@ -428,9 +425,8 @@ fn create_trade(
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            ust_amount: ust_amount,
+            ust_amount,
             taker: taker.clone(),
-            taker_contact,
             offers_addr: env.contract.address.to_string(),
             timestamp: env.block.time.seconds(),
         })
