@@ -7,7 +7,7 @@ use cw_storage_plus::Bound;
 
 use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::factory_util::{get_contract_address_from_reply, get_factory_config};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
     offers, Arbitrator, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg,
@@ -188,22 +188,9 @@ fn trade_instance_reply(
         return Err(GuardError::InvalidReply {});
     }
 
-    let trade_addr: Addr = result
-        .unwrap()
-        .events
-        .into_iter()
-        .find(|e| e.ty == "instantiate_contract")
-        .and_then(|ev| {
-            ev.attributes
-                .into_iter()
-                .find(|attr| attr.key == "contract_address")
-                .map(|addr| addr.value)
-        })
-        .and_then(|addr| deps.api.addr_validate(addr.as_str()).ok())
-        .unwrap();
-
+    let trade_addr: Addr = get_contract_address_from_reply()
     let trade: TradeData = deps
-        .querier
+        .querie
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
 
@@ -414,10 +401,7 @@ fn create_trade(
     taker: String,
 ) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
-    // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
-    //     .ok_or(GuardError::InvalidReply {})?; // TODO choose better error
-
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
     let instantiate_msg = WasmMsg::Instantiate {
