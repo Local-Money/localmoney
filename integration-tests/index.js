@@ -1,11 +1,11 @@
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 dotenv.config()
 
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+import { GasPrice } from "@cosmjs/stargate";
 import * as fs from "fs";
 import findFilesInDir from "./findFilesInDir.js";
-import {SigningCosmWasmClient} from "@cosmjs/cosmwasm-stargate";
-import {DirectSecp256k1HdWallet} from "@cosmjs/proto-signing";
-import {GasPrice} from "@cosmjs/stargate";
 
 const rpcEndpoint = "http://localhost:26657";
 const maker_seed =
@@ -167,10 +167,9 @@ async function test(codeIds) {
     .then((result) => {
       console.log("Trade Result:", result);
       tradeAddr = result.logs[0].events
-        .find((e) => e.type === "instantiate_contract")
-        .attributes.find((a) => a.key === "contract_address").value;
+        .find((e) => e.type === "instantiate")
+        .attributes.find((a) => a.key === "_contract_address").value;
       console.log("**Trade created with address:", tradeAddr);
-      console.log(`https://finder.terra.money/${network}/address/${tradeAddr}`);
       //Send UST and fund trade
       const coin = Coin.fromData({
         denom: "uusd",

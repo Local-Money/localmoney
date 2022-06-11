@@ -8,6 +8,7 @@ use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, Su
 use crate::errors::FactoryError;
 use crate::state::CONFIG;
 use localterra_protocol::factory::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
+use localterra_protocol::factory_util::get_contract_address_from_reply;
 use localterra_protocol::offer::InstantiateMsg as OfferInstantiate;
 use localterra_protocol::trading_incentives::InstantiateMsg as TradingIncentivesInstantiateMsg;
 

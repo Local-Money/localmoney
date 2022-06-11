@@ -188,9 +188,9 @@ fn trade_instance_reply(
         return Err(GuardError::InvalidReply {});
     }
 
-    let trade_addr: Addr = get_contract_address_from_reply()
+    let trade_addr: Addr = get_contract_address_from_reply(deps.as_ref(), result);
     let trade: TradeData = deps
-        .querie
+        .querier
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
 
