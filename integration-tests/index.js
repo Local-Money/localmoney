@@ -6,6 +6,7 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
 import * as fs from "fs";
 import findFilesInDir from "./findFilesInDir.js";
+import { coin, coins } from '@cosmjs/amino';
 
 const rpcEndpoint = "http://localhost:26657";
 const maker_seed =
@@ -170,22 +171,12 @@ async function test(codeIds) {
         .find((e) => e.type === "instantiate")
         .attributes.find((a) => a.key === "_contract_address").value;
       console.log("**Trade created with address:", tradeAddr);
-      //Send UST and fund trade
-      const coin = Coin.fromData({
-        denom: "uusd",
-        amount: min_amount * 2 + "",
-      });
-      const coins = new Coins([coin]);
-      let fundEscrowMsg = new MsgExecuteContract(
-        taker,
-        tradeAddr,
-        { fund_escrow: {} },
-        coins
-      );
+      const funds = coins(min_amount, "ujunox");
       console.log("*Funding Escrow*");
-      return executeMsg(fundEscrowMsg, taker_wallet);
+      return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
     })
     .then((r) => {
+      console.log("Fund escrow result: ", r);
       if (r.txhash) {
         console.log("**Escrow Funded**");
       } else {
