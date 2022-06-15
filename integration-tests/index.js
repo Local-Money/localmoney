@@ -14,8 +14,8 @@ const maker_seed =
 const taker_seed =
   "paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily";
 
-const min_amount = "120000000";
-const max_amount = "360000000";
+const min_amount = "1";
+const max_amount = "10";
 const offer_type = "buy";
 const cw20_code_id = process.env.CW20;
 
@@ -131,6 +131,7 @@ async function test(codeIds) {
       resolve(queryResult);
     } else {
       console.log("*Instantiating Factory*");
+      console.log('codeIds', codeIds);
       instantiateFactory(codeIds).then((r) => {
         const factoryAddr = getAttribute(
           r,
@@ -154,7 +155,7 @@ async function test(codeIds) {
       }
       return query_offers(factoryCfg.offers_addr);
     })
-    .then((r) => {
+    .then(async (r) => {
       const newTradeMsg = {
         new_trade: {
           offer_id: r[0][0].id + "",
@@ -173,22 +174,24 @@ async function test(codeIds) {
       console.log("**Trade created with address:", tradeAddr);
       const funds = coins(min_amount, "ujunox");
       console.log("*Funding Escrow*");
+      console.log('makerAddr:',makerAddr);
       return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
     })
     .then((r) => {
       console.log("Fund escrow result: ", r);
-      if (r.txhash) {
+      if (r.transactionHash) {
         console.log("**Escrow Funded**");
       } else {
         console.log("%Error%");
       }
-      const releaseMsg = new MsgExecuteContract(taker, tradeAddr, {
-        release: {},
-      });
-      console.log("*Releasing Trade*");
-      return executeMsg(releaseMsg, taker_wallet);
+      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
     })
     .then((r) => {
+      console.log("Trade State:", r);
+      console.log("*Releasing Trade*");
+      return makerClient.execute(makerAddr, tradeAddr, {"release_escrow":{}}, "auto", "release_escrow")
+    }).then((r) => {
+      console.log("Trade Release Result:", r);
       console.log("**Trade Released**");
     });
 }

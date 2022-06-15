@@ -175,16 +175,18 @@ fn fund_escrow(
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
 
+    let denom = String::from("ujunox");
+
     // TODO only accept exact funding amounts, return otherwise
     let sent_ust_amount = if !info.funds.is_empty() {
         get_ust_amount(info.clone())
     } else {
         let ust_balance = deps
             .querier
-            .query_balance(env.contract.address, "uusd".to_string());
+            .query_balance(env.contract.address, denom.clone());
         ust_balance
             .unwrap_or(Coin {
-                denom: "uusd".to_string(),
+                denom: denom.clone(),
                 amount: Uint128::zero(),
             })
             .amount
@@ -206,7 +208,6 @@ fn fund_escrow(
         .add_attribute("sent_ust_amount", sent_ust_amount.to_string())
         .add_attribute("seller", info.sender)
         .add_attribute("state", trade.state.to_string());
-
     Ok(res)
 }
 
@@ -601,7 +602,7 @@ fn refund_escrow(
 }
 
 fn get_ust_amount(info: MessageInfo) -> Uint128 {
-    let ust = &info.funds.iter().find(|c| c.denom.eq("uusd"));
+    let ust = &info.funds.iter().find(|c| c.denom.eq("ujunox"));
     return match ust {
         None => Uint128::zero(),
         Some(c) => c.amount,
