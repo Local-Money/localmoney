@@ -341,8 +341,6 @@ fn cancel_request(
     info: MessageInfo,
     state: TradeData,
 ) -> Result<Response, TradeError> {
-    // TODO anyone can set the state to RequestExpired
-
     // Only the buyer or seller can cancel the trade.
     assert_caller_is_buyer_or_seller(info.sender, state.buyer, state.seller).unwrap(); // TODO test this case
 
@@ -358,13 +356,9 @@ fn cancel_request(
 
     // Update trade State to TradeState::RequestCanceled
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
-
     trade.state = TradeState::RequestCanceled;
-
     state_storage(deps.storage).save(&trade).unwrap();
-
     let res = Response::new();
-
     Ok(res)
 }
 
