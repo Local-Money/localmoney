@@ -63,28 +63,6 @@ async function create_offers(offers_addr) {
         },
       },
     },
-    {
-      create: {
-        offer: {
-          offer_type: "sell",
-          fiat_currency: "BRL",
-          min_amount,
-          max_amount,
-          rate: "50",
-        },
-      },
-    },
-    {
-      create: {
-        offer: {
-          offer_type: "buy",
-          fiat_currency: "USD",
-          min_amount,
-          max_amount,
-          rate: "0",
-        },
-      },
-    },
   ];
 
   let finalResult;
@@ -154,8 +132,7 @@ async function test(codeIds) {
         await create_offers(factoryCfg.offers_addr);
       }
       return query_offers(factoryCfg.offers_addr);
-    })
-    .then(async (r) => {
+    }).then(async (r) => {
       const newTradeMsg = {
         new_trade: {
           offer_id: r[0][0].id + "",
@@ -165,19 +142,21 @@ async function test(codeIds) {
       };
       console.log("*Creating Trade*");
       return makerClient.execute(makerAddr, factoryCfg.offers_addr, newTradeMsg, "auto");
-    })
-    .then((result) => {
+    }).then((result) => {
       console.log("Trade Result:", result);
       tradeAddr = result.logs[0].events
         .find((e) => e.type === "instantiate")
         .attributes.find((a) => a.key === "_contract_address").value;
       console.log("**Trade created with address:", tradeAddr);
-      const funds = coins(min_amount, "ujunox");
+      console.log("*Accepting Trade Request");
+      return makerClient.execute(makerAddr, tradeAddr, {"accept_request":{}}, "auto", "fund_escrow");
+    }).then((r) => {
+      console.log("Accept Trade Request Result:", r);
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
+      const funds = coins(min_amount, "ujunox");
       return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
-    })
-    .then((r) => {
+    }).then((r) => {
       console.log("Fund escrow result: ", r);
       if (r.transactionHash) {
         console.log("**Escrow Funded**");
@@ -185,14 +164,13 @@ async function test(codeIds) {
         console.log("%Error%");
       }
       return makerClient.queryContractSmart(tradeAddr, {"state":{}});
-    })
-    .then((r) => {
-      console.log("Trade State:", r);
-      console.log("*Releasing Trade*");
-      return makerClient.execute(makerAddr, tradeAddr, {"release_escrow":{}}, "auto", "release_escrow")
     }).then((r) => {
-      console.log("Trade Release Result:", r);
-      console.log("**Trade Released**");
+      console.log("Trade State:", r);
+      //console.log("*Releasing Trade*");
+      //return makerClient.execute(makerAddr, tradeAddr, {"release_escrow":{}}, "auto", "release_escrow")
+    }).then((r) => {
+      //console.log("Trade Release Result:", r);
+      //console.log("**Trade Released**");
     });
 }
 

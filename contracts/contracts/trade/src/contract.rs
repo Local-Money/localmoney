@@ -170,7 +170,7 @@ fn fund_escrow(
     }
 
     // Only the seller wallet is authorized to fund this trade.
-    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap(); // TODO test this case
+    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
