@@ -374,6 +374,7 @@ fn release_escrow(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
+    let denom = String::from("ujunox");
     let arbitrator = match trade.arbitrator.clone() {
         Some(one) => one,
         None => Addr::unchecked(""), // So we can compare Addr Types
@@ -425,7 +426,7 @@ fn release_escrow(
     }
 
     //Load and check balance
-    let balance_result = deps.querier.query_balance(&env.contract.address, "uusd");
+    let balance_result = deps.querier.query_balance(&env.contract.address, denom.clone());
     if balance_result.is_err() {
         return Err(TradeError::ReleaseError {
             message: "Contract has no funds.".to_string(),
@@ -453,15 +454,16 @@ fn release_escrow(
     let factory_cfg: FactoryConfig =
         get_factory_config(&deps.querier, trade.factory_addr.to_string());
 
-    // Collect Fee
-    // Caclulate Fees
-    let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
-    let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
+    //TODO: Collect Fee
+    //let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
+    //let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
+    // let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
 
-    let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
+    let mut release_amount = trade.ust_amount.clone();
+    /*
     // TODO check that release_amount is > 0
 
-    // Pay arbitration fee
+    //Arbitration Fee
     if arbitration_mode {
         let arbitration_amount = get_fee_amount(trade.ust_amount.clone(), ARBITRATOR_FEE);
         release_amount -= arbitration_amount;
@@ -470,20 +472,14 @@ fn release_escrow(
         // Send arbitration fee share
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: trade.arbitrator.unwrap().to_string(), // TODO make sure unwrap doesn't crash this, but releases without arbitrator msg if needed
-            amount: vec![Coin::new(warchest_share.u128(), "uusd")],
+            amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
         })));
     }
 
-    // Send warchest fee share
+    //Warchest
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
         to_address: factory_cfg.warchest_addr.to_string(),
-        amount: vec![Coin::new(warchest_share.u128(), "uusd")],
-    })));
-
-    // Send released trade funds to buyer
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: trade.buyer.into_string(),
-        amount: vec![Coin::new(release_amount.u128(), "uusd")],
+        amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
     })));
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
@@ -498,6 +494,10 @@ fn release_escrow(
     }));
     send_msgs.push(register_trade_msg);
 
+    let res = Response::new().add_submessages(send_msgs);
+    Ok(res)
+     */
+
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: factory_cfg.offers_addr.to_string(),
@@ -505,6 +505,11 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
+
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: trade.buyer.into_string(),
+        amount: vec![Coin::new(release_amount.u128(), denom.clone())],
+    })));
 
     let res = Response::new().add_submessages(send_msgs);
     Ok(res)

@@ -133,6 +133,7 @@ async function test(codeIds) {
       }
       return query_offers(factoryCfg.offers_addr);
     }).then(async (r) => {
+      //Create Trade
       const newTradeMsg = {
         new_trade: {
           offer_id: r[0][0].id + "",
@@ -143,6 +144,7 @@ async function test(codeIds) {
       console.log("*Creating Trade*");
       return makerClient.execute(makerAddr, factoryCfg.offers_addr, newTradeMsg, "auto");
     }).then((result) => {
+      //Accept Trade Request
       console.log("Trade Result:", result);
       tradeAddr = result.logs[0].events
         .find((e) => e.type === "instantiate")
@@ -151,12 +153,14 @@ async function test(codeIds) {
       console.log("*Accepting Trade Request");
       return makerClient.execute(makerAddr, tradeAddr, {"accept_request":{}}, "auto", "fund_escrow");
     }).then((r) => {
+      //Fund Escrow
       console.log("Accept Trade Request Result:", r);
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
       const funds = coins(min_amount, "ujunox");
       return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
     }).then((r) => {
+      //Query State
       console.log("Fund escrow result: ", r);
       if (r.transactionHash) {
         console.log("**Escrow Funded**");
@@ -165,13 +169,26 @@ async function test(codeIds) {
       }
       return makerClient.queryContractSmart(tradeAddr, {"state":{}});
     }).then((r) => {
+      //Mark as Paid
       console.log("Trade State:", r);
-      //console.log("*Releasing Trade*");
-      //return makerClient.execute(makerAddr, tradeAddr, {"release_escrow":{}}, "auto", "release_escrow")
+      console.log("*Marking Trade as Paid*");
+      return makerClient.execute(makerAddr, tradeAddr, {"fiat_deposited":{}}, "auto", "release_escrow")
     }).then((r) => {
-      //console.log("Trade Release Result:", r);
-      //console.log("**Trade Released**");
-    });
+      //Query State
+      console.log("Mark as Paid Result:", r);
+      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+    }).then((r) => {
+      //Release Escrow
+      console.log("Trade State:", r);
+      console.log("*Releasing Trade*");
+      return makerClient.execute(makerAddr, tradeAddr, {"release_escrow":{}}, "auto", "release_escrow")
+    }).then((r) => {
+      //Query State
+      console.log("Trade Release Result:", r);
+      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+    }).then((r) => {
+      console.log("Trade State", r);
+  });
 }
 
 function getContractNameFromPath(path) {
