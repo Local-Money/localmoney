@@ -79,7 +79,7 @@ pub fn instantiate(
         seller, // seller
         offer_contract: offer_contract.clone(),
         offer_id,
-        arbitrator: None,
+        arbitrator: Some(Addr::unchecked("todo")),
         state: TradeState::RequestCreated,
         created_at: env.block.time.seconds(),
         ust_amount: msg.ust_amount,
@@ -426,7 +426,9 @@ fn release_escrow(
     }
 
     //Load and check balance
-    let balance_result = deps.querier.query_balance(&env.contract.address, denom.clone());
+    let balance_result = deps
+        .querier
+        .query_balance(&env.contract.address, denom.clone());
     if balance_result.is_err() {
         return Err(TradeError::ReleaseError {
             message: "Contract has no funds.".to_string(),
