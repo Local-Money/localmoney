@@ -105,7 +105,6 @@ fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<U
 }
 
 fn register_trade(
-    // TODO remove leading underscores (suppressing unused variables warnings)
     _trade: String,
     _maker: String,
     _deps: DepsMut,

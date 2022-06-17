@@ -402,7 +402,7 @@ fn release_escrow(
     if !(info.sender == trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
             owner: trade.seller,
-            arbitrator: arbitrator,
+            arbitrator,
             caller: info.sender,
         });
     }
@@ -446,18 +446,22 @@ fn release_escrow(
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-
     let factory_cfg: FactoryConfig =
         get_factory_config(&deps.querier, trade.factory_addr.to_string());
+    let mut release_amount = trade.ust_amount.clone();
 
     //TODO: Collect Fee
     //let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
     //let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
-    // let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
+    //let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
 
-    let mut release_amount = trade.ust_amount.clone();
     /*
-    // TODO check that release_amount is > 0
+    //Warchest
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: factory_cfg.warchest_addr.to_string(),
+        amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
+    })));
+     */
 
     //Arbitration Fee
     if arbitration_mode {
@@ -468,15 +472,9 @@ fn release_escrow(
         // Send arbitration fee share
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: trade.arbitrator.unwrap().to_string(), // TODO make sure unwrap doesn't crash this, but releases without arbitrator msg if needed
-            amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
+            amount: vec![],                                    //TODO
         })));
     }
-
-    //Warchest
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: factory_cfg.warchest_addr.to_string(),
-        amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
-    })));
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -489,10 +487,6 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(register_trade_msg);
-
-    let res = Response::new().add_submessages(send_msgs);
-    Ok(res)
-     */
 
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
