@@ -1,12 +1,14 @@
+use cosmwasm_std::OverflowOperation::Add;
 use cosmwasm_std::{
     entry_point, Addr, Binary, ContractResult, Deps, Reply, ReplyOn, StdError, StdResult,
-    SubMsgExecutionResponse,
+    SubMsgResponse,
 };
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 
 use crate::errors::FactoryError;
 use crate::state::CONFIG;
 use localterra_protocol::factory::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
+use localterra_protocol::factory_util::get_contract_address_from_reply;
 use localterra_protocol::offer::InstantiateMsg as OfferInstantiate;
 use localterra_protocol::trading_incentives::InstantiateMsg as TradingIncentivesInstantiateMsg;
 
@@ -33,16 +35,15 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &cfg).unwrap();
 
-    /*
     let offer_msg = instantiate_offer_msg(msg.offer_code_id);
     let trading_incentives_msg = instantiate_trading_incentives_msg(msg.trading_incentives_code_id);
 
     let r = Response::new()
         .add_submessage(offer_msg)
         .add_submessage(trading_incentives_msg);
+    Ok(r)
 
-    */
-    Ok(Response::default())
+    // Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -86,7 +87,7 @@ fn instantiate_offer_msg(code_id: u64) -> SubMsg {
 
 fn instantiate_offer_reply(
     deps: DepsMut,
-    result: ContractResult<SubMsgExecutionResponse>,
+    result: ContractResult<SubMsgResponse>,
 ) -> Result<Response, FactoryError> {
     if result.is_err() {
         return Err(FactoryError::Std(StdError::generic_err(
@@ -113,7 +114,7 @@ fn instantiate_trading_incentives_msg(trading_incentives_code_id: u64) -> SubMsg
 
 fn instantiate_trading_incentives_reply(
     deps: DepsMut,
-    result: ContractResult<SubMsgExecutionResponse>,
+    result: ContractResult<SubMsgResponse>,
 ) -> Result<Response, FactoryError> {
     if result.is_err() {
         return Err(FactoryError::Std(StdError::generic_err(
@@ -126,24 +127,6 @@ fn instantiate_trading_incentives_reply(
     CONFIG.save(deps.storage, &cfg).unwrap();
     let res = Response::new().add_attribute("instantiate_contract", "incentives");
     Ok(res)
-}
-
-fn get_contract_address_from_reply(
-    deps: Deps,
-    result: ContractResult<SubMsgExecutionResponse>,
-) -> Addr {
-    result
-        .unwrap()
-        .events
-        .into_iter()
-        .find(|e| e.ty == "instantiate_contract")
-        .and_then(|ev| {
-            ev.attributes
-                .into_iter()
-                .find(|attr| attr.key == "contract_address")
-        })
-        .map(|attr| deps.api.addr_validate(attr.value.as_str()).unwrap())
-        .unwrap()
 }
 
 fn create_instantiate_msg(code_id: u64, msg: Binary, reply_id: u64, label: String) -> SubMsg {

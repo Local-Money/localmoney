@@ -10,7 +10,6 @@ pub struct InstantiateMsg {
     pub ust_amount: Uint128,
     pub taker: String,
     pub offers_addr: String,
-    pub taker_contact: String,
     pub timestamp: u64,
 }
 
@@ -38,7 +37,6 @@ pub struct TradeData {
     pub factory_addr: Addr,
     pub buyer: Addr,
     pub seller: Addr,
-    pub taker_contact: String,
     pub arbitrator: Option<Addr>,
     pub offer_contract: Addr,
     pub offer_id: String,

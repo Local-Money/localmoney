@@ -13,9 +13,10 @@
   "type": "module",
   "license": "GPL v3.0",
   "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.28.4",
     "@cosmjs/proto-signing": "^0.28.4",
     "@cosmjs/stargate": "^0.28.4",
-    "@cosmjs/cosmwasm-stargate": "^0.28.4"
+    "dotenv": "^16.0.1"
   },
   "devDependencies": {
     "node": "^16.13.0"

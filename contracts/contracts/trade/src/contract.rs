@@ -79,8 +79,7 @@ pub fn instantiate(
         seller, // seller
         offer_contract: offer_contract.clone(),
         offer_id,
-        taker_contact: msg.taker_contact,
-        arbitrator: None,
+        arbitrator: Some(Addr::unchecked("todo")),
         state: TradeState::RequestCreated,
         created_at: env.block.time.seconds(),
         ust_amount: msg.ust_amount,
@@ -171,10 +170,12 @@ fn fund_escrow(
     }
 
     // Only the seller wallet is authorized to fund this trade.
-    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap(); // TODO test this case
+    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
+
+    let denom = String::from("ujunox");
 
     // TODO only accept exact funding amounts, return otherwise
     let sent_ust_amount = if !info.funds.is_empty() {
@@ -182,10 +183,10 @@ fn fund_escrow(
     } else {
         let ust_balance = deps
             .querier
-            .query_balance(env.contract.address, "uusd".to_string());
+            .query_balance(env.contract.address, denom.clone());
         ust_balance
             .unwrap_or(Coin {
-                denom: "uusd".to_string(),
+                denom: denom.clone(),
                 amount: Uint128::zero(),
             })
             .amount
@@ -207,7 +208,6 @@ fn fund_escrow(
         .add_attribute("sent_ust_amount", sent_ust_amount.to_string())
         .add_attribute("seller", info.sender)
         .add_attribute("state", trade.state.to_string());
-
     Ok(res)
 }
 
@@ -341,8 +341,6 @@ fn cancel_request(
     info: MessageInfo,
     state: TradeData,
 ) -> Result<Response, TradeError> {
-    // TODO anyone can set the state to RequestExpired
-
     // Only the buyer or seller can cancel the trade.
     assert_caller_is_buyer_or_seller(info.sender, state.buyer, state.seller).unwrap(); // TODO test this case
 
@@ -358,13 +356,9 @@ fn cancel_request(
 
     // Update trade State to TradeState::RequestCanceled
     let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
-
     trade.state = TradeState::RequestCanceled;
-
     state_storage(deps.storage).save(&trade).unwrap();
-
     let res = Response::new();
-
     Ok(res)
 }
 
@@ -374,6 +368,7 @@ fn release_escrow(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
+    let denom = String::from("ujunox");
     let arbitrator = match trade.arbitrator.clone() {
         Some(one) => one,
         None => Addr::unchecked(""), // So we can compare Addr Types
@@ -407,7 +402,7 @@ fn release_escrow(
     if !(info.sender == trade.seller) & !arbitration_mode {
         return Err(TradeError::Unauthorized {
             owner: trade.seller,
-            arbitrator: arbitrator,
+            arbitrator,
             caller: info.sender,
         });
     }
@@ -425,7 +420,9 @@ fn release_escrow(
     }
 
     //Load and check balance
-    let balance_result = deps.querier.query_balance(&env.contract.address, "uusd");
+    let balance_result = deps
+        .querier
+        .query_balance(&env.contract.address, denom.clone());
     if balance_result.is_err() {
         return Err(TradeError::ReleaseError {
             message: "Contract has no funds.".to_string(),
@@ -449,19 +446,24 @@ fn release_escrow(
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-
     let factory_cfg: FactoryConfig =
         get_factory_config(&deps.querier, trade.factory_addr.to_string());
+    let mut release_amount = trade.ust_amount.clone();
 
-    // Collect Fee
-    // Caclulate Fees
-    let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
-    let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
+    //TODO: Collect Fee
+    //let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
+    //let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
+    //let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
 
-    let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
-    // TODO check that release_amount is > 0
+    /*
+    //Warchest
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: factory_cfg.warchest_addr.to_string(),
+        amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
+    })));
+     */
 
-    // Pay arbitration fee
+    //Arbitration Fee
     if arbitration_mode {
         let arbitration_amount = get_fee_amount(trade.ust_amount.clone(), ARBITRATOR_FEE);
         release_amount -= arbitration_amount;
@@ -470,21 +472,9 @@ fn release_escrow(
         // Send arbitration fee share
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: trade.arbitrator.unwrap().to_string(), // TODO make sure unwrap doesn't crash this, but releases without arbitrator msg if needed
-            amount: vec![Coin::new(warchest_share.u128(), "uusd")],
+            amount: vec![],                                    //TODO
         })));
     }
-
-    // Send warchest fee share
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: factory_cfg.warchest_addr.to_string(),
-        amount: vec![Coin::new(warchest_share.u128(), "uusd")],
-    })));
-
-    // Send released trade funds to buyer
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: trade.buyer.into_string(),
-        amount: vec![Coin::new(release_amount.u128(), "uusd")],
-    })));
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -505,6 +495,11 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
+
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: trade.buyer.into_string(),
+        amount: vec![Coin::new(release_amount.u128(), denom.clone())],
+    })));
 
     let res = Response::new().add_submessages(send_msgs);
     Ok(res)
@@ -602,7 +597,7 @@ fn refund_escrow(
 }
 
 fn get_ust_amount(info: MessageInfo) -> Uint128 {
-    let ust = &info.funds.iter().find(|c| c.denom.eq("uusd"));
+    let ust = &info.funds.iter().find(|c| c.denom.eq("ujunox"));
     return match ust {
         None => Uint128::zero(),
         Some(c) => c.amount,

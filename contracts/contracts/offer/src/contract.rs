@@ -7,14 +7,14 @@ use cw_storage_plus::Bound;
 
 use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::factory_util::{get_contract_address_from_reply, get_factory_config};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
     offers, Arbitrator, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg,
     OfferState, OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
-    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData, TradeState,
+    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData,
 };
 
 use crate::state::{arbitrators, config_read, config_storage, state_read, state_storage, trades};
@@ -34,6 +34,7 @@ pub fn instantiate(
     })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
 
+    /*
     // TODO remove testing code
     let index = "terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz".to_string() + &"COP".to_string();
     arbitrators().save(
@@ -44,6 +45,7 @@ pub fn instantiate(
             asset: FiatCurrency::COP,
         },
     )?;
+     */
 
     // let index = "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk".to_string() + &"COP".to_string();
 
@@ -74,8 +76,7 @@ pub fn execute(
             offer_id,
             ust_amount,
             taker,
-            taker_contact,
-        } => create_trade(deps, env, info, offer_id, ust_amount, taker, taker_contact),
+        } => create_trade(deps, env, info, offer_id, ust_amount, taker),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -187,20 +188,7 @@ fn trade_instance_reply(
         return Err(GuardError::InvalidReply {});
     }
 
-    let trade_addr: Addr = result
-        .unwrap()
-        .events
-        .into_iter()
-        .find(|e| e.ty == "instantiate_contract")
-        .and_then(|ev| {
-            ev.attributes
-                .into_iter()
-                .find(|attr| attr.key == "contract_address")
-                .map(|addr| addr.value)
-        })
-        .and_then(|addr| deps.api.addr_validate(addr.as_str()).ok())
-        .unwrap();
-
+    let trade_addr: Addr = get_contract_address_from_reply(deps.as_ref(), result);
     let trade: TradeData = deps
         .querier
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
@@ -252,7 +240,6 @@ pub fn create_offer(
         Offer {
             id: offer_id,
             owner: info.sender.clone(),
-            maker_contact: msg.maker_contact,
             offer_type: msg.offer_type,
             fiat_currency: msg.fiat_currency.clone(),
             rate: msg.rate,
@@ -412,13 +399,9 @@ fn create_trade(
     offer_id: String,
     ust_amount: Uint128,
     taker: String,
-    taker_contact: String,
 ) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
-    // let offer = load_offer_by_id(deps.storage, offer_id).unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
-    //     .ok_or(GuardError::InvalidReply {})?; // TODO choose better error
-
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
 
     let instantiate_msg = WasmMsg::Instantiate {
@@ -426,9 +409,8 @@ fn create_trade(
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            ust_amount: ust_amount,
+            ust_amount,
             taker: taker.clone(),
-            taker_contact,
             offers_addr: env.contract.address.to_string(),
             timestamp: env.block.time.seconds(),
         })
