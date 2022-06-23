@@ -8,11 +8,16 @@ import * as fs from "fs";
 import findFilesInDir from "./findFilesInDir.js";
 import { coin, coins } from '@cosmjs/amino';
 
-const rpcEndpoint = "http://localhost:26657";
-const maker_seed =
+let rpcEndpoint = "http://localhost:26657";
+let maker_seed =
   "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose";
-const taker_seed =
-  "paddle prefer true embody scissors romance train replace flush rather until clap intact hello used cricket limb cake nut permit toss stove cute easily";
+
+if (process.env.SEED) {
+  maker_seed = process.env.SEED;
+}
+if (process.env.RPC) {
+  rpcEndpoint = process.env.RPC;
+}
 
 const min_amount = "1";
 const max_amount = "10";
