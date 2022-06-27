@@ -3,6 +3,7 @@ use cosmwasm_std::{
     MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
     WasmMsg, WasmQuery,
 };
+use cw20::Denom;
 
 use localterra_protocol::constants::{
     ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
@@ -56,7 +57,7 @@ pub fn instantiate(
         }));
     let offers_cfg = load_offer_config_result.unwrap();
 
-    assert_value_in_range(offer.min_amount, offer.max_amount, msg.ust_amount).unwrap(); // TODO test this guard
+    assert_value_in_range(offer.min_amount, offer.max_amount, msg.amount.clone()).unwrap(); // TODO test this guard
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -82,7 +83,8 @@ pub fn instantiate(
         arbitrator: Some(Addr::unchecked("todo")),
         state: TradeState::RequestCreated,
         created_at: env.block.time.seconds(),
-        ust_amount: msg.ust_amount,
+        denom: msg.denom.clone(),
+        amount: msg.amount.clone(),
         asset: offer.fiat_currency,
     };
 
@@ -174,38 +176,36 @@ fn fund_escrow(
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
-
-    let denom = String::from("ujunox");
-
-    // TODO only accept exact funding amounts, return otherwise
-    let sent_ust_amount = if !info.funds.is_empty() {
-        get_ust_amount(info.clone())
-    } else {
-        let ust_balance = deps
-            .querier
-            .query_balance(env.contract.address, denom.clone());
-        ust_balance
-            .unwrap_or(Coin {
-                denom: denom.clone(),
-                amount: Uint128::zero(),
-            })
-            .amount
+    let denom = match trade.denom.clone() {
+        Denom::Native(s) => s.clone(),
+        Denom::Cw20(addr) => {
+            addr.clone().to_string() //TODO: Support for CW20 Escrow.
+        }
     };
 
-    if sent_ust_amount >= trade.ust_amount {
+    // TODO only accept exact funding amounts, return otherwise
+    let balance = deps
+        .querier
+        .query_balance(env.contract.address, denom.clone())
+        .unwrap_or(Coin {
+            denom: denom.clone(),
+            amount: Uint128::zero(),
+        });
+
+    if balance.amount >= trade.amount {
         trade.state = TradeState::EscrowFunded;
     } else {
         return Err(TradeError::FundEscrowError {
-            required_amount: trade.ust_amount.clone(),
-            sent_amount: sent_ust_amount.clone(),
+            required_amount: trade.amount.clone(),
+            sent_amount: balance.amount.clone(),
         });
     }
 
     state_storage(deps.storage).save(&trade).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
-        .add_attribute("trade.ust_amount", trade.ust_amount.to_string())
-        .add_attribute("sent_ust_amount", sent_ust_amount.to_string())
+        .add_attribute("trade.amount", trade.amount.clone().to_string())
+        .add_attribute("sent_amount", balance.amount.to_string())
         .add_attribute("seller", info.sender)
         .add_attribute("state", trade.state.to_string());
     Ok(res)
@@ -448,12 +448,12 @@ fn release_escrow(
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let factory_cfg: FactoryConfig =
         get_factory_config(&deps.querier, trade.factory_addr.to_string());
-    let mut release_amount = trade.ust_amount.clone();
+    let mut release_amount = trade.amount.clone();
 
     //TODO: Collect Fee
-    //let local_terra_fee = get_fee_amount(trade.ust_amount.clone(), LOCAL_TERRA_FEE);
+    //let local_terra_fee = get_fee_amount(trade.amount.clone(), LOCAL_TERRA_FEE);
     //let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
-    //let mut release_amount = trade.ust_amount.clone() - local_terra_fee;
+    //let mut release_amount = trade.amount.amount.clone() - local_terra_fee;
 
     /*
     //Warchest
@@ -465,7 +465,7 @@ fn release_escrow(
 
     //Arbitration Fee
     if arbitration_mode {
-        let arbitration_amount = get_fee_amount(trade.ust_amount.clone(), ARBITRATOR_FEE);
+        let arbitration_amount = get_fee_amount(trade.amount.clone(), ARBITRATOR_FEE);
         release_amount -= arbitration_amount;
         // TODO check that release_amount is > 0
 
@@ -593,14 +593,6 @@ fn refund_escrow(
             message: "Contract has no funds.".to_string(),
             trade: trade.state.to_string(),
         })
-    };
-}
-
-fn get_ust_amount(info: MessageInfo) -> Uint128 {
-    let ust = &info.funds.iter().find(|c| c.denom.eq("ujunox"));
-    return match ust {
-        None => Uint128::zero(),
-        Some(c) => c.amount,
     };
 }
 

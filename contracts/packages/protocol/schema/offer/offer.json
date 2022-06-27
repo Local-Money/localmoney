@@ -6,7 +6,6 @@
     "fiat_currency",
     "id",
     "last_traded_at",
-    "maker_contact",
     "max_amount",
     "min_amount",
     "offer_type",
@@ -26,9 +25,6 @@
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
-    },
-    "maker_contact": {
-      "type": "string"
     },
     "max_amount": {
       "$ref": "#/definitions/Uint128"

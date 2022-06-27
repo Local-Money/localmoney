@@ -1,5 +1,4 @@
 use cosmwasm_std::{Addr, Uint128};
-use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +11,7 @@ pub struct InstantiateMsg {}
 pub enum ExecuteMsg {
     RegisterTrade { trade: String, maker: String },
     Claim { period: u8 },
-    Receive(Cw20ReceiveMsg),
+    StartDistribution,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

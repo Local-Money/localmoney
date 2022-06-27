@@ -4,39 +4,24 @@
   "description": "Messages",
   "type": "object",
   "required": [
-    "cw20_code_id",
-    "gov_contract_code_id",
-    "local_token_addr",
-    "local_ust_pool_addr",
+    "admin_addr",
+    "local_denom",
+    "local_market_addr",
     "offer_code_id",
-    "staking_code_id",
     "trade_code_id",
-    "trading_incentives_code_id",
-    "warchest_addr"
+    "trading_incentives_code_id"
   ],
   "properties": {
-    "cw20_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
+    "admin_addr": {
+      "$ref": "#/definitions/Addr"
     },
-    "gov_contract_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
+    "local_denom": {
+      "$ref": "#/definitions/Denom"
     },
-    "local_token_addr": {
-      "type": "string"
-    },
-    "local_ust_pool_addr": {
-      "type": "string"
+    "local_market_addr": {
+      "$ref": "#/definitions/Addr"
     },
     "offer_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
-    },
-    "staking_code_id": {
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
@@ -50,9 +35,40 @@
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
-    },
-    "warchest_addr": {
+    }
+  },
+  "definitions": {
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
       "type": "string"
+    },
+    "Denom": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "native"
+          ],
+          "properties": {
+            "native": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "cw20"
+          ],
+          "properties": {
+            "cw20": {
+              "$ref": "#/definitions/Addr"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

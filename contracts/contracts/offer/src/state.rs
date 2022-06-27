@@ -25,7 +25,7 @@ pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
         seller: MultiIndex::new(|d: &TradeAddr| d.seller.clone(), "trades", "trades__seller"),
         buyer: MultiIndex::new(|d: &TradeAddr| d.buyer.clone(), "trades", "trades__buyer"),
         arbitrator: MultiIndex::new(
-            |d: &TradeAddr| d.arbitrator.clone(),
+            |d: &TradeAddr| d.arbitrator.clone().unwrap(),
             "trades",
             "trades__arbitrator",
         ),

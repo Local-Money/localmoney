@@ -3,6 +3,7 @@ use cosmwasm_std::{
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128, WasmMsg, WasmQuery,
 };
+use cw20::Denom;
 use cw_storage_plus::Bound;
 
 use localterra_protocol::constants::REQUEST_TIMEOUT;
@@ -33,32 +34,6 @@ pub fn instantiate(
         factory_addr: info.sender,
     })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
-
-    /*
-    // TODO remove testing code
-    let index = "terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz".to_string() + &"COP".to_string();
-    arbitrators().save(
-        deps.storage,
-        &index,
-        &Arbitrator {
-            arbitrator: Addr::unchecked("terra1f9cwmeq4dcrvkdtj8nn3a0u3rwycqhjcx4wecz"),
-            asset: FiatCurrency::COP,
-        },
-    )?;
-     */
-
-    // let index = "terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk".to_string() + &"COP".to_string();
-
-    // arbitrators().save(
-    //     deps.storage,
-    //     &index,
-    //     &Arbitrator {
-    //         arbitrator: Addr::unchecked("terra10ms2n6uqzgrz4gtkcyslqx0gysfvwlg6n2tusk"),
-    //         asset: FiatCurrency::COP,
-    //     },
-    // )?;
-    // TODO END remove testing code
-
     Ok(Response::default())
 }
 
@@ -74,9 +49,10 @@ pub fn execute(
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
         ExecuteMsg::NewTrade {
             offer_id,
-            ust_amount,
+            denom,
+            amount,
             taker,
-        } => create_trade(deps, env, info, offer_id, ust_amount, taker),
+        } => create_trade(deps, env, info, offer_id, denom, amount, taker),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -202,7 +178,7 @@ fn trade_instance_reply(
                 trade: trade_addr.clone(),
                 seller: trade.seller.clone(),
                 buyer: trade.buyer.clone(),
-                arbitrator: Addr::unchecked("None"), // We need a non-sensical Addr to create the indices, `None` won't work
+                arbitrator: None,
                 state: trade.state.clone(),
                 offer_id: trade.offer_id.clone(),
             },
@@ -216,7 +192,7 @@ fn trade_instance_reply(
         .add_attribute("action", "create_trade_reply")
         .add_attribute("addr", trade_addr)
         .add_attribute("offer_id", offer.id.to_string())
-        .add_attribute("amount", trade.ust_amount)
+        .add_attribute("amount", trade.amount.to_string())
         .add_attribute("owner", offer.owner);
     Ok(res)
 }
@@ -230,9 +206,7 @@ pub fn create_offer(
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut state = state_storage(deps.storage).load().unwrap();
-
     state.offers_count += 1;
-
     let offer_id = [msg.rate.clone().to_string(), state.offers_count.to_string()].join("_");
 
     let offer = OfferModel::create(
@@ -275,7 +249,7 @@ pub fn execute_update_trade_arbitrator(
     // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set
     let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
 
-    trade.arbitrator = arbitrator.clone();
+    trade.arbitrator = Some(arbitrator.clone());
 
     trades()
         .save(deps.storage, trade.trade.as_str(), &trade)
@@ -397,8 +371,9 @@ fn create_trade(
     env: Env,
     info: MessageInfo,
     offer_id: String,
-    ust_amount: Uint128,
-    taker: String,
+    denom: Denom,
+    amount: Uint128,
+    taker: Addr,
 ) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
@@ -409,9 +384,10 @@ fn create_trade(
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            ust_amount,
+            denom: denom.clone(),
+            amount: amount.clone(),
             taker: taker.clone(),
-            offers_addr: env.contract.address.to_string(),
+            offers_addr: env.contract.address,
             timestamp: env.block.time.seconds(),
         })
         .unwrap(),
@@ -430,7 +406,7 @@ fn create_trade(
         .add_attribute("action", "create_trade")
         .add_attribute("id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string())
-        .add_attribute("ust_amount", ust_amount)
+        .add_attribute("amount", amount.to_string())
         .add_attribute("taker", taker);
     Ok(res)
 }
