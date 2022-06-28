@@ -4,7 +4,6 @@
   "type": "string",
   "enum": [
     "seller",
-    "buyer",
-    "arbitrator_state"
+    "buyer"
   ]
 }

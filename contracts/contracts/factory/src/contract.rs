@@ -12,11 +12,8 @@ use localterra_protocol::factory_util::get_contract_address_from_reply;
 use localterra_protocol::offer::InstantiateMsg as OfferInstantiate;
 use localterra_protocol::trading_incentives::InstantiateMsg as TradingIncentivesInstantiateMsg;
 
-pub const GOV_REPLY_ID: u64 = 0;
 pub const OFFER_REPLY_ID: u64 = 2;
 pub const TRADING_INCENTIVES_REPLY_ID: u64 = 3;
-pub const CW20_TOKEN_REPLY_ID: u64 = 4;
-pub const STAKING_REPLY_ID: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -26,12 +23,13 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, FactoryError> {
     let cfg = Config {
+        admin_addr: msg.admin_addr,
         trade_code_id: msg.trade_code_id,
-        local_token_addr: deps.api.addr_validate(&msg.local_token_addr).unwrap(),
-        local_pool_addr: deps.api.addr_validate(&msg.local_pool_addr).unwrap(),
-        warchest_addr: deps.api.addr_validate(&msg.warchest_addr).unwrap(),
+        local_denom: msg.local_denom,
         offers_addr: Addr::unchecked(""),
         trading_incentives_addr: Addr::unchecked(""),
+        local_market_addr: msg.local_market_addr,
+        warchest_addr: None,
     };
     CONFIG.save(deps.storage, &cfg).unwrap();
 
@@ -42,8 +40,6 @@ pub fn instantiate(
         .add_submessage(offer_msg)
         .add_submessage(trading_incentives_msg);
     Ok(r)
-
-    // Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

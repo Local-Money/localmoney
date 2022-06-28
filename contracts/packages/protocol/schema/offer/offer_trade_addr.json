@@ -3,7 +3,6 @@
   "title": "offer_trade_addr",
   "type": "object",
   "required": [
-    "arbitrator",
     "buyer",
     "offer_id",
     "seller",
@@ -12,7 +11,14 @@
   ],
   "properties": {
     "arbitrator": {
-      "$ref": "#/definitions/Addr"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "buyer": {
       "$ref": "#/definitions/Addr"

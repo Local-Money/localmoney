@@ -2,14 +2,12 @@ use crate::errors::TradingIncentivesError;
 use crate::math::DECIMAL_FRACTIONAL;
 use crate::state::{CONFIG, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, StdError, StdResult, Storage, SubMsg,
-    WasmMsg,
+    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, StdError, StdResult,
+    Storage, SubMsg,
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::Denom;
 use localterra_protocol::factory_util::get_factory_config;
-// use localterra_protocol::offer::{QueryMsg as OfferQueryMsg, TradeInfo};
-// use localterra_protocol::trade::TradeState as TradeTradeState;
 use localterra_protocol::trading_incentives::{
     Config, Distribution, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
@@ -61,7 +59,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::RegisterTrade { trade, maker } => register_trade(trade, maker, deps, env),
         ExecuteMsg::Claim { period } => claim(deps, env, info, period),
-        ExecuteMsg::Receive(cw20msg) => start_distribution(deps, env, info, cw20msg),
+        ExecuteMsg::StartDistribution => start_distribution(deps, env, info),
     }
 }
 
@@ -140,7 +138,7 @@ fn register_trade(
         return Err(TradingIncentivesError::Unauthorized {});
     }
 
-    let ust_amount = trade_info.trade.ust_amount.clone();
+    let amount = trade_info.trade.amount.amount.clone();
     let distribution_info = get_distribution_info(env.clone(), deps.storage).unwrap();
     let period = distribution_info.current_period;
 
@@ -148,7 +146,7 @@ fn register_trade(
     let mut total_volume = total_volume_store
         .load(deps.storage)
         .unwrap_or(Uint128::zero());
-    total_volume = total_volume.add(ust_amount);
+    total_volume = total_volume.add(amount);
     total_volume_store
         .save(deps.storage, &total_volume)
         .unwrap();
@@ -158,14 +156,14 @@ fn register_trade(
         .load(deps.storage)
         .unwrap_or(Uint128::zero());
     trader_volume_store
-        .save(deps.storage, &trader_volume.add(ust_amount.clone()))
+        .save(deps.storage, &trader_volume.add(amount.clone()))
         .unwrap();
 
     let res = Response::new()
         .add_attribute("action", "register_trade")
         .add_attribute("trade", trade)
         .add_attribute("maker", maker)
-        .add_attribute("ust_amount", ust_amount);
+        .add_attribute("amount", amount);
 
     Ok(res)
     */
@@ -195,18 +193,13 @@ fn claim(
 
     let amount =
         get_rewards(deps.storage, info.sender.to_string(), period).unwrap_or(Uint128::zero());
-
-    let transfer_tokens_msg = Cw20ExecuteMsg::Transfer {
-        recipient: info.sender.to_string(),
-        amount,
-    };
-
-    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
     let res = Response::new()
-        .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: factory_cfg.local_token_addr.to_string(),
-            msg: to_binary(&transfer_tokens_msg).unwrap(),
-            funds: vec![],
+        .add_submessage(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: info.sender.to_string(),
+            amount: vec![Coin {
+                denom: "".to_string(),
+                amount: amount.clone(),
+            }],
         })))
         .add_attribute("action", "claim")
         .add_attribute("maker", info.sender)
@@ -220,21 +213,21 @@ fn start_distribution(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    cw20: Cw20ReceiveMsg,
 ) -> Result<Response, TradingIncentivesError> {
     let mut cfg = CONFIG.load(deps.storage).unwrap();
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
-    if !info
-        .sender
-        .to_string()
-        .eq(&factory_cfg.local_token_addr.to_string())
-    {
-        return Err(TradingIncentivesError::Unauthorized {});
-    }
-
+    let rewards_denom = match factory_cfg.local_denom {
+        Denom::Native(name) => name,
+        Denom::Cw20(addr) => addr.to_string(),
+    };
+    let rewards = info
+        .funds
+        .iter()
+        .find(|c| c.denom.eq(&rewards_denom))
+        .unwrap();
     cfg.distribution_start = env.block.time.seconds();
     cfg.tokens_per_period = Uint128::new(1u128)
-        .mul(Decimal::from_ratio(cw20.amount, cfg.distribution_periods) / DECIMAL_FRACTIONAL);
+        .mul(Decimal::from_ratio(rewards.amount, cfg.distribution_periods) / DECIMAL_FRACTIONAL);
     CONFIG.save(deps.storage, &cfg).unwrap();
     Ok(Response::default())
 }

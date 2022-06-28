@@ -74,7 +74,7 @@ pub fn assert_value_in_range(
     max: Uint128,
     amount: Uint128,
 ) -> Result<(), GuardError> {
-    //Check that ust_amount is inside Offer limits
+    //Check that amount is inside Offer limits
     if amount > max || amount < min {
         return Err(GuardError::AmountError {
             amount,

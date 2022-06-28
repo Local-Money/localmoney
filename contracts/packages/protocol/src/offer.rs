@@ -3,6 +3,7 @@ use crate::currencies::FiatCurrency;
 // use crate::errors::GuardError;
 use crate::trade::{TradeData, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
+use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -65,6 +66,7 @@ pub struct OfferMsg {
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub rate: Uint128,
+    pub denom: Denom,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
 }
@@ -89,8 +91,8 @@ pub enum ExecuteMsg {
     },
     NewTrade {
         offer_id: String,
-        ust_amount: Uint128,
-        taker: String, // TODO should be Addr
+        amount: Uint128,
+        taker: Addr,
     },
     NewArbitrator {
         arbitrator: Addr,
@@ -200,6 +202,7 @@ pub struct Offer {
     pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
+    pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
     pub last_traded_at: u64,
@@ -414,7 +417,7 @@ pub struct TradeInfo {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeAddr {
-    pub trade: Addr, // TODO rename to tradeAddr
+    pub trade: Addr,
     pub seller: Addr,
     pub buyer: Addr,
     pub arbitrator: Addr,

@@ -23,6 +23,21 @@
       "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
       "type": "string"
     },
+    "Coin": {
+      "type": "object",
+      "required": [
+        "amount",
+        "denom"
+      ],
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/Uint128"
+        },
+        "denom": {
+          "type": "string"
+        }
+      }
+    },
     "FiatCurrency": {
       "type": "string",
       "enum": [
@@ -189,7 +204,6 @@
         "fiat_currency",
         "id",
         "last_traded_at",
-        "maker_contact",
         "max_amount",
         "min_amount",
         "offer_type",
@@ -209,9 +223,6 @@
           "type": "integer",
           "format": "uint64",
           "minimum": 0.0
-        },
-        "maker_contact": {
-          "type": "string"
         },
         "max_amount": {
           "$ref": "#/definitions/Uint128"
@@ -257,6 +268,7 @@
       "type": "object",
       "required": [
         "addr",
+        "amount",
         "asset",
         "buyer",
         "created_at",
@@ -264,13 +276,14 @@
         "offer_contract",
         "offer_id",
         "seller",
-        "state",
-        "taker_contact",
-        "ust_amount"
+        "state"
       ],
       "properties": {
         "addr": {
           "$ref": "#/definitions/Addr"
+        },
+        "amount": {
+          "$ref": "#/definitions/Coin"
         },
         "arbitrator": {
           "anyOf": [
@@ -307,12 +320,6 @@
         },
         "state": {
           "$ref": "#/definitions/TradeState"
-        },
-        "taker_contact": {
-          "type": "string"
-        },
-        "ust_amount": {
-          "$ref": "#/definitions/Uint128"
         }
       }
     },

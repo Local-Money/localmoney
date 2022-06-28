@@ -22,12 +22,14 @@ if (process.env.RPC) {
 const min_amount = "1";
 const max_amount = "10";
 const offer_type = "buy";
-const cw20_code_id = process.env.CW20;
 
-const gasPrice = GasPrice.fromString("0.025ujunox");
-const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { prefix: "juno" });
+const gasPrice = GasPrice.fromString(process.env.GAS_PRICE);
+const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { prefix: process.env.ADDR_PREFIX });
 const makerAccounts = await makerWallet.getAccounts();
 const makerAddr = makerAccounts[0].address;
+//const local_denom = { "native": `factory/${makerAddr}/local` }
+const local_denom = { "native": process.env.DENOM }
+
 const makerClient = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, makerWallet, {
   broadcastTimeoutMs: 30 * 1000,
   gasPrice: gasPrice
@@ -40,14 +42,12 @@ function sleep(ms) {
 async function instantiateFactory(codeIds) {
   //Instantiate Factory
   const factoryInstantiateMsg = {
-    cw20_code_id: parseInt(cw20_code_id),
+    admin_addr: makerAddr,
     trading_incentives_code_id: codeIds.trading_incentives,
     offer_code_id: codeIds.offer,
     trade_code_id: codeIds.trade,
-    local_pool_addr: makerAddr, //TODO: use actual address
-    local_token_addr: makerAddr,
-    warchest_addr: makerAddr,
-    // local_token_addr: process.env.LOCAL_TOKEN_ADDR,
+    local_denom,
+    local_market_addr: makerAddr, //TODO: use actual address
   };
   const result = await makerClient.instantiate(makerAddr, codeIds.factory, factoryInstantiateMsg, "factory", "auto");
   console.log("instantiate result = ", result);
@@ -65,6 +65,7 @@ async function create_offers(offers_addr) {
           min_amount,
           max_amount,
           rate: "1",
+          denom: local_denom,
         },
       },
     },
@@ -142,15 +143,16 @@ async function test(codeIds) {
       const newTradeMsg = {
         new_trade: {
           offer_id: r[0][0].id + "",
-          ust_amount: min_amount + "",
+          amount: min_amount + "",
           taker: makerAddr,
         },
       };
+      console.log('new trade msg', JSON.stringify(newTradeMsg));
       console.log("*Creating Trade*");
       return makerClient.execute(makerAddr, factoryCfg.offers_addr, newTradeMsg, "auto");
     }).then((result) => {
       //Accept Trade Request
-      console.log("Trade Result:", result);
+      console.log("Trade Result:", JSON.stringify(result));
       tradeAddr = result.logs[0].events
         .find((e) => e.type === "instantiate")
         .attributes.find((a) => a.key === "_contract_address").value;
@@ -162,7 +164,7 @@ async function test(codeIds) {
       console.log("Accept Trade Request Result:", r);
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
-      const funds = coins(min_amount, "ujunox");
+      const funds = coins(min_amount, process.env.DENOM);
       return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
     }).then((r) => {
       //Query State

@@ -1,5 +1,6 @@
 use crate::currencies::FiatCurrency;
 use cosmwasm_std::{Addr, Uint128};
+use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -7,9 +8,10 @@ use std::fmt::{self};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub offer_id: String,
-    pub ust_amount: Uint128,
-    pub taker: String,
-    pub offers_addr: String,
+    pub denom: Denom,
+    pub amount: Uint128,
+    pub taker: Addr,
+    pub offers_addr: Addr,
     pub timestamp: u64,
 }
 
@@ -41,7 +43,8 @@ pub struct TradeData {
     pub offer_contract: Addr,
     pub offer_id: String,
     pub created_at: u64,
-    pub ust_amount: Uint128,
+    pub denom: Denom,
+    pub amount: Uint128,
     pub state: TradeState,
     pub asset: FiatCurrency,
 }
