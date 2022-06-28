@@ -1,3 +1,4 @@
+use cosmwasm_std::OverflowOperation::Add;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
@@ -178,7 +179,7 @@ fn trade_instance_reply(
                 trade: trade_addr.clone(),
                 seller: trade.seller.clone(),
                 buyer: trade.buyer.clone(),
-                arbitrator: None,
+                arbitrator: Addr::unchecked(""),
                 state: trade.state.clone(),
                 offer_id: trade.offer_id.clone(),
             },
@@ -249,7 +250,7 @@ pub fn execute_update_trade_arbitrator(
     // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set
     let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
 
-    trade.arbitrator = Some(arbitrator.clone());
+    trade.arbitrator = arbitrator.clone();
 
     trades()
         .save(deps.storage, trade.trade.as_str(), &trade)
@@ -378,13 +379,17 @@ fn create_trade(
     let cfg = config_read(deps.storage).load().unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+    let denom = match denom {
+        Denom::Native(s) => s,
+        Denom::Cw20(addr) => addr.to_string(),
+    };
 
     let instantiate_msg = WasmMsg::Instantiate {
         admin: None,
         code_id: factory_cfg.trade_code_id,
         msg: to_binary(&TradeInstantiateMsg {
             offer_id,
-            denom: denom.clone(),
+            denom: Denom::Native(denom.clone()), //TODO: CW20 Support.
             amount: amount.clone(),
             taker: taker.clone(),
             offers_addr: env.contract.address,
@@ -407,7 +412,9 @@ fn create_trade(
         .add_attribute("id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", amount.to_string())
-        .add_attribute("taker", taker);
+        .add_attribute("denom", denom)
+        .add_attribute("taker", taker.to_string());
+
     Ok(res)
 }
 

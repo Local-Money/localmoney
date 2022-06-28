@@ -142,15 +142,17 @@ async function test(codeIds) {
       const newTradeMsg = {
         new_trade: {
           offer_id: r[0][0].id + "",
-          ust_amount: min_amount + "",
+          denom: local_denom,
+          amount: min_amount + "",
           taker: makerAddr,
         },
       };
+      console.log('new trade msg', JSON.stringify(newTradeMsg));
       console.log("*Creating Trade*");
       return makerClient.execute(makerAddr, factoryCfg.offers_addr, newTradeMsg, "auto");
     }).then((result) => {
       //Accept Trade Request
-      console.log("Trade Result:", result);
+      console.log("Trade Result:", JSON.stringify(result));
       tradeAddr = result.logs[0].events
         .find((e) => e.type === "instantiate")
         .attributes.find((a) => a.key === "_contract_address").value;

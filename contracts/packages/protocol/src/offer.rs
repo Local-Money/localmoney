@@ -421,7 +421,7 @@ pub struct TradeAddr {
     pub trade: Addr,
     pub seller: Addr,
     pub buyer: Addr,
-    pub arbitrator: Option<Addr>,
+    pub arbitrator: Addr,
     pub state: TradeState,
     pub offer_id: String,
 }
