@@ -27,7 +27,8 @@ const gasPrice = GasPrice.fromString(process.env.GAS_PRICE);
 const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { prefix: process.env.ADDR_PREFIX });
 const makerAccounts = await makerWallet.getAccounts();
 const makerAddr = makerAccounts[0].address;
-const local_denom = { "native": `factory/${makerAddr}/local` }
+//const local_denom = { "native": `factory/${makerAddr}/local` }
+const local_denom = { "native": "ujunox" }
 
 const makerClient = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, makerWallet, {
   broadcastTimeoutMs: 30 * 1000,
