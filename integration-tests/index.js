@@ -28,7 +28,7 @@ const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { pre
 const makerAccounts = await makerWallet.getAccounts();
 const makerAddr = makerAccounts[0].address;
 //const local_denom = { "native": `factory/${makerAddr}/local` }
-const local_denom = { "native": "ujunox" }
+const local_denom = { "native": process.env.DENOM }
 
 const makerClient = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, makerWallet, {
   broadcastTimeoutMs: 30 * 1000,
@@ -165,7 +165,7 @@ async function test(codeIds) {
       console.log("Accept Trade Request Result:", r);
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
-      const funds = coins(min_amount, "ujunox");
+      const funds = coins(min_amount, process.env.DENOM);
       return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
     }).then((r) => {
       //Query State

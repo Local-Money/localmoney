@@ -368,7 +368,11 @@ fn release_escrow(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    let denom = String::from("ujunox");
+    let denom  = match trade.denom.clone() {
+        Denom::Native(s) => { s }
+        Denom::Cw20(addr) => { addr.to_string()}
+    };
+
     let arbitrator = match trade.arbitrator.clone() {
         Some(one) => one,
         None => Addr::unchecked(""), // So we can compare Addr Types
