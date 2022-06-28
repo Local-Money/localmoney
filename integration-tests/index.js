@@ -27,6 +27,7 @@ const gasPrice = GasPrice.fromString(process.env.GAS_PRICE);
 const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { prefix: process.env.ADDR_PREFIX });
 const makerAccounts = await makerWallet.getAccounts();
 const makerAddr = makerAccounts[0].address;
+console.log('makerAddr', makerAddr);
 //const local_denom = { "native": `factory/${makerAddr}/local` }
 const local_denom = { "native": process.env.DENOM }
 
@@ -49,6 +50,7 @@ async function instantiateFactory(codeIds) {
     local_denom,
     local_market_addr: makerAddr, //TODO: use actual address
   };
+  console.log('factoryInstantiateMsg', JSON.stringify(factoryInstantiateMsg));
   const result = await makerClient.instantiate(makerAddr, codeIds.factory, factoryInstantiateMsg, "factory", "auto");
   console.log("instantiate result = ", result);
   console.log("\n");
