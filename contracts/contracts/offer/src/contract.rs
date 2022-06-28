@@ -50,10 +50,9 @@ pub fn execute(
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
         ExecuteMsg::NewTrade {
             offer_id,
-            denom,
             amount,
             taker,
-        } => create_trade(deps, env, info, offer_id, denom, amount, taker),
+        } => create_trade(deps, env, info, offer_id, amount, taker),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -218,6 +217,7 @@ pub fn create_offer(
             offer_type: msg.offer_type,
             fiat_currency: msg.fiat_currency.clone(),
             rate: msg.rate,
+            denom: msg.denom,
             min_amount: msg.min_amount,
             max_amount: msg.max_amount,
             state: OfferState::Active,
@@ -372,14 +372,13 @@ fn create_trade(
     env: Env,
     info: MessageInfo,
     offer_id: String,
-    denom: Denom,
     amount: Uint128,
     taker: Addr,
 ) -> Result<Response, GuardError> {
     let cfg = config_read(deps.storage).load().unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
     let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
-    let denom = match denom {
+    let denom = match offer.denom.clone() {
         Denom::Native(s) => s,
         Denom::Cw20(addr) => addr.to_string(),
     };

@@ -75,7 +75,6 @@ pub struct OfferMsg {
 pub struct OfferUpdateMsg {
     pub id: String,
     pub rate: Uint128,
-    pub denom: Denom,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
     pub state: OfferState,
@@ -92,7 +91,6 @@ pub enum ExecuteMsg {
     },
     NewTrade {
         offer_id: String,
-        denom: Denom,
         amount: Uint128,
         taker: Addr,
     },
@@ -204,6 +202,7 @@ pub struct Offer {
     pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
+    pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
     pub last_traded_at: u64,

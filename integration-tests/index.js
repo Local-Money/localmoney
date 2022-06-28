@@ -143,7 +143,6 @@ async function test(codeIds) {
       const newTradeMsg = {
         new_trade: {
           offer_id: r[0][0].id + "",
-          denom: local_denom,
           amount: min_amount + "",
           taker: makerAddr,
         },
