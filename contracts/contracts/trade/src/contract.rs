@@ -16,10 +16,10 @@ use localterra_protocol::guards::{
     trade_request_is_expired,
 };
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
-use localterra_protocol::offer::{
-    Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
+use localterra_protocol::offer::{Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg};
+use localterra_protocol::trade::{
+    ExecuteMsg, InstantiateMsg, QueryMsg, Trade, TradeData, TradeState,
 };
-use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
@@ -29,13 +29,13 @@ const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut,
-    env: Env,
+    _deps: DepsMut,
+    _env: Env,
     _info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
     //Load Offer
-    let offer_contract = deps.api.addr_validate(msg.offers_addr.as_str()).unwrap();
+    /*let offer_contract = deps.api.addr_validate(msg.offers_addr.as_str()).unwrap();
     let offer_id = msg.offer_id.clone();
     let offer = load_offer(
         deps.querier,
@@ -75,7 +75,7 @@ pub fn instantiate(
     //Instantiate Trade state
     let trade = TradeData {
         addr: env.contract.address.clone(),
-        factory_addr: offers_cfg.factory_addr.clone(),
+        factory_addr: offers_cfg.hub_addr.clone(),
         buyer,  // buyer
         seller, // seller
         offer_contract: offer_contract.clone(),
@@ -94,7 +94,7 @@ pub fn instantiate(
         return Err(TradeError::InstantiationError {
             message: "Couldn't save state.".to_string(),
         });
-    }
+    }*/
 
     Ok(Response::default())
 }
@@ -115,7 +115,18 @@ pub fn execute(
         ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
         ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
         ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
+        ExecuteMsg::Create(trade) => create_trade(deps, env, info, trade),
     }
+}
+
+fn create_trade(
+    dep: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    trade: Trade,
+) -> Result<Response, TradeError> {
+    let res = Response::default();
+    Ok(res)
 }
 
 #[entry_point]
@@ -368,9 +379,9 @@ fn release_escrow(
     info: MessageInfo,
     trade: TradeData,
 ) -> Result<Response, TradeError> {
-    let denom  = match trade.denom.clone() {
-        Denom::Native(s) => { s }
-        Denom::Cw20(addr) => { addr.to_string()}
+    let denom = match trade.denom.clone() {
+        Denom::Native(s) => s,
+        Denom::Cw20(addr) => addr.to_string(),
     };
 
     let arbitrator = match trade.arbitrator.clone() {
@@ -494,7 +505,7 @@ fn release_escrow(
 
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: factory_cfg.offers_addr.to_string(),
+        contract_addr: factory_cfg.offer_addr.to_string(),
         msg: to_binary(&UpdateLastTraded {}).unwrap(),
         funds: vec![],
     }));

@@ -4,10 +4,12 @@ use cosmwasm_std::{
     SubMsgResponse,
 };
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
+use cw20::Denom;
 
 use crate::errors::FactoryError;
-use crate::state::CONFIG;
-use localterra_protocol::factory::{Config, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::errors::FactoryError::Unauthorized;
+use crate::state::{ADMIN, CONFIG};
+use localterra_protocol::factory::{Admin, Config, ExecuteMsg, InstantiateMsg, QueryMsg};
 use localterra_protocol::factory_util::get_contract_address_from_reply;
 use localterra_protocol::offer::InstantiateMsg as OfferInstantiate;
 use localterra_protocol::trading_incentives::InstantiateMsg as TradingIncentivesInstantiateMsg;
@@ -22,121 +24,76 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, FactoryError> {
-    let cfg = Config {
-        admin_addr: msg.admin_addr,
-        trade_code_id: msg.trade_code_id,
-        local_denom: msg.local_denom,
-        offers_addr: Addr::unchecked(""),
-        trading_incentives_addr: Addr::unchecked(""),
-        local_market_addr: msg.local_market_addr,
-        warchest_addr: None,
+    let admin = Admin {
+        addr: msg.admin_addr.clone(),
     };
-    CONFIG.save(deps.storage, &cfg).unwrap();
+    ADMIN.save(deps.storage, &admin).unwrap();
 
-    let offer_msg = instantiate_offer_msg(msg.offer_code_id);
-    let trading_incentives_msg = instantiate_trading_incentives_msg(msg.trading_incentives_code_id);
-
-    let r = Response::new()
-        .add_submessage(offer_msg)
-        .add_submessage(trading_incentives_msg);
-    Ok(r)
+    let res = Response::new().add_attribute("admin_addr", msg.admin_addr.to_string());
+    Ok(res)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    info: MessageInfo,
+    msg: ExecuteMsg,
 ) -> Result<Response, FactoryError> {
-    Ok(Response::default())
+    match msg {
+        ExecuteMsg::UpdateConfig(config) => update_config(deps, info, config),
+        ExecuteMsg::UpdateAdmin { admin_addr } => update_admin(deps, info, admin_addr),
+    }
 }
 
-#[entry_point]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, FactoryError> {
-    match msg.id {
-        OFFER_REPLY_ID => instantiate_offer_reply(deps, ContractResult::Ok(msg.result.unwrap())),
-        TRADING_INCENTIVES_REPLY_ID => {
-            instantiate_trading_incentives_reply(deps, ContractResult::Ok(msg.result.unwrap()))
-        }
-        _ => Err(FactoryError::Std(StdError::generic_err(
-            "Unknown reply id.",
-        ))),
+fn update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    config: Config,
+) -> Result<Response, FactoryError> {
+    let admin = ADMIN.load(deps.storage).unwrap();
+    if !info.sender.eq(&admin.addr) {
+        return Err(Unauthorized {});
     }
+    CONFIG.save(deps.storage, &config).unwrap();
+    let local_denom = match config.local_denom {
+        Denom::Native(s) => s,
+        Denom::Cw20(addr) => addr.to_string(),
+    };
+    let res = Response::default()
+        .add_attribute("local_denom", local_denom)
+        .add_attribute("local_market_addr", config.local_market_addr)
+        .add_attribute("offer_addr", config.offer_addr)
+        .add_attribute("trade_addr", config.trade_addr)
+        .add_attribute("trading_incentives_addr", config.trading_incentives_addr);
+
+    Ok(res)
+}
+
+fn update_admin(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_admin: Addr,
+) -> Result<Response, FactoryError> {
+    let mut admin = ADMIN.load(deps.storage).unwrap();
+    if !info.sender.eq(&admin.addr) {
+        return Err(Unauthorized {});
+    }
+
+    let old_admin = admin.addr.clone();
+    admin.addr = new_admin.clone();
+    ADMIN.save(deps.storage, &admin).unwrap();
+
+    let res = Response::default()
+        .add_attribute("old_admin", old_admin)
+        .add_attribute("new_admin", new_admin);
+    Ok(res)
 }
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&CONFIG.load(deps.storage).unwrap()),
-    }
-}
-
-fn instantiate_offer_msg(code_id: u64) -> SubMsg {
-    create_instantiate_msg(
-        code_id,
-        to_binary(&OfferInstantiate {}).unwrap(),
-        OFFER_REPLY_ID,
-        "offer".to_string(),
-    )
-}
-
-fn instantiate_offer_reply(
-    deps: DepsMut,
-    result: ContractResult<SubMsgResponse>,
-) -> Result<Response, FactoryError> {
-    if result.is_err() {
-        return Err(FactoryError::Std(StdError::generic_err(
-            "Failed to instantiate offer contract.",
-        )));
-    }
-
-    let offer_addr = get_contract_address_from_reply(deps.as_ref(), result);
-    let mut cfg = CONFIG.load(deps.storage).unwrap();
-    cfg.offers_addr = offer_addr;
-    CONFIG.save(deps.storage, &cfg).unwrap();
-    let res = Response::new().add_attribute("instantiate_contract", "offers");
-    Ok(res)
-}
-
-fn instantiate_trading_incentives_msg(trading_incentives_code_id: u64) -> SubMsg {
-    create_instantiate_msg(
-        trading_incentives_code_id,
-        to_binary(&TradingIncentivesInstantiateMsg {}).unwrap(),
-        TRADING_INCENTIVES_REPLY_ID,
-        "trading-incentives".to_string(),
-    )
-}
-
-fn instantiate_trading_incentives_reply(
-    deps: DepsMut,
-    result: ContractResult<SubMsgResponse>,
-) -> Result<Response, FactoryError> {
-    if result.is_err() {
-        return Err(FactoryError::Std(StdError::generic_err(
-            "Failed to instantiate trading incentives contract.",
-        )));
-    }
-
-    let mut cfg = CONFIG.load(deps.storage).unwrap();
-    cfg.trading_incentives_addr = get_contract_address_from_reply(deps.as_ref(), result);
-    CONFIG.save(deps.storage, &cfg).unwrap();
-    let res = Response::new().add_attribute("instantiate_contract", "incentives");
-    Ok(res)
-}
-
-fn create_instantiate_msg(code_id: u64, msg: Binary, reply_id: u64, label: String) -> SubMsg {
-    let instantiate_msg = WasmMsg::Instantiate {
-        admin: None,
-        code_id,
-        msg,
-        funds: vec![],
-        label,
-    };
-    SubMsg {
-        id: reply_id,
-        msg: CosmosMsg::Wasm(instantiate_msg),
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
+        QueryMsg::Admin {} => to_binary(&ADMIN.load(deps.storage).unwrap()),
     }
 }

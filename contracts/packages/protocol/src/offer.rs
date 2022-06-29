@@ -86,6 +86,7 @@ pub enum ExecuteMsg {
     Create {
         offer: OfferMsg,
     },
+    RegisterHub,
     UpdateOffer {
         offer_update: OfferUpdateMsg,
     },
@@ -180,12 +181,6 @@ pub enum QueryMsg {
         random_value: u32,
         asset: FiatCurrency,
     },
-}
-
-///Data
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Config {
-    pub factory_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

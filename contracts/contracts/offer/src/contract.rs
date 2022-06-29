@@ -4,23 +4,31 @@ use cosmwasm_std::{
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128, WasmMsg, WasmQuery,
 };
+use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw20::Denom;
 use cw_storage_plus::Bound;
+use std::borrow::BorrowMut;
+use std::ops::Deref;
 
 use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::factory_util::{get_contract_address_from_reply, get_factory_config};
+use localterra_protocol::factory_util::{
+    get_contract_address_from_reply, get_factory_config, register_hub_internal, HubConfig,
+};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
-    offers, Arbitrator, Config, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg,
-    OfferState, OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
+    offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
+    OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
-    InstantiateMsg as TradeInstantiateMsg, QueryMsg as TradeQueryMsg, TradeData,
+    ExecuteMsg::Create as CreateTradeMsg, QueryMsg as TradeQueryMsg, Trade, TradeData,
 };
 
-use crate::state::{arbitrators, config_read, config_storage, state_read, state_storage, trades};
+use crate::state::{
+    arbitrators, hub_config_read, hub_config_storage, state_read, state_storage, trades,
+};
 use localterra_protocol::errors::GuardError;
+use localterra_protocol::errors::GuardError::HubAlreadyRegistered;
 
 const INSTANTIATE_TRADE_REPLY_ID: u64 = 0u64;
 
@@ -28,12 +36,9 @@ const INSTANTIATE_TRADE_REPLY_ID: u64 = 0u64;
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, GuardError> {
-    config_storage(deps.storage).save(&Config {
-        factory_addr: info.sender,
-    })?;
     state_storage(deps.storage).save(&State { offers_count: 0 })?;
     Ok(Response::default())
 }
@@ -64,6 +69,7 @@ pub fn execute(
             execute_update_trade_arbitrator(deps, env, info, arbitrator)
         }
         ExecuteMsg::UpdateLastTraded {} => execute_update_last_traded(deps, env, info),
+        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
 
@@ -375,32 +381,29 @@ fn create_trade(
     amount: Uint128,
     taker: Addr,
 ) -> Result<Response, GuardError> {
-    let cfg = config_read(deps.storage).load().unwrap();
+    let cfg = hub_config_read(deps.storage).load().unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
-    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
+    let factory_cfg = get_factory_config(&deps.querier, cfg.hub_addr.to_string());
     let denom = match offer.denom.clone() {
         Denom::Native(s) => s,
         Denom::Cw20(addr) => addr.to_string(),
     };
 
-    let instantiate_msg = WasmMsg::Instantiate {
-        admin: None,
-        code_id: factory_cfg.trade_code_id,
-        msg: to_binary(&TradeInstantiateMsg {
+    let execute_msg = WasmMsg::Execute {
+        contract_addr: factory_cfg.trade_addr.to_string(),
+        msg: to_binary(&CreateTradeMsg(Trade {
             offer_id,
             denom: Denom::Native(denom.clone()), //TODO: CW20 Support.
             amount: amount.clone(),
             taker: taker.clone(),
-            offers_addr: env.contract.address,
-            timestamp: env.block.time.seconds(),
-        })
+        }))
         .unwrap(),
         funds: info.funds,
-        label: "new-trade".to_string(),
     };
+
     let sub_message = SubMsg {
         id: INSTANTIATE_TRADE_REPLY_ID,
-        msg: CosmosMsg::Wasm(instantiate_msg),
+        msg: CosmosMsg::Wasm(execute_msg),
         gas_limit: None,
         reply_on: ReplyOn::Success, // TODO should we throw an error if the trade instantiation fails ?
     };
@@ -417,8 +420,12 @@ fn create_trade(
     Ok(res)
 }
 
-fn query_config(deps: Deps) -> StdResult<Config> {
-    let cfg = config_read(deps.storage).load().unwrap();
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError> {
+    register_hub_internal(info.sender, hub_config_storage(deps.storage))
+}
+
+fn query_config(deps: Deps) -> StdResult<HubConfig> {
+    let cfg = hub_config_read(deps.storage).load().unwrap();
     Ok(cfg)
 }
 

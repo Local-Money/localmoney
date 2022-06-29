@@ -6,18 +6,12 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub offer_id: String,
-    pub denom: Denom,
-    pub amount: Uint128,
-    pub taker: Addr,
-    pub offers_addr: Addr,
-    pub timestamp: u64,
-}
+pub struct InstantiateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Create(Trade),
     FundEscrow {},
     RefundEscrow {},
     ReleaseEscrow {},
@@ -31,6 +25,14 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     State {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Trade {
+    pub offer_id: String,
+    pub denom: Denom,
+    pub amount: Uint128,
+    pub taker: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
