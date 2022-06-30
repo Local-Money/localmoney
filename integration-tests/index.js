@@ -40,24 +40,45 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function instantiateFactory(codeIds) {
-  //Instantiate Factory
+async function setupProtocol(codeIds) {
+  // Instantiate Factory
   const factoryInstantiateMsg = {
     admin_addr: makerAddr,
-    trading_incentives_code_id: codeIds.trading_incentives,
-    offer_code_id: codeIds.offer,
-    trade_code_id: codeIds.trade,
-    local_denom,
-    local_market_addr: makerAddr, //TODO: use actual address
   };
-  console.log('factoryInstantiateMsg', JSON.stringify(factoryInstantiateMsg));
+  console.log('Factory Instantiate - Msg = ', JSON.stringify(factoryInstantiateMsg));
   const result = await makerClient.instantiate(makerAddr, codeIds.factory, factoryInstantiateMsg, "factory", "auto");
-  console.log("instantiate result = ", result);
+  console.log("instantiate factory result = ", result);
+  // Instantiate Offer
+  console.log('Offer Instantiate');
+  const offerInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.offer, {}, "offer", "auto");
+  console.log("Instantiate Offer result = ", offerInstantiateResult);
+  // Instantiate Trade
+  console.log('Trade Instantiate');
+  const tradeInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trade, {}, "trade", "auto");
+  console.log("Instantiate Trade result = ", tradeInstantiateResult);
+  // Instantiate Trade Incentives
+  console.log('Trade Incentives Instantiate');
+  const tradeIncentivesInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trade, {}, "trade", "auto");
+  console.log("Instantiate Trade Incentives result = ", tradeIncentivesInstantiateResult);
+  // Update Factory config
+  const factoryAddress = result.contractAddress
+  const updatedConfigMsg = {
+    update_config: {
+      offer_addr: offerInstantiateResult.contractAddress,
+      trade_addr: tradeInstantiateResult.contractAddress,
+      trading_incentives_addr: tradeIncentivesInstantiateResult.contractAddress,
+      local_market_addr: makerAddr, //TODO: use actual address
+      local_denom
+    }
+  }
+  console.log('Factory Update Config - Msg = ', JSON.stringify(updatedConfigMsg));
+  const updateFactoryConfigResult = await makerClient.execute(makerAddr, factoryAddress, updatedConfigMsg, "auto")
+  console.log("Updated Factory Config result = ", updateFactoryConfigResult);
   console.log("\n");
   return result;
 }
 
-async function create_offers(offers_addr) {
+async function create_offers(offer_addr) {
   const offers = [
     {
       create: {
@@ -78,14 +99,14 @@ async function create_offers(offers_addr) {
   for (let idx = 0; idx < offers.length; idx++) {
     const offer = offers[idx];
     console.log(`*Creating Offer ${idx}*`);
-    const createOfferResult = await makerClient.execute(makerAddr, offers_addr, offer, "auto");
+    const createOfferResult = await makerClient.execute(makerAddr, offer_addr, offer, "auto");
     console.log(`Created Offer ${idx}:`, createOfferResult);
     finalResult = createOfferResult;
   }
   return finalResult;
 }
 
-async function query_offers(offers_addr) {
+async function query_offers(offer_addr) {
   const queries = [
     {
       offers_query: {
@@ -98,7 +119,7 @@ async function query_offers(offers_addr) {
   const offers = [];
   for (let idx = 0; idx < queries.length; idx++) {
     const query = queries[idx];
-    const queryResult = await makerClient.queryContractSmart(offers_addr, query);
+    const queryResult = await makerClient.queryContractSmart(offer_addr, query);
     offers.push(queryResult)
   }
 
@@ -116,9 +137,9 @@ async function test(codeIds) {
       const queryResult = await makerClient.queryContractSmart(factoryAddr, {config:{}});
       resolve(queryResult);
     } else {
-      console.log("*Instantiating Factory*");
+      console.log("*Setup protocol*");
       console.log('codeIds', codeIds);
-      instantiateFactory(codeIds).then((r) => {
+      setupProtocol(codeIds).then((r) => {
         const factoryAddr = getAttribute(
           r,
           "instantiate",
@@ -137,9 +158,9 @@ async function test(codeIds) {
       factoryCfg = r;
       console.log("Factory Config result", r);
       if (process.env.CREATE_OFFERS) {
-        await create_offers(factoryCfg.offers_addr);
+        await create_offers(factoryCfg.offer_addr);
       }
-      return query_offers(factoryCfg.offers_addr);
+      return query_offers(factoryCfg.offer_addr);
     }).then(async (r) => {
       //Create Trade
       const newTradeMsg = {
@@ -151,7 +172,7 @@ async function test(codeIds) {
       };
       console.log('new trade msg', JSON.stringify(newTradeMsg));
       console.log("*Creating Trade*");
-      return makerClient.execute(makerAddr, factoryCfg.offers_addr, newTradeMsg, "auto");
+      return makerClient.execute(makerAddr, factoryCfg.offer_addr, newTradeMsg, "auto");
     }).then((result) => {
       //Accept Trade Request
       console.log("Trade Result:", JSON.stringify(result));
