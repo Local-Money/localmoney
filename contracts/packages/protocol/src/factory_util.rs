@@ -1,11 +1,9 @@
-use crate::errors::GuardError;
-use crate::errors::GuardError::HubAlreadyRegistered;
 use crate::factory::{Config, QueryMsg};
 use cosmwasm_std::{
-    to_binary, Addr, ContractResult, Deps, DepsMut, MessageInfo, QuerierWrapper, QueryRequest,
-    Response, SubMsgResponse, WasmQuery,
+    to_binary, Addr, ContractResult, Deps, QuerierWrapper, QueryRequest, Response, Storage,
+    SubMsgResponse, WasmQuery,
 };
-use cosmwasm_storage::{ReadonlySingleton, Singleton};
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -33,20 +31,26 @@ pub fn get_contract_address_from_reply(deps: Deps, result: ContractResult<SubMsg
         .unwrap()
 }
 
-pub fn register_hub_internal(
+pub const HUB_CONFIG: Item<HubConfig> = Item::new("HubConfig");
+
+pub fn register_hub_internal<E>(
     hub_addr: Addr,
-    mut hub_config_storage: Singleton<HubConfig>,
-) -> Result<Response, GuardError> {
-    let cfg = hub_config_storage.may_load().unwrap();
+    store: &mut dyn Storage,
+    error: E,
+) -> Result<Response, E> {
+    let cfg = HUB_CONFIG.may_load(store).unwrap();
     if cfg.is_some() {
-        return Err(HubAlreadyRegistered {});
+        return Err(error);
     }
-    hub_config_storage
-        .save(&HubConfig {
-            hub_addr: hub_addr.clone(),
-        })
+    HUB_CONFIG
+        .save(
+            store,
+            &HubConfig {
+                hub_addr: hub_addr.clone(),
+            },
+        )
         .unwrap();
-    let res = Response::default().add_attribute("hub_addr", hub_addr.to_string());
+    let res = Response::new().add_attribute("hub_addr", hub_addr.to_string());
 
     Ok(res)
 }

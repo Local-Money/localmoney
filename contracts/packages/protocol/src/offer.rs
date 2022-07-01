@@ -86,7 +86,7 @@ pub enum ExecuteMsg {
     Create {
         offer: OfferMsg,
     },
-    RegisterHub,
+    RegisterHub {},
     UpdateOffer {
         offer_update: OfferUpdateMsg,
     },

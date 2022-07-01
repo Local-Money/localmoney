@@ -1,11 +1,8 @@
 use cosmwasm_std::{Addr, Storage};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
-use localterra_protocol::factory::Config;
-use localterra_protocol::factory_util::HubConfig;
 use localterra_protocol::offer::{Arbitrator, State, TradeAddr};
 
-pub static CONFIG_KEY: &[u8] = b"config";
 pub static STATE_KEY: &[u8] = b"state";
 
 pub struct TradeIndexes<'a> {
@@ -62,14 +59,6 @@ pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexe
         ),
     };
     IndexedMap::new("arbitrators", indexes)
-}
-
-pub fn hub_config_storage(storage: &mut dyn Storage) -> Singleton<HubConfig> {
-    singleton(storage, CONFIG_KEY)
-}
-
-pub fn hub_config_read(storage: &dyn Storage) -> ReadonlySingleton<HubConfig> {
-    singleton_read(storage, CONFIG_KEY)
 }
 
 pub fn state_storage(storage: &mut dyn Storage) -> Singleton<State> {

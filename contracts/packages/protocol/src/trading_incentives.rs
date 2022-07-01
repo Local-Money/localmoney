@@ -12,6 +12,7 @@ pub enum ExecuteMsg {
     RegisterTrade { trade: String, maker: String },
     Claim { period: u8 },
     StartDistribution,
+    RegisterHub {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -25,6 +26,7 @@ pub enum Cw20HookMsg {
 pub enum QueryMsg {
     Distribution {},
     Rewards { trader: String, period: u8 },
+    Config {},
 }
 
 ///Data

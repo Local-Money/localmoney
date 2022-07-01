@@ -1,4 +1,5 @@
 use crate::errors::TradingIncentivesError;
+use crate::errors::TradingIncentivesError::HubAlreadyRegistered;
 use crate::math::DECIMAL_FRACTIONAL;
 use crate::state::{CONFIG, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
@@ -7,7 +8,9 @@ use cosmwasm_std::{
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
-use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::factory_util::{
+    get_factory_config, register_hub_internal, HubConfig, HUB_CONFIG,
+};
 use localterra_protocol::trading_incentives::{
     Config, Distribution, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
@@ -60,6 +63,7 @@ pub fn execute(
         ExecuteMsg::RegisterTrade { trade, maker } => register_trade(trade, maker, deps, env),
         ExecuteMsg::Claim { period } => claim(deps, env, info, period),
         ExecuteMsg::StartDistribution => start_distribution(deps, env, info),
+        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
 
@@ -70,6 +74,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Rewards { trader, period } => {
             to_binary(&get_rewards(deps.storage, trader, period)?)
         }
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
 }
 
@@ -230,4 +235,13 @@ fn start_distribution(
         .mul(Decimal::from_ratio(rewards.amount, cfg.distribution_periods) / DECIMAL_FRACTIONAL);
     CONFIG.save(deps.storage, &cfg).unwrap();
     Ok(Response::default())
+}
+
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradingIncentivesError> {
+    register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
+}
+
+fn query_config(deps: Deps) -> StdResult<HubConfig> {
+    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
+    Ok(cfg)
 }

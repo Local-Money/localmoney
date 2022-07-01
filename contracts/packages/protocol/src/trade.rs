@@ -19,12 +19,14 @@ pub enum ExecuteMsg {
     FiatDeposited {},
     CancelRequest {},
     AcceptRequest {},
+    RegisterHub {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     State {},
+    Config {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

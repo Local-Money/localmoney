@@ -29,7 +29,7 @@ pub enum GuardError {
         buyer: Addr,
         seller: Addr,
     },
-    #[error("Unauthorized3.")]
+    #[error("Hub Already Registered.")]
     HubAlreadyRegistered {},
     #[error("Unauthorized Release.")]
     UnauthorizedRelease {

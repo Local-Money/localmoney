@@ -4,16 +4,14 @@ use cosmwasm_std::{
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128, WasmMsg, WasmQuery,
 };
-use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw20::Denom;
 use cw_storage_plus::Bound;
-use std::borrow::BorrowMut;
-use std::ops::Deref;
 
 use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::factory_util::{
     get_contract_address_from_reply, get_factory_config, register_hub_internal, HubConfig,
+    HUB_CONFIG,
 };
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::offer::{
@@ -24,9 +22,7 @@ use localterra_protocol::trade::{
     ExecuteMsg::Create as CreateTradeMsg, QueryMsg as TradeQueryMsg, Trade, TradeData,
 };
 
-use crate::state::{
-    arbitrators, hub_config_read, hub_config_storage, state_read, state_storage, trades,
-};
+use crate::state::{arbitrators, state_read, state_storage, trades};
 use localterra_protocol::errors::GuardError;
 use localterra_protocol::errors::GuardError::HubAlreadyRegistered;
 
@@ -381,7 +377,7 @@ fn create_trade(
     amount: Uint128,
     taker: Addr,
 ) -> Result<Response, GuardError> {
-    let cfg = hub_config_read(deps.storage).load().unwrap();
+    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
     let factory_cfg = get_factory_config(&deps.querier, cfg.hub_addr.to_string());
     let denom = match offer.denom.clone() {
@@ -421,11 +417,11 @@ fn create_trade(
 }
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError> {
-    register_hub_internal(info.sender, hub_config_storage(deps.storage))
+    register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
 fn query_config(deps: Deps) -> StdResult<HubConfig> {
-    let cfg = hub_config_read(deps.storage).load().unwrap();
+    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
     Ok(cfg)
 }
 

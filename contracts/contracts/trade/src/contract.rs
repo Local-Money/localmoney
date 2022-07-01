@@ -9,7 +9,9 @@ use localterra_protocol::constants::{
     ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
 };
 use localterra_protocol::factory::Config as FactoryConfig;
-use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::factory_util::{
+    get_factory_config, register_hub_internal, HubConfig, HUB_CONFIG,
+};
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_caller_is_seller_or_arbitrator, assert_ownership,
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
@@ -23,6 +25,7 @@ use localterra_protocol::trade::{
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
+use crate::errors::TradeError::HubAlreadyRegistered;
 use crate::state::{state as state_storage, state_read};
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
@@ -106,16 +109,18 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, TradeError> {
-    let state = state_storage(deps.storage).load().unwrap();
+    // TODO refactor this state
+    let state = state_storage(deps.storage).may_load().unwrap();
     match msg {
-        ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state),
-        ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state),
-        ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state),
-        ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state),
-        ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
-        ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
-        ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
+        ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state.unwrap()),
+        ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state.unwrap()),
+        ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state.unwrap()),
+        ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state.unwrap()),
+        ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state.unwrap()),
+        ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state.unwrap()),
+        ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state.unwrap()),
         ExecuteMsg::Create(trade) => create_trade(deps, env, info, trade),
+        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
 
@@ -125,6 +130,7 @@ fn create_trade(
     info: MessageInfo,
     trade: Trade,
 ) -> Result<Response, TradeError> {
+    // TODO implements create trade
     let res = Response::default();
     Ok(res)
 }
@@ -133,12 +139,22 @@ fn create_trade(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
 }
 
 fn query_state(deps: Deps) -> StdResult<TradeData> {
     let state = state_read(deps.storage).load().unwrap();
     Ok(state)
+}
+
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError> {
+    register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
+}
+
+fn query_config(deps: Deps) -> StdResult<HubConfig> {
+    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
+    Ok(cfg)
 }
 
 fn load_offer(querier: QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {

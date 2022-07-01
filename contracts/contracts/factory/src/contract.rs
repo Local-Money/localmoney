@@ -1,8 +1,4 @@
-use cosmwasm_std::OverflowOperation::Add;
-use cosmwasm_std::{
-    entry_point, Addr, Binary, ContractResult, Deps, Reply, ReplyOn, StdError, StdResult,
-    SubMsgResponse,
-};
+use cosmwasm_std::{entry_point, Addr, Binary, Deps, ReplyOn, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw20::Denom;
 
@@ -10,12 +6,13 @@ use crate::errors::FactoryError;
 use crate::errors::FactoryError::Unauthorized;
 use crate::state::{ADMIN, CONFIG};
 use localterra_protocol::factory::{Admin, Config, ExecuteMsg, InstantiateMsg, QueryMsg};
-use localterra_protocol::factory_util::get_contract_address_from_reply;
-use localterra_protocol::offer::InstantiateMsg as OfferInstantiate;
-use localterra_protocol::trading_incentives::InstantiateMsg as TradingIncentivesInstantiateMsg;
+use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
+use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
+use localterra_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
 
-pub const OFFER_REPLY_ID: u64 = 2;
-pub const TRADING_INCENTIVES_REPLY_ID: u64 = 3;
+pub const OFFER_REPLY_ID: u64 = 0;
+pub const TRADE_REPLY_ID: u64 = 1;
+pub const TRADING_INCENTIVES_REPLY_ID: u64 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -60,7 +57,44 @@ fn update_config(
         Denom::Native(s) => s,
         Denom::Cw20(addr) => addr.to_string(),
     };
-    let res = Response::default()
+
+    let offer_register_hub = SubMsg {
+        id: OFFER_REPLY_ID,
+        msg: CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.offer_addr.to_string(),
+            msg: to_binary(&OfferRegisterHub {}).unwrap(),
+            funds: info.funds.clone(),
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Never, // TODO Should we handle it if something wrong happens?
+    };
+
+    let trade_register_hub = SubMsg {
+        id: TRADE_REPLY_ID,
+        msg: CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.trade_addr.to_string(),
+            msg: to_binary(&TradeRegisterHub {}).unwrap(),
+            funds: info.funds.clone(),
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Never, // TODO Should we handle it if something wrong happens?
+    };
+
+    let trading_incentives_register_hub = SubMsg {
+        id: TRADING_INCENTIVES_REPLY_ID,
+        msg: CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.trading_incentives_addr.to_string(),
+            msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
+            funds: info.funds.clone(),
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Never, // TODO Should we handle it if something wrong happens?
+    };
+
+    let res = Response::new()
+        .add_submessage(offer_register_hub)
+        .add_submessage(trade_register_hub)
+        .add_submessage(trading_incentives_register_hub)
         .add_attribute("local_denom", local_denom)
         .add_attribute("local_market_addr", config.local_market_addr)
         .add_attribute("offer_addr", config.offer_addr)
