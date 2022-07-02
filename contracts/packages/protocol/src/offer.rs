@@ -1,7 +1,7 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 // use crate::errors::GuardError;
-use crate::trade::{TradeData, TradeState};
+use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
@@ -184,8 +184,8 @@ pub enum QueryMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct State {
-    pub offers_count: u64,
+pub struct OffersCount {
+    pub count: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -200,6 +200,7 @@ pub struct Offer {
     pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
+    pub trades_count: u64,
     pub last_traded_at: u64,
 }
 
@@ -405,7 +406,7 @@ impl OfferModel<'_> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeInfo {
-    pub trade: TradeData,
+    pub trade: Trade,
     pub offer: Offer,
     pub expired: bool,
 }

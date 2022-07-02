@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Storage};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
-use localterra_protocol::offer::{Arbitrator, State, TradeAddr};
+use localterra_protocol::offer::{Arbitrator, OffersCount, TradeAddr};
 
 pub static STATE_KEY: &[u8] = b"state";
 
@@ -61,10 +61,10 @@ pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexe
     IndexedMap::new("arbitrators", indexes)
 }
 
-pub fn state_storage(storage: &mut dyn Storage) -> Singleton<State> {
+pub fn offers_count_storage(storage: &mut dyn Storage) -> Singleton<OffersCount> {
     singleton(storage, STATE_KEY)
 }
 
-pub fn state_read(storage: &dyn Storage) -> ReadonlySingleton<State> {
+pub fn offers_count_read(storage: &dyn Storage) -> ReadonlySingleton<OffersCount> {
     singleton_read(storage, STATE_KEY)
 }

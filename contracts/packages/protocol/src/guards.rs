@@ -1,6 +1,6 @@
 use crate::errors::GuardError;
 use crate::offer::OfferType;
-use crate::trade::{TradeData, TradeState};
+use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{Addr, StdError, Uint128};
 
 pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), GuardError> {
@@ -102,7 +102,7 @@ pub fn trade_request_is_expired(block_time: u64, created_at: u64, expire_timer: 
 }
 
 pub fn assert_trade_state_and_type(
-    trade: &TradeData,
+    trade: &Trade,
     offer_type: &OfferType,
 ) -> Result<(), GuardError> {
     if offer_type == &OfferType::Sell && trade.state == TradeState::RequestCreated {

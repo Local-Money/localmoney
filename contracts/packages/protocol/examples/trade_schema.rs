@@ -1,5 +1,5 @@
 use cosmwasm_schema::{export_schema_with_title, remove_schemas};
-use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
+use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, Trade, TradeState};
 use schemars::schema_for;
 use std::env::current_dir;
 use std::fs::create_dir_all;
@@ -18,5 +18,5 @@ fn main() {
     export_schema_with_title(&schema_for!(ExecuteMsg), &out_dir, "trade_execute_msg");
     export_schema_with_title(&schema_for!(QueryMsg), &out_dir, "trade_query_msg");
     export_schema_with_title(&schema_for!(TradeState), &out_dir, "trade_state");
-    export_schema_with_title(&schema_for!(TradeData), &out_dir, "trade_data");
+    export_schema_with_title(&schema_for!(Trade), &out_dir, "trade_data");
 }

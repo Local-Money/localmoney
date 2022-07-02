@@ -1,4 +1,3 @@
-use cosmwasm_std::OverflowOperation::Add;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdResult, Storage, SubMsg,
@@ -15,13 +14,13 @@ use localterra_protocol::hub_util::{
 };
 use localterra_protocol::offer::{
     offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
-    OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
+    OfferUpdateMsg, OffersCount, QueryMsg, TradeAddr, TradeInfo, TradesIndex,
 };
 use localterra_protocol::trade::{
-    ExecuteMsg::Create as CreateTradeMsg, QueryMsg as TradeQueryMsg, Trade, TradeData,
+    ExecuteMsg::Create as CreateTradeMsg, NewTrade, QueryMsg as TradeQueryMsg, Trade,
 };
 
-use crate::state::{arbitrators, state_read, state_storage, trades};
+use crate::state::{arbitrators, offers_count_read, offers_count_storage, trades};
 use localterra_protocol::errors::GuardError;
 use localterra_protocol::errors::GuardError::HubAlreadyRegistered;
 
@@ -34,7 +33,7 @@ pub fn instantiate(
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, GuardError> {
-    state_storage(deps.storage).save(&State { offers_count: 0 })?;
+    offers_count_storage(deps.storage).save(&OffersCount { count: 0 })?;
     Ok(Response::default())
 }
 
@@ -52,7 +51,7 @@ pub fn execute(
             offer_id,
             amount,
             taker,
-        } => create_trade(deps, env, info, offer_id, amount, taker),
+        } => create_trade(deps, info, offer_id, amount, taker),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -166,7 +165,7 @@ fn trade_instance_reply(
     }
 
     let trade_addr: Addr = get_contract_address_from_reply(deps.as_ref(), result);
-    let trade: TradeData = deps
+    let trade: Trade = deps
         .querier
         .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
         .unwrap();
@@ -206,9 +205,9 @@ pub fn create_offer(
 ) -> Result<Response, GuardError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
-    let mut state = state_storage(deps.storage).load().unwrap();
-    state.offers_count += 1;
-    let offer_id = [msg.rate.clone().to_string(), state.offers_count.to_string()].join("_");
+    let mut offers_count = offers_count_storage(deps.storage).load().unwrap();
+    offers_count.count += 1;
+    let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
 
     let offer = OfferModel::create(
         deps.storage,
@@ -224,11 +223,14 @@ pub fn create_offer(
             state: OfferState::Active,
             timestamp: env.block.time.seconds(),
             last_traded_at: 0,
+            trades_count: 0,
         },
     )
     .offer;
 
-    state_storage(deps.storage).save(&state).unwrap();
+    offers_count_storage(deps.storage)
+        .save(&offers_count)
+        .unwrap();
 
     let res = Response::new()
         .add_attribute("action", "create_offer")
@@ -370,7 +372,6 @@ pub fn update_offer(
 
 fn create_trade(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     offer_id: String,
     amount: Uint128,
@@ -386,7 +387,7 @@ fn create_trade(
 
     let execute_msg = WasmMsg::Execute {
         contract_addr: hub_cfg.trade_addr.to_string(),
-        msg: to_binary(&CreateTradeMsg(Trade {
+        msg: to_binary(&CreateTradeMsg(NewTrade {
             offer_id,
             denom: Denom::Native(denom.clone()), //TODO: CW20 Support.
             amount: amount.clone(),
@@ -420,12 +421,12 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError
 }
 
 fn query_hub_addr(deps: Deps) -> StdResult<HubAddr> {
-    let cfg = HUB_ADDR.load(deps.storage).unwrap();
-    Ok(cfg)
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    Ok(hub_addr)
 }
 
-fn query_state(deps: Deps) -> StdResult<State> {
-    let state = state_read(deps.storage).load().unwrap();
+fn query_state(deps: Deps) -> StdResult<OffersCount> {
+    let state = offers_count_read(deps.storage).load().unwrap();
     Ok(state)
 }
 
@@ -470,7 +471,7 @@ pub fn query_trades(
         .collect();
 
     trade_results.iter().for_each(|t| {
-        let trade_state: TradeData = deps
+        let trade_state: Trade = deps
             .querier
             .query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: t.trade.to_string(),
