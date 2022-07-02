@@ -9,11 +9,10 @@ use cw_storage_plus::Bound;
 
 use localterra_protocol::constants::REQUEST_TIMEOUT;
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::factory_util::{
-    get_contract_address_from_reply, get_factory_config, register_hub_internal, HubConfig,
-    HUB_CONFIG,
-};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
+use localterra_protocol::hub_util::{
+    get_contract_address_from_reply, get_hub_config, register_hub_internal, HubAddr, HUB_ADDR,
+};
 use localterra_protocol::offer::{
     offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
     OfferUpdateMsg, QueryMsg, State, TradeAddr, TradeInfo, TradesIndex,
@@ -72,7 +71,7 @@ pub fn execute(
 #[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::HubAddr {} => to_binary(&query_hub_addr(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offers { fiat_currency } => {
             to_binary(&OfferModel::query_all_offers(deps.storage, fiat_currency)?)
@@ -377,16 +376,16 @@ fn create_trade(
     amount: Uint128,
     taker: Addr,
 ) -> Result<Response, GuardError> {
-    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     let offer = OfferModel::from_store(deps.storage, &offer_id);
-    let factory_cfg = get_factory_config(&deps.querier, cfg.hub_addr.to_string());
+    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
     let denom = match offer.denom.clone() {
         Denom::Native(s) => s,
         Denom::Cw20(addr) => addr.to_string(),
     };
 
     let execute_msg = WasmMsg::Execute {
-        contract_addr: factory_cfg.trade_addr.to_string(),
+        contract_addr: hub_cfg.trade_addr.to_string(),
         msg: to_binary(&CreateTradeMsg(Trade {
             offer_id,
             denom: Denom::Native(denom.clone()), //TODO: CW20 Support.
@@ -420,8 +419,8 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_config(deps: Deps) -> StdResult<HubConfig> {
-    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
+fn query_hub_addr(deps: Deps) -> StdResult<HubAddr> {
+    let cfg = HUB_ADDR.load(deps.storage).unwrap();
     Ok(cfg)
 }
 

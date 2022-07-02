@@ -40,7 +40,7 @@ pub struct Trade {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeData {
     pub addr: Addr,
-    pub factory_addr: Addr,
+    pub hub_addr: Addr,
     pub buyer: Addr,
     pub seller: Addr,
     pub arbitrator: Option<Addr>,

@@ -41,13 +41,13 @@ function sleep(ms) {
 }
 
 async function setupProtocol(codeIds) {
-  // Instantiate Factory
-  const factoryInstantiateMsg = {
+  // Instantiate Hub
+  const hubInstantiateMsg = {
     admin_addr: makerAddr,
   };
-  console.log('Factory Instantiate - Msg = ', JSON.stringify(factoryInstantiateMsg));
-  const result = await makerClient.instantiate(makerAddr, codeIds.factory, factoryInstantiateMsg, "factory", "auto");
-  console.log("instantiate factory result = ", result);
+  console.log('Hub Instantiate - Msg = ', JSON.stringify(hubInstantiateMsg));
+  const result = await makerClient.instantiate(makerAddr, codeIds.hub, hubInstantiateMsg, "hub", "auto");
+  console.log("instantiate hub result = ", result);
   // Instantiate Offer
   console.log('Offer Instantiate');
   const offerInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.offer, {}, "offer", "auto");
@@ -60,8 +60,8 @@ async function setupProtocol(codeIds) {
   console.log('Trade Incentives Instantiate');
   const tradeIncentivesInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trading_incentives, {}, "trading_incentives", "auto");
   console.log("Instantiate Trade Incentives result = ", tradeIncentivesInstantiateResult);
-  // Update Factory config
-  const factoryAddress = result.contractAddress
+  // Update Hub config
+  const hubAddress = result.contractAddress
   const updatedConfigMsg = {
     update_config: {
       offer_addr: offerInstantiateResult.contractAddress,
@@ -71,9 +71,9 @@ async function setupProtocol(codeIds) {
       local_denom
     }
   }
-  console.log('Factory Update Config - Msg = ', JSON.stringify(updatedConfigMsg));
-  const updateFactoryConfigResult = await makerClient.execute(makerAddr, factoryAddress, updatedConfigMsg, "auto")
-  console.log("Updated Factory Config result = ", updateFactoryConfigResult);
+  console.log('Hub Update Config - Msg = ', JSON.stringify(updatedConfigMsg));
+  const updateHubConfigResult = await makerClient.execute(makerAddr, hubAddress, updatedConfigMsg, "auto")
+  console.log("Updated Hub Config result = ", updateHubConfigResult);
   console.log("\n");
   return result;
 }
@@ -127,40 +127,40 @@ async function query_offers(offer_addr) {
 }
 
 async function test(codeIds) {
-  let factoryCfg;
-  let factoryAddr = process.env.FACTORY;
+  let hubCfg;
+  let hubAddr = process.env.HUB;
   let tradeAddr;
 
   let setup = new Promise(async (resolve, reject) => {
-    if (factoryAddr) {
-      console.log("*Querying Factory Config*");
-      const queryResult = await makerClient.queryContractSmart(factoryAddr, {config:{}});
+    if (hubAddr) {
+      console.log("*Querying Hub Config*");
+      const queryResult = await makerClient.queryContractSmart(hubAddr, {config:{}});
       resolve(queryResult);
     } else {
       console.log("*Setup protocol*");
       console.log('codeIds', codeIds);
       setupProtocol(codeIds).then((r) => {
-        const factoryAddr = getAttribute(
+        const hubAddr = getAttribute(
           r,
           "instantiate",
           "_contract_address"
         );
-        console.log("**Factory Addr:", factoryAddr);
+        console.log("**Hub Addr:", hubAddr);
 
-        console.log("*Querying Factory Config*");
-        const queryResult = makerClient.queryContractSmart(factoryAddr, {"config":{}});
+        console.log("*Querying Hub Config*");
+        const queryResult = makerClient.queryContractSmart(hubAddr, {"config":{}});
         resolve(queryResult)
       });
     }
   });
   setup
     .then(async (r) => {
-      factoryCfg = r;
-      console.log("Factory Config result", r);
+      hubCfg = r;
+      console.log("Hub Config result", r);
       if (process.env.CREATE_OFFERS) {
-        await create_offers(factoryCfg.offer_addr);
+        await create_offers(hubCfg.offer_addr);
       }
-      return query_offers(factoryCfg.offer_addr);
+      return query_offers(hubCfg.offer_addr);
     }).then(async (r) => {
       //Create Trade
       const newTradeMsg = {
@@ -172,7 +172,7 @@ async function test(codeIds) {
       };
       console.log('new trade msg', JSON.stringify(newTradeMsg));
       console.log("*Creating Trade*");
-      return makerClient.execute(makerAddr, factoryCfg.offer_addr, newTradeMsg, "auto");
+      return makerClient.execute(makerAddr, hubCfg.offer_addr, newTradeMsg, "auto");
     }).then((result) => {
       //Accept Trade Request
       console.log("Trade Result:", JSON.stringify(result));

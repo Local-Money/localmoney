@@ -32,7 +32,7 @@ pub enum QueryMsg {
 ///Data
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Config {
-    pub factory_addr: Addr,
+    pub hub_addr: Addr,
     pub distribution_start: u64,
     pub distribution_period_duration: u64,
     pub distribution_periods: u8,

@@ -8,9 +8,7 @@ use cosmwasm_std::{
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
-use localterra_protocol::factory_util::{
-    get_factory_config, register_hub_internal, HubConfig, HUB_CONFIG,
-};
+use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
 use localterra_protocol::trading_incentives::{
     Config, Distribution, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
@@ -35,7 +33,7 @@ pub fn instantiate(
         .save(
             deps.storage,
             &Config {
-                factory_addr: info.sender.clone(),
+                hub_addr: info.sender.clone(),
                 distribution_start,
                 distribution_period_duration: total_duration,
                 distribution_periods,
@@ -130,11 +128,11 @@ fn register_trade(
         .unwrap()
         .into_string();
 
-    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.into_string());
+    let hub_cfg = get_hub_config(&deps.querier, cfg.hub_addr.into_string());
     let trade_info: TradeInfo = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: factory_cfg.offers_addr.into_string(),
+            contract_addr: hub_cfg.offers_addr.into_string(),
             msg: to_binary(&OfferQueryMsg::TradesStates { trades: vec![] }).unwrap(),
         }))
         .unwrap();
@@ -220,8 +218,8 @@ fn start_distribution(
     info: MessageInfo,
 ) -> Result<Response, TradingIncentivesError> {
     let mut cfg = CONFIG.load(deps.storage).unwrap();
-    let factory_cfg = get_factory_config(&deps.querier, cfg.factory_addr.to_string());
-    let rewards_denom = match factory_cfg.local_denom {
+    let hub_cfg = get_hub_config(&deps.querier, cfg.hub_addr.to_string());
+    let rewards_denom = match hub_cfg.local_denom {
         Denom::Native(name) => name,
         Denom::Cw20(addr) => addr.to_string(),
     };
@@ -241,7 +239,7 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradingInc
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_config(deps: Deps) -> StdResult<HubConfig> {
-    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
+fn query_config(deps: Deps) -> StdResult<HubAddr> {
+    let cfg = HUB_ADDR.load(deps.storage).unwrap();
     Ok(cfg)
 }

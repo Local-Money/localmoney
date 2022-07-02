@@ -1,40 +1,29 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "factory_instantiate_msg",
-  "description": "Messages",
+  "title": "hub_config",
   "type": "object",
   "required": [
-    "admin_addr",
     "local_denom",
     "local_market_addr",
-    "offer_code_id",
-    "trade_code_id",
-    "trading_incentives_code_id"
+    "offer_addr",
+    "trade_addr",
+    "trading_incentives_addr"
   ],
   "properties": {
-    "admin_addr": {
-      "$ref": "#/definitions/Addr"
-    },
     "local_denom": {
       "$ref": "#/definitions/Denom"
     },
     "local_market_addr": {
       "$ref": "#/definitions/Addr"
     },
-    "offer_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
+    "offer_addr": {
+      "$ref": "#/definitions/Addr"
     },
-    "trade_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
+    "trade_addr": {
+      "$ref": "#/definitions/Addr"
     },
-    "trading_incentives_code_id": {
-      "type": "integer",
-      "format": "uint64",
-      "minimum": 0.0
+    "trading_incentives_addr": {
+      "$ref": "#/definitions/Addr"
     }
   },
   "definitions": {

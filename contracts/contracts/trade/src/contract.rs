@@ -8,15 +8,13 @@ use cw20::Denom;
 use localterra_protocol::constants::{
     ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
 };
-use localterra_protocol::factory::Config as FactoryConfig;
-use localterra_protocol::factory_util::{
-    get_factory_config, register_hub_internal, HubConfig, HUB_CONFIG,
-};
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_caller_is_seller_or_arbitrator, assert_ownership,
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
     trade_request_is_expired,
 };
+use localterra_protocol::hub::HubConfig;
+use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg};
 use localterra_protocol::trade::{
@@ -78,7 +76,7 @@ pub fn instantiate(
     //Instantiate Trade state
     let trade = TradeData {
         addr: env.contract.address.clone(),
-        factory_addr: offers_cfg.hub_addr.clone(),
+        hub_addr: offers_cfg.hub_addr.clone(),
         buyer,  // buyer
         seller, // seller
         offer_contract: offer_contract.clone(),
@@ -152,8 +150,8 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_config(deps: Deps) -> StdResult<HubConfig> {
-    let cfg = HUB_CONFIG.load(deps.storage).unwrap();
+fn query_config(deps: Deps) -> StdResult<HubAddr> {
+    let cfg = HUB_ADDR.load(deps.storage).unwrap();
     Ok(cfg)
 }
 
@@ -477,8 +475,7 @@ fn release_escrow(
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-    let factory_cfg: FactoryConfig =
-        get_factory_config(&deps.querier, trade.factory_addr.to_string());
+    let hub_cfg: HubConfig = get_hub_config(&deps.querier, trade.hub_addr.to_string());
     let mut release_amount = trade.amount.clone();
 
     //TODO: Collect Fee
@@ -489,7 +486,7 @@ fn release_escrow(
     /*
     //Warchest
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: factory_cfg.warchest_addr.to_string(),
+        to_address: hub_cfg.warchest_addr.to_string(),
         amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
     })));
      */
@@ -509,7 +506,7 @@ fn release_escrow(
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: factory_cfg.trading_incentives_addr.to_string(),
+        contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
             trade: env.contract.address.to_string(),
             maker: offer.owner.to_string(),
@@ -521,7 +518,7 @@ fn release_escrow(
 
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: factory_cfg.offer_addr.to_string(),
+        contract_addr: hub_cfg.offer_addr.to_string(),
         msg: to_binary(&UpdateLastTraded {}).unwrap(),
         funds: vec![],
     }));

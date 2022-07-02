@@ -12,7 +12,7 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateConfig(Config),
+    UpdateConfig(HubConfig),
     UpdateAdmin { admin_addr: Addr },
 }
 
@@ -29,7 +29,7 @@ pub struct Admin {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Config {
+pub struct HubConfig {
     pub offer_addr: Addr,
     pub trade_addr: Addr,
     pub trading_incentives_addr: Addr,

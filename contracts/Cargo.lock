@@ -629,24 +629,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "factory"
-version = "0.0.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cosmwasm-vm",
- "cw-storage-plus",
- "cw20",
- "localterra-protocol",
- "offer",
- "schemars",
- "serde",
- "snafu",
- "thiserror",
-]
-
-[[package]]
 name = "fallible-iterator"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -769,6 +751,24 @@ checksum = "2a2a2320eb7ec0ebe8da8f744d7812d9fc4cb4d09344ac01898dbcb6a20ae69b"
 dependencies = [
  "crypto-mac",
  "digest",
+]
+
+[[package]]
+name = "hub"
+version = "0.0.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cosmwasm-vm",
+ "cw-storage-plus",
+ "cw20",
+ "localterra-protocol",
+ "offer",
+ "schemars",
+ "serde",
+ "snafu",
+ "thiserror",
 ]
 
 [[package]]

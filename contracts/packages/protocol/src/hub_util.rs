@@ -1,4 +1,4 @@
-use crate::factory::{Config, QueryMsg};
+use crate::hub::{HubConfig, QueryMsg};
 use cosmwasm_std::{
     to_binary, Addr, ContractResult, Deps, QuerierWrapper, QueryRequest, Response, Storage,
     SubMsgResponse, WasmQuery,
@@ -7,10 +7,10 @@ use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-pub fn get_factory_config(querier: &QuerierWrapper, factory_addr: String) -> Config {
+pub fn get_hub_config(querier: &QuerierWrapper, hub_addr: String) -> HubConfig {
     querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: factory_addr,
+            contract_addr: hub_addr,
             msg: to_binary(&QueryMsg::Config {}).unwrap(),
         }))
         .unwrap()
@@ -31,22 +31,22 @@ pub fn get_contract_address_from_reply(deps: Deps, result: ContractResult<SubMsg
         .unwrap()
 }
 
-pub const HUB_CONFIG: Item<HubConfig> = Item::new("HubConfig");
+pub const HUB_ADDR: Item<HubAddr> = Item::new("HubConfig");
 
 pub fn register_hub_internal<E>(
     hub_addr: Addr,
     store: &mut dyn Storage,
     error: E,
 ) -> Result<Response, E> {
-    let cfg = HUB_CONFIG.may_load(store).unwrap();
+    let cfg = HUB_ADDR.may_load(store).unwrap();
     if cfg.is_some() {
         return Err(error);
     }
-    HUB_CONFIG
+    HUB_ADDR
         .save(
             store,
-            &HubConfig {
-                hub_addr: hub_addr.clone(),
+            &HubAddr {
+                addr: hub_addr.clone(),
             },
         )
         .unwrap();
@@ -57,6 +57,6 @@ pub fn register_hub_internal<E>(
 
 ///Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct HubConfig {
-    pub hub_addr: Addr,
+pub struct HubAddr {
+    pub addr: Addr,
 }
