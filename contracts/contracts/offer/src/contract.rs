@@ -24,8 +24,6 @@ use crate::state::{arbitrators, offers_count_read, offers_count_storage, trades}
 use localterra_protocol::errors::GuardError;
 use localterra_protocol::errors::GuardError::HubAlreadyRegistered;
 
-const INSTANTIATE_TRADE_REPLY_ID: u64 = 0u64;
-
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
@@ -47,11 +45,6 @@ pub fn execute(
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::NewTrade {
-            offer_id,
-            amount,
-            taker,
-        } => create_trade(deps, info, offer_id, amount, taker),
         ExecuteMsg::NewArbitrator { arbitrator, asset } => {
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
@@ -143,58 +136,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             asset,
         )?),
     }
-}
-
-#[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, GuardError> {
-    match msg.id {
-        INSTANTIATE_TRADE_REPLY_ID => {
-            trade_instance_reply(deps, env, ContractResult::Ok(msg.result.unwrap()))
-        }
-        _ => Err(GuardError::InvalidReply {}),
-    }
-}
-
-fn trade_instance_reply(
-    deps: DepsMut,
-    _env: Env,
-    result: ContractResult<SubMsgResponse>,
-) -> Result<Response, GuardError> {
-    if result.is_err() {
-        return Err(GuardError::InvalidReply {});
-    }
-
-    let trade_addr: Addr = get_contract_address_from_reply(deps.as_ref(), result);
-    let trade: Trade = deps
-        .querier
-        .query_wasm_smart(trade_addr.to_string(), &TradeQueryMsg::State {})
-        .unwrap();
-
-    trades()
-        .save(
-            deps.storage,
-            trade.addr.as_str(),
-            &TradeAddr {
-                trade: trade_addr.clone(),
-                seller: trade.seller.clone(),
-                buyer: trade.buyer.clone(),
-                arbitrator: Addr::unchecked(""),
-                state: trade.state.clone(),
-                offer_id: trade.offer_id.clone(),
-            },
-        )
-        .unwrap();
-
-    let offer = load_offer_by_id(deps.storage, trade.offer_id.clone()).unwrap();
-
-    //trade_state, offer_id, trade_amount,owner
-    let res = Response::new()
-        .add_attribute("action", "create_trade_reply")
-        .add_attribute("addr", trade_addr)
-        .add_attribute("offer_id", offer.id.to_string())
-        .add_attribute("amount", trade.amount.to_string())
-        .add_attribute("owner", offer.owner);
-    Ok(res)
 }
 
 pub fn create_offer(
@@ -366,52 +307,6 @@ pub fn update_offer(
         .add_attribute("action", "update_offer")
         .add_attribute("id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string());
-
-    Ok(res)
-}
-
-fn create_trade(
-    deps: DepsMut,
-    info: MessageInfo,
-    offer_id: String,
-    amount: Uint128,
-    taker: Addr,
-) -> Result<Response, GuardError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let offer = OfferModel::from_store(deps.storage, &offer_id);
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
-    let denom = match offer.denom.clone() {
-        Denom::Native(s) => s,
-        Denom::Cw20(addr) => addr.to_string(),
-    };
-
-    let execute_msg = WasmMsg::Execute {
-        contract_addr: hub_cfg.trade_addr.to_string(),
-        msg: to_binary(&CreateTradeMsg(NewTrade {
-            offer_id,
-            denom: Denom::Native(denom.clone()), //TODO: CW20 Support.
-            amount: amount.clone(),
-            taker: taker.clone(),
-        }))
-        .unwrap(),
-        funds: info.funds,
-    };
-
-    let sub_message = SubMsg {
-        id: INSTANTIATE_TRADE_REPLY_ID,
-        msg: CosmosMsg::Wasm(execute_msg),
-        gas_limit: None,
-        reply_on: ReplyOn::Success, // TODO should we throw an error if the trade instantiation fails ?
-    };
-
-    let res = Response::new()
-        .add_submessage(sub_message)
-        .add_attribute("action", "create_trade")
-        .add_attribute("id", offer.id.to_string())
-        .add_attribute("owner", offer.owner.to_string())
-        .add_attribute("amount", amount.to_string())
-        .add_attribute("denom", denom)
-        .add_attribute("taker", taker.to_string());
 
     Ok(res)
 }

@@ -116,7 +116,17 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     .trade;
 
     //TODO: Send Msg to Offer Contract to increment offer.trades_count
-    let res = Response::new().add_attribute("trade_id", trade_id);
+
+    //TODO: Check attributes.
+    let res = Response::new()
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("action", "create_trade")
+        .add_attribute("id", offer.id.to_string())
+        .add_attribute("owner", offer.owner.to_string())
+        .add_attribute("amount", amount.to_string())
+        .add_attribute("denom", denom)
+        .add_attribute("taker", taker.to_string());
+
     Ok(res)
 }
 
