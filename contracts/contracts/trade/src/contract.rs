@@ -48,14 +48,14 @@ pub fn execute(
     // TODO refactor this state
     let state = state_storage(deps.storage).may_load().unwrap();
     match msg {
+        ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
+        ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
         ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state.unwrap()),
-        ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state.unwrap()),
         ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state.unwrap()),
         ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state.unwrap()),
-        ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
@@ -378,8 +378,9 @@ fn accept_request(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    mut trade: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // Only the buyer can accept the request
     assert_ownership(info.sender, trade.buyer.clone()).unwrap(); // TODO test this case
 
@@ -393,9 +394,11 @@ fn accept_request(
 
     trade.state = TradeState::RequestAccepted;
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
 
-    let res = Response::new().add_attribute("state", trade.state.to_string());
+    let res = Response::new()
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("state", trade.state.to_string());
 
     Ok(res)
 }

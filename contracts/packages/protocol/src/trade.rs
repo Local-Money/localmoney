@@ -13,13 +13,13 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Create(NewTrade),
+    AcceptRequest { trade_id: String },
     FundEscrow {},
     RefundEscrow {},
     ReleaseEscrow {},
     DisputeEscrow {},
     FiatDeposited {},
     CancelRequest {},
-    AcceptRequest {},
     RegisterHub {},
 }
 
