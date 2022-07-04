@@ -130,6 +130,7 @@ async function test(codeIds) {
   let hubCfg;
   let hubAddr = process.env.HUB;
   let tradeAddr;
+  let tradeId;
 
   let setup = new Promise(async (resolve, reject) => {
     if (hubAddr) {
@@ -177,11 +178,14 @@ async function test(codeIds) {
     }).then((result) => {
       //Accept Trade Request
       console.log("Trade Result:", JSON.stringify(result));
+      tradeId = result.logs[0].events
+          .find((e) => e.type === "wasm")
+          .attributes.find((a) => a.key === "trade_id").value
       // TODO replace tradeAddr to hubConfig.trade_addr
       tradeAddr = hubCfg.trade_addr
-      console.log("**Trade created with address:", tradeAddr);
+      console.log("**Trade created with Id:", tradeId);
       console.log("*Accepting Trade Request");
-      return makerClient.execute(makerAddr, tradeAddr, {"accept_request":{}}, "auto", "fund_escrow");
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, {"accept_request":{"trade_id": tradeId}}, "auto", "fund_escrow");
     }).then((r) => {
       //Fund Escrow
       console.log("Accept Trade Request Result:", r);
