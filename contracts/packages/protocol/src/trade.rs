@@ -26,8 +26,10 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    State {},
     Config {},
+    Trade {
+        id: String,
+    },
     Trades {
         user: Addr,
         state: Option<TradeState>,
@@ -101,7 +103,7 @@ impl TradeModel<'_> {
         trades().save(storage, trade.id.to_string(), trade)
     }
 
-    pub fn from_store(storage: &mut dyn Storage, id: &String) -> Trade {
+    pub fn from_store(storage: &dyn Storage, id: &String) -> Trade {
         trades()
             .may_load(storage, id.to_string())
             .unwrap_or_default()

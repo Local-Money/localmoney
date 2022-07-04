@@ -147,8 +147,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 #[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Trade { id } => to_binary(&query_trade(deps, id)?),
         QueryMsg::Trades {
             user,
             state,
@@ -161,11 +161,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_state(deps: Deps) -> StdResult<Trade> {
-    let state = state_read(deps.storage).load().unwrap();
-    Ok(state)
-}
-
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
@@ -173,6 +168,11 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError
 fn query_config(deps: Deps) -> StdResult<HubAddr> {
     let cfg = HUB_ADDR.load(deps.storage).unwrap();
     Ok(cfg)
+}
+
+fn query_trade(deps: Deps, id: String) -> StdResult<Trade> {
+    let state = TradeModel::from_store(deps.storage, &id);
+    Ok(state)
 }
 
 pub fn query_trades(
