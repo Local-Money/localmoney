@@ -14,7 +14,7 @@ pub struct InstantiateMsg {}
 pub enum ExecuteMsg {
     Create(NewTrade),
     AcceptRequest { trade_id: String },
-    FundEscrow {},
+    FundEscrow { trade_id: String },
     RefundEscrow {},
     ReleaseEscrow {},
     DisputeEscrow {},

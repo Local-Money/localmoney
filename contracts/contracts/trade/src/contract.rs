@@ -50,7 +50,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
         ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
-        ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state.unwrap()),
+        ExecuteMsg::FundEscrow { trade_id } => fund_escrow(deps, env, info, trade_id),
         ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state.unwrap()),
@@ -239,8 +239,10 @@ fn fund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    mut trade: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+
     let offer = load_offer(
         deps.querier.clone(),
         trade.offer_id.clone(),
@@ -292,9 +294,10 @@ fn fund_escrow(
         });
     }
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
+        .add_attribute("trade_id", trade_id)
         .add_attribute("trade.amount", trade.amount.clone().to_string())
         .add_attribute("sent_amount", balance.amount.to_string())
         .add_attribute("seller", info.sender)
@@ -397,6 +400,7 @@ fn accept_request(
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
+        .add_attribute("action", "accept_request")
         .add_attribute("trade_id", trade_id)
         .add_attribute("state", trade.state.to_string());
 
