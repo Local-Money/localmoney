@@ -164,21 +164,21 @@ async function test(codeIds) {
     }).then(async (r) => {
       //Create Trade
       const newTradeMsg = {
-        new_trade: {
+        create: {
           offer_id: r[0][0].id + "",
           amount: min_amount + "",
+          denom: local_denom,
           taker: makerAddr,
         },
       };
       console.log('new trade msg', JSON.stringify(newTradeMsg));
       console.log("*Creating Trade*");
-      return makerClient.execute(makerAddr, hubCfg.offer_addr, newTradeMsg, "auto");
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, newTradeMsg, "auto");
     }).then((result) => {
       //Accept Trade Request
       console.log("Trade Result:", JSON.stringify(result));
-      tradeAddr = result.logs[0].events
-        .find((e) => e.type === "instantiate")
-        .attributes.find((a) => a.key === "_contract_address").value;
+      // TODO replace tradeAddr to hubConfig.trade_addr
+      tradeAddr = hubCfg.trade_addr
       console.log("**Trade created with address:", tradeAddr);
       console.log("*Accepting Trade Request");
       return makerClient.execute(makerAddr, tradeAddr, {"accept_request":{}}, "auto", "fund_escrow");
