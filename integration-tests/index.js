@@ -192,7 +192,7 @@ async function test(codeIds) {
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
       const funds = coins(min_amount, process.env.DENOM);
-      return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
+      return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{"trade_id": tradeId}}, "auto", "fund_escrow", funds);
     }).then((r) => {
       //Query State
       console.log("Fund escrow result: ", r);
@@ -201,7 +201,7 @@ async function test(codeIds) {
       } else {
         console.log("%Error%");
       }
-      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+      return makerClient.queryContractSmart(tradeAddr, {"trade":{"id": tradeId}});
     }).then((r) => {
       //Mark as Paid
       console.log("Trade State:", r);
@@ -210,7 +210,7 @@ async function test(codeIds) {
     }).then((r) => {
       //Query State
       console.log("Mark as Paid Result:", r);
-      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+    return makerClient.queryContractSmart(tradeAddr, {"trade":{"id": tradeId}});
     }).then((r) => {
       //Release Escrow
       console.log("Trade State:", r);
@@ -219,7 +219,7 @@ async function test(codeIds) {
     }).then((r) => {
       //Query State
       console.log("Trade Release Result:", r);
-      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+    return makerClient.queryContractSmart(tradeAddr, {"trade":{"id": tradeId}});
     }).then((r) => {
       console.log("Trade State", r);
   });
