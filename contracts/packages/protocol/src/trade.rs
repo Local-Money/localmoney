@@ -1,7 +1,7 @@
 use crate::currencies::FiatCurrency;
-use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw20::Denom;
-use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex, Bound};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -28,6 +28,21 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     State {},
     Config {},
+    Trades {
+        user: Addr,
+        state: Option<TradeState>,
+        index: TradesIndex,
+        last_value: Option<String>,
+        limit: u32,
+    },
+}
+
+//TODO: rename to something more self explanatory.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TradesIndex {
+    Seller,
+    Buyer,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -112,18 +127,16 @@ impl TradeModel<'_> {
     }
 
     pub fn trades_by_buyer(
-        deps: Deps,
+        storage: &dyn Storage,
         buyer: String,
         last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Trade>> {
-        let storage = deps.storage;
-
         let range_from = match last_value {
             Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
         };
-        
+
         let result = trades()
             .idx
             .buyer
@@ -132,18 +145,16 @@ impl TradeModel<'_> {
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
             .collect();
-        
+
         Ok(result)
     }
-    
+
     pub fn trades_by_seller(
-        deps: Deps,
+        storage: &dyn Storage,
         seller: String,
         last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Trade>> {
-        let storage = deps.storage;
-
         let range_from = match last_value {
             Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
@@ -160,7 +171,6 @@ impl TradeModel<'_> {
 
         Ok(result)
     }
-
 }
 
 pub struct TradeIndexes<'a> {

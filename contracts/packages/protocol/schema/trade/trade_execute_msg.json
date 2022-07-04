@@ -9,7 +9,7 @@
       ],
       "properties": {
         "create": {
-          "$ref": "#/definitions/Trade"
+          "$ref": "#/definitions/NewTrade"
         }
       },
       "additionalProperties": false
@@ -144,7 +144,7 @@
         }
       ]
     },
-    "Trade": {
+    "NewTrade": {
       "type": "object",
       "required": [
         "amount",

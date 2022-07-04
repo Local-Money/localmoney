@@ -1,8 +1,5 @@
 use crate::hub::{HubConfig, QueryMsg};
-use cosmwasm_std::{
-    to_binary, Addr, ContractResult, Deps, QuerierWrapper, QueryRequest, Response, Storage,
-    SubMsgResponse, WasmQuery,
-};
+use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, Response, Storage, WasmQuery};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,21 +10,6 @@ pub fn get_hub_config(querier: &QuerierWrapper, hub_addr: String) -> HubConfig {
             contract_addr: hub_addr,
             msg: to_binary(&QueryMsg::Config {}).unwrap(),
         }))
-        .unwrap()
-}
-
-pub fn get_contract_address_from_reply(deps: Deps, result: ContractResult<SubMsgResponse>) -> Addr {
-    result
-        .unwrap()
-        .events
-        .into_iter()
-        .find(|e| e.ty == "instantiate")
-        .and_then(|ev| {
-            ev.attributes
-                .into_iter()
-                .find(|attr| attr.key == "_contract_address")
-        })
-        .map(|attr| deps.api.addr_validate(attr.value.as_str()).unwrap())
         .unwrap()
 }
 

@@ -5,9 +5,7 @@ use cosmwasm_std::{
 };
 use cw20::Denom;
 
-use localterra_protocol::constants::{
-    ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
-};
+use localterra_protocol::constants::{ARBITRATOR_FEE, FUNDING_TIMEOUT, REQUEST_TIMEOUT};
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_caller_is_seller_or_arbitrator, assert_ownership,
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
@@ -16,9 +14,11 @@ use localterra_protocol::guards::{
 use localterra_protocol::hub::HubConfig;
 use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
-use localterra_protocol::offer::{Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg};
+use localterra_protocol::offer::{
+    Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
+};
 use localterra_protocol::trade::{
-    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState,
+    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TradesIndex,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -145,10 +145,19 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Trades {
+            user,
+            state,
+            index,
+            last_value,
+            limit,
+        } => to_binary(&query_trades(
+            env, deps, user, state, index, last_value, limit,
+        )?),
     }
 }
 
@@ -164,6 +173,52 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError
 fn query_config(deps: Deps) -> StdResult<HubAddr> {
     let cfg = HUB_ADDR.load(deps.storage).unwrap();
     Ok(cfg)
+}
+
+pub fn query_trades(
+    env: Env,
+    deps: Deps,
+    user: Addr,
+    _state: Option<TradeState>,
+    index: TradesIndex,
+    last_value: Option<String>,
+    limit: u32,
+) -> StdResult<Vec<TradeInfo>> {
+    let mut trades_infos: Vec<TradeInfo> = vec![];
+
+    let trade_results = match index {
+        TradesIndex::Seller => {
+            TradeModel::trades_by_seller(deps.storage, user.to_string(), last_value, limit).unwrap()
+        }
+        TradesIndex::Buyer => {
+            TradeModel::trades_by_buyer(deps.storage, user.to_string(), last_value, limit).unwrap()
+        }
+    };
+
+    trade_results.iter().for_each(|trade| {
+        let offer: Offer = deps
+            .querier
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: trade.offer_contract.to_string(),
+                msg: to_binary(&OfferQueryMsg::Offer {
+                    id: trade.offer_id.clone(),
+                })
+                .unwrap(),
+            }))
+            .unwrap();
+
+        let current_time = env.block.time.seconds();
+
+        let expired = current_time > trade.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
+
+        trades_infos.push(TradeInfo {
+            trade: trade.clone(),
+            offer,
+            expired,
+        })
+    });
+
+    Ok(trades_infos)
 }
 
 fn load_offer(querier: QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {

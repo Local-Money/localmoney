@@ -110,13 +110,6 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum TradesIndex {
-    Seller,
-    Buyer,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub enum QueryOrder {
     Asc,
     Desc,
@@ -158,13 +151,6 @@ pub enum QueryMsg {
     },
     Offer {
         id: String,
-    },
-    TradesQuery {
-        user: Addr,
-        state: Option<TradeState>,
-        index: TradesIndex,
-        last_value: Option<Addr>,
-        limit: u32,
     },
     Arbitrator {
         arbitrator: Addr,
@@ -295,6 +281,7 @@ impl OfferModel<'_> {
 
     pub fn query_by_type_fiat(
         deps: Deps,
+        _offer_type: OfferType,
         fiat_currency: FiatCurrency,
         min: Option<String>,
         max: Option<String>,

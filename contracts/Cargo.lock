@@ -1582,6 +1582,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cosmwasm-vm",
+ "cw-storage-plus",
  "cw20",
  "cw20-base",
  "localterra-protocol",

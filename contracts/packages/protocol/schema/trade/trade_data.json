@@ -9,7 +9,7 @@
     "buyer",
     "created_at",
     "denom",
-    "hub_addr",
+    "id",
     "offer_contract",
     "offer_id",
     "seller",
@@ -46,8 +46,8 @@
     "denom": {
       "$ref": "#/definitions/Denom"
     },
-    "hub_addr": {
-      "$ref": "#/definitions/Addr"
+    "id": {
+      "type": "string"
     },
     "offer_contract": {
       "$ref": "#/definitions/Addr"
