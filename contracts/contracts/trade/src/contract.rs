@@ -85,15 +85,15 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let seller: Addr;
 
     if offer.offer_type == OfferType::Buy {
-        buyer = offer.owner; // maker
+        buyer = offer.owner.clone(); // maker
         seller = new_trade.taker.clone(); // taker
     } else {
         buyer = new_trade.taker.clone(); // taker
-        seller = offer.owner; // maker
+        seller = offer.owner.clone(); // maker
     }
 
     let trade_count = offer.trades_count + 1;
-    let trade_id = [offer.id, trade_count.to_string()].join("_");
+    let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
 
     //Instantiate Trade state
     let trade = TradeModel::create(
@@ -115,6 +115,10 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     )
     .trade;
 
+    let denom_str = match trade.denom.clone() {
+        Denom::Native(s) => s,
+        Denom::Cw20(addr) => addr.to_string(),
+    };
     //TODO: Send Msg to Offer Contract to increment offer.trades_count
 
     //TODO: Check attributes.
@@ -123,9 +127,9 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         .add_attribute("action", "create_trade")
         .add_attribute("id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string())
-        .add_attribute("amount", amount.to_string())
-        .add_attribute("denom", denom)
-        .add_attribute("taker", taker.to_string());
+        .add_attribute("amount", trade.amount.to_string())
+        .add_attribute("denom", denom_str)
+        .add_attribute("taker", new_trade.taker.to_string());
 
     Ok(res)
 }
