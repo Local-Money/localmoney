@@ -55,7 +55,7 @@ pub fn execute(
         ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state.unwrap()),
         ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state.unwrap()),
         ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state.unwrap()),
-        ExecuteMsg::Create(trade) => create_trade(deps, env, trade),
+        ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
@@ -64,13 +64,12 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     //Load Offer
     let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
-    let offer_contract = hub_cfg.offer_addr;
 
     let offer_id = new_trade.offer_id.clone();
     let offer = load_offer(
         deps.querier,
         new_trade.offer_id.clone(),
-        offer_contract.to_string(),
+        hub_cfg.offer_addr.to_string(),
     );
     if offer.is_none() {
         return Err(TradeError::OfferNotFound {
@@ -103,7 +102,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             addr: env.contract.address.clone(),
             buyer,  // buyer
             seller, // seller
-            offer_contract: offer_contract.clone(),
+            offer_contract: hub_cfg.offer_addr.clone(),
             offer_id,
             arbitrator: Some(Addr::unchecked("todo")),
             state: TradeState::RequestCreated,
@@ -119,13 +118,24 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         Denom::Native(s) => s,
         Denom::Cw20(addr) => addr.to_string(),
     };
-    //TODO: Send Msg to Offer Contract to increment offer.trades_count
 
-    //TODO: Check attributes.
+    //SubMsg to Offer to contract increment trades count.
+    let increment_submsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: hub_cfg.offer_addr.to_string(),
+        msg: to_binary(
+            &localterra_protocol::offer::ExecuteMsg::IncrementTradesCount {
+                offer_id: offer.id.clone(),
+            },
+        )
+        .unwrap(),
+        funds: vec![],
+    }));
+
     let res = Response::new()
+        .add_submessage(increment_submsg)
         .add_attribute("trade_id", trade_id)
         .add_attribute("action", "create_trade")
-        .add_attribute("id", offer.id.to_string())
+        .add_attribute("id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)

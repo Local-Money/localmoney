@@ -22,7 +22,9 @@ use localterra_protocol::trade::{
 
 use crate::state::{arbitrators, offers_count_read, offers_count_storage, trades};
 use localterra_protocol::errors::GuardError;
-use localterra_protocol::errors::GuardError::HubAlreadyRegistered;
+use localterra_protocol::errors::GuardError::{HubAlreadyRegistered, Unauthorized};
+use localterra_protocol::hub::HubConfig;
+use localterra_protocol::offer::QueryMsg::Offers;
 
 #[entry_point]
 pub fn instantiate(
@@ -57,6 +59,9 @@ pub fn execute(
         }
         ExecuteMsg::UpdateLastTraded {} => execute_update_last_traded(deps, env, info),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
+        ExecuteMsg::IncrementTradesCount { offer_id } => {
+            increment_trades_count(deps, info, offer_id)
+        }
     }
 }
 
@@ -313,6 +318,33 @@ pub fn update_offer(
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
+}
+
+fn increment_trades_count(
+    deps: DepsMut,
+    info: MessageInfo,
+    offer_id: String,
+) -> Result<Response, GuardError> {
+    let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
+    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+
+    //Check if caller is Trade Contract
+    if info.sender.ne(&hub_cfg.trade_addr) {
+        return Err(Unauthorized {
+            owner: hub_cfg.trade_addr.clone(),
+            caller: info.sender.clone(),
+        });
+    }
+
+    //Increment trades_count
+    let mut offer = load_offer_by_id(deps.storage, offer_id).unwrap();
+    offer.trades_count += 1;
+    OfferModel::store(deps.storage, &offer).unwrap();
+
+    let res = Response::new()
+        .add_attribute("offer_id", offer.id)
+        .add_attribute("trades_count", offer.trades_count.to_string());
+    Ok(res)
 }
 
 fn query_hub_addr(deps: Deps) -> StdResult<HubAddr> {

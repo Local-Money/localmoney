@@ -103,6 +103,9 @@ pub enum ExecuteMsg {
         arbitrator: Addr,
     },
     UpdateLastTraded,
+    IncrementTradesCount {
+        offer_id: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
