@@ -15,11 +15,11 @@ pub enum ExecuteMsg {
     Create(NewTrade),
     AcceptRequest { trade_id: String },
     FundEscrow { trade_id: String },
-    RefundEscrow {},
+    RefundEscrow { trade_id: String },
     ReleaseEscrow { trade_id: String },
-    DisputeEscrow {},
+    DisputeEscrow { trade_id: String },
     FiatDeposited { trade_id: String },
-    CancelRequest {},
+    CancelRequest { trade_id: String },
     RegisterHub {},
 }
 

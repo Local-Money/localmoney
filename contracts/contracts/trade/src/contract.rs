@@ -24,7 +24,7 @@ use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::errors::TradeError::HubAlreadyRegistered;
-use crate::state::{state as state_storage, state_read};
+use crate::state::state as state_storage;
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
 
@@ -45,17 +45,15 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, TradeError> {
-    // TODO refactor this state
-    let state = state_storage(deps.storage).may_load().unwrap();
     match msg {
         ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
         ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
         ExecuteMsg::FundEscrow { trade_id } => fund_escrow(deps, env, info, trade_id),
-        ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::ReleaseEscrow { trade_id } => release_escrow(deps, env, info, trade_id),
-        ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
-        ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state.unwrap()),
+        ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
+        ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
+        ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
@@ -321,8 +319,9 @@ fn dispute_escrow(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    mut trade: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // TODO check escrow funding timer
     // Only the buyer or seller can start a dispute
     assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
@@ -352,7 +351,7 @@ fn dispute_escrow(
 
     trade.arbitrator = Some(arbitrator.arbitrator);
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
     // Update TradeAddr::Arbitrator in offer contract storage to enable querying by arbirator
     let execute_msg = WasmMsg::Execute {
         contract_addr: trade.offer_contract.to_string(),
@@ -441,25 +440,26 @@ fn cancel_request(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    state: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // Only the buyer or seller can cancel the trade.
-    assert_caller_is_buyer_or_seller(info.sender, state.buyer, state.seller).unwrap(); // TODO test this case
+    assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
+        .unwrap(); // TODO test this case
 
     // You can only cancel the trade if the current TradeState is Created or Accepted
-    if !((state.state == TradeState::RequestCreated)
-        || (state.state == TradeState::RequestAccepted))
+    if !((trade.state == TradeState::RequestCreated)
+        || (trade.state == TradeState::RequestAccepted))
     {
         return Err(TradeError::InvalidStateChange {
-            from: state.state,
+            from: trade.state,
             to: TradeState::RequestCanceled,
         });
     }
 
     // Update trade State to TradeState::RequestCanceled
-    let mut trade: Trade = state_storage(deps.storage).load().unwrap();
     trade.state = TradeState::RequestCanceled;
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new();
     Ok(res)
 }
@@ -616,8 +616,9 @@ fn refund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // Refund can only happen if:
     // 1) By anyone: TradeState::EscrowFunded and FundingTimeout is expired
     // 2) By assigned arbitrator: TradeState::EscrowDisputed
@@ -668,7 +669,7 @@ fn refund_escrow(
             trade.state = TradeState::SettledForMaker;
         }
 
-        state_storage(deps.storage).save(&trade).unwrap();
+        TradeModel::store(deps.storage, &trade).unwrap();
 
         // Pay arbitration fee
         if arbitration_mode {
