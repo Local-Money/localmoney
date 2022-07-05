@@ -50,7 +50,6 @@ pub enum TradesIndex {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct NewTrade {
     pub offer_id: String,
-    pub denom: Denom,
     pub amount: Uint128,
     pub taker: Addr,
 }

@@ -168,7 +168,6 @@ async function test(codeIds) {
         create: {
           offer_id: r[0][0].id + "",
           amount: min_amount + "",
-          denom: local_denom,
           taker: makerAddr,
         },
       };

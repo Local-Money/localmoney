@@ -105,7 +105,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             arbitrator: Some(Addr::unchecked("todo")),
             state: TradeState::RequestCreated,
             created_at: env.block.time.seconds(),
-            denom: new_trade.denom.clone(),
+            denom: offer.denom.clone(),
             amount: new_trade.amount.clone(),
             asset: offer.fiat_currency,
         },
