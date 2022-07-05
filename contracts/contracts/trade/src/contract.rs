@@ -5,97 +5,36 @@ use cosmwasm_std::{
 };
 use cw20::Denom;
 
-use localterra_protocol::constants::{
-    ARBITRATOR_FEE, FUNDING_TIMEOUT, LOCAL_TERRA_FEE, REQUEST_TIMEOUT, WARCHEST_FEE,
-};
-use localterra_protocol::factory::Config as FactoryConfig;
-use localterra_protocol::factory_util::get_factory_config;
+use localterra_protocol::constants::{ARBITRATOR_FEE, FUNDING_TIMEOUT, REQUEST_TIMEOUT};
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_caller_is_seller_or_arbitrator, assert_ownership,
     assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
     trade_request_is_expired,
 };
+use localterra_protocol::hub::HubConfig;
+use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
-    Arbitrator, Config as OfferConfig, Offer, OfferType, QueryMsg as OfferQueryMsg,
+    Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
-use localterra_protocol::trade::{ExecuteMsg, InstantiateMsg, QueryMsg, TradeData, TradeState};
+use localterra_protocol::trade::{
+    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TradesIndex,
+};
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
-use crate::state::{state as state_storage, state_read};
+use crate::errors::TradeError::HubAlreadyRegistered;
+use crate::state::state as state_storage;
 
 const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut,
-    env: Env,
+    _deps: DepsMut,
+    _env: Env,
     _info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, TradeError> {
-    //Load Offer
-    let offer_contract = deps.api.addr_validate(msg.offers_addr.as_str()).unwrap();
-    let offer_id = msg.offer_id.clone();
-    let offer = load_offer(
-        deps.querier,
-        msg.offer_id.clone(),
-        offer_contract.to_string(),
-    );
-    if offer.is_none() {
-        return Err(TradeError::OfferNotFound {
-            offer_id: msg.offer_id,
-        });
-    }
-    let offer = offer.unwrap();
-
-    //Load Offer Contract Config
-    let load_offer_config_result: StdResult<OfferConfig> =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: offer_contract.clone().into_string(),
-            msg: to_binary(&OfferQueryMsg::Config {}).unwrap(),
-        }));
-    let offers_cfg = load_offer_config_result.unwrap();
-
-    assert_value_in_range(offer.min_amount, offer.max_amount, msg.amount.clone()).unwrap(); // TODO test this guard
-
-    //Instantiate buyer and seller addresses according to Offer type (buy, sell)
-    let buyer: Addr;
-    let seller: Addr;
-    let taker = deps.api.addr_validate(msg.taker.as_str()).unwrap();
-
-    if offer.offer_type == OfferType::Buy {
-        buyer = offer.owner; // maker
-        seller = taker.clone(); // taker
-    } else {
-        buyer = taker.clone(); // taker
-        seller = offer.owner; // maker
-    }
-
-    //Instantiate Trade state
-    let trade = TradeData {
-        addr: env.contract.address.clone(),
-        factory_addr: offers_cfg.factory_addr.clone(),
-        buyer,  // buyer
-        seller, // seller
-        offer_contract: offer_contract.clone(),
-        offer_id,
-        arbitrator: Some(Addr::unchecked("todo")),
-        state: TradeState::RequestCreated,
-        created_at: env.block.time.seconds(),
-        denom: msg.denom.clone(),
-        amount: msg.amount.clone(),
-        asset: offer.fiat_currency,
-    };
-
-    //Save state.
-    let save_state_result = state_storage(deps.storage).save(&trade);
-    if save_state_result.is_err() {
-        return Err(TradeError::InstantiationError {
-            message: "Couldn't save state.".to_string(),
-        });
-    }
-
     Ok(Response::default())
 }
 
@@ -106,28 +45,178 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, TradeError> {
-    let state = state_storage(deps.storage).load().unwrap();
     match msg {
-        ExecuteMsg::FundEscrow {} => fund_escrow(deps, env, info, state),
-        ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state),
-        ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state),
-        ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state),
-        ExecuteMsg::AcceptRequest {} => accept_request(deps, env, info, state),
-        ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state),
-        ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state),
+        ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
+        ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
+        ExecuteMsg::FundEscrow { trade_id } => fund_escrow(deps, env, info, trade_id),
+        ExecuteMsg::ReleaseEscrow { trade_id } => release_escrow(deps, env, info, trade_id),
+        ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
+        ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
+        ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
+        ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
+        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
+}
+
+fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, TradeError> {
+    //Load Offer
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+
+    let offer_id = new_trade.offer_id.clone();
+    let offer = load_offer(
+        deps.querier,
+        new_trade.offer_id.clone(),
+        hub_cfg.offer_addr.to_string(),
+    );
+    if offer.is_none() {
+        return Err(TradeError::OfferNotFound {
+            offer_id: new_trade.offer_id.to_string(),
+        });
+    }
+    let offer = offer.unwrap();
+    assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap(); // TODO test this guard
+
+    //Instantiate buyer and seller addresses according to Offer type (buy, sell)
+    let buyer: Addr;
+    let seller: Addr;
+
+    if offer.offer_type == OfferType::Buy {
+        buyer = offer.owner.clone(); // maker
+        seller = new_trade.taker.clone(); // taker
+    } else {
+        buyer = new_trade.taker.clone(); // taker
+        seller = offer.owner.clone(); // maker
+    }
+
+    let trade_count = offer.trades_count + 1;
+    let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
+
+    //Instantiate Trade state
+    let trade = TradeModel::create(
+        deps.storage,
+        Trade {
+            id: trade_id.clone(),
+            addr: env.contract.address.clone(),
+            buyer,  // buyer
+            seller, // seller
+            offer_contract: hub_cfg.offer_addr.clone(),
+            offer_id,
+            arbitrator: Some(Addr::unchecked("todo")),
+            state: TradeState::RequestCreated,
+            created_at: env.block.time.seconds(),
+            denom: offer.denom.clone(),
+            amount: new_trade.amount.clone(),
+            asset: offer.fiat_currency,
+        },
+    )
+    .trade;
+
+    let denom_str = match trade.denom.clone() {
+        Denom::Native(s) => s,
+        Denom::Cw20(addr) => addr.to_string(),
+    };
+
+    //SubMsg to Offer to contract increment trades count.
+    let increment_submsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: hub_cfg.offer_addr.to_string(),
+        msg: to_binary(
+            &localterra_protocol::offer::ExecuteMsg::IncrementTradesCount {
+                offer_id: offer.id.clone(),
+            },
+        )
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    let res = Response::new()
+        .add_submessage(increment_submsg)
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("action", "create_trade")
+        .add_attribute("id", offer.id.clone())
+        .add_attribute("owner", offer.owner.to_string())
+        .add_attribute("amount", trade.amount.to_string())
+        .add_attribute("denom", denom_str)
+        .add_attribute("taker", new_trade.taker.to_string());
+
+    Ok(res)
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Trade { id } => to_binary(&query_trade(deps, id)?),
+        QueryMsg::Trades {
+            user,
+            state,
+            index,
+            last_value,
+            limit,
+        } => to_binary(&query_trades(
+            env, deps, user, state, index, last_value, limit,
+        )?),
     }
 }
 
-fn query_state(deps: Deps) -> StdResult<TradeData> {
-    let state = state_read(deps.storage).load().unwrap();
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError> {
+    register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
+}
+
+fn query_config(deps: Deps) -> StdResult<HubAddr> {
+    let cfg = HUB_ADDR.load(deps.storage).unwrap();
+    Ok(cfg)
+}
+
+fn query_trade(deps: Deps, id: String) -> StdResult<Trade> {
+    let state = TradeModel::from_store(deps.storage, &id);
     Ok(state)
+}
+
+pub fn query_trades(
+    env: Env,
+    deps: Deps,
+    user: Addr,
+    _state: Option<TradeState>,
+    index: TradesIndex,
+    last_value: Option<String>,
+    limit: u32,
+) -> StdResult<Vec<TradeInfo>> {
+    let mut trades_infos: Vec<TradeInfo> = vec![];
+
+    let trade_results = match index {
+        TradesIndex::Seller => {
+            TradeModel::trades_by_seller(deps.storage, user.to_string(), last_value, limit).unwrap()
+        }
+        TradesIndex::Buyer => {
+            TradeModel::trades_by_buyer(deps.storage, user.to_string(), last_value, limit).unwrap()
+        }
+    };
+
+    trade_results.iter().for_each(|trade| {
+        let offer: Offer = deps
+            .querier
+            .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: trade.offer_contract.to_string(),
+                msg: to_binary(&OfferQueryMsg::Offer {
+                    id: trade.offer_id.clone(),
+                })
+                .unwrap(),
+            }))
+            .unwrap();
+
+        let current_time = env.block.time.seconds();
+
+        let expired = current_time > trade.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
+
+        trades_infos.push(TradeInfo {
+            trade: trade.clone(),
+            offer,
+            expired,
+        })
+    });
+
+    Ok(trades_infos)
 }
 
 fn load_offer(querier: QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {
@@ -148,8 +237,10 @@ fn fund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    mut trade: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+
     let offer = load_offer(
         deps.querier.clone(),
         trade.offer_id.clone(),
@@ -201,9 +292,10 @@ fn fund_escrow(
         });
     }
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
+        .add_attribute("trade_id", trade_id)
         .add_attribute("trade.amount", trade.amount.clone().to_string())
         .add_attribute("sent_amount", balance.amount.to_string())
         .add_attribute("seller", info.sender)
@@ -211,12 +303,12 @@ fn fund_escrow(
     Ok(res)
 }
 
-fn get_offer(deps: &Deps, state: &TradeData) -> Offer {
+fn get_offer(deps: &Deps, trade: &Trade) -> Offer {
     deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: state.offer_contract.to_string(),
+            contract_addr: trade.offer_contract.to_string(),
             msg: to_binary(&OfferQueryMsg::Offer {
-                id: state.offer_id.clone(),
+                id: trade.offer_id.clone(),
             })
             .unwrap(),
         }))
@@ -227,8 +319,9 @@ fn dispute_escrow(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    mut trade: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // TODO check escrow funding timer
     // Only the buyer or seller can start a dispute
     assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
@@ -258,7 +351,7 @@ fn dispute_escrow(
 
     trade.arbitrator = Some(arbitrator.arbitrator);
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
     // Update TradeAddr::Arbitrator in offer contract storage to enable querying by arbirator
     let execute_msg = WasmMsg::Execute {
         contract_addr: trade.offer_contract.to_string(),
@@ -287,8 +380,9 @@ fn accept_request(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    mut trade: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // Only the buyer can accept the request
     assert_ownership(info.sender, trade.buyer.clone()).unwrap(); // TODO test this case
 
@@ -302,9 +396,12 @@ fn accept_request(
 
     trade.state = TradeState::RequestAccepted;
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
 
-    let res = Response::new().add_attribute("state", trade.state.to_string());
+    let res = Response::new()
+        .add_attribute("action", "accept_request")
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("state", trade.state.to_string());
 
     Ok(res)
 }
@@ -313,8 +410,9 @@ fn fiat_deposited(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    mut trade: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
     assert_ownership(info.sender, trade.buyer.clone()).unwrap(); // TODO test this case
@@ -328,9 +426,12 @@ fn fiat_deposited(
     // Update trade State to TradeState::FiatDeposited
     trade.state = TradeState::FiatDeposited;
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
 
-    let res = Response::new().add_attribute("state", trade.state.to_string());
+    let res = Response::new()
+        .add_attribute("action", "accept_request")
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("state", trade.state.to_string());
 
     Ok(res)
 }
@@ -339,25 +440,26 @@ fn cancel_request(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    state: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // Only the buyer or seller can cancel the trade.
-    assert_caller_is_buyer_or_seller(info.sender, state.buyer, state.seller).unwrap(); // TODO test this case
+    assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
+        .unwrap(); // TODO test this case
 
     // You can only cancel the trade if the current TradeState is Created or Accepted
-    if !((state.state == TradeState::RequestCreated)
-        || (state.state == TradeState::RequestAccepted))
+    if !((trade.state == TradeState::RequestCreated)
+        || (trade.state == TradeState::RequestAccepted))
     {
         return Err(TradeError::InvalidStateChange {
-            from: state.state,
+            from: trade.state,
             to: TradeState::RequestCanceled,
         });
     }
 
     // Update trade State to TradeState::RequestCanceled
-    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
     trade.state = TradeState::RequestCanceled;
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new();
     Ok(res)
 }
@@ -366,17 +468,16 @@ fn release_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
-    let denom  = match trade.denom.clone() {
-        Denom::Native(s) => { s }
-        Denom::Cw20(addr) => { addr.to_string()}
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+
+    let denom = match trade.denom.clone() {
+        Denom::Native(s) => s,
+        Denom::Cw20(addr) => addr.to_string(),
     };
 
-    let arbitrator = match trade.arbitrator.clone() {
-        Some(one) => one,
-        None => Addr::unchecked(""), // So we can compare Addr Types
-    };
+    let arbitrator = trade.arbitrator.clone().unwrap_or(Addr::unchecked(""));
     // Only seller and arbitrator can release the escrow
     assert_caller_is_seller_or_arbitrator(
         info.sender.clone(),
@@ -436,8 +537,6 @@ fn release_escrow(
     let offer = get_offer(&deps.as_ref(), &trade);
 
     //Update trade State to TradeState::EscrowReleased or TradeState::SettledFor(Maker|Taker)
-    let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
-
     if !arbitration_mode {
         trade.state = TradeState::EscrowReleased;
     } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
@@ -446,12 +545,12 @@ fn release_escrow(
         trade.state = TradeState::SettledForTaker;
     }
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-    let factory_cfg: FactoryConfig =
-        get_factory_config(&deps.querier, trade.factory_addr.to_string());
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
     let mut release_amount = trade.amount.clone();
 
     //TODO: Collect Fee
@@ -462,7 +561,7 @@ fn release_escrow(
     /*
     //Warchest
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: factory_cfg.warchest_addr.to_string(),
+        to_address: hub_cfg.warchest_addr.to_string(),
         amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
     })));
      */
@@ -475,14 +574,14 @@ fn release_escrow(
 
         // Send arbitration fee share
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: trade.arbitrator.unwrap().to_string(), // TODO make sure unwrap doesn't crash this, but releases without arbitrator msg if needed
-            amount: vec![],                                    //TODO
+            to_address: arbitrator.to_string(),
+            amount: vec![], //TODO arbitrator amount fee share
         })));
     }
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: factory_cfg.trading_incentives_addr.to_string(),
+        contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
             trade: env.contract.address.to_string(),
             maker: offer.owner.to_string(),
@@ -494,8 +593,8 @@ fn release_escrow(
 
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: factory_cfg.offers_addr.to_string(),
-        msg: to_binary(&UpdateLastTraded {}).unwrap(),
+        contract_addr: hub_cfg.offer_addr.to_string(),
+        msg: to_binary(&UpdateLastTraded { offer_id: offer.id }).unwrap(),
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
@@ -505,7 +604,11 @@ fn release_escrow(
         amount: vec![Coin::new(release_amount.u128(), denom.clone())],
     })));
 
-    let res = Response::new().add_submessages(send_msgs);
+    let res = Response::new()
+        .add_submessages(send_msgs)
+        .add_attribute("action", "accept_request")
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("state", trade.state.to_string());
     Ok(res)
 }
 
@@ -513,8 +616,9 @@ fn refund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade: TradeData,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // Refund can only happen if:
     // 1) By anyone: TradeState::EscrowFunded and FundingTimeout is expired
     // 2) By assigned arbitrator: TradeState::EscrowDisputed
@@ -555,7 +659,7 @@ fn refund_escrow(
         let offer = get_offer(&deps.as_ref(), &trade);
 
         //Update TradeData to TradeState::Released or TradeState::SettledFor(Maker|Taker)
-        let mut trade: TradeData = state_storage(deps.storage).load().unwrap();
+        let mut trade: Trade = state_storage(deps.storage).load().unwrap();
 
         if !arbitration_mode {
             trade.state = TradeState::EscrowRefunded;
@@ -565,7 +669,7 @@ fn refund_escrow(
             trade.state = TradeState::SettledForMaker;
         }
 
-        state_storage(deps.storage).save(&trade).unwrap();
+        TradeModel::store(deps.storage, &trade).unwrap();
 
         // Pay arbitration fee
         if arbitration_mode {

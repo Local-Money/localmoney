@@ -5,10 +5,10 @@
     {
       "type": "object",
       "required": [
-        "config"
+        "hub_addr"
       ],
       "properties": {
-        "config": {
+        "hub_addr": {
           "type": "object"
         }
       },
@@ -218,56 +218,6 @@
           "properties": {
             "id": {
               "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "trades_query"
-      ],
-      "properties": {
-        "trades_query": {
-          "type": "object",
-          "required": [
-            "index",
-            "limit",
-            "user"
-          ],
-          "properties": {
-            "index": {
-              "$ref": "#/definitions/TradesIndex"
-            },
-            "last_value": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Addr"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "limit": {
-              "type": "integer",
-              "format": "uint32",
-              "minimum": 0.0
-            },
-            "state": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/TradeState"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "user": {
-              "$ref": "#/definitions/Addr"
             }
           }
         }
@@ -546,29 +496,6 @@
       "enum": [
         "asc",
         "desc"
-      ]
-    },
-    "TradeState": {
-      "type": "string",
-      "enum": [
-        "request_created",
-        "request_accepted",
-        "request_canceled",
-        "request_expired",
-        "escrow_funded",
-        "escrow_refunded",
-        "fiat_deposited",
-        "escrow_released",
-        "escrow_disputed",
-        "settled_for_maker",
-        "settled_for_taker"
-      ]
-    },
-    "TradesIndex": {
-      "type": "string",
-      "enum": [
-        "seller",
-        "buyer"
       ]
     }
   }

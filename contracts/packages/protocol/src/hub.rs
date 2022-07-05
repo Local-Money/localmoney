@@ -7,30 +7,32 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub admin_addr: Addr,
-    pub trading_incentives_code_id: u64,
-    pub offer_code_id: u64,
-    pub trade_code_id: u64,
-    pub local_denom: Denom,
-    pub local_market_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    UpdateConfig(HubConfig),
+    UpdateAdmin { admin_addr: Addr },
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
+    Admin {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Config {
-    pub admin_addr: Addr,
-    pub trade_code_id: u64,
-    pub local_denom: Denom,
-    pub local_market_addr: Addr,
-    pub offers_addr: Addr,
+pub struct Admin {
+    pub addr: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct HubConfig {
+    pub offer_addr: Addr,
+    pub trade_addr: Addr,
     pub trading_incentives_addr: Addr,
-    pub warchest_addr: Option<Addr>,
+    pub local_market_addr: Addr,
+    pub local_denom: Denom,
 }

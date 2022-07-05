@@ -29,6 +29,8 @@ pub enum GuardError {
         buyer: Addr,
         seller: Addr,
     },
+    #[error("Hub Already Registered.")]
+    HubAlreadyRegistered {},
     #[error("Unauthorized Release.")]
     UnauthorizedRelease {
         caller: Addr,

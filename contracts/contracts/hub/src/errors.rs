@@ -2,7 +2,7 @@ use cosmwasm_std::StdError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum FactoryError {
+pub enum HubError {
     #[error("{0}")]
     Std(#[from] StdError),
 

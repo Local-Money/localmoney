@@ -19,8 +19,8 @@ if (process.env.RPC) {
   rpcEndpoint = process.env.RPC;
 }
 
-const min_amount = "1";
-const max_amount = "10";
+const min_amount = "1000000";
+const max_amount = "10000000";
 const offer_type = "buy";
 
 const gasPrice = GasPrice.fromString(process.env.GAS_PRICE);
@@ -40,24 +40,45 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function instantiateFactory(codeIds) {
-  //Instantiate Factory
-  const factoryInstantiateMsg = {
+async function setupProtocol(codeIds) {
+  // Instantiate Hub
+  const hubInstantiateMsg = {
     admin_addr: makerAddr,
-    trading_incentives_code_id: codeIds.trading_incentives,
-    offer_code_id: codeIds.offer,
-    trade_code_id: codeIds.trade,
-    local_denom,
-    local_market_addr: makerAddr, //TODO: use actual address
   };
-  console.log('factoryInstantiateMsg', JSON.stringify(factoryInstantiateMsg));
-  const result = await makerClient.instantiate(makerAddr, codeIds.factory, factoryInstantiateMsg, "factory", "auto");
-  console.log("instantiate result = ", result);
+  console.log('Hub Instantiate - Msg = ', JSON.stringify(hubInstantiateMsg));
+  const result = await makerClient.instantiate(makerAddr, codeIds.hub, hubInstantiateMsg, "hub", "auto");
+  console.log("instantiate hub result = ", result);
+  // Instantiate Offer
+  console.log('Offer Instantiate');
+  const offerInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.offer, {}, "offer", "auto");
+  console.log("Instantiate Offer result = ", offerInstantiateResult);
+  // Instantiate Trade
+  console.log('Trade Instantiate');
+  const tradeInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trade, {}, "trade", "auto");
+  console.log("Instantiate Trade result = ", tradeInstantiateResult);
+  // Instantiate Trade Incentives
+  console.log('Trade Incentives Instantiate');
+  const tradeIncentivesInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trading_incentives, {}, "trading_incentives", "auto");
+  console.log("Instantiate Trade Incentives result = ", tradeIncentivesInstantiateResult);
+  // Update Hub config
+  const hubAddress = result.contractAddress
+  const updatedConfigMsg = {
+    update_config: {
+      offer_addr: offerInstantiateResult.contractAddress,
+      trade_addr: tradeInstantiateResult.contractAddress,
+      trading_incentives_addr: tradeIncentivesInstantiateResult.contractAddress,
+      local_market_addr: makerAddr, //TODO: use actual address
+      local_denom
+    }
+  }
+  console.log('Hub Update Config - Msg = ', JSON.stringify(updatedConfigMsg));
+  const updateHubConfigResult = await makerClient.execute(makerAddr, hubAddress, updatedConfigMsg, "auto")
+  console.log("Updated Hub Config result = ", updateHubConfigResult);
   console.log("\n");
   return result;
 }
 
-async function create_offers(offers_addr) {
+async function create_offers(offer_addr) {
   const offers = [
     {
       create: {
@@ -78,14 +99,14 @@ async function create_offers(offers_addr) {
   for (let idx = 0; idx < offers.length; idx++) {
     const offer = offers[idx];
     console.log(`*Creating Offer ${idx}*`);
-    const createOfferResult = await makerClient.execute(makerAddr, offers_addr, offer, "auto");
+    const createOfferResult = await makerClient.execute(makerAddr, offer_addr, offer, "auto");
     console.log(`Created Offer ${idx}:`, createOfferResult);
     finalResult = createOfferResult;
   }
   return finalResult;
 }
 
-async function query_offers(offers_addr) {
+async function query_offers(offer_addr) {
   const queries = [
     {
       offers_query: {
@@ -98,7 +119,7 @@ async function query_offers(offers_addr) {
   const offers = [];
   for (let idx = 0; idx < queries.length; idx++) {
     const query = queries[idx];
-    const queryResult = await makerClient.queryContractSmart(offers_addr, query);
+    const queryResult = await makerClient.queryContractSmart(offer_addr, query);
     offers.push(queryResult)
   }
 
@@ -106,44 +127,45 @@ async function query_offers(offers_addr) {
 }
 
 async function test(codeIds) {
-  let factoryCfg;
-  let factoryAddr = process.env.FACTORY;
+  let hubCfg;
+  let hubAddr = process.env.HUB;
   let tradeAddr;
+  let tradeId;
 
   let setup = new Promise(async (resolve, reject) => {
-    if (factoryAddr) {
-      console.log("*Querying Factory Config*");
-      const queryResult = await makerClient.queryContractSmart(factoryAddr, {config:{}});
+    if (hubAddr) {
+      console.log("*Querying Hub Config*");
+      const queryResult = await makerClient.queryContractSmart(hubAddr, {config:{}});
       resolve(queryResult);
     } else {
-      console.log("*Instantiating Factory*");
+      console.log("*Setup protocol*");
       console.log('codeIds', codeIds);
-      instantiateFactory(codeIds).then((r) => {
-        const factoryAddr = getAttribute(
+      setupProtocol(codeIds).then((r) => {
+        const hubAddr = getAttribute(
           r,
           "instantiate",
           "_contract_address"
         );
-        console.log("**Factory Addr:", factoryAddr);
+        console.log("**Hub Addr:", hubAddr);
 
-        console.log("*Querying Factory Config*");
-        const queryResult = makerClient.queryContractSmart(factoryAddr, {"config":{}});
+        console.log("*Querying Hub Config*");
+        const queryResult = makerClient.queryContractSmart(hubAddr, {config:{}});
         resolve(queryResult)
       });
     }
   });
   setup
     .then(async (r) => {
-      factoryCfg = r;
-      console.log("Factory Config result", r);
+      hubCfg = r;
+      console.log("Hub Config result", r);
       if (process.env.CREATE_OFFERS) {
-        await create_offers(factoryCfg.offers_addr);
+        await create_offers(hubCfg.offer_addr);
       }
-      return query_offers(factoryCfg.offers_addr);
+      return query_offers(hubCfg.offer_addr);
     }).then(async (r) => {
       //Create Trade
       const newTradeMsg = {
-        new_trade: {
+        create: {
           offer_id: r[0][0].id + "",
           amount: min_amount + "",
           taker: makerAddr,
@@ -151,23 +173,28 @@ async function test(codeIds) {
       };
       console.log('new trade msg', JSON.stringify(newTradeMsg));
       console.log("*Creating Trade*");
-      return makerClient.execute(makerAddr, factoryCfg.offers_addr, newTradeMsg, "auto");
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, newTradeMsg, "auto");
     }).then((result) => {
       //Accept Trade Request
       console.log("Trade Result:", JSON.stringify(result));
-      tradeAddr = result.logs[0].events
-        .find((e) => e.type === "instantiate")
-        .attributes.find((a) => a.key === "_contract_address").value;
-      console.log("**Trade created with address:", tradeAddr);
+      tradeId = result.logs[0].events
+          .find((e) => e.type === "wasm")
+          .attributes.find((a) => a.key === "trade_id").value
+      // TODO replace tradeAddr to hubConfig.trade_addr
+      tradeAddr = hubCfg.trade_addr
+      console.log("**Trade created with Id:", tradeId);
+      return makerClient.getBalance(tradeAddr, local_denom.native);
+    }).then((balance) => {
+      console.log("Escrow initial balance: ", JSON.stringify(balance))
       console.log("*Accepting Trade Request");
-      return makerClient.execute(makerAddr, tradeAddr, {"accept_request":{}}, "auto", "fund_escrow");
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, {"accept_request":{"trade_id": tradeId}}, "auto", "fund_escrow");
     }).then((r) => {
       //Fund Escrow
       console.log("Accept Trade Request Result:", r);
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
       const funds = coins(min_amount, process.env.DENOM);
-      return makerClient.execute(makerAddr, tradeAddr, {"fund_escrow":{}}, "auto", "fund_escrow", funds);
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, {"fund_escrow":{"trade_id": tradeId}}, "auto", "fund_escrow", funds);
     }).then((r) => {
       //Query State
       console.log("Fund escrow result: ", r);
@@ -176,25 +203,31 @@ async function test(codeIds) {
       } else {
         console.log("%Error%");
       }
-      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+      return makerClient.getBalance(tradeAddr, local_denom.native);
+    }).then((balance) => {
+      console.log("Escrow balance: ", JSON.stringify(balance))
+      return makerClient.queryContractSmart(hubCfg.trade_addr, {"trade":{"id": tradeId}});
     }).then((r) => {
       //Mark as Paid
       console.log("Trade State:", r);
       console.log("*Marking Trade as Paid*");
-      return makerClient.execute(makerAddr, tradeAddr, {"fiat_deposited":{}}, "auto", "release_escrow")
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, {"fiat_deposited":{"trade_id": tradeId}}, "auto", "release_escrow")
     }).then((r) => {
       //Query State
       console.log("Mark as Paid Result:", r);
-      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+      return makerClient.queryContractSmart(hubCfg.trade_addr, {"trade":{"id": tradeId}});
     }).then((r) => {
       //Release Escrow
       console.log("Trade State:", r);
       console.log("*Releasing Trade*");
-      return makerClient.execute(makerAddr, tradeAddr, {"release_escrow":{}}, "auto", "release_escrow")
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, {"release_escrow":{"trade_id": tradeId}}, "auto", "release_escrow")
     }).then((r) => {
       //Query State
       console.log("Trade Release Result:", r);
-      return makerClient.queryContractSmart(tradeAddr, {"state":{}});
+      return makerClient.getBalance(tradeAddr, local_denom.native);
+    }).then((balance) => {
+      console.log("Escrow final balance: ", JSON.stringify(balance))
+      return makerClient.queryContractSmart(hubCfg.trade_addr, {"trade":{"id": tradeId}});
     }).then((r) => {
       console.log("Trade State", r);
   });

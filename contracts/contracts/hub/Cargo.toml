@@ -1,5 +1,5 @@
 [package]
-name = "factory"
+name = "hub"
 version = "0.0.0"
 authors = ["local devs <dev@localmoney.io>"]
 edition = "2018"

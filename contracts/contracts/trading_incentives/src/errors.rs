@@ -8,4 +8,7 @@ pub enum TradingIncentivesError {
 
     #[error("Unauthorized")]
     Unauthorized {},
+
+    #[error("Hub Already Registered")]
+    HubAlreadyRegistered {},
 }

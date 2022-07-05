@@ -29,6 +29,7 @@ snafu = { version = "0.6.3" }
 localterra-protocol = { path = "../../packages/protocol" }
 cw20 = { version = "0.13.1" }
 cw20-base = { version = "0.13.1" }
+cw-storage-plus = { version = "0.13.1", features = ["iterator"] }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }

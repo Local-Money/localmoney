@@ -1,7 +1,7 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 // use crate::errors::GuardError;
-use crate::trade::{TradeData, TradeState};
+use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
@@ -83,16 +83,13 @@ pub struct OfferUpdateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    //TODO: Change to Create(OfferMsg)
     Create {
         offer: OfferMsg,
     },
+    RegisterHub {},
     UpdateOffer {
         offer_update: OfferUpdateMsg,
-    },
-    NewTrade {
-        offer_id: String,
-        amount: Uint128,
-        taker: Addr,
     },
     NewArbitrator {
         arbitrator: Addr,
@@ -105,14 +102,12 @@ pub enum ExecuteMsg {
     UpdateTradeArbitrator {
         arbitrator: Addr,
     },
-    UpdateLastTraded,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum TradesIndex {
-    Seller,
-    Buyer,
+    UpdateLastTraded {
+        offer_id: String,
+    },
+    IncrementTradesCount {
+        offer_id: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -125,7 +120,7 @@ pub enum QueryOrder {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Config {},
+    HubAddr {},
     State {},
     Offers {
         // TODO deprecated, remove
@@ -159,13 +154,6 @@ pub enum QueryMsg {
     Offer {
         id: String,
     },
-    TradesQuery {
-        user: Addr,
-        state: Option<TradeState>,
-        index: TradesIndex,
-        last_value: Option<Addr>,
-        limit: u32,
-    },
     Arbitrator {
         arbitrator: Addr,
     },
@@ -182,15 +170,9 @@ pub enum QueryMsg {
     },
 }
 
-///Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Config {
-    pub factory_addr: Addr,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct State {
-    pub offers_count: u64,
+pub struct OffersCount {
+    pub count: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -205,6 +187,7 @@ pub struct Offer {
     pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
+    pub trades_count: u64,
     pub last_traded_at: u64,
 }
 
@@ -300,6 +283,7 @@ impl OfferModel<'_> {
 
     pub fn query_by_type_fiat(
         deps: Deps,
+        _offer_type: OfferType,
         fiat_currency: FiatCurrency,
         min: Option<String>,
         max: Option<String>,
@@ -410,7 +394,7 @@ impl OfferModel<'_> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeInfo {
-    pub trade: TradeData,
+    pub trade: Trade,
     pub offer: Offer,
     pub expired: bool,
 }

@@ -5,14 +5,109 @@
     {
       "type": "object",
       "required": [
-        "state"
+        "config"
       ],
       "properties": {
-        "state": {
+        "config": {
           "type": "object"
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "trade"
+      ],
+      "properties": {
+        "trade": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "trades"
+      ],
+      "properties": {
+        "trades": {
+          "type": "object",
+          "required": [
+            "index",
+            "limit",
+            "user"
+          ],
+          "properties": {
+            "index": {
+              "$ref": "#/definitions/TradesIndex"
+            },
+            "last_value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "state": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TradeState"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "user": {
+              "$ref": "#/definitions/Addr"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "TradeState": {
+      "type": "string",
+      "enum": [
+        "request_created",
+        "request_accepted",
+        "request_canceled",
+        "request_expired",
+        "escrow_funded",
+        "escrow_refunded",
+        "fiat_deposited",
+        "escrow_released",
+        "escrow_disputed",
+        "settled_for_maker",
+        "settled_for_taker"
+      ]
+    },
+    "TradesIndex": {
+      "type": "string",
+      "enum": [
+        "seller",
+        "buyer"
+      ]
+    }
+  }
 }

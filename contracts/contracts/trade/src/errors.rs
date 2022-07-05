@@ -58,4 +58,6 @@ pub enum TradeError {
         buyer: Addr,
         caller: Addr,
     },
+    #[error("Hub Already Registered")]
+    HubAlreadyRegistered {},
 }
