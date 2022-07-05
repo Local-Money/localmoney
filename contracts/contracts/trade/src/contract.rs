@@ -52,7 +52,7 @@ pub fn execute(
         ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
         ExecuteMsg::FundEscrow { trade_id } => fund_escrow(deps, env, info, trade_id),
         ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state.unwrap()),
-        ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state.unwrap()),
+        ExecuteMsg::ReleaseEscrow { trade_id } => release_escrow(deps, env, info, trade_id),
         ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
         ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state.unwrap()),
@@ -305,12 +305,12 @@ fn fund_escrow(
     Ok(res)
 }
 
-fn get_offer(deps: &Deps, state: &Trade) -> Offer {
+fn get_offer(deps: &Deps, trade: &Trade) -> Offer {
     deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: state.offer_contract.to_string(),
+            contract_addr: trade.offer_contract.to_string(),
             msg: to_binary(&OfferQueryMsg::Offer {
-                id: state.offer_id.clone(),
+                id: trade.offer_id.clone(),
             })
             .unwrap(),
         }))
@@ -468,17 +468,16 @@ fn release_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+
     let denom = match trade.denom.clone() {
         Denom::Native(s) => s,
         Denom::Cw20(addr) => addr.to_string(),
     };
 
-    let arbitrator = match trade.arbitrator.clone() {
-        Some(one) => one,
-        None => Addr::unchecked(""), // So we can compare Addr Types
-    };
+    let arbitrator = trade.arbitrator.clone().unwrap_or(Addr::unchecked(""));
     // Only seller and arbitrator can release the escrow
     assert_caller_is_seller_or_arbitrator(
         info.sender.clone(),
@@ -538,8 +537,6 @@ fn release_escrow(
     let offer = get_offer(&deps.as_ref(), &trade);
 
     //Update trade State to TradeState::EscrowReleased or TradeState::SettledFor(Maker|Taker)
-    let mut trade: Trade = state_storage(deps.storage).load().unwrap();
-
     if !arbitration_mode {
         trade.state = TradeState::EscrowReleased;
     } else if (offer.offer_type == OfferType::Buy) & (offer.owner == trade.buyer) {
@@ -548,7 +545,7 @@ fn release_escrow(
         trade.state = TradeState::SettledForTaker;
     }
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
@@ -577,8 +574,8 @@ fn release_escrow(
 
         // Send arbitration fee share
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: trade.arbitrator.unwrap().to_string(), // TODO make sure unwrap doesn't crash this, but releases without arbitrator msg if needed
-            amount: vec![],                                    //TODO
+            to_address: arbitrator.to_string(),
+            amount: vec![], //TODO arbitrator amount fee share
         })));
     }
 
@@ -597,7 +594,7 @@ fn release_escrow(
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.offer_addr.to_string(),
-        msg: to_binary(&UpdateLastTraded {}).unwrap(),
+        msg: to_binary(&UpdateLastTraded { offer_id: offer.id }).unwrap(),
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
@@ -607,7 +604,11 @@ fn release_escrow(
         amount: vec![Coin::new(release_amount.u128(), denom.clone())],
     })));
 
-    let res = Response::new().add_submessages(send_msgs);
+    let res = Response::new()
+        .add_submessages(send_msgs)
+        .add_attribute("action", "accept_request")
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("state", trade.state.to_string());
     Ok(res)
 }
 

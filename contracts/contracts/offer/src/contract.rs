@@ -48,7 +48,9 @@ pub fn execute(
             // TODO merge this call with the query random arbitrator call
             execute_update_trade_arbitrator(deps, env, info, arbitrator)
         }
-        ExecuteMsg::UpdateLastTraded {} => execute_update_last_traded(deps, env, info),
+        ExecuteMsg::UpdateLastTraded { offer_id } => {
+            execute_update_last_traded(deps, env, info, offer_id)
+        }
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::IncrementTradesCount { offer_id } => {
             increment_trades_count(deps, info, offer_id)
@@ -196,10 +198,20 @@ pub fn execute_update_last_traded(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    offer_id: String,
 ) -> Result<Response, GuardError> {
-    let trade = trades().load(deps.storage, &info.sender.as_str())?;
+    let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
+    let hub_config = get_hub_config(&deps.querier, hub_addr.addr.to_string());
 
-    let mut offer_model = OfferModel::may_load(deps.storage, &trade.offer_id);
+    // Only allows to execute_update_last_traded if called by trade
+    if info.sender.ne(&hub_config.trade_addr) {
+        return Err(Unauthorized {
+            owner: hub_config.trade_addr,
+            caller: info.sender.clone(),
+        });
+    }
+
+    let mut offer_model = OfferModel::may_load(deps.storage, &offer_id);
 
     let offer = offer_model.update_last_traded(env.block.time.seconds());
 

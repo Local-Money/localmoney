@@ -102,7 +102,9 @@ pub enum ExecuteMsg {
     UpdateTradeArbitrator {
         arbitrator: Addr,
     },
-    UpdateLastTraded,
+    UpdateLastTraded {
+        offer_id: String,
+    },
     IncrementTradesCount {
         offer_id: String,
     },

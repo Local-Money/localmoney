@@ -16,7 +16,7 @@ pub enum ExecuteMsg {
     AcceptRequest { trade_id: String },
     FundEscrow { trade_id: String },
     RefundEscrow {},
-    ReleaseEscrow {},
+    ReleaseEscrow { trade_id: String },
     DisputeEscrow {},
     FiatDeposited { trade_id: String },
     CancelRequest {},
