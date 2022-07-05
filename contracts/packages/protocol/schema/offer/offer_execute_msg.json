@@ -3,12 +3,6 @@
   "title": "offer_execute_msg",
   "oneOf": [
     {
-      "type": "string",
-      "enum": [
-        "update_last_traded"
-      ]
-    },
-    {
       "type": "object",
       "required": [
         "create"
@@ -54,34 +48,6 @@
           "properties": {
             "offer_update": {
               "$ref": "#/definitions/OfferUpdateMsg"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "new_trade"
-      ],
-      "properties": {
-        "new_trade": {
-          "type": "object",
-          "required": [
-            "amount",
-            "offer_id",
-            "taker"
-          ],
-          "properties": {
-            "amount": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "offer_id": {
-              "type": "string"
-            },
-            "taker": {
-              "$ref": "#/definitions/Addr"
             }
           }
         }
@@ -150,6 +116,46 @@
           "properties": {
             "arbitrator": {
               "$ref": "#/definitions/Addr"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_last_traded"
+      ],
+      "properties": {
+        "update_last_traded": {
+          "type": "object",
+          "required": [
+            "offer_id"
+          ],
+          "properties": {
+            "offer_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "increment_trades_count"
+      ],
+      "properties": {
+        "increment_trades_count": {
+          "type": "object",
+          "required": [
+            "offer_id"
+          ],
+          "properties": {
+            "offer_id": {
+              "type": "string"
             }
           }
         }

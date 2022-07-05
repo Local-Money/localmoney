@@ -2,7 +2,7 @@ use cosmwasm_schema::{export_schema_with_title, remove_schemas};
 use localterra_protocol::hub_util::HubAddr;
 use localterra_protocol::offer::{
     ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, OfferType, OfferUpdateMsg,
-    OffersCount, QueryMsg, QueryOrder, TradeAddr, TradeInfo, TradesIndex,
+    OffersCount, QueryMsg, QueryOrder, TradeAddr, TradeInfo,
 };
 use schemars::schema_for;
 use std::env::current_dir;
@@ -31,5 +31,4 @@ fn main() {
     export_schema_with_title(&schema_for!(OfferState), &out_dir, "offer_state");
     export_schema_with_title(&schema_for!(TradeInfo), &out_dir, "offer_trade_info");
     export_schema_with_title(&schema_for!(TradeAddr), &out_dir, "offer_trade_addr");
-    export_schema_with_title(&schema_for!(TradesIndex), &out_dir, "offer_trades_index");
 }

@@ -13,7 +13,8 @@
     "owner",
     "rate",
     "state",
-    "timestamp"
+    "timestamp",
+    "trades_count"
   ],
   "properties": {
     "denom": {
@@ -49,6 +50,11 @@
       "$ref": "#/definitions/OfferState"
     },
     "timestamp": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "trades_count": {
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0

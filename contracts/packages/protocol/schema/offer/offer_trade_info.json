@@ -15,7 +15,7 @@
       "$ref": "#/definitions/Offer"
     },
     "trade": {
-      "$ref": "#/definitions/TradeData"
+      "$ref": "#/definitions/Trade"
     }
   },
   "definitions": {
@@ -224,7 +224,8 @@
         "owner",
         "rate",
         "state",
-        "timestamp"
+        "timestamp",
+        "trades_count"
       ],
       "properties": {
         "denom": {
@@ -263,6 +264,11 @@
           "type": "integer",
           "format": "uint64",
           "minimum": 0.0
+        },
+        "trades_count": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
         }
       }
     },
@@ -281,7 +287,7 @@
         "sell"
       ]
     },
-    "TradeData": {
+    "Trade": {
       "type": "object",
       "required": [
         "addr",
@@ -290,7 +296,7 @@
         "buyer",
         "created_at",
         "denom",
-        "hub_addr",
+        "id",
         "offer_contract",
         "offer_id",
         "seller",
@@ -327,8 +333,8 @@
         "denom": {
           "$ref": "#/definitions/Denom"
         },
-        "hub_addr": {
-          "$ref": "#/definitions/Addr"
+        "id": {
+          "type": "string"
         },
         "offer_contract": {
           "$ref": "#/definitions/Addr"
