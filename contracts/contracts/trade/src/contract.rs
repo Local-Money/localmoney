@@ -54,7 +54,7 @@ pub fn execute(
         ExecuteMsg::RefundEscrow {} => refund_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::ReleaseEscrow {} => release_escrow(deps, env, info, state.unwrap()),
         ExecuteMsg::DisputeEscrow {} => dispute_escrow(deps, env, info, state.unwrap()),
-        ExecuteMsg::FiatDeposited {} => fiat_deposited(deps, env, info, state.unwrap()),
+        ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
         ExecuteMsg::CancelRequest {} => cancel_request(deps, env, info, state.unwrap()),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
@@ -411,8 +411,9 @@ fn fiat_deposited(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    mut trade: Trade,
+    trade_id: String,
 ) -> Result<Response, TradeError> {
+    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
     assert_ownership(info.sender, trade.buyer.clone()).unwrap(); // TODO test this case
@@ -426,9 +427,12 @@ fn fiat_deposited(
     // Update trade State to TradeState::FiatDeposited
     trade.state = TradeState::FiatDeposited;
 
-    state_storage(deps.storage).save(&trade).unwrap();
+    TradeModel::store(deps.storage, &trade).unwrap();
 
-    let res = Response::new().add_attribute("state", trade.state.to_string());
+    let res = Response::new()
+        .add_attribute("action", "accept_request")
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("state", trade.state.to_string());
 
     Ok(res)
 }

@@ -206,7 +206,7 @@ async function test(codeIds) {
       //Mark as Paid
       console.log("Trade State:", r);
       console.log("*Marking Trade as Paid*");
-      return makerClient.execute(makerAddr, tradeAddr, {"fiat_deposited":{}}, "auto", "release_escrow")
+      return makerClient.execute(makerAddr, hubCfg.trade_addr, {"fiat_deposited":{"trade_id": tradeId}}, "auto", "release_escrow")
     }).then((r) => {
       //Query State
       console.log("Mark as Paid Result:", r);
