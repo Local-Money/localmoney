@@ -56,10 +56,10 @@ async function setupProtocol(codeIds) {
   console.log('Trade Instantiate');
   const tradeInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trade, {}, "trade", "auto");
   console.log("Instantiate Trade result = ", tradeInstantiateResult);
-  // Instantiate Trade Incentives
-  console.log('Trade Incentives Instantiate');
+  // Instantiate Trading Incentives
+  console.log('Trading Incentives Instantiate');
   const tradeIncentivesInstantiateResult = await makerClient.instantiate(makerAddr, codeIds.trading_incentives, {}, "trading_incentives", "auto");
-  console.log("Instantiate Trade Incentives result = ", tradeIncentivesInstantiateResult);
+  console.log("Instantiate Trading Incentives result = ", tradeIncentivesInstantiateResult);
   // Update Hub config
   const hubAddress = result.contractAddress
   const updatedConfigMsg = {
