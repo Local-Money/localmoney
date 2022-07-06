@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +11,7 @@ pub struct InstantiateMsg {}
 pub enum ExecuteMsg {
     RegisterTrade { trade: String, maker: String },
     Claim { period: u8 },
-    StartDistribution,
+    StartDistribution {},
     RegisterHub {},
 }
 
@@ -32,7 +32,6 @@ pub enum QueryMsg {
 ///Data
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Config {
-    pub hub_addr: Addr,
     pub distribution_start: u64,
     pub distribution_period_duration: u64,
     pub distribution_periods: u8,

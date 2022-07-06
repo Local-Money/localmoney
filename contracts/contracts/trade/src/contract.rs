@@ -583,7 +583,7 @@ fn release_escrow(
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
-            trade: env.contract.address.to_string(),
+            trade: trade.id.clone(),
             maker: offer.owner.to_string(),
         })
         .unwrap(),

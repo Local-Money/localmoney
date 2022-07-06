@@ -3,23 +3,24 @@ use crate::errors::TradingIncentivesError::HubAlreadyRegistered;
 use crate::math::DECIMAL_FRACTIONAL;
 use crate::state::{CONFIG, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
-    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, StdError, StdResult,
-    Storage, SubMsg,
+    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, QueryRequest,
+    StdError, StdResult, Storage, SubMsg, WasmQuery,
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
 use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
+use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
 use localterra_protocol::trading_incentives::{
     Config, Distribution, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use std::cmp;
-use std::ops::Mul;
+use std::ops::{Add, Mul};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, TradingIncentivesError> {
     let period_duration = 604800u64; //1 week in seconds
@@ -33,7 +34,6 @@ pub fn instantiate(
         .save(
             deps.storage,
             &Config {
-                hub_addr: info.sender.clone(),
                 distribution_start,
                 distribution_period_duration: total_duration,
                 distribution_periods,
@@ -41,8 +41,9 @@ pub fn instantiate(
             },
         )
         .unwrap();
+
     let res = Response::new()
-        .add_attribute("action", "instantiate_gov")
+        .add_attribute("action", "instantiate_trading_incentives")
         .add_attribute("period_duration", period_duration.to_string())
         .add_attribute("distribution_periods", distribution_periods.to_string())
         .add_attribute("total_duration", total_duration.to_string());
@@ -58,9 +59,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, TradingIncentivesError> {
     match msg {
-        ExecuteMsg::RegisterTrade { trade, maker } => register_trade(trade, maker, deps, env),
+        ExecuteMsg::RegisterTrade { trade, maker } => register_trade(deps, env, info, trade, maker),
         ExecuteMsg::Claim { period } => claim(deps, env, info, period),
-        ExecuteMsg::StartDistribution => start_distribution(deps, env, info),
+        ExecuteMsg::StartDistribution {} => start_distribution(deps, env, info),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
@@ -106,21 +107,19 @@ fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<U
 }
 
 fn register_trade(
-    _trade: String,
-    _maker: String,
-    _deps: DepsMut,
-    _env: Env,
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    trade_id: String,
+    maker: String,
 ) -> Result<Response, TradingIncentivesError> {
-    //TODO: Refactor
-    Ok(Response::default())
-    /*
-    let cfg = CONFIG.load(deps.storage).unwrap();
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
 
-    let trade = deps
-        .api
-        .addr_validate(&trade.as_str())
-        .unwrap()
-        .into_string();
+    //Only callable by the Trade Contract.
+    if hub_cfg.trade_addr.ne(&info.sender) {
+        return Err(TradingIncentivesError::Unauthorized {});
+    }
 
     let maker = deps
         .api
@@ -128,20 +127,22 @@ fn register_trade(
         .unwrap()
         .into_string();
 
-    let hub_cfg = get_hub_config(&deps.querier, cfg.hub_addr.into_string());
-    let trade_info: TradeInfo = deps
+    let trade: Trade = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: hub_cfg.offers_addr.into_string(),
-            msg: to_binary(&OfferQueryMsg::TradesStates { trades: vec![] }).unwrap(),
+            contract_addr: hub_cfg.trade_addr.to_string(),
+            msg: to_binary(&TradeQueryMsg::Trade {
+                id: trade_id.clone(),
+            })
+            .unwrap(),
         }))
         .unwrap();
 
-    if trade_info.trade.state != TradeTradeState::Released {
+    if trade.state != TradeState::EscrowReleased {
         return Err(TradingIncentivesError::Unauthorized {});
     }
 
-    let amount = trade_info.trade.amount.amount.clone();
+    let amount = trade.amount.clone();
     let distribution_info = get_distribution_info(env.clone(), deps.storage).unwrap();
     let period = distribution_info.current_period;
 
@@ -164,12 +165,11 @@ fn register_trade(
 
     let res = Response::new()
         .add_attribute("action", "register_trade")
-        .add_attribute("trade", trade)
+        .add_attribute("trade_id", trade_id)
         .add_attribute("maker", maker)
         .add_attribute("amount", amount);
 
     Ok(res)
-    */
 }
 
 fn claim(
@@ -218,7 +218,9 @@ fn start_distribution(
     info: MessageInfo,
 ) -> Result<Response, TradingIncentivesError> {
     let mut cfg = CONFIG.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, cfg.hub_addr.to_string());
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+
     let rewards_denom = match hub_cfg.local_denom {
         Denom::Native(name) => name,
         Denom::Cw20(addr) => addr.to_string(),
