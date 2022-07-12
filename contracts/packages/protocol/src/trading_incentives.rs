@@ -38,3 +38,8 @@ pub struct Distribution {
     pub current_period: u8,
     pub tokens_per_period: Uint128,
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct TraderRewards {
+    pub amount: Uint128,
+}

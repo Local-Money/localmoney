@@ -1,6 +1,5 @@
 use crate::errors::TradingIncentivesError;
 use crate::errors::TradingIncentivesError::HubAlreadyRegistered;
-use crate::math::DECIMAL_FRACTIONAL;
 use crate::state::{DISTRIBUTION, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, QueryRequest,
@@ -10,7 +9,9 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
 use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HUB_ADDR};
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
-use localterra_protocol::trading_incentives::{Distribution, ExecuteMsg, InstantiateMsg, QueryMsg};
+use localterra_protocol::trading_incentives::{
+    Distribution, ExecuteMsg, InstantiateMsg, QueryMsg, TraderRewards,
+};
 use std::cmp;
 use std::ops::{Add, Mul};
 
@@ -92,7 +93,7 @@ fn get_distribution_info(env: Env, storage: &dyn Storage) -> StdResult<Distribut
     Ok(distribution)
 }
 
-fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<Uint128> {
+fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<TraderRewards> {
     let distribution = DISTRIBUTION.load(storage).unwrap();
 
     let total_volume = TOTAL_VOLUME.load(storage, &[period]).unwrap();
@@ -100,8 +101,11 @@ fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<U
         .load(storage, (trader.as_bytes(), &[period]))
         .unwrap();
 
-    let trader_share = Decimal::from_ratio(trader_volume, total_volume) / DECIMAL_FRACTIONAL;
-    Ok(distribution.tokens_per_period.mul(trader_share))
+    let trader_share = trader_volume / total_volume;
+    let trader_rewards = TraderRewards {
+        amount: distribution.tokens_per_period.mul(trader_share),
+    };
+    Ok(trader_rewards)
 }
 
 fn register_trade(
@@ -173,11 +177,12 @@ fn register_trade(
 
 fn claim_rewards(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     period: u8,
 ) -> Result<Response, TradingIncentivesError> {
-    let distribution = DISTRIBUTION.load(deps.storage).unwrap();
+    let distribution = get_distribution_info(env, deps.storage).unwrap();
+    let rewards_denom = get_rewards_denom(deps.as_ref());
 
     if distribution.start_time.eq(&0u64) {
         return Err(TradingIncentivesError::Std(StdError::generic_err(
@@ -192,18 +197,21 @@ fn claim_rewards(
     }
 
     let amount =
-        get_rewards(deps.storage, info.sender.to_string(), period).unwrap_or(Uint128::zero());
+        get_rewards(deps.storage, info.sender.to_string(), period).unwrap_or(TraderRewards {
+            amount: Uint128::zero(),
+        });
     let res = Response::new()
         .add_submessage(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: info.sender.to_string(),
             amount: vec![Coin {
-                denom: "".to_string(),
-                amount: amount.clone(),
+                denom: rewards_denom.clone(),
+                amount: amount.amount.clone(),
             }],
         })))
         .add_attribute("action", "claim")
         .add_attribute("maker", info.sender)
-        .add_attribute("amount", amount)
+        .add_attribute("amount", amount.amount.to_string())
+        .add_attribute("denom", rewards_denom)
         .add_attribute("period", period.to_string());
 
     Ok(res)
@@ -215,13 +223,7 @@ fn start_distribution(
     info: MessageInfo,
 ) -> Result<Response, TradingIncentivesError> {
     let mut distribution = DISTRIBUTION.load(deps.storage).unwrap();
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
-
-    let rewards_denom = match hub_cfg.local_denom {
-        Denom::Native(name) => name,
-        Denom::Cw20(addr) => addr.to_string(),
-    };
+    let rewards_denom = get_rewards_denom(deps.as_ref());
 
     let rewards = info
         .funds
@@ -245,6 +247,15 @@ fn start_distribution(
         .add_attribute("amount", rewards.amount);
 
     Ok(res)
+}
+
+fn get_rewards_denom(deps: Deps) -> String {
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    match hub_cfg.local_denom {
+        Denom::Native(name) => name,
+        Denom::Cw20(addr) => addr.to_string(),
+    }
 }
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradingIncentivesError> {
