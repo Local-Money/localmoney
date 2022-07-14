@@ -1,0 +1,17 @@
+@import "tokens.scss";
+@import "elements.scss";
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+h3 {
+  margin: 32px 0;
+  font-size: 18px;
+  font-weight: $semi-bold;
+}
+
+* {
+  transition: all;
+}
