@@ -1,6 +1,6 @@
 <p align="center">
   <a href="http://localmoney.io/">
-    <img alt="Local Money" src="img/logo.png" width="200">
+    <img alt="Local Money" src="img/logo.png" width="100">
   </a>
 </p>
 
