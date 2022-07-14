@@ -9,7 +9,7 @@
   "offer_id": "110_2",
   "created_at": 1652984695,
   "amount": "100000000",
-  "denom": { "native":  "umock"},
+  "denom": { "native": "umock" },
   "state": "request_created",
   "asset": "BRL"
 }

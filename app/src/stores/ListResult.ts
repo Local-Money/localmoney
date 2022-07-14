@@ -1,7 +1,6 @@
-import type { ChainError } from '~/network/chain-error';
+import type { ChainError } from '~/network/chain-error'
 
 export class ListResult<T> {
-
   readonly loading: boolean
   readonly data: T[]
   readonly error: ChainError | null

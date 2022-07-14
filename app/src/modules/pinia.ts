@@ -1,14 +1,13 @@
 import { createPinia } from 'pinia'
+import type { Router } from 'vue-router'
 import { type UserModule } from '~/types'
-import { Router } from "vue-router";
-import "pinia";
 
 // Setup Pinia
 // https://pinia.esm.dev/
 
-declare module "pinia" {
+declare module 'pinia' {
   export interface PiniaCustomProperties {
-    router: Router;
+    router: Router
   }
 }
 

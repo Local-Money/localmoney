@@ -126,41 +126,55 @@ onUnmounted(() => {
 
 <template>
   <div class="card offer collapsed" v-bind="trade = tradeInfo.trade">
-
     <div class="trade-type">
-      <p class="type">{{ buyOrSell }}ing {{ trade.denom.native }}</p>
-      <p class="wallet-addr">{{ fromTo }} {{ formatAddress(counterparty) }}</p>
+      <p class="type">
+        {{ buyOrSell }}ing {{ trade.denom.native }}
+      </p>
+      <p class="wallet-addr">
+        {{ fromTo }} {{ formatAddress(counterparty) }}
+      </p>
     </div>
 
     <div class="info">
-
       <div class="wrap">
-        <p class="label">Status</p>
-        <p class="content">{{ stepLabel }}</p>
+        <p class="label">
+          Status
+        </p>
+        <p class="content">
+          {{ stepLabel }}
+        </p>
       </div>
 
       <div class="divider" />
 
       <div class="wrap">
-        <p class="label">Amount</p>
-        <p class="content">{{ formatAmount(trade.amount) }} {{ trade.denom.native }}</p>
+        <p class="label">
+          Amount
+        </p>
+        <p class="content">
+          {{ formatAmount(trade.amount) }} {{ trade.denom.native }}
+        </p>
       </div>
 
       <div class="divider" />
 
       <div class="wrap">
-        <p class="label">Time remaining</p>
-        <p class="content">?? min</p>
+        <p class="label">
+          Time remaining
+        </p>
+        <p class="content">
+          ?? min
+        </p>
       </div>
-
     </div>
 
     <div class="price">
       <router-link :to="`/trade/${trade.id}`">
-        <button class="primary bg-gray300">view trade</button>
+        <button class="primary bg-gray300">
+          view trade
+        </button>
       </router-link>
     </div>
-
   </div>
 </template>
 

@@ -17,8 +17,10 @@ function connectWallet() {
     <p v-if="userWallet.isConnected">
       {{ formatAddress(userWallet.address) }}
     </p>
-    <p v-else>connect</p>
-    <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
+    <p v-else>
+      connect
+    </p>
+    <img src="../../assets/ic_wallet.svg" alt="Connect your wallet">
   </button>
 </template>
 

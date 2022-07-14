@@ -142,17 +142,22 @@ onUnmounted(() => {
 <template>
   <div :key="`${offer.id}-expanded`" ref="expandedCard" class="offer expanded">
     <div class="owner">
-      <p class="wallet">{{ formatAddress(offer.owner) }}</p>
-      <p class="n-trades">0 trades</p>
+      <p class="wallet">
+        {{ formatAddress(offer.owner) }}
+      </p>
+      <p class="n-trades">
+        0 trades
+      </p>
     </div>
 
     <div class="divider-horizontal" />
 
     <div class="offer-detail">
-
       <div class="wrap-input">
         <div class="input">
-          <p class="label">{{ fromLabel }}</p>
+          <p class="label">
+            {{ fromLabel }}
+          </p>
           <CurrencyInput
             ref="cryptoAmountInput"
             v-model="cryptoAmount"
@@ -172,15 +177,21 @@ onUnmounted(() => {
           />
           <div class="wrap-limit">
             <div class="limit-btn">
-              <p class="btn" @click="useMinCrypto()">{{ minMaxCryptoStr[0] }}</p>
+              <p class="btn" @click="useMinCrypto()">
+                {{ minMaxCryptoStr[0] }}
+              </p>
               <p>-</p>
-              <p class="btn" @click="useMaxCrypto()">{{ minMaxCryptoStr[1] }}</p>
+              <p class="btn" @click="useMaxCrypto()">
+                {{ minMaxCryptoStr[1] }}
+              </p>
             </div>
           </div>
         </div>
 
         <div class="input">
-          <p class="label">{{ toLabel }}</p>
+          <p class="label">
+            {{ toLabel }}
+          </p>
           <CurrencyInput
             ref="fiatAmountInput"
             v-model="fiatAmount"
@@ -204,46 +215,64 @@ onUnmounted(() => {
 
           <div class="wrap-limit">
             <div class="limit-btn">
-              <p class="btn" @click="useMinFiat()">{{ minMaxFiatStr[0] }}</p>
+              <p class="btn" @click="useMinFiat()">
+                {{ minMaxFiatStr[0] }}
+              </p>
               <p>-</p>
-              <p class="btn" @click="useMaxFiat()">{{ minMaxFiatStr[1] }}</p>
+              <p class="btn" @click="useMaxFiat()">
+                {{ minMaxFiatStr[1] }}
+              </p>
             </div>
           </div>
-
         </div>
       </div>
 
       <div class="receipt">
-
         <div class="price">
-          <p class="label">Price</p>
+          <p class="label">
+            Price
+          </p>
           <div class="wrap">
-            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
-            <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-            <p class="value">1 {{ offer.denom.native }} = {{ offerPrice }}</p>
+            <p class="ticker">
+              Will refresh in {{ secondsUntilRateRefresh }}s
+            </p>
+            <p class="margin">
+              {{ marginRate.marginOffset }}% {{ marginRate.margin }} market
+            </p>
+            <p class="value">
+              1 {{ offer.denom.native }} = {{ offerPrice }}
+            </p>
           </div>
         </div>
 
         <div class="summary">
           <div class="wrap">
             <div class="item">
-              <p class="info">Trading Fee</p>
+              <p class="info">
+                Trading Fee
+              </p>
               <p>{{ tradingFee.toFixed(2) }}</p>
             </div>
             <div class="item">
-              <p class="info">Total</p>
-              <p class="total">??????</p>
+              <p class="info">
+                Total
+              </p>
+              <p class="total">
+                ??????
+              </p>
             </div>
           </div>
         </div>
 
         <div class="wrap-btns">
-          <button class="secondary" @click="$emit('cancel')">cancel</button>
-          <button class="primary" :disabled="!valid" @click="newTrade()">open trade</button>
+          <button class="secondary" @click="$emit('cancel')">
+            cancel
+          </button>
+          <button class="primary" :disabled="!valid" @click="newTrade()">
+            open trade
+          </button>
         </div>
-
       </div>
-
     </div>
   </div>
 </template>

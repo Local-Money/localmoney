@@ -6,13 +6,7 @@ import { TradeState } from '~/types/components.interface'
 
 const client = useClientStore()
 const tradeResult = computed(() => client.trades)
-const trades = computed(() => {
-  if (tradeResult.value.isSuccess()) {
-    return tradeResult.value.data
-  } else {
-    return []
-  }
-})
+const trades = computed(() => tradeResult.value.isSuccess() ? tradeResult.value.data : [])
 
 const openTrades = computed(() => {
   return trades.value.filter(
@@ -37,7 +31,7 @@ const closedTrades = computed(() => {
         TradeState.escrow_released,
         TradeState.settled_for_maker,
         TradeState.settled_for_taker,
-      ].includes(tradeInfo.trade.state)
+      ].includes(tradeInfo.trade.state),
   )
 })
 
@@ -57,7 +51,7 @@ onUnmounted(async () => { })
     <!-- Open Trades section -->
     <ListContentResult
       :result="tradeResult"
-      :emptyStateMsg="'There is no trades here yet'"
+      empty-state-msg="There is no trades here yet"
     >
       <section v-if="hasOpenTrades">
         <TradeOpenItem

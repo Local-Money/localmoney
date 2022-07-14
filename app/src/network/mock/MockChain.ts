@@ -6,25 +6,26 @@ import type {
   Denom,
   FetchOffersArgs,
   GetOffer,
+  NewTrade,
   PatchOffer,
   PostOffer,
   Trade,
-  TradeInfo
+  TradeInfo,
 } from '~/types/components.interface'
 import type { Chain } from '~/network/Chain'
-import {NewTrade, TradeState} from "~/types/components.interface";
+import { TradeState } from '~/types/components.interface'
 
 class MockChain implements Chain {
   private ownerPublicKey = 'terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7'
-  
+
   async init() {
     return await someDelay()
   }
-  
+
   async connectWallet() {
     await someDelay()
   }
-  
+
   getWalletAddress(): string {
     return this.ownerPublicKey
   }

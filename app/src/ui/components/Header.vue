@@ -18,7 +18,9 @@ const isMobile = computed(() => width.value <= 550)
           <div className="logo" />
         </router-link>
 
-        <div class="badge-testnet"><p>Testnet</p></div>
+        <div class="badge-testnet">
+          <p>Testnet</p>
+        </div>
       </div>
 
       <NavMobile v-if="isMobile" />

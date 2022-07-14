@@ -210,8 +210,8 @@ onUnmounted(() => {
   </main>
   <main v-else>
     <div class="error-state card">
-    <p>You need to connect your wallet</p>
-  </div>
+      <p>You need to connect your wallet</p>
+    </div>
   </main>
 </template>
 

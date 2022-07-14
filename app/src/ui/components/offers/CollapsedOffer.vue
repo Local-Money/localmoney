@@ -26,27 +26,40 @@ const offerPrice = computed(() => {
 <template>
   <div :key="`${offer.id}-collapsed`" class="offer collapsed">
     <div class="owner">
-      <p class="wallet-addr">{{ formatAddress(offer.owner) }}</p>
-      <p class="n-trades">0 trades</p>
+      <p class="wallet-addr">
+        {{ formatAddress(offer.owner) }}
+      </p>
+      <p class="n-trades">
+        0 trades
+      </p>
     </div>
 
     <div class="info">
       <div class="wrap">
-        <p class="label">Limits</p>
-        <p class="limit">${{ formatAmount(offer.min_amount) }} - ${{ formatAmount(offer.max_amount) }}</p>
+        <p class="label">
+          Limits
+        </p>
+        <p class="limit">
+          ${{ formatAmount(offer.min_amount) }} - ${{ formatAmount(offer.max_amount) }}
+        </p>
       </div>
 
       <div class="divider" />
       <div class="wrap">
-        <p class="label">Price</p>
-        <p class="rate">${{ marginRate.marginOffset }}%
-          {{ marginRate.margin }} market</p>
+        <p class="label">
+          Price
+        </p>
+        <p class="rate">
+          ${{ marginRate.marginOffset }}%
+          {{ marginRate.margin }} market
+        </p>
       </div>
-
     </div>
 
     <div class="price">
-      <p class="value">{{ offerPrice }}</p>
+      <p class="value">
+        {{ offerPrice }}
+      </p>
       <button class="primary bg-gray300" type="button" @click="$emit('select')">
         {{ offerTypeLabels[offer.offer_type] }}
       </button>

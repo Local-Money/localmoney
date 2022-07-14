@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ListResult } from '~/stores/ListResult';
+import type { ListResult } from '~/stores/ListResult'
 
 const props = defineProps<{
   result: ListResult<any>
@@ -9,7 +9,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <slot v-if="result.isSuccess()"/>
+  <slot v-if="result.isSuccess()" />
   <div v-if="result.isEmpty()" class="empty-state card">
     <p>{{ emptyStateMsg }}</p>
   </div>

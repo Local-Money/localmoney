@@ -70,9 +70,9 @@ export interface FetchOffersArgs {
 }
 
 export interface NewTrade {
-  offer_id: string,
-  amount: string,
-  taker: string, //TODO
+  offer_id: string
+  amount: string
+  taker: string // TODO
   // counterparty: string,
   // taker_contact: string, //TODO
   // arbitrator: TODO,
