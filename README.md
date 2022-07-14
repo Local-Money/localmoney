@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="http://localp2p.money/">
-    <img alt="local money" src="https://user-images.githubusercontent.com/92374012/156565929-f32e8186-c354-4454-840d-a8e3107c063d.png" width="248">
+  <a href="http://localmoney.io/">
+    <img alt="Local Money" src="img/logo.png" width="200">
   </a>
 </p>
 
