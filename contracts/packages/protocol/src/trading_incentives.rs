@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -10,8 +10,8 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     RegisterTrade { trade: String, maker: String },
-    Claim { period: u8 },
-    StartDistribution,
+    ClaimRewards { period: u8 },
+    StartDistribution {},
     RegisterHub {},
 }
 
@@ -26,24 +26,20 @@ pub enum Cw20HookMsg {
 pub enum QueryMsg {
     Distribution {},
     Rewards { trader: String, period: u8 },
-    Config {},
 }
 
-///Data
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub struct Config {
-    pub hub_addr: Addr,
-    pub distribution_start: u64,
-    pub distribution_period_duration: u64,
-    pub distribution_periods: u8,
-    pub tokens_per_period: Uint128,
-}
-
+//Data
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Distribution {
-    pub distribution_start_time: u64,
-    pub distribution_end_time: u64,
+    pub start_time: u64,
+    pub end_time: u64,
     pub period_duration: u64,
+    pub periods: u8,
     pub current_period: u8,
     pub tokens_per_period: Uint128,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct TraderRewards {
+    pub amount: Uint128,
 }
