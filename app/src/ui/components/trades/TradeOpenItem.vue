@@ -2,7 +2,7 @@
 import { formatAddress, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import type { TradeInfo } from '~/types/components.interface'
-import { denomFromMicroDenom } from '~/utils/denom'
+import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
@@ -129,7 +129,7 @@ onUnmounted(() => {
   <div class="card offer collapsed" v-bind="trade = tradeInfo.trade">
     <div class="trade-type">
       <p class="type">
-        {{ buyOrSell }}ing {{ denomFromMicroDenom(trade.denom.native) }}
+        {{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }}
       </p>
       <p class="wallet-addr">
         {{ fromTo }} {{ formatAddress(counterparty) }}
@@ -153,7 +153,7 @@ onUnmounted(() => {
           Amount
         </p>
         <p class="content">
-          {{ formatAmount(trade.amount) }} {{ denomFromMicroDenom(trade.denom.native) }}
+          {{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}
         </p>
       </div>
 

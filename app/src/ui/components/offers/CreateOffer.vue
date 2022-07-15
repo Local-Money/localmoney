@@ -11,7 +11,7 @@ import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import {
   defaultMicroDenomAvailable,
-  denomFromMicroDenom,
+  microDenomToDenom,
   denomsAvailable,
 } from '~/utils/denom'
 
@@ -93,7 +93,7 @@ watch(margin, () => {
           <label for="crypto">Crypto</label>
           <select id="crypto" v-model="selectedCrypto" class="bg-gray300" name="crypto">
             <option v-for="microDenom in denomsAvailable.keys()" :value="microDenom">
-              {{ denomFromMicroDenom(microDenom) }}
+              {{ microDenomToDenom(microDenom) }}
             </option>
           </select>
         </div>

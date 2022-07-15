@@ -7,7 +7,7 @@ import { usePriceStore } from '~/stores/price'
 import {
   checkMicroDenomAvailable,
   defaultMicroDenomAvailable,
-  denomFromMicroDenom,
+  microDenomToDenom,
   denomsAvailable,
 } from '~/utils/denom'
 
@@ -87,7 +87,7 @@ watch(offerType, async () => {
           <label for="crypto">Crypto</label>
           <select v-model="selectedCrypto" name="crypto" id="crypto" class="bg-surface">
               <option v-for="microDenom in denomsAvailable.keys()" :value="microDenom">
-                {{ denomFromMicroDenom(microDenom) }}
+                {{ microDenomToDenom(microDenom) }}
               </option>
           </select>
       </div>

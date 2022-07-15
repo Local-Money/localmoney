@@ -10,7 +10,7 @@ export function checkMicroDenomAvailable(microDenom: string): boolean {
   return denomsAvailable.has(microDenom)
 }
 
-export function denomFromMicroDenom(microDenom: string): string {
+export function microDenomToDenom(microDenom: string): string {
   return denomsAvailable.has(microDenom) ? denomsAvailable.get(microDenom)!.denom : microDenom
 }
 
