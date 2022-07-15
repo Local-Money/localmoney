@@ -42,11 +42,12 @@ pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
             "offers__fiat",
         ),
         filter: MultiIndex::new(
-            |d: &Offer| {
-                d.fiat_currency
+            |offer: &Offer| {
+                offer
+                    .fiat_currency
                     .to_string()
-                    .add(d.state.to_string().as_str())
-                    .to_string()
+                    .add(offer.offer_type.to_string().as_str())
+                    .add(&offer.state.to_string())
             },
             "offers",
             "offers__filter",
@@ -283,7 +284,7 @@ impl OfferModel<'_> {
 
     pub fn query_by_type_fiat(
         deps: Deps,
-        _offer_type: OfferType,
+        offer_type: OfferType,
         fiat_currency: FiatCurrency,
         min: Option<String>,
         max: Option<String>,
@@ -296,11 +297,11 @@ impl OfferModel<'_> {
             QueryOrder::Asc => Order::Ascending,
             QueryOrder::Desc => Order::Descending,
         };
+
         let range_min = match min {
             Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
         };
-
         let range_max = match max {
             Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
@@ -309,7 +310,11 @@ impl OfferModel<'_> {
         let result = offers()
             .idx
             .filter
-            .prefix(fiat_currency.to_string() + &*OfferState::Active.to_string())
+            .prefix(
+                fiat_currency.to_string()
+                    + &offer_type.to_string()
+                    + &*OfferState::Active.to_string(),
+            )
             .range(storage, range_min, range_max, std_order)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))

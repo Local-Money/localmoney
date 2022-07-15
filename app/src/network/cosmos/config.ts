@@ -29,11 +29,11 @@ export const JUNO_CONFIG: CosmosConfig = {
 }
 
 export const JUNO_HUB_INFO: HubInfo = {
-  hubAddress: 'juno10xspvwdnzqxqgfu30hzz3q8ne0qzj88kvnp75grqhcks3hs4wqzqehw9d3',
+  hubAddress: 'juno1mf8mc3d5k4mny5djsuqsp7t9p9dmjxaj4gky4q0lthx6zrmjrlyq2yknmd',
   hubConfig: {
-    offer_addr: 'juno1k55r769kf0wrmt333s0l0gwv3eflyxwtkeaqvnpzhmag5kk39mnse0tg5f',
-    trade_addr: 'juno1vr7tkvcqftncc2crt68mxg6uhqk84660gwy4rjh3udajhv9s4pgshfx4qh',
-    trading_incentives_addr: 'juno1cwxxtrq8nqlpacx2uky768r3c9vghh5suzgzw50uy87ne77p5kvs6496sy',
+    offer_addr: 'juno1qzjsgnpwtlz265t2cxheftf5mlgs7lqjacvz3lkp5vr4ga3rgassgvsegx',
+    trade_addr: 'juno1htpc5ek2p80agv2x7tjgx6l03p52l930dd4dyk3qk9raanzyrngq4zx8da',
+    trading_incentives_addr: 'juno1a6qzj0ep50jjn97ufmsjlwdhnqmny2phhcug3e6404tkngfd906syquknw',
     local_market_addr: 'juno1gqhxtrsve4f2pcp65fr8l5t86pu7v0cxqvqgj6',
     local_denom: { native: 'ujunox' },
   },
