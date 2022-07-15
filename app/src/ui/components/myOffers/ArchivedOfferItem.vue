@@ -4,6 +4,7 @@ import { OfferType } from '~/types/components.interface'
 import type { GetOffer } from '~/types/components.interface'
 import { calculateFiatPriceByRate, formatAmount, formatDate } from '~/shared'
 import { useClientStore } from '~/stores/client'
+import { denomFromMicroDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
 
@@ -21,7 +22,8 @@ const price = computed(() => {
 const limit = computed(() => {
   const min = formatAmount(props.offer.min_amount)
   const max = formatAmount(props.offer.max_amount)
-  return `$${min} - $${max}`
+  const denom = denomFromMicroDenom(props.offer.denom.native)
+  return `${min} - ${max} ${denom}`
 })
 const type = computed(() => props.offer.offer_type === OfferType.buy ? 'Buying' : 'Selling')
 
