@@ -4,6 +4,12 @@ import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { usePriceStore } from '~/stores/price'
+import {
+  checkMicroDenomAvailable,
+  denomsAvailable,
+  defaultMicroDenomAvailable,
+  denomFromMicroDenom
+} from "~/utils/denom";
 
 const client = useClientStore()
 const priceStore = usePriceStore()
@@ -11,9 +17,12 @@ const offersResult = computed(() => client.offers)
 const page = reactive({ offers: <ExpandableItem<GetOffer>[]>[] })
 client.$subscribe((mutation, state) => {
   if (state.offers.isSuccess())
-  page.offers = state.offers.data.flatMap(offer => new ExpandableItem(offer))
+  page.offers = state.offers.data
+      .filter(offer => checkMicroDenomAvailable(offer.denom.native))
+      .flatMap(offer => new ExpandableItem(offer))
 })
 
+const selectedDenom = ref(defaultMicroDenomAvailable())
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const offerType = ref<OfferType>(OfferType.sell)
 const selectedOffer = ref<ExpandableItem<GetOffer> | null>(null)
@@ -75,8 +84,10 @@ watch(offerType, async () => {
       </div>
       <div class="filter">
           <label for="crypto">Crypto</label>
-          <select name="crypto" id="crypto" class="bg-surface">
-              <option value="KUJI">KUJI</option>
+          <select v-model="selectedDenom" name="crypto" id="crypto" class="bg-surface">
+              <option v-for="microDenoms in denomsAvailable.keys()" :value="microDenoms">
+                {{ denomFromMicroDenom(microDenoms) }}
+              </option>
           </select>
       </div>
       <div class="filter">

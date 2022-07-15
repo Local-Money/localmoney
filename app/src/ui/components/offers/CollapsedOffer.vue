@@ -9,6 +9,7 @@ import {
 import { usePriceStore } from '~/stores/price'
 import { OfferType } from '~/types/components.interface'
 import type { GetOffer, OfferTypeLabel } from '~/types/components.interface'
+import { denomFromMicroDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
 const { t } = useI18n()
@@ -40,7 +41,9 @@ const offerPrice = computed(() => {
           Limits
         </p>
         <p class="limit">
-          ${{ formatAmount(offer.min_amount) }} - ${{ formatAmount(offer.max_amount) }}
+          {{ formatAmount(offer.min_amount) }} -
+          {{ formatAmount(offer.max_amount) }}
+          {{ denomFromMicroDenom(offer.denom.native) }}
         </p>
       </div>
 
@@ -50,7 +53,7 @@ const offerPrice = computed(() => {
           Price
         </p>
         <p class="rate">
-          ${{ marginRate.marginOffset }}%
+          {{ marginRate.marginOffset }}%
           {{ marginRate.margin }} market
         </p>
       </div>

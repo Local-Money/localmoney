@@ -11,6 +11,7 @@ import { OfferType } from '~/types/components.interface'
 import type { GetOffer, NewTrade } from '~/types/components.interface'
 import { usePriceStore } from '~/stores/price'
 import { useClientStore } from '~/stores/client'
+import { denomFromMicroDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
 const priceStore = usePriceStore()
@@ -31,7 +32,7 @@ const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate)
 const fromLabel = computed(() => props.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy')
 const toLabel = computed(() => props.offer.offer_type === OfferType.buy ? 'I will receive' : 'I will pay')
 const fiatPlaceholder = computed(() => `${props.offer.fiat_currency.toUpperCase()} 0`)
-const cryptoPlaceholder = computed(() => `${props.offer.denom.native} ${parseFloat('0').toFixed(2)}`)
+const cryptoPlaceholder = computed(() => `${denomFromMicroDenom(props.offer.denom.native)} ${parseFloat('0').toFixed(2)}`)
 const fiatPriceByRate = computed(() => calculateFiatPriceByRate(priceStore.getPrice(props.offer.fiat_currency), props.offer.rate))
 const minAmountInCrypto = computed(() => (parseInt(props.offer.min_amount.toString()) / 1000000))
 const maxAmountInCrypto = computed(() => (parseInt(props.offer.max_amount.toString()) / 1000000))
@@ -46,7 +47,7 @@ const minMaxFiatStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 const minMaxCryptoStr = computed(() => {
-  const symbol = props.offer.denom.native // TODO: get from offer
+  const symbol = denomFromMicroDenom(props.offer.denom.native)
   const min = (parseInt(props.offer.min_amount.toString()) / 1000000).toFixed(2)
   const max = (parseInt(props.offer.max_amount.toString()) / 1000000).toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]
@@ -240,7 +241,7 @@ onUnmounted(() => {
               {{ marginRate.marginOffset }}% {{ marginRate.margin }} market
             </p>
             <p class="value">
-              1 {{ offer.denom.native }} = {{ offerPrice }}
+              1 {{ denomFromMicroDenom(offer.denom.native) }} = {{ offerPrice }}
             </p>
           </div>
         </div>
@@ -251,7 +252,7 @@ onUnmounted(() => {
               <p class="info">
                 Trading Fee
               </p>
-              <p>{{ tradingFee.toFixed(2) }}</p>
+              <p>{{ denomFromMicroDenom(offer.denom.native) }} {{ tradingFee.toFixed(2) }}</p>
             </div>
             <div class="item">
               <p class="info">
