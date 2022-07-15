@@ -1,6 +1,6 @@
 import denomList from './denoms-config.json'
 
-export const denomsAvailable = new Map<string, Denom>(Object.entries(denomList))
+export const denomsAvailable = new Map<string, MicronDenom>(Object.entries(denomList))
 
 export function defaultMicroDenomAvailable(): string {
   return denomsAvailable.keys().next().value
@@ -14,6 +14,6 @@ export function denomFromMicroDenom(microDenom: string): string {
   return denomsAvailable.has(microDenom) ? denomsAvailable.get(microDenom)!.denom : microDenom
 }
 
-interface Denom {
+interface MicronDenom {
   denom: string
 }

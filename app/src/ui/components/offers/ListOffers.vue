@@ -6,10 +6,10 @@ import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { usePriceStore } from '~/stores/price'
 import {
   checkMicroDenomAvailable,
-  denomsAvailable,
   defaultMicroDenomAvailable,
-  denomFromMicroDenom
-} from "~/utils/denom";
+  denomFromMicroDenom,
+  denomsAvailable,
+} from '~/utils/denom'
 
 const client = useClientStore()
 const priceStore = usePriceStore()
@@ -22,7 +22,7 @@ client.$subscribe((mutation, state) => {
       .flatMap(offer => new ExpandableItem(offer))
 })
 
-const selectedDenom = ref(defaultMicroDenomAvailable())
+const selectedCrypto = ref(defaultMicroDenomAvailable())
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const offerType = ref<OfferType>(OfferType.sell)
 const selectedOffer = ref<ExpandableItem<GetOffer> | null>(null)
@@ -40,6 +40,7 @@ function unselectOffer(offer: ExpandableItem<GetOffer>) {
 
 onMounted(async () => {
   await priceStore.fetchPrices()
+  // TODO we should send the selectedCrypto here to filter on fetchOffers
   await client.fetchOffers({
     fiatCurrency: fiatCurrency.value,
     offerType: offerType.value,
@@ -84,9 +85,9 @@ watch(offerType, async () => {
       </div>
       <div class="filter">
           <label for="crypto">Crypto</label>
-          <select v-model="selectedDenom" name="crypto" id="crypto" class="bg-surface">
-              <option v-for="microDenoms in denomsAvailable.keys()" :value="microDenoms">
-                {{ denomFromMicroDenom(microDenoms) }}
+          <select v-model="selectedCrypto" name="crypto" id="crypto" class="bg-surface">
+              <option v-for="microDenom in denomsAvailable.keys()" :value="microDenom">
+                {{ denomFromMicroDenom(microDenom) }}
               </option>
           </select>
       </div>

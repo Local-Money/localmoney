@@ -9,6 +9,11 @@ import { usePriceStore } from '~/stores/price'
 import type { PostOffer } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
+import {
+  defaultMicroDenomAvailable,
+  denomFromMicroDenom,
+  denomsAvailable,
+} from '~/utils/denom'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -16,6 +21,7 @@ const emit = defineEmits<{
 const client = useClientStore()
 const priceStore = usePriceStore()
 
+const selectedCrypto = ref(defaultMicroDenomAvailable())
 const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
@@ -39,8 +45,7 @@ function createOffer() {
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
-    // TODO remove this hard coded denom
-    denom: { native: 'ujunox' },
+    denom: { native: selectedCrypto.value },
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
     maker_contact: 'NoContactProvided',
@@ -86,9 +91,9 @@ watch(margin, () => {
       <div class="currency">
         <div class="filter">
           <label for="crypto">Crypto</label>
-          <select id="crypto" class="bg-gray300" name="crypto">
-            <option value="KUJI">
-              KUJI
+          <select id="crypto" v-model="selectedCrypto" class="bg-gray300" name="crypto">
+            <option v-for="microDenom in denomsAvailable.keys()" :value="microDenom">
+              {{ denomFromMicroDenom(microDenom) }}
             </option>
           </select>
         </div>
