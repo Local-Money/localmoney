@@ -8,6 +8,7 @@ import {
 } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
+import { denomFromMicroDenom } from '~/utils/denom'
 
 const client = useClientStore()
 const priceStore = usePriceStore()
@@ -71,7 +72,7 @@ onUnmounted(() => {
 
 <template>
   <main v-if="tradeInfo" v-bind="trade = tradeInfo.trade">
-    <h3>{{ buyOrSell }}ing {{ trade.denom.native }} from {{ formatAddress(counterparty) }}</h3>
+    <h3>{{ buyOrSell }}ing {{ denomFromMicroDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
@@ -184,7 +185,7 @@ onUnmounted(() => {
                   You will send
                 </p>
                 <p class="value">
-                  {{ formatAmount(trade.amount) }} {{ trade.denom.native }}
+                  {{ formatAmount(trade.amount) }} {{ denomFromMicroDenom(trade.denom.native) }}
                 </p>
               </div>
               <div class="list-item">
