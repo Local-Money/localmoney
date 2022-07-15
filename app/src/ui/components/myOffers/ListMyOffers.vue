@@ -6,8 +6,8 @@ import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import type { GetOffer } from '~/types/components.interface'
 import { OfferState } from '~/types/components.interface'
-import { ListResult } from "~/stores/ListResult";
-import {checkMicroDenomAvailable} from "~/utils/denom";
+import { ListResult } from '~/stores/ListResult'
+import { checkMicroDenomAvailable } from '~/utils/denom'
 
 const client = useClientStore()
 const myOffersResult = computed<ListResult<GetOffer>>(() => client.myOffers)
