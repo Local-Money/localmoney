@@ -63,8 +63,6 @@ export class CosmosChain implements Chain {
   }
 
   async createOffer(postOffer: PostOffer) {
-    // TODO this parameter should come from front selector
-    postOffer.denom = { native: this.config.coinMinimalDenom }
     const msg = { create: { offer: postOffer } }
     console.log('Create offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {

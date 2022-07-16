@@ -10,6 +10,7 @@ import {
 import type { TradeInfo } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
+import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
@@ -43,7 +44,7 @@ const counterparty = computed(() => {
       <p>{{ tradeType }}</p>
     </div>
     <div class="col-3">
-      <p>{{ formatAmount(tradeInfo.trade.amount) }} {{ tradeInfo.trade.denom.native }}</p>
+      <p>{{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}</p>
     </div>
     <div class="col-4">
       <p>{{ fiatAmountStr }}</p>

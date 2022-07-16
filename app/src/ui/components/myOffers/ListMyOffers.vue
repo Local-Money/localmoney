@@ -6,7 +6,8 @@ import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import type { GetOffer } from '~/types/components.interface'
 import { OfferState } from '~/types/components.interface'
-import { ListResult } from "~/stores/ListResult";
+import { ListResult } from '~/stores/ListResult'
+import { checkMicroDenomAvailable } from '~/utils/denom'
 
 const client = useClientStore()
 const myOffersResult = computed<ListResult<GetOffer>>(() => client.myOffers)
@@ -17,11 +18,11 @@ const page = reactive({
 client.$subscribe((mutation, state) => {
   if (state.myOffers.isSuccess()) {
     page.myOffers = state.myOffers.data
-        .filter(offer => offer.state !== OfferState.archived)
+        .filter(offer => checkMicroDenomAvailable(offer.denom.native) && offer.state !== OfferState.archived)
         .flatMap(offer => new ExpandableItem(offer))
 
     page.archiveOffers = state.myOffers.data
-        .filter(offer => offer.state === OfferState.archived)
+        .filter(offer => checkMicroDenomAvailable(offer.denom.native) && offer.state === OfferState.archived)
   }
 })
 const expandedMyOffer = ref()

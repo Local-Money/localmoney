@@ -3,10 +3,19 @@ import TradeOpenItem from '../components/trades/TradeOpenItem.vue'
 import TradeHistoryItem from '../components/trades/TradeHistoryItem.vue'
 import { useClientStore } from '~/stores/client'
 import { TradeState } from '~/types/components.interface'
+import { checkMicroDenomAvailable } from '~/utils/denom'
 
 const client = useClientStore()
 const tradeResult = computed(() => client.trades)
-const trades = computed(() => tradeResult.value.isSuccess() ? tradeResult.value.data : [])
+const trades = computed(() => {
+  if (tradeResult.value.isSuccess()) {
+    return tradeResult.value.data.filter(trade =>
+      checkMicroDenomAvailable(trade.offer.denom.native)
+    )
+  } else {
+    return []
+  }
+})
 
 const openTrades = computed(() => {
   return trades.value.filter(
