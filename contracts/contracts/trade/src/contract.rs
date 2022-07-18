@@ -65,7 +65,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 
     let offer_id = new_trade.offer_id.clone();
     let offer = load_offer(
-        deps.querier,
+        &deps.querier,
         new_trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     );
@@ -190,8 +190,10 @@ pub fn query_trades(
         }
     };
 
-    trade_results.iter().for_each(|trade| {
-        let offer: Offer = get_offer(&deps.querier, trade);
+    trade_results.iter().for_each(|trade: &Trade| {
+        let offer_id = trade.offer_id.clone();
+        let offer_contract = trade.offer_contract.to_string();
+        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap(); // if trade exist, it is guaranteed that offer exists.
         let current_time = env.block.time.seconds();
         let expired = current_time > trade.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
         trades_infos.push(TradeInfo {
@@ -204,7 +206,7 @@ pub fn query_trades(
     Ok(trades_infos)
 }
 
-fn load_offer(querier: QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {
+fn load_offer(querier: &QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {
     let load_offer_result: StdResult<Offer> =
         querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: offer_contract.clone(),
@@ -227,7 +229,7 @@ fn fund_escrow(
     let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
 
     let offer = load_offer(
-        deps.querier.clone(),
+        &deps.querier.clone(),
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
@@ -280,18 +282,6 @@ fn fund_escrow(
         .add_attribute("seller", info.sender)
         .add_attribute("state", trade.state.to_string());
     Ok(res)
-}
-
-fn get_offer(querier: &QuerierWrapper, trade: &Trade) -> Offer {
-    querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: trade.offer_contract.to_string(),
-            msg: to_binary(&OfferQueryMsg::Offer {
-                id: trade.offer_id.clone(),
-            })
-            .unwrap(),
-        }))
-        .unwrap()
 }
 
 fn dispute_escrow(
@@ -497,7 +487,14 @@ fn release_escrow(
         });
     }
 
-    let offer = get_offer(&deps.querier, &trade);
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let offer = load_offer(
+        &deps.querier,
+        trade.offer_id.clone(),
+        hub_cfg.offer_addr.to_string(),
+    )
+    .unwrap(); //at this stage, offer is guaranteed to exists.
 
     //Update trade State to TradeState::EscrowReleased or TradeState::SettledFor(Maker|Taker)
     if !arbitration_mode {
@@ -512,8 +509,6 @@ fn release_escrow(
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
     let mut release_amount = trade.amount.clone();
 
     //TODO: Collect Fee
@@ -622,7 +617,12 @@ fn refund_escrow(
         }
     }
 
-    let offer = get_offer(&deps.querier, &trade);
+    let offer = load_offer(
+        &deps.querier,
+        trade.offer_id.clone(),
+        trade.offer_contract.to_string(),
+    )
+    .unwrap(); //at this stage, offer is guaranteed to exists.
 
     //Update TradeData to TradeState::Released or TradeState::SettledFor(Maker|Taker)
     let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
