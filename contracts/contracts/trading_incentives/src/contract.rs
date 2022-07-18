@@ -7,7 +7,7 @@ use cosmwasm_std::{
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
-use localterra_protocol::hub_util::{get_hub_config, register_hub_internal, HUB_ADDR};
+use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HUB_ADDR};
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
 use localterra_protocol::trading_incentives::{
     Distribution, ExecuteMsg, InstantiateMsg, QueryMsg, TraderRewards,
