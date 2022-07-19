@@ -226,7 +226,7 @@ fn fund_escrow(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, TradeError> {
-    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     let offer = load_offer(
         &deps.querier.clone(),
@@ -290,7 +290,7 @@ fn dispute_escrow(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, TradeError> {
-    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO check escrow funding timer
     // Only the buyer or seller can start a dispute
     assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
@@ -351,7 +351,7 @@ fn accept_request(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, TradeError> {
-    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer can accept the request
     assert_ownership(info.sender, trade.buyer.clone()).unwrap();
 
@@ -381,7 +381,7 @@ fn fiat_deposited(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, TradeError> {
-    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
     assert_ownership(info.sender, trade.buyer.clone()).unwrap(); // TODO test this case
@@ -411,7 +411,7 @@ fn cancel_request(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, TradeError> {
-    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer or seller can cancel the trade.
     assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
         .unwrap(); // TODO test this case
@@ -439,7 +439,7 @@ fn release_escrow(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, TradeError> {
-    let mut trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     let denom = denom_to_string(&trade.denom);
 
     let arbitrator = trade.arbitrator.clone().unwrap_or(Addr::unchecked(""));
@@ -579,7 +579,7 @@ fn refund_escrow(
     // Refund can only happen if:
     // 1) By anyone: TradeState::EscrowFunded and FundingTimeout is expired
     // 2) By assigned arbitrator: TradeState::EscrowDisputed
-    let trade = query_trade(deps.as_ref(), trade_id.clone()).unwrap();
+    let trade = TradeModel::from_store(deps.storage, &trade_id);
 
     let arbitration_mode = (info.sender == trade.arbitrator.clone().unwrap())
         & (trade.state == TradeState::EscrowDisputed);
