@@ -10,9 +10,7 @@ use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
 use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
 use localterra_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
 
-pub const OFFER_REPLY_ID: u64 = 0;
-pub const TRADE_REPLY_ID: u64 = 1;
-pub const TRADING_INCENTIVES_REPLY_ID: u64 = 2;
+pub const UNUSED_MSG_ID: u64 = 0;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -59,36 +57,36 @@ fn update_config(
     };
 
     let offer_register_hub = SubMsg {
-        id: OFFER_REPLY_ID,
+        id: UNUSED_MSG_ID,
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.offer_addr.to_string(),
             msg: to_binary(&OfferRegisterHub {}).unwrap(),
             funds: info.funds.clone(),
         }),
         gas_limit: None,
-        reply_on: ReplyOn::Never, // TODO Should we handle it if something wrong happens?
+        reply_on: ReplyOn::Never,
     };
 
     let trade_register_hub = SubMsg {
-        id: TRADE_REPLY_ID,
+        id: UNUSED_MSG_ID,
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.trade_addr.to_string(),
             msg: to_binary(&TradeRegisterHub {}).unwrap(),
             funds: info.funds.clone(),
         }),
         gas_limit: None,
-        reply_on: ReplyOn::Never, // TODO Should we handle it if something wrong happens?
+        reply_on: ReplyOn::Never,
     };
 
     let trading_incentives_register_hub = SubMsg {
-        id: TRADING_INCENTIVES_REPLY_ID,
+        id: UNUSED_MSG_ID,
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.trading_incentives_addr.to_string(),
             msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
             funds: info.funds.clone(),
         }),
         gas_limit: None,
-        reply_on: ReplyOn::Never, // TODO Should we handle it if something wrong happens?
+        reply_on: ReplyOn::Never,
     };
 
     let res = Response::new()
