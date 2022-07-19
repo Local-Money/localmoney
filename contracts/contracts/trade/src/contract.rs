@@ -235,7 +235,6 @@ fn fund_escrow(
     .unwrap();
 
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
-    // TODO write test for RequestExpired, attempt to fund
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
         trade.state = TradeState::RequestExpired;
         TradeModel::store(deps.storage, &trade).unwrap();
@@ -360,7 +359,7 @@ fn accept_request(
         TradeState::RequestCreated,
         TradeState::RequestAccepted,
     )
-    .unwrap(); // TODO test this case
+    .unwrap();
 
     trade.state = TradeState::RequestAccepted;
 
@@ -383,13 +382,13 @@ fn fiat_deposited(
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
-    assert_ownership(info.sender, trade.buyer.clone()).unwrap(); // TODO test this case
+    assert_ownership(info.sender, trade.buyer.clone()).unwrap();
     assert_trade_state_change_is_valid(
         trade.state.clone(),
         TradeState::EscrowFunded,
         TradeState::FiatDeposited,
     )
-    .unwrap(); // TODO test this case
+    .unwrap();
 
     // Update trade State to TradeState::FiatDeposited
     trade.state = TradeState::FiatDeposited;
@@ -413,7 +412,7 @@ fn cancel_request(
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer or seller can cancel the trade.
     assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
-        .unwrap(); // TODO test this case
+        .unwrap();
 
     // You can only cancel the trade if the current TradeState is Created or Accepted
     if !((trade.state == TradeState::RequestCreated)
@@ -509,19 +508,6 @@ fn release_escrow(
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let mut release_amount = trade.amount.clone();
-
-    //TODO: Collect Fee
-    //let local_terra_fee = get_fee_amount(trade.amount.clone(), LOCAL_TERRA_FEE);
-    //let warchest_share = get_fee_amount(local_terra_fee, WARCHEST_FEE);
-    //let mut release_amount = trade.amount.amount.clone() - local_terra_fee;
-
-    /*
-    //Warchest
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: hub_cfg.warchest_addr.to_string(),
-        amount: vec![Coin::new(warchest_share.u128(), denom.clone())],
-    })));
-     */
 
     //Arbitration Fee
     if arbitration_mode {

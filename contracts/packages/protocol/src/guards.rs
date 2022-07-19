@@ -111,7 +111,7 @@ pub fn assert_trade_state_and_type(
         Ok(())
     } else {
         Err(GuardError::Std(StdError::generic_err(
-            "Incorrect sender funding the trade.", // TODO use costum error and return the funds
+            "Incorrect sender funding the trade.", // TODO: use custom error.
         )))
     }
 }
