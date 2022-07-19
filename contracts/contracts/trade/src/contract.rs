@@ -193,7 +193,7 @@ pub fn query_trades(
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
-        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap(); // if trade exist, it is guaranteed that offer exists.
+        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
         let current_time = env.block.time.seconds();
         let expired = current_time > trade.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
         trades_infos.push(TradeInfo {
@@ -233,7 +233,7 @@ fn fund_escrow(
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
-    .unwrap(); //at this stage, offer is guaranteed to exists.
+    .unwrap();
 
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
     // TODO write test for RequestExpired, attempt to fund
@@ -494,7 +494,7 @@ fn release_escrow(
         trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     )
-    .unwrap(); //at this stage, offer is guaranteed to exists.
+    .unwrap();
 
     //Update trade State to TradeState::EscrowReleased or TradeState::SettledFor(Maker|Taker)
     if !arbitration_mode {
@@ -622,7 +622,7 @@ fn refund_escrow(
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
-    .unwrap(); //at this stage, offer is guaranteed to exists.
+    .unwrap();
 
     //Update TradeData to TradeState::Released or TradeState::SettledFor(Maker|Taker)
     let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
