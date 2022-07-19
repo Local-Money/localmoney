@@ -5,7 +5,9 @@ use cosmwasm_std::{
 };
 use std::ops::Sub;
 
-use localterra_protocol::constants::{ARBITRATOR_FEE, FUNDING_TIMEOUT, REQUEST_TIMEOUT};
+use localterra_protocol::constants::{
+    ARBITRATOR_FEE, FUNDING_TIMEOUT, REQUEST_TIMEOUT, UNUSED_MSG_ID,
+};
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_caller_is_seller_or_arbitrator, assert_ownership,
@@ -25,8 +27,6 @@ use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::errors::TradeError::HubAlreadyRegistered;
-
-const EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID: u64 = 0u64;
 
 #[entry_point]
 pub fn instantiate(
@@ -75,7 +75,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         });
     }
     let offer = offer.unwrap();
-    assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap(); // TODO test this guard
+    assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -112,8 +112,6 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     )
     .trade;
 
-    let denom_str = denom_to_string(&trade.denom);
-
     //SubMsg to Offer to contract increment trades count.
     let increment_submsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.offer_addr.to_string(),
@@ -126,6 +124,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         funds: vec![],
     }));
 
+    let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
         .add_submessage(increment_submsg)
         .add_attribute("trade_id", trade_id)
@@ -195,7 +194,7 @@ pub fn query_trades(
         let offer_contract = trade.offer_contract.to_string();
         let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
         let current_time = env.block.time.seconds();
-        let expired = current_time > trade.created_at + REQUEST_TIMEOUT; // TODO handle different possible expirations
+        let expired = current_time > trade.created_at + REQUEST_TIMEOUT;
         trades_infos.push(TradeInfo {
             trade: trade.clone(),
             offer,
@@ -252,7 +251,7 @@ fn fund_escrow(
     assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
-    assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
+    assert_trade_state_and_type(&trade, &offer.offer_type).unwrap();
     let denom = denom_to_string(&trade.denom);
 
     // TODO only accept exact funding amounts, return otherwise
@@ -331,10 +330,10 @@ fn dispute_escrow(
         .unwrap(),
     };
     let sub_message = SubMsg {
-        id: EXECUTE_UPDATE_TRADE_ARBITRATOR_REPLY_ID,
+        id: UNUSED_MSG_ID,
         msg: CosmosMsg::Wasm(execute_msg),
         gas_limit: None,
-        reply_on: ReplyOn::Never, // TODO should we throw an error if the execution fails ?
+        reply_on: ReplyOn::Never,
     };
 
     let res = Response::new()
