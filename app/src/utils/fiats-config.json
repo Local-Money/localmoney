@@ -1,0 +1,17 @@
+{
+  "ARS": {
+    "flag": "/flags/ar.svg",
+    "display": "PESOS ARS",
+    "code": "ARS"
+  },
+  "BRL": {
+    "flag": "/flags/br.svg",
+    "display": "REAL BRL",
+    "code": "BRL"
+  },
+  "COL": {
+    "flag": "/flags/co.svg",
+    "display": "PESOS COL",
+    "code": "COP"
+  }
+}
