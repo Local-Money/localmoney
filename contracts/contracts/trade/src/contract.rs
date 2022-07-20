@@ -21,7 +21,7 @@ use localterra_protocol::offer::{
     Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
 use localterra_protocol::trade::{
-    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TradesIndex,
+    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -146,7 +146,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Trades {
             user,
             state,
-            index,
+            role: index,
             last_value,
             limit,
         } => to_binary(&query_trades(
@@ -174,17 +174,17 @@ pub fn query_trades(
     deps: Deps,
     user: Addr,
     _state: Option<TradeState>,
-    index: TradesIndex,
+    index: TraderRole,
     last_value: Option<String>,
     limit: u32,
 ) -> StdResult<Vec<TradeInfo>> {
     let mut trades_infos: Vec<TradeInfo> = vec![];
 
     let trade_results = match index {
-        TradesIndex::Seller => {
+        TraderRole::Seller => {
             TradeModel::trades_by_seller(deps.storage, user.to_string(), last_value, limit).unwrap()
         }
-        TradesIndex::Buyer => {
+        TraderRole::Buyer => {
             TradeModel::trades_by_buyer(deps.storage, user.to_string(), last_value, limit).unwrap()
         }
     };
