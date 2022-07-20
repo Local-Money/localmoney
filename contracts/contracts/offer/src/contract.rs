@@ -9,7 +9,9 @@ use localterra_protocol::errors::GuardError;
 use localterra_protocol::errors::GuardError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::hub::HubConfig;
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
+use localterra_protocol::hub_utils::{
+    get_hub_admin, get_hub_config, register_hub_internal, HubAddr, HUB_ADDR,
+};
 use localterra_protocol::offer::{
     offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
     OfferUpdateMsg, OffersCount, QueryMsg,
@@ -42,7 +44,7 @@ pub fn execute(
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
-            delete_arbitrator(deps, env, info, arbitrator, asset)
+            delete_arbitrator(deps, info, arbitrator, asset)
         }
         ExecuteMsg::UpdateTradeArbitrator { arbitrator } => {
             // TODO merge this call with the query random arbitrator call
@@ -226,15 +228,14 @@ pub fn execute_update_last_traded(
 
 pub fn create_arbitrator(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
 ) -> Result<Response, GuardError> {
-    assert_ownership(
-        info.sender,
-        Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
-    )?;
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+    assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
@@ -251,10 +252,10 @@ pub fn create_arbitrator(
         .add_attribute("action", "create_arbitrator")
         .add_attribute("arbitrator", arbitrator.to_string())
         .add_attribute("asset", asset.to_string())
-        .add_attribute("timestamp", _env.block.time.seconds().to_string())
+        .add_attribute("timestamp", env.block.time.seconds().to_string())
         .add_attribute(
             "numeric",
-            ((_env.block.time.seconds() % 100) * (3 + 1) / (99 + 1)).to_string(),
+            ((env.block.time.seconds() % 100) * (3 + 1) / (99 + 1)).to_string(),
         );
 
     Ok(res)
@@ -262,15 +263,13 @@ pub fn create_arbitrator(
 
 pub fn delete_arbitrator(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
 ) -> Result<Response, GuardError> {
-    assert_ownership(
-        info.sender,
-        Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
-    )?;
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+    assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
