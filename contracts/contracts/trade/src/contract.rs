@@ -123,9 +123,9 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
         .add_submessage(increment_submsg)
-        .add_attribute("trade_id", trade_id)
         .add_attribute("action", "create_trade")
-        .add_attribute("id", offer.id.clone())
+        .add_attribute("trade_id", trade_id)
+        .add_attribute("offer_id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)
