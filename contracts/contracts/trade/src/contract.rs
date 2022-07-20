@@ -1,7 +1,6 @@
 use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
-    WasmMsg, WasmQuery,
+    MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 
 use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT, UNUSED_MSG_ID};
@@ -14,7 +13,7 @@ use localterra_protocol::hub::HubConfig;
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
-    Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
+    load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
 use localterra_protocol::trade::{
     ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TraderRole,
@@ -199,20 +198,6 @@ pub fn query_trades(
     });
 
     Ok(trades_infos)
-}
-
-fn load_offer(querier: &QuerierWrapper, offer_id: String, offer_contract: String) -> Option<Offer> {
-    let load_offer_result: StdResult<Offer> =
-        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: offer_contract.clone(),
-            msg: to_binary(&OfferQueryMsg::Offer { id: offer_id }).unwrap(),
-        }));
-
-    if load_offer_result.is_err() {
-        None
-    } else {
-        Some(load_offer_result.unwrap())
-    }
 }
 
 fn fund_escrow(
@@ -471,7 +456,6 @@ fn release_escrow(
         contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
             trade: trade.id.clone(),
-            maker: offer.owner.to_string(),
         })
         .unwrap(),
         funds: vec![],
