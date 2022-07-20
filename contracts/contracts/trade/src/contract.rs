@@ -484,6 +484,41 @@ fn release_escrow(
     Ok(res)
 }
 
+fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, TradeError> {
+    // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
+    let trade = TradeModel::from_store(deps.storage, &trade_id);
+    assert_trade_state_change_is_valid(
+        trade.state.clone(),
+        TradeState::EscrowFunded,
+        TradeState::EscrowRefunded,
+    )
+    .unwrap();
+
+    // anyone can try to refund, as long as the contract is expired
+    // no one except arbitrator can refund if the trade is in arbitration
+    let expired = env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT;
+    if !expired {
+        return Err(TradeError::RefundErrorNotExpired {
+            message:
+                "Only expired trades that are not disputed can be refunded by non-arbitrators."
+                    .to_string(),
+            trade: trade.state.to_string(),
+        });
+    }
+
+    //Update trade state to TradeState::EscrowRefunded
+    let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
+    trade.state = TradeState::EscrowRefunded;
+    TradeModel::store(deps.storage, &trade).unwrap();
+
+    let amount = trade.amount.clone();
+    let denom = denom_to_string(&trade.denom);
+    let refund_amount = vec![Coin::new(amount.u128(), denom.clone())];
+    let send_msg = create_send_msg(trade.seller, refund_amount);
+    let res = Response::new().add_submessage(SubMsg::new(send_msg));
+    Ok(res)
+}
+
 fn _settle_dispute() -> () {
     /*
     // The arbitrator can only release the escrow if the trade.state is EscrowDisputed
@@ -523,41 +558,6 @@ fn _settle_dispute() -> () {
         })));
     }
     */
-}
-
-fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, TradeError> {
-    // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
-    let trade = TradeModel::from_store(deps.storage, &trade_id);
-    assert_trade_state_change_is_valid(
-        trade.state.clone(),
-        TradeState::EscrowFunded,
-        TradeState::EscrowRefunded,
-    )
-    .unwrap();
-
-    // anyone can try to refund, as long as the contract is expired
-    // no one except arbitrator can refund if the trade is in arbitration
-    let expired = env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT;
-    if !expired {
-        return Err(TradeError::RefundErrorNotExpired {
-            message:
-                "Only expired trades that are not disputed can be refunded by non-arbitrators."
-                    .to_string(),
-            trade: trade.state.to_string(),
-        });
-    }
-
-    //Update trade state to TradeState::EscrowRefunded
-    let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
-    trade.state = TradeState::EscrowRefunded;
-    TradeModel::store(deps.storage, &trade).unwrap();
-
-    let amount = trade.amount.clone();
-    let denom = denom_to_string(&trade.denom);
-    let refund_amount = vec![Coin::new(amount.u128(), denom.clone())];
-    let send_msg = create_send_msg(trade.seller, refund_amount);
-    let res = Response::new().add_submessage(SubMsg::new(send_msg));
-    Ok(res)
 }
 
 pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
