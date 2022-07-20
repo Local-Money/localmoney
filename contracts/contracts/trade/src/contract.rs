@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, QuerierWrapper, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128,
     WasmMsg, WasmQuery,
 };
@@ -253,17 +253,16 @@ fn fund_escrow(
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap(); // TODO test this case
+
     let denom = denom_to_string(&trade.denom);
+    let default = coin(0, denom.clone());
+    let balance = info
+        .funds
+        .iter()
+        .find(|&coin| &coin.denom == &denom)
+        .unwrap_or(&default);
 
     // TODO only accept exact funding amounts, return otherwise
-    let balance = deps
-        .querier
-        .query_balance(env.contract.address, denom.clone())
-        .unwrap_or(Coin {
-            denom: denom.clone(),
-            amount: Uint128::zero(),
-        });
-
     if balance.amount >= trade.amount {
         trade.state = TradeState::EscrowFunded;
     } else {
