@@ -5,11 +5,15 @@ import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { usePriceStore } from '~/stores/price'
 import {
-  checkMicroDenomAvailable,
   defaultMicroDenomAvailable,
   microDenomToDenom,
   denomsAvailable,
 } from '~/utils/denom'
+import {
+  fiatsAvailable,
+  getFiatInfo,
+} from '~/utils/fiat'
+import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
 const priceStore = usePriceStore()
@@ -18,7 +22,7 @@ const page = reactive({ offers: <ExpandableItem<GetOffer>[]>[] })
 client.$subscribe((mutation, state) => {
   if (state.offers.isSuccess())
   page.offers = state.offers.data
-      .filter(offer => checkMicroDenomAvailable(offer.denom.native))
+      .filter(offer => checkValidOffer(offer))
       .flatMap(offer => new ExpandableItem(offer))
 })
 
@@ -99,14 +103,11 @@ watch(offerType, async () => {
           name="currency"
           class="bg-surface"
         >
-          <option :value="FiatCurrency.ARS">
-            ARS
-          </option>
-          <option :value="FiatCurrency.BRL">
-            BRL
-          </option>
-          <option :value="FiatCurrency.COP">
-            COP
+          <option
+            v-for="fiatCode in fiatsAvailable.keys()"
+            :value="fiatCode"
+          >
+            {{ getFiatInfo(fiatCode).display }} <img :src="getFiatInfo(fiatCode).flag" />
           </option>
         </select>
       </div>
@@ -121,27 +122,27 @@ watch(offerType, async () => {
       </h3>
       <!-- Offers for -->
       <ListContentResult
-          :result="offersResult"
-          :emptyStateMsg="'There is no offers available yet'"
+        :result="offersResult"
+        :emptyStateMsg="'There is no offers available yet'"
       >
         <ul>
           <li
-              v-for="offer in page.offers"
-              :key="offer.data.id"
-              class="card"
-              :class="offer.isExpanded ? 'card-active' : ''"
+            v-for="offer in page.offers"
+            :key="offer.data.id"
+            class="card"
+            :class="offer.isExpanded ? 'card-active' : ''"
           >
             <!-- Collapsed Offer -->
             <CollapsedOffer
-                v-if="!offer.isExpanded"
-                :offer="offer.data"
-                @select="selectOffer(offer)"
+              v-if="!offer.isExpanded"
+              :offer="offer.data"
+              @select="selectOffer(offer)"
             />
             <!-- Expanded Offer Desktop -->
             <ExpandedOffer
-                v-else
-                :offer="offer.data"
-                @cancel="unselectOffer(offer)"
+              v-else
+              :offer="offer.data"
+              @cancel="unselectOffer(offer)"
             />
           </li>
         </ul>

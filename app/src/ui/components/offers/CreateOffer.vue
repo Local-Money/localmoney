@@ -11,9 +11,10 @@ import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import {
   defaultMicroDenomAvailable,
-  microDenomToDenom,
   denomsAvailable,
+  microDenomToDenom,
 } from '~/utils/denom'
+import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -105,14 +106,11 @@ watch(margin, () => {
             class="bg-gray300"
             name="currency"
           >
-            <option :value="FiatCurrency.ARS">
-              ARS
-            </option>
-            <option :value="FiatCurrency.BRL">
-              BRL
-            </option>
-            <option :value="FiatCurrency.COP">
-              COP
+            <option
+              v-for="fiatCode in fiatsAvailable.keys()"
+              :value="fiatCode"
+            >
+              {{ getFiatInfo(fiatCode).display }} <img :src="getFiatInfo(fiatCode).flag" />
             </option>
           </select>
         </div>
