@@ -97,19 +97,38 @@ watch(offerType, async () => {
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
-        <select
+        <v-select
           id="currency"
-          v-model="fiatCurrency"
-          name="currency"
           class="bg-surface"
+          name="currency"
+          v-model="fiatCurrency"
+          :options="[...fiatsAvailable.keys()]"
+          :searchable="false"
+          :clearable="false"
         >
-          <option
-            v-for="fiatCode in fiatsAvailable.keys()"
-            :value="fiatCode"
-          >
-            {{ getFiatInfo(fiatCode).display }} <img :src="getFiatInfo(fiatCode).flag" />
-          </option>
-        </select>
+          <template #selected-option>
+            <img :src="getFiatInfo(fiatCurrency).flag" width="25"> {{ getFiatInfo(fiatCurrency).display }}
+          </template>
+          <template #option="{ label }">
+            <img :src="getFiatInfo(label).flag" width="25"> {{ getFiatInfo(label).display }}
+          </template>
+        </v-select>
+
+<!--        <select-->
+<!--          id="currency"-->
+<!--          v-model="fiatCurrency"-->
+<!--          name="currency"-->
+<!--          class="bg-surface"-->
+<!--          :style="`background-image:url(${getFiatInfo(fiatCurrency).flag})`"-->
+<!--        >-->
+<!--          <option-->
+<!--            v-for="fiatCode in fiatsAvailable.keys()"-->
+<!--            :value="fiatCode"-->
+<!--            :style="`background-image:url(${getFiatInfo(fiatCode).flag})`"-->
+<!--          >-->
+<!--            {{ getFiatInfo(fiatCode).display }}-->
+<!--          </option>-->
+<!--        </select>-->
       </div>
     </section>
 
