@@ -65,50 +65,39 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::HubAddr {} => to_binary(&query_hub_addr(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
-        QueryMsg::Offers { fiat_currency } => {
-            to_binary(&OfferModel::query_all_offers(deps.storage, fiat_currency)?)
-        }
-        QueryMsg::OffersQuery {
+        QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
+        QueryMsg::Offers {
             owner,
             min,
             max,
             limit,
             order,
-        } => to_binary(&OfferModel::query(deps, owner, min, max, limit, order)?),
-        QueryMsg::OffersByType {
-            offer_type,
-            last_value,
-            limit,
-        } => to_binary(&OfferModel::query_by_type(
-            deps, offer_type, last_value, limit,
-        )?),
-        QueryMsg::OffersByFiat {
-            fiat_currency,
-            last_value,
-            limit,
-        } => to_binary(&OfferModel::query_by_fiat(
-            deps,
-            fiat_currency,
-            last_value,
-            limit,
-        )?),
-        QueryMsg::OffersByTypeFiat {
-            offer_type,
-            fiat_currency,
-            min,
-            max,
-            limit,
-            order,
-        } => to_binary(&OfferModel::query_by_type_fiat(
-            deps,
-            offer_type,
-            fiat_currency,
+        } => to_binary(&OfferModel::query(
+            deps.storage,
+            owner,
             min,
             max,
             limit,
             order,
         )?),
-        QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
+        QueryMsg::OffersBy {
+            offer_type,
+            fiat_currency,
+            denom,
+            min,
+            max,
+            limit,
+            order,
+        } => to_binary(&OfferModel::query_by(
+            deps.storage,
+            offer_type,
+            fiat_currency,
+            denom,
+            min,
+            max,
+            order,
+            limit,
+        )?),
         QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
         QueryMsg::Arbitrators { last_value, limit } => {
             to_binary(&query_arbitrators(deps, last_value, limit)?)
