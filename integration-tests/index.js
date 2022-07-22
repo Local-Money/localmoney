@@ -109,7 +109,7 @@ async function create_offers(offer_addr) {
 async function query_offers(offer_addr) {
   const queries = [
     {
-      offers_query: {
+      offers: {
         limit: 5,
         order: 'desc'
       },
