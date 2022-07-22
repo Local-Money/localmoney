@@ -33,16 +33,15 @@ pub enum QueryMsg {
     Trades {
         user: Addr,
         state: Option<TradeState>,
-        index: TradesIndex,
+        role: TraderRole,
         last_value: Option<String>,
         limit: u32,
     },
 }
 
-//TODO: rename to something more self explanatory.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum TradesIndex {
+pub enum TraderRole {
     Seller,
     Buyer,
 }

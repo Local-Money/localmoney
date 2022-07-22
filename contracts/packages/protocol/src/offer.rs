@@ -2,7 +2,10 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 // use crate::errors::GuardError;
 use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{
+    to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, Uint128,
+    WasmQuery,
+};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -445,4 +448,23 @@ pub enum OfferState {
     Active,
     Paused,
     Archive,
+}
+
+//Queries
+pub fn load_offer(
+    querier: &QuerierWrapper,
+    offer_id: String,
+    offer_contract: String,
+) -> Option<Offer> {
+    let load_offer_result: StdResult<Offer> =
+        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: offer_contract,
+            msg: to_binary(&QueryMsg::Offer { id: offer_id }).unwrap(),
+        }));
+
+    if load_offer_result.is_err() {
+        None
+    } else {
+        Some(load_offer_result.unwrap())
+    }
 }

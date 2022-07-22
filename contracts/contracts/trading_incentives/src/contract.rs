@@ -8,6 +8,7 @@ use cosmwasm_std::{
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HUB_ADDR};
+use localterra_protocol::offer::load_offer;
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
 use localterra_protocol::trading_incentives::{
     Distribution, ExecuteMsg, InstantiateMsg, QueryMsg, TraderRewards,
@@ -58,7 +59,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, TradingIncentivesError> {
     match msg {
-        ExecuteMsg::RegisterTrade { trade, maker } => register_trade(deps, env, info, trade, maker),
+        ExecuteMsg::RegisterTrade { trade } => register_trade(deps, env, info, trade),
         ExecuteMsg::ClaimRewards { period } => claim_rewards(deps, env, info, period),
         ExecuteMsg::StartDistribution {} => start_distribution(deps, env, info),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
@@ -113,7 +114,6 @@ fn register_trade(
     env: Env,
     info: MessageInfo,
     trade_id: String,
-    maker: String,
 ) -> Result<Response, TradingIncentivesError> {
     let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
@@ -122,12 +122,6 @@ fn register_trade(
     if hub_cfg.trade_addr.ne(&info.sender) {
         return Err(TradingIncentivesError::Unauthorized {});
     }
-
-    let maker = deps
-        .api
-        .addr_validate(&maker.as_str())
-        .unwrap()
-        .into_string();
 
     let trade: Trade = deps
         .querier
@@ -139,6 +133,14 @@ fn register_trade(
             .unwrap(),
         }))
         .unwrap();
+
+    let offer = load_offer(
+        &deps.querier,
+        trade.offer_id,
+        hub_cfg.offer_addr.to_string(),
+    )
+    .unwrap();
+    let maker = offer.owner.to_string();
 
     if trade.state != TradeState::EscrowReleased {
         return Err(TradingIncentivesError::Unauthorized {});
@@ -208,7 +210,7 @@ fn claim_rewards(
                 amount: amount.amount.clone(),
             }],
         })))
-        .add_attribute("action", "claim")
+        .add_attribute("action", "claim_rewards")
         .add_attribute("maker", info.sender)
         .add_attribute("amount", amount.amount.to_string())
         .add_attribute("denom", rewards_denom)
