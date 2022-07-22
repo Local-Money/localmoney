@@ -1,9 +1,9 @@
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 
-use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT, UNUSED_MSG_ID};
+use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT};
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
@@ -307,12 +307,7 @@ fn dispute_escrow(
         })
         .unwrap(),
     };
-    let sub_message = SubMsg {
-        id: UNUSED_MSG_ID,
-        msg: CosmosMsg::Wasm(execute_msg),
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    };
+    let sub_message = SubMsg::new(CosmosMsg::Wasm(execute_msg));
 
     let res = Response::new()
         .add_submessage(sub_message)

@@ -1,7 +1,6 @@
-use cosmwasm_std::{entry_point, Addr, Binary, Deps, ReplyOn, StdResult};
+use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw20::Denom;
-use localterra_protocol::constants::UNUSED_MSG_ID;
 
 use crate::errors::HubError;
 use crate::errors::HubError::Unauthorized;
@@ -55,38 +54,23 @@ fn update_config(
         Denom::Cw20(addr) => addr.to_string(),
     };
 
-    let offer_register_hub = SubMsg {
-        id: UNUSED_MSG_ID,
-        msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.offer_addr.to_string(),
-            msg: to_binary(&OfferRegisterHub {}).unwrap(),
-            funds: info.funds.clone(),
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    };
+    let offer_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.offer_addr.to_string(),
+        msg: to_binary(&OfferRegisterHub {}).unwrap(),
+        funds: info.funds.clone(),
+    }));
 
-    let trade_register_hub = SubMsg {
-        id: UNUSED_MSG_ID,
-        msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.trade_addr.to_string(),
-            msg: to_binary(&TradeRegisterHub {}).unwrap(),
-            funds: info.funds.clone(),
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    };
+    let trade_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.trade_addr.to_string(),
+        msg: to_binary(&TradeRegisterHub {}).unwrap(),
+        funds: info.funds.clone(),
+    }));
 
-    let trading_incentives_register_hub = SubMsg {
-        id: UNUSED_MSG_ID,
-        msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.trading_incentives_addr.to_string(),
-            msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
-            funds: info.funds.clone(),
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    };
+    let trading_incentives_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.trading_incentives_addr.to_string(),
+        msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
+        funds: info.funds.clone(),
+    }));
 
     let res = Response::new()
         .add_submessage(offer_register_hub)
