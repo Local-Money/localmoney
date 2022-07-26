@@ -67,6 +67,7 @@ export enum OfferState { active = 'active', paused = 'paused', archived = 'archi
 export interface FetchOffersArgs {
   fiatCurrency: FiatCurrency
   offerType: OfferType
+  denom: Denom
 }
 
 export interface NewTrade {

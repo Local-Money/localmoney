@@ -38,28 +38,23 @@ function unselectOffer(offer: ExpandableItem<GetOffer>) {
   offer.isExpanded = false;
 }
 
+async function fetchOffers() {
+  await client.fetchOffers({
+    fiatCurrency: fiatCurrency.value,
+    offerType: offerType.value,
+    denom: { native: selectedCrypto.value },
+  })
+}
+
 onMounted(async () => {
-  await priceStore.fetchPrices();
-  // TODO we should send the selectedCrypto here to filter on fetchOffers
-  await client.fetchOffers({
-    fiatCurrency: fiatCurrency.value,
-    offerType: offerType.value,
-  });
-});
+  await priceStore.fetchPrices()
+  await fetchOffers()
+})
 
-watch(fiatCurrency, async () => {
-  await client.fetchOffers({
-    fiatCurrency: fiatCurrency.value,
-    offerType: offerType.value,
-  });
-});
+watch(fiatCurrency, async () => await fetchOffers())
+watch(selectedCrypto, async () => await fetchOffers())
+watch(offerType, async () => await fetchOffers())
 
-watch(offerType, async () => {
-  await client.fetchOffers({
-    fiatCurrency: fiatCurrency.value,
-    offerType: offerType.value,
-  });
-});
 </script>
 
 <template>

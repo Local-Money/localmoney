@@ -112,6 +112,8 @@ export class CosmosChain implements Chain {
         const response = await this.cwClient.queryContractSmart(
           this.hubInfo.hubConfig.offer_addr,
           {
+            // TODO: update this query when new contracts are deployed
+            // offers: {
             offers_query: {
               owner: this.getWalletAddress(),
               limit: 10,
@@ -132,22 +134,36 @@ export class CosmosChain implements Chain {
 
   async fetchOffers(args: FetchOffersArgs) {
     console.log('args >>> ', args)
-    // TODO fix init
+    // TODO: fix init
     if (!this.cwClient)
       await this.init()
     try {
+      // TODO: update this query when new contracts are deployed
+      // const queryMsg = {
+      //   offers_by: {
+      //     fiat_currency: args.fiatCurrency,
+      //     offer_type: args.offerType,
+      //     denom: args.denom,
+      //     // min: "",
+      //     // max: "",
+      //     limit: 10,
+      //     order: 'asc',
+      //   },
+      // }
+      const queryMsg = {
+        offers_by_type_fiat: {
+          fiat_currency: args.fiatCurrency,
+          offer_type: args.offerType,
+          // min: "",
+          // max: "",
+          limit: 10,
+          order: 'asc',
+        },
+      }
       const response = await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
-        {
-          offers_by_type_fiat: {
-            fiat_currency: args.fiatCurrency,
-            offer_type: args.offerType,
-            // min: "",
-            // max: "",
-            limit: 10,
-            order: 'asc',
-          },
-        }) as GetOffer[]
+        queryMsg
+      ) as GetOffer[]
       console.log('response >>> ', response)
       return response
     }

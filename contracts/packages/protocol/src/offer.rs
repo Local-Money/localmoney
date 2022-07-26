@@ -1,8 +1,12 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 // use crate::errors::GuardError;
+use crate::denom_utils::denom_to_string;
 use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{Addr, Deps, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{
+    to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, Uint128,
+    WasmQuery,
+};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -11,19 +15,16 @@ use std::fmt::{self};
 use std::ops::Add;
 
 pub static CONFIG_KEY: &[u8] = b"config";
-// pub const OFFERS: Map<&[u8], Offer> = Map::new(OFFERS_KEY);
+
 pub struct OfferIndexes<'a> {
     // pk goes to second tuple element
     pub owner: MultiIndex<'a, String, Offer, String>,
-    pub offer_type: MultiIndex<'a, String, Offer, String>,
-    pub fiat: MultiIndex<'a, String, Offer, String>,
     pub filter: MultiIndex<'a, String, Offer, String>,
 }
 
 impl<'a> IndexList<Offer> for OfferIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Offer>> + '_> {
-        let v: Vec<&dyn Index<Offer>> =
-            vec![&self.owner, &self.offer_type, &self.fiat, &self.filter];
+        let v: Vec<&dyn Index<Offer>> = vec![&self.owner, &self.filter];
         Box::new(v.into_iter())
     }
 }
@@ -31,22 +32,13 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
 pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
     let indexes = OfferIndexes {
         owner: MultiIndex::new(|d| d.owner.clone().to_string(), "offers", "offers__owner"),
-        offer_type: MultiIndex::new(
-            |d: &Offer| d.offer_type.to_string(),
-            "offers",
-            "offers__offer_type",
-        ),
-        fiat: MultiIndex::new(
-            |d: &Offer| d.fiat_currency.to_string(),
-            "offers",
-            "offers__fiat",
-        ),
         filter: MultiIndex::new(
             |offer: &Offer| {
                 offer
                     .fiat_currency
                     .to_string()
                     .add(offer.offer_type.to_string().as_str())
+                    .add(denom_to_string(&offer.denom).as_str())
                     .add(&offer.state.to_string())
             },
             "offers",
@@ -123,37 +115,24 @@ pub enum QueryOrder {
 pub enum QueryMsg {
     HubAddr {},
     State {},
-    Offers {
-        // TODO deprecated, remove
-        fiat_currency: FiatCurrency,
+    Offer {
+        id: String,
     },
-    OffersQuery {
+    Offers {
         owner: Option<Addr>,
         min: Option<String>,
         max: Option<String>,
         limit: u32,
         order: QueryOrder,
     },
-    OffersByType {
-        offer_type: OfferType,
-        last_value: Option<String>,
-        limit: u32,
-    },
-    OffersByFiat {
-        fiat_currency: FiatCurrency,
-        last_value: Option<String>,
-        limit: u32,
-    },
-    OffersByTypeFiat {
+    OffersBy {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
+        denom: Denom,
         min: Option<String>,
         max: Option<String>,
-        limit: u32,
         order: QueryOrder,
-    },
-    Offer {
-        id: String,
+        limit: u32,
     },
     Arbitrator {
         arbitrator: Addr,
@@ -244,110 +223,6 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query_all_offers(
-        storage: &dyn Storage,
-        fiat_currency: FiatCurrency,
-    ) -> StdResult<Vec<Offer>> {
-        let result: Vec<Offer> = offers()
-            .range(storage, None, None, Order::Descending)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-            .filter(|offer| offer.fiat_currency == fiat_currency)
-            .collect();
-
-        Ok(result)
-    }
-
-    pub fn query_by_type(
-        deps: Deps,
-        offer_type: OfferType,
-        last_value: Option<String>,
-        limit: u32,
-    ) -> StdResult<Vec<Offer>> {
-        let storage = deps.storage;
-
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-
-        let result = offers()
-            .idx
-            .offer_type
-            .prefix(offer_type.to_string())
-            .range(storage, range_from, None, Order::Descending)
-            .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-            .collect();
-
-        Ok(result)
-    }
-
-    pub fn query_by_type_fiat(
-        deps: Deps,
-        offer_type: OfferType,
-        fiat_currency: FiatCurrency,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
-        order: QueryOrder,
-    ) -> StdResult<Vec<Offer>> {
-        let storage = deps.storage;
-
-        let std_order = match order {
-            QueryOrder::Asc => Order::Ascending,
-            QueryOrder::Desc => Order::Descending,
-        };
-
-        let range_min = match min {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-        let range_max = match max {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-
-        let result = offers()
-            .idx
-            .filter
-            .prefix(
-                fiat_currency.to_string()
-                    + &offer_type.to_string()
-                    + &*OfferState::Active.to_string(),
-            )
-            .range(storage, range_min, range_max, std_order)
-            .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-            .collect();
-
-        Ok(result)
-    }
-
-    pub fn query_by_fiat(
-        deps: Deps,
-        fiat_currency: FiatCurrency,
-        last_value: Option<String>,
-        limit: u32,
-    ) -> StdResult<Vec<Offer>> {
-        let storage = deps.storage;
-
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-
-        let result = offers()
-            .idx
-            .fiat
-            .prefix(fiat_currency.to_string())
-            .range(storage, range_from, None, Order::Descending)
-            .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
-            .collect();
-
-        Ok(result)
-    }
-
     pub fn query(
         deps: Deps,
         owner: Option<Addr>,
@@ -357,7 +232,11 @@ impl OfferModel<'_> {
         order: QueryOrder,
     ) -> StdResult<Vec<Offer>> {
         let storage = deps.storage;
-        // let range: Box<dyn Iterator<Item = StdResult<Pair<Offer>>>>;
+
+        let std_order = match order {
+            QueryOrder::Asc => Order::Ascending,
+            QueryOrder::Desc => Order::Descending,
+        };
 
         let range_min = match min {
             Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
@@ -367,11 +246,6 @@ impl OfferModel<'_> {
         let range_max = match max {
             Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
             None => None,
-        };
-
-        let std_order = match order {
-            QueryOrder::Asc => Order::Ascending,
-            QueryOrder::Desc => Order::Descending,
         };
 
         // Handle optional owner address query parameter
@@ -389,6 +263,48 @@ impl OfferModel<'_> {
         };
 
         let result = range
+            .take(limit as usize)
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn query_by(
+        storage: &dyn Storage,
+        offer_type: OfferType,
+        fiat_currency: FiatCurrency,
+        denom: Denom,
+        min: Option<String>,
+        max: Option<String>,
+        order: QueryOrder,
+        limit: u32,
+    ) -> StdResult<Vec<Offer>> {
+        let std_order = match order {
+            QueryOrder::Asc => Order::Ascending,
+            QueryOrder::Desc => Order::Descending,
+        };
+
+        let range_min = match min {
+            Some(thing) => Some(Bound::exclusive(thing)),
+            None => None,
+        };
+
+        let range_max = match max {
+            Some(thing) => Some(Bound::exclusive(thing)),
+            None => None,
+        };
+
+        let result = offers()
+            .idx
+            .filter
+            .prefix(
+                fiat_currency.to_string()
+                    + &offer_type.to_string()
+                    + &denom_to_string(&denom)
+                    + &*OfferState::Active.to_string(),
+            )
+            .range(storage, range_min, range_max, std_order)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
@@ -445,4 +361,23 @@ pub enum OfferState {
     Active,
     Paused,
     Archive,
+}
+
+//Queries
+pub fn load_offer(
+    querier: &QuerierWrapper,
+    offer_id: String,
+    offer_contract: String,
+) -> Option<Offer> {
+    let load_offer_result: StdResult<Offer> =
+        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: offer_contract,
+            msg: to_binary(&QueryMsg::Offer { id: offer_id }).unwrap(),
+        }));
+
+    if load_offer_result.is_err() {
+        None
+    } else {
+        Some(load_offer_result.unwrap())
+    }
 }

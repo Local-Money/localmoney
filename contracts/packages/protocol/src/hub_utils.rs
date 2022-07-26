@@ -13,6 +13,15 @@ pub fn get_hub_config(querier: &QuerierWrapper, hub_addr: String) -> HubConfig {
         .unwrap()
 }
 
+pub fn get_hub_admin(querier: &QuerierWrapper, hub_addr: String) -> Addr {
+    querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: hub_addr,
+            msg: to_binary(&QueryMsg::Admin {}).unwrap(),
+        }))
+        .unwrap()
+}
+
 pub const HUB_ADDR: Item<HubAddr> = Item::new("HubConfig");
 
 pub fn register_hub_internal<E>(

@@ -9,7 +9,9 @@ use localterra_protocol::errors::GuardError;
 use localterra_protocol::errors::GuardError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::hub::HubConfig;
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
+use localterra_protocol::hub_utils::{
+    get_hub_admin, get_hub_config, register_hub_internal, HubAddr, HUB_ADDR,
+};
 use localterra_protocol::offer::{
     offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
     OfferUpdateMsg, OffersCount, QueryMsg,
@@ -42,10 +44,10 @@ pub fn execute(
             create_arbitrator(deps, env, info, arbitrator, asset)
         }
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
-            delete_arbitrator(deps, env, info, arbitrator, asset)
+            delete_arbitrator(deps, info, arbitrator, asset)
         }
         ExecuteMsg::UpdateTradeArbitrator { arbitrator } => {
-            // TODO merge this call with the query random arbitrator call
+            // TODO merge this call with the query random arbitrator call. LOCAL-660
             execute_update_trade_arbitrator(deps, env, info, arbitrator)
         }
         ExecuteMsg::UpdateLastTraded { offer_id } => {
@@ -63,50 +65,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::HubAddr {} => to_binary(&query_hub_addr(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
-        QueryMsg::Offers { fiat_currency } => {
-            to_binary(&OfferModel::query_all_offers(deps.storage, fiat_currency)?)
-        }
-        QueryMsg::OffersQuery {
+        QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
+        QueryMsg::Offers {
             owner,
             min,
             max,
             limit,
             order,
         } => to_binary(&OfferModel::query(deps, owner, min, max, limit, order)?),
-        QueryMsg::OffersByType {
-            offer_type,
-            last_value,
-            limit,
-        } => to_binary(&OfferModel::query_by_type(
-            deps, offer_type, last_value, limit,
-        )?),
-        QueryMsg::OffersByFiat {
-            fiat_currency,
-            last_value,
-            limit,
-        } => to_binary(&OfferModel::query_by_fiat(
-            deps,
-            fiat_currency,
-            last_value,
-            limit,
-        )?),
-        QueryMsg::OffersByTypeFiat {
+        QueryMsg::OffersBy {
             offer_type,
             fiat_currency,
+            denom,
             min,
             max,
             limit,
             order,
-        } => to_binary(&OfferModel::query_by_type_fiat(
-            deps,
+        } => to_binary(&OfferModel::query_by(
+            deps.storage,
             offer_type,
             fiat_currency,
+            denom,
             min,
             max,
-            limit,
             order,
+            limit,
         )?),
-        QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
         QueryMsg::Arbitrators { last_value, limit } => {
             to_binary(&query_arbitrators(deps, last_value, limit)?)
@@ -176,7 +160,7 @@ pub fn execute_update_trade_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
 ) -> Result<Response, GuardError> {
-    // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set
+    // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set. LOCAL-660
     let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
 
     trade.arbitrator = arbitrator.clone();
@@ -226,15 +210,14 @@ pub fn execute_update_last_traded(
 
 pub fn create_arbitrator(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
 ) -> Result<Response, GuardError> {
-    assert_ownership(
-        info.sender,
-        Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
-    )?;
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+    assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
@@ -251,10 +234,10 @@ pub fn create_arbitrator(
         .add_attribute("action", "create_arbitrator")
         .add_attribute("arbitrator", arbitrator.to_string())
         .add_attribute("asset", asset.to_string())
-        .add_attribute("timestamp", _env.block.time.seconds().to_string())
+        .add_attribute("timestamp", env.block.time.seconds().to_string())
         .add_attribute(
             "numeric",
-            ((_env.block.time.seconds() % 100) * (3 + 1) / (99 + 1)).to_string(),
+            ((env.block.time.seconds() % 100) * (3 + 1) / (99 + 1)).to_string(),
         );
 
     Ok(res)
@@ -262,15 +245,13 @@ pub fn create_arbitrator(
 
 pub fn delete_arbitrator(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
 ) -> Result<Response, GuardError> {
-    assert_ownership(
-        info.sender,
-        Addr::unchecked("terra1rz4mcfwmqkgv7ss2tygpy79ffd33gh32as49j0"), // TODO move quorum address to constant
-    )?;
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+    assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
