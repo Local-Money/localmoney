@@ -224,13 +224,15 @@ impl OfferModel<'_> {
     }
 
     pub fn query(
-        storage: &dyn Storage,
+        deps: Deps,
         owner: Option<Addr>,
         min: Option<String>,
         max: Option<String>,
         limit: u32,
         order: QueryOrder,
     ) -> StdResult<Vec<Offer>> {
+        let storage = deps.storage;
+
         let std_order = match order {
             QueryOrder::Asc => Order::Ascending,
             QueryOrder::Desc => Order::Descending,
