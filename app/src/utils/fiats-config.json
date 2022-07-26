@@ -1,16 +1,16 @@
 {
   "ARS": {
-    "flag": "/flags/ar.svg",
+    "icon": "/flags/ar.svg",
     "display": "PESOS ARS",
     "code": "ARS"
   },
   "BRL": {
-    "flag": "/flags/br.svg",
+    "icon": "/flags/br.svg",
     "display": "REAL BRL",
     "code": "BRL"
   },
   "COP": {
-    "flag": "/flags/co.svg",
+    "icon": "/flags/co.svg",
     "display": "PESOS COL",
     "code": "COP"
   }
