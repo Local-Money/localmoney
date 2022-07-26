@@ -1,27 +1,34 @@
 <script setup lang="ts">
-import { fiatsAvailable, getFiatInfo } from "~/utils/fiat";
+import type { SelectInfo } from '~/utils/select-utils'
+import { getSelectInfo } from '~/utils/select-utils'
+const props = defineProps<{
+  modelValue: string
+  options: Map<string, SelectInfo>
+}>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', modelValue: string): void
+}>()
 </script>
 
 <template>
   <v-select
-    id="currency"
     class=""
-    name="currency"
-    v-model="fiatCurrency"
-    :options="[...fiatsAvailable.keys()]"
+    :model-value="modelValue"
+    :options="[...options.keys()]"
     :searchable="false"
     :clearable="false"
+    @update:model-value="emit('update:modelValue', $event)"
   >
     <template #selected-option>
-      <div class="wrap">
-        <img :src="getFiatInfo(fiatCurrency).flag" />
-        <p>{{ getFiatInfo(fiatCurrency).display }}</p>
+      <div class="wrap" v-bind="info = getSelectInfo(options, modelValue)">
+        <img v-if="info.icon" :src="info.icon" />
+        <p>{{ info.display }}</p>
       </div>
     </template>
     <template #option="{ label }">
-      <div class="wrap">
-        <img :src="getFiatInfo(label).flag" />
-        <p>{{ getFiatInfo(label).display }}</p>
+      <div class="wrap" v-bind="info = getSelectInfo(options, label)">
+        <img v-if="info.icon" :src="info.icon" />
+        <p>{{ info.display }}</p>
       </div>
     </template>
   </v-select>
@@ -67,6 +74,7 @@ import { fiatsAvailable, getFiatInfo } from "~/utils/fiat";
     display: flex;
     align-content: space-between;
     align-items: center;
+    height: 24px;
     img {
       width: 24px;
     }

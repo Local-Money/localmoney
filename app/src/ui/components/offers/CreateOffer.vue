@@ -92,27 +92,15 @@ watch(margin, () => {
       <div class="currency">
         <div class="filter">
           <label for="crypto">Crypto</label>
-          <select id="crypto" v-model="selectedCrypto" class="bg-gray300" name="crypto">
-            <option v-for="microDenom in denomsAvailable.keys()" :value="microDenom">
-              {{ microDenomToDenom(microDenom) }}
-            </option>
-          </select>
+          <CustomSelect
+            v-model="selectedCrypto"
+            :options="denomsAvailable"/>
         </div>
         <div class="filter">
           <label for="currency">Currency (FIAT)</label>
-          <select
-            id="currency"
+          <CustomSelect
             v-model="fiatCurrency"
-            class="bg-gray300"
-            name="currency"
-          >
-            <option
-              v-for="fiatCode in fiatsAvailable.keys()"
-              :value="fiatCode"
-            >
-              {{ getFiatInfo(fiatCode).display }} <img :src="getFiatInfo(fiatCode).flag" />
-            </option>
-          </select>
+            :options="fiatsAvailable"/>
         </div>
       </div>
       <div class="divider" />

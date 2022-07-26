@@ -23,7 +23,7 @@ client.$subscribe((mutation, state) => {
       .flatMap((offer) => new ExpandableItem(offer));
 });
 
-const selectedCrypto = ref(defaultMicroDenomAvailable());
+const selectedCrypto = ref<string>(defaultMicroDenomAvailable());
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS);
 const offerType = ref<OfferType>(OfferType.sell);
 const selectedOffer = ref<ExpandableItem<GetOffer> | null>(null);
@@ -85,60 +85,15 @@ watch(offerType, async () => {
       </div>
       <div class="filter">
         <label for="crypto">Crypto</label>
-        <select
-          v-model="selectedCrypto"
-          name="crypto"
-          id="crypto"
-          class="bg-surface"
-        >
-          <option
-            v-for="microDenom in denomsAvailable.keys()"
-            :value="microDenom"
-          >
-            {{ microDenomToDenom(microDenom) }}
-          </option>
-        </select>
+        <CustomSelect
+            v-model="selectedCrypto"
+            :options="denomsAvailable"/>
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
-        <v-select
-          id="currency"
-          class=""
-          name="currency"
-          v-model="fiatCurrency"
-          :options="[...fiatsAvailable.keys()]"
-          :searchable="false"
-          :clearable="false"
-        >
-          <template #selected-option>
-            <img :src="getFiatInfo(fiatCurrency).flag" width="25" />
-            {{ getFiatInfo(fiatCurrency).display }}
-          </template>
-          <template #option="{ label }">
-            <img :src="getFiatInfo(label).flag" width="25" />
-            {{ getFiatInfo(label).display }}
-          </template>
-        </v-select>
-
-        <!--        <select-->
-        <!--          id="currency"-->
-        <!--          v-model="fiatCurrency"-->
-        <!--          name="currency"-->
-        <!--          class="bg-surface"-->
-        <!--          :style="`background-image:url(${getFiatInfo(fiatCurrency).flag})`"-->
-        <!--        >-->
-        <!--          <option-->
-        <!--            v-for="fiatCode in fiatsAvailable.keys()"-->
-        <!--            :value="fiatCode"-->
-        <!--            :style="`background-image:url(${getFiatInfo(fiatCode).flag})`"-->
-        <!--          >-->
-        <!--            {{ getFiatInfo(fiatCode).display }}-->
-        <!--          </option>-->
-        <!--        </select>-->
-      </div>
-      <div class="filter">
-        <label>Teste Component</label>
-        <CustomSelect />
+        <CustomSelect
+            v-model="fiatCurrency"
+            :options="fiatsAvailable"/>
       </div>
     </section>
 
