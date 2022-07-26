@@ -55,10 +55,10 @@ export const useClientStore = defineStore({
         alert((e as ChainError).message)
       }
     },
-    async fetchOffers({ fiatCurrency, offerType }: FetchOffersArgs) {
+    async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
       try {
-        const listOffers = await this.client.fetchOffers({ fiatCurrency, offerType })
+        const listOffers = await this.client.fetchOffers(offersArgs)
         this.offers = ListResult.success(listOffers)
       } catch (e) {
         this.offers = ListResult.error(e as ChainError)
