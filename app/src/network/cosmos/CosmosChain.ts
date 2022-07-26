@@ -42,8 +42,7 @@ export class CosmosChain implements Chain {
   async connectWallet() {
     if (!window.getOfflineSigner || !window.keplr || !window.getOfflineSignerAuto) {
       throw new WalletNotInstalled()
-    }
-    else {
+    } else {
       await CosmosChain.suggestChain(this.config)
       await window.keplr.enable(this.config.chainId)
       this.signer = await window.getOfflineSignerAuto(this.config.chainId);
@@ -74,12 +73,10 @@ export class CosmosChain implements Chain {
           'auto',
         )
         console.log('Create offer result >> ', result)
-      }
-      catch (e) {
+      } catch (e) {
         throw new DefaultError()
       }
-    }
-    else {
+    } else {
       throw new WalletNotConnected()
     }
   }
@@ -96,12 +93,10 @@ export class CosmosChain implements Chain {
           'auto',
         )
         console.log('Update offer result >> ', result)
-      }
-      catch (e) {
+      } catch (e) {
         throw new DefaultError()
       }
-    }
-    else {
+    } else {
       throw new WalletNotConnected()
     }
   }
@@ -120,12 +115,10 @@ export class CosmosChain implements Chain {
           }) as GetOffer[]
         console.log('response >> ', response)
         return response
-      }
-      catch (e) {
+      } catch (e) {
         throw new DefaultError()
       }
-    }
-    else {
+    } else {
       throw new WalletNotConnected()
     }
   }
@@ -150,8 +143,7 @@ export class CosmosChain implements Chain {
         }) as GetOffer[]
       console.log('response >>> ', response)
       return response
-    }
-    catch (e) {
+    } catch (e) {
       throw new DefaultError()
     }
   }
@@ -171,12 +163,10 @@ export class CosmosChain implements Chain {
         console.log('Open Trade result >> ', result)
         // TODO should we try to get this info this way?
         response = result.logs[0].events[2].attributes[1].value
-      }
-      catch (e) {
+      } catch (e) {
         throw new DefaultError()
       }
-    }
-    else {
+    } else {
       throw new WalletNotConnected()
     }
     return response
@@ -208,12 +198,10 @@ export class CosmosChain implements Chain {
         const response: TradeInfo[] = tradesAsBuyer.concat(tradesAsSeller)
         console.log('response >>> ', response)
         return response
-      }
-      catch (e) {
+      } catch (e) {
         throw new DefaultError()
       }
-    }
-    else {
+    } else {
       throw new WalletNotConnected()
     }
   }
@@ -229,8 +217,7 @@ export class CosmosChain implements Chain {
       ) as Trade
       console.log('response >>> ', response)
       return response
-    }
-    catch (e) {
+    } catch (e) {
       // TODO error state
       throw new DefaultError()
     }
@@ -289,13 +276,11 @@ export class CosmosChain implements Chain {
           funds,
         )
         console.log('Trade State result >> ', result)
-      }
-      catch (e) {
+      } catch (e) {
         // TODO manage error
         throw new DefaultError()
       }
-    }
-    else {
+    } else {
       throw new WalletNotConnected()
     }
   }
@@ -347,8 +332,7 @@ export class CosmosChain implements Chain {
           coinDecimals: config.coinDecimals,
         }],
       })
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e)
     }
   }
