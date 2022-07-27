@@ -1,8 +1,8 @@
 use std::fmt::{self};
 
-use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw20::Denom;
-use cw_storage_plus::{Bound, Index, IndexedMap, IndexList, MultiIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -53,6 +53,12 @@ pub struct NewTrade {
     pub offer_id: String,
     pub amount: Uint128,
     pub taker: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SwapMsg {
+    pub swap: Swap,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

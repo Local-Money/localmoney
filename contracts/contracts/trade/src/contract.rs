@@ -19,8 +19,8 @@ use localterra_protocol::offer::{
     load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
 use localterra_protocol::trade::{
-    Asset, AssetInfo, ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Swap, Trade, TradeModel,
-    TradeState, TraderRole,
+    Asset, AssetInfo, ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
+    TradeModel, TradeState, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -449,7 +449,7 @@ fn release_escrow(
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let mut release_amount = trade.amount.clone();
-    let fee = Uint128(1u128).mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
+    let fee = Uint128::new(1u128).mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
     release_amount = release_amount.checked_sub(fee.clone()).unwrap();
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
@@ -482,12 +482,14 @@ fn release_escrow(
         id: SWAP_REPLY_ID,
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: hub_cfg.local_market_addr.to_string(),
-            msg: to_binary(&Swap {
-                offer_asset: Asset {
-                    info: AssetInfo::NativeToken {
-                        denom: denom.to_string(),
+            msg: to_binary(&SwapMsg {
+                swap: Swap {
+                    offer_asset: Asset {
+                        info: AssetInfo::NativeToken {
+                            denom: denom.to_string(),
+                        },
+                        amount: fee.clone(),
                     },
-                    amount: fee.clone(),
                 },
             })
             .unwrap(),
@@ -513,7 +515,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
+fn handle_swap_reply(_deps: DepsMut, msg: Reply) -> StdResult<Response> {
     let attributes = msg
         .result
         .unwrap()
@@ -539,14 +541,17 @@ fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
     let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
         amount: vec![coin(
             u128::from_str(return_amount.as_str()).unwrap(),
-            ask_asset,
+            ask_asset.clone(),
         )],
     });
 
-    // Save res.contract_address
-    let res = Response::new();
-    res.add_attributes(!vec![("event", "swap_reply")]);
-    res.add_submessage(SubMsg::new(burn_msg));
+    let res = Response::new()
+        .add_attributes(vec![
+            ("event", "swap_reply"),
+            ("burn_amount", return_amount.as_str()),
+            ("demon", ask_asset.as_str()),
+        ])
+        .add_submessage(SubMsg::new(burn_msg));
     Ok(res)
 }
 
