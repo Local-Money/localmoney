@@ -1,4 +1,5 @@
 import denomList from './denoms-config.json'
+import type { SelectInfo } from '~/utils/select-utils'
 
 export const denomsAvailable = new Map<string, MicronDenom>(Object.entries(denomList))
 
@@ -11,9 +12,9 @@ export function checkMicroDenomAvailable(microDenom: string): boolean {
 }
 
 export function microDenomToDenom(microDenom: string): string {
-  return denomsAvailable.has(microDenom) ? denomsAvailable.get(microDenom)!.denom : microDenom
+  return denomsAvailable.has(microDenom) ? denomsAvailable.get(microDenom)!.display : microDenom
 }
 
-interface MicronDenom {
-  denom: string
+interface MicronDenom extends SelectInfo {
+  display: string
 }
