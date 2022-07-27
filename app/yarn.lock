@@ -4888,6 +4888,11 @@ vue-router@^4.1.2:
   dependencies:
     "@vue/devtools-api" "^6.1.4"
 
+vue-select@^4.0.0-beta.3:
+  version "4.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/vue-select/-/vue-select-4.0.0-beta.3.tgz#12096cdc5701af94bac66a60e7bbe560d5ef1d54"
+  integrity sha512-sXufbTDluz26a39UUZE9jeh9Hojnn8zr9qDDUlVEBc7E0F+h3+Nzy8YzyFHuVNrrYLmK0zrPkb7hWFulAEW41Q==
+
 vue-tsc@^0.34.12:
   version "0.34.16"
   resolved "https://registry.yarnpkg.com/vue-tsc/-/vue-tsc-0.34.16.tgz#92cc8cc23bc3e979d44bc8ed9a318d46ee5201fa"

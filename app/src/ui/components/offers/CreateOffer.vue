@@ -11,9 +11,10 @@ import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import {
   defaultMicroDenomAvailable,
-  microDenomToDenom,
   denomsAvailable,
+  microDenomToDenom,
 } from '~/utils/denom'
+import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -91,30 +92,15 @@ watch(margin, () => {
       <div class="currency">
         <div class="filter">
           <label for="crypto">Crypto</label>
-          <select id="crypto" v-model="selectedCrypto" class="bg-gray300" name="crypto">
-            <option v-for="microDenom in denomsAvailable.keys()" :value="microDenom">
-              {{ microDenomToDenom(microDenom) }}
-            </option>
-          </select>
+          <CustomSelect
+            v-model="selectedCrypto"
+            :options="denomsAvailable"/>
         </div>
         <div class="filter">
           <label for="currency">Currency (FIAT)</label>
-          <select
-            id="currency"
+          <CustomSelect
             v-model="fiatCurrency"
-            class="bg-gray300"
-            name="currency"
-          >
-            <option :value="FiatCurrency.ARS">
-              ARS
-            </option>
-            <option :value="FiatCurrency.BRL">
-              BRL
-            </option>
-            <option :value="FiatCurrency.COP">
-              COP
-            </option>
-          </select>
+            :options="fiatsAvailable"/>
         </div>
       </div>
       <div class="divider" />
