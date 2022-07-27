@@ -1,9 +1,12 @@
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery,
 };
+use std::ops::Mul;
+use std::str::FromStr;
 
-use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT};
+use localterra_protocol::constants::{FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT};
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
@@ -16,12 +19,15 @@ use localterra_protocol::offer::{
     load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
 use localterra_protocol::trade::{
-    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TraderRole,
+    Asset, AssetInfo, ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Swap, Trade, TradeModel,
+    TradeState, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::errors::TradeError::HubAlreadyRegistered;
+
+pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
 pub fn instantiate(
@@ -442,7 +448,9 @@ fn release_escrow(
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-    let release_amount = trade.amount.clone();
+    let mut release_amount = trade.amount.clone();
+    let fee = Uint128(1u128).mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
+    release_amount = release_amount.checked_sub(fee.clone()).unwrap();
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -469,11 +477,76 @@ fn release_escrow(
         amount: vec![Coin::new(release_amount.u128(), denom.clone())],
     })));
 
+    //Buys LOCAL and burn it on the reply.
+    send_msgs.push(SubMsg {
+        id: SWAP_REPLY_ID,
+        msg: CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: hub_cfg.local_market_addr.to_string(),
+            msg: to_binary(&Swap {
+                offer_asset: Asset {
+                    info: AssetInfo::NativeToken {
+                        denom: denom.to_string(),
+                    },
+                    amount: fee.clone(),
+                },
+            })
+            .unwrap(),
+            funds: vec![coin(fee.u128(), denom_to_string(&trade.denom))],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    });
+
     let res = Response::new()
         .add_submessages(send_msgs)
         .add_attribute("action", "release_escrow")
         .add_attribute("trade_id", trade_id)
         .add_attribute("state", trade.state.to_string());
+    Ok(res)
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+    match msg.id {
+        SWAP_REPLY_ID => handle_swap_reply(deps, msg),
+        id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
+    }
+}
+
+fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
+    let attributes = msg
+        .result
+        .unwrap()
+        .events
+        .iter()
+        .find(|evt| evt.ty.eq("wasm"))
+        .unwrap()
+        .attributes
+        .clone();
+    let return_amount = attributes
+        .iter()
+        .find(|attr| attr.key.eq("return_amount"))
+        .unwrap()
+        .value
+        .clone();
+    let ask_asset = attributes
+        .iter()
+        .find(|attr| attr.key.eq("ask_asset"))
+        .unwrap()
+        .value
+        .clone();
+
+    let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
+        amount: vec![coin(
+            u128::from_str(return_amount.as_str()).unwrap(),
+            ask_asset,
+        )],
+    });
+
+    // Save res.contract_address
+    let res = Response::new();
+    res.add_attributes(!vec![("event", "swap_reply")]);
+    res.add_submessage(SubMsg::new(burn_msg));
     Ok(res)
 }
 
