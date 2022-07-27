@@ -68,7 +68,12 @@ async function setupProtocol(codeIds) {
       trade_addr: tradeInstantiateResult.contractAddress,
       trading_incentives_addr: tradeIncentivesInstantiateResult.contractAddress,
       local_market_addr: process.env.LOCAL_MARKET,
-      local_denom
+      local_denom,
+      chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
+      warchest_addr: process.env.WARCHEST_ADDR,
+      warchest_fee_pct: "50",
+      chain_fee_pct: "10",
+      burn_fee_pct: "40",
     }
   }
   console.log('Hub Update Config - Msg = ', JSON.stringify(updatedConfigMsg));
