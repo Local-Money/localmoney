@@ -1,9 +1,12 @@
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery,
 };
+use std::ops::Mul;
+use std::str::FromStr;
 
-use localterra_protocol::constants::{FUNDING_TIMEOUT, REQUEST_TIMEOUT};
+use localterra_protocol::constants::{FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT};
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
@@ -16,12 +19,15 @@ use localterra_protocol::offer::{
     load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
 use localterra_protocol::trade::{
-    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Trade, TradeModel, TradeState, TraderRole,
+    Asset, AssetInfo, ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
+    TradeModel, TradeState, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
 use crate::errors::TradeError;
 use crate::errors::TradeError::HubAlreadyRegistered;
+
+pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
 pub fn instantiate(
@@ -409,7 +415,7 @@ fn release_escrow(
     trade_id: String,
 ) -> Result<Response, TradeError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
-    let denom = denom_to_string(&trade.denom);
+    let trade_denom = denom_to_string(&trade.denom);
 
     let arbitrator = trade.arbitrator.clone().unwrap_or(Addr::unchecked(""));
     if trade.seller.eq(&info.sender) {
@@ -442,7 +448,13 @@ fn release_escrow(
 
     //Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
-    let release_amount = trade.amount.clone();
+    let mut release_amount = trade.amount.clone();
+    let one = Uint128::new(1u128);
+    let fee = one.mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
+    release_amount = release_amount.checked_sub(fee.clone()).unwrap();
+    let burn_amount = fee.mul(Decimal::from_ratio(hub_cfg.burn_fee_pct, 100u128));
+    let chain_amount = fee.mul(Decimal::from_ratio(hub_cfg.chain_fee_pct, 100u128));
+    let warchest_amount = fee.mul(Decimal::from_ratio(hub_cfg.warchest_fee_pct, 100u128));
 
     //Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -466,7 +478,50 @@ fn release_escrow(
     // Send tokens to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
         to_address: trade.buyer.into_string(),
-        amount: vec![Coin::new(release_amount.u128(), denom.clone())],
+        amount: vec![Coin::new(release_amount.u128(), trade_denom.clone())],
+    })));
+
+    // Fee Distribution
+    let local_denom = denom_to_string(&hub_cfg.local_denom);
+    //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
+    if trade_denom.ne(&local_denom) {
+        send_msgs.push(SubMsg {
+            id: SWAP_REPLY_ID,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: hub_cfg.local_market_addr.to_string(),
+                msg: to_binary(&SwapMsg {
+                    swap: Swap {
+                        offer_asset: Asset {
+                            info: AssetInfo::NativeToken {
+                                denom: trade_denom.to_string(),
+                            },
+                            amount: burn_amount.clone(),
+                        },
+                    },
+                })
+                .unwrap(),
+                funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        });
+    } else {
+        //If coin being traded is $LOCAL, add message burning the local_burn amount
+        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Burn {
+            amount: vec![coin(burn_amount.u128(), local_denom.clone())],
+        })));
+    }
+
+    // Warchest
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: hub_cfg.warchest_addr.to_string(),
+        amount: vec![coin(warchest_amount.u128(), trade_denom.clone())],
+    })));
+
+    // Chain Fee Sharing
+    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: hub_cfg.chain_fee_collector_addr.to_string(),
+        amount: vec![coin(chain_amount.u128(), trade_denom.clone())],
     })));
 
     let res = Response::new()
@@ -474,6 +529,55 @@ fn release_escrow(
         .add_attribute("action", "release_escrow")
         .add_attribute("trade_id", trade_id)
         .add_attribute("state", trade.state.to_string());
+    Ok(res)
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+    match msg.id {
+        SWAP_REPLY_ID => handle_swap_reply(deps, msg),
+        id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
+    }
+}
+
+fn handle_swap_reply(_deps: DepsMut, msg: Reply) -> StdResult<Response> {
+    let attributes = msg
+        .result
+        .unwrap()
+        .events
+        .iter()
+        .find(|evt| evt.ty.eq("wasm"))
+        .unwrap()
+        .attributes
+        .clone();
+    let return_amount = attributes
+        .iter()
+        .find(|attr| attr.key.eq("return_amount"))
+        .unwrap()
+        .value
+        .clone();
+    let ask_asset = attributes
+        .iter()
+        .find(|attr| attr.key.eq("ask_asset"))
+        .unwrap()
+        .value
+        .clone();
+
+    //Burn $LOCAL
+    let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
+        amount: vec![coin(
+            u128::from_str(return_amount.as_str()).unwrap(),
+            ask_asset.clone(),
+        )],
+    });
+
+    let res = Response::new()
+        .add_attributes(vec![
+            ("event", "swap_reply"),
+            ("burn_amount", return_amount.as_str()),
+            ("demon", ask_asset.as_str()),
+        ])
+        .add_submessage(SubMsg::new(burn_msg));
     Ok(res)
 }
 

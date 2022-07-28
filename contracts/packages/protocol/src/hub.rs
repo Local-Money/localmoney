@@ -35,4 +35,9 @@ pub struct HubConfig {
     pub trading_incentives_addr: Addr,
     pub local_market_addr: Addr,
     pub local_denom: Denom,
+    pub chain_fee_collector_addr: Addr,
+    pub warchest_addr: Addr,
+    pub burn_fee_pct: u128,
+    pub chain_fee_pct: u128,
+    pub warchest_fee_pct: u128,
 }
