@@ -31,7 +31,11 @@ pub fn register_hub_internal<E>(
 ) -> Result<Response, E> {
     let cfg = HUB_ADDR.may_load(store).unwrap();
     if cfg.is_some() {
-        return Err(error);
+        return if cfg.unwrap().addr.ne(&hub_addr) {
+            Err(error)
+        } else {
+            Ok(Response::default())
+        };
     }
     HUB_ADDR
         .save(
