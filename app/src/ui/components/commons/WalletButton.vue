@@ -17,6 +17,12 @@ function connectWallet() {
   })
 }
 
+function readNotification() {
+  nextTick(async () => {
+    await notification.readAllNotifications()
+  })
+}
+
 onUnmounted(() => {
   notification.unregister()
 })
@@ -26,12 +32,14 @@ onUnmounted(() => {
   <button class="wallet" @click="connectWallet()">
     <p v-if="userWallet.isConnected">
       {{ formatAddress(userWallet.address) }}
-      <span> - {{ notificationCount }}</span>
     </p>
     <p v-else>
       connect
     </p>
     <img src="../../assets/ic_wallet.svg" alt="Connect your wallet">
+  </button>
+  <button v-if="userWallet.isConnected" class="wallet" @click="readNotification()">
+    {{ notificationCount }}
   </button>
 </template>
 

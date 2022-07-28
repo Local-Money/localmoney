@@ -4,7 +4,7 @@ import { useClientStore } from '~/stores/client'
 import type { TradeInfo } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
-const millisecond = 1000
+const millisecond = 15000
 
 class NotificationHandler {
   readonly badgeCount
@@ -15,11 +15,11 @@ class NotificationHandler {
   constructor() {
     this.store = useNotificationStore()
     this.client = useClientStore()
-    console.log(this.client)
     this.badgeCount = computed(() => this.store.badgeCount)
   }
 
   public async register() {
+    await this.handle()
     this.interval = setInterval(() => {
       this.handle()
     }, millisecond)
@@ -29,24 +29,31 @@ class NotificationHandler {
     clearInterval(this.interval)
   }
 
+  public async readAllNotifications() {
+    const userWallet = this.client.userWallet.address
+    await this.store.cleanNotification(userWallet)
+  }
+
   private async handle() {
     await this.client.fetchTrades()
     if (this.client.trades.isSuccess()) {
-      const notifications = this.client.trades.data
-        .filter(tradeInfo => this.filterOpenTrades(tradeInfo))
-        .map(tradeInfo => this.mapTradeInfoToNotification(tradeInfo))
-      await this.store.addNotifications(this.client.userWallet.address, notifications)
+      const userWallet = this.client.userWallet.address
+      const trades = this.client.trades.data
+      const openTrades = trades.filter(this.filterOpenTrades)
+      const notifications = this.store.notifications(userWallet)
+      const newNotifications: Notification[] = openTrades.filter((tradeInfo) => {
+        return notifications.find((notification) => {
+          return notification.id !== tradeInfo.trade.id
+              || (notification.id === tradeInfo.trade.id && notification.state !== tradeInfo.trade.state)
+        }) !== undefined || notifications.length <= 0
+      }).map(tradeInfo => this.mapTradeInfoToNotification(tradeInfo))
+      const notificationsUpdated = [...notifications, ...newNotifications]
+      console.log(notificationsUpdated)
+      await this.store.addNotifications(this.client.userWallet.address, notificationsUpdated)
     }
   }
 
   private filterOpenTrades(tradeInfo: TradeInfo): boolean {
-    // const notifications = this.store.notifications(this.client.userWallet.address)
-    // const isOnNotifications = notifications.find(notification => notification.id === tradeInfo.trade.id) !== undefined
-    // console.log(isOnNotifications)
-    return this.verifyOpenTrade(tradeInfo)
-  }
-
-  private verifyOpenTrade(tradeInfo: TradeInfo): boolean {
     return !tradeInfo.expired && [
       TradeState.request_created,
       TradeState.request_accepted,
@@ -57,21 +64,25 @@ class NotificationHandler {
   }
 
   private mapTradeInfoToNotification(tradeInfo: TradeInfo): Notification {
-    return {
-      state: tradeInfo.trade.state,
-      id: tradeInfo.trade.id,
-      message: '',
-      sender: '',
-    }
+    const state = tradeInfo.trade.state
+    const id = tradeInfo.trade.id
+    const sender = this.getCounterParty(tradeInfo)
+    const message = `You have a trade (id: ${id}) with ${sender} on state ${state}`
+    return { state, id, message, sender }
+  }
+
+  private getCounterParty(tradeInfo: TradeInfo): string{
+    const trade = tradeInfo.trade
+    const walletAddress = this.client.userWallet.address
+    return walletAddress === trade.seller ? trade.buyer : trade.seller
   }
 }
 
 let notificationHandler: NotificationHandler
 
 const useNotificationSystem = () => {
-  if (!notificationHandler) {
+  if (!notificationHandler)
     notificationHandler = new NotificationHandler()
-  }
   return notificationHandler
 }
 
