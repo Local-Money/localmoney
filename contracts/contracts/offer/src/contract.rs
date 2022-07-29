@@ -5,8 +5,8 @@ use cosmwasm_std::{
 use cw_storage_plus::Bound;
 
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::errors::GuardError;
-use localterra_protocol::errors::GuardError::{HubAlreadyRegistered, Unauthorized};
+use localterra_protocol::errors::ContractError;
+use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
 use localterra_protocol::hub::HubConfig;
 use localterra_protocol::hub_utils::{
@@ -25,7 +25,7 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     offers_count_storage(deps.storage).save(&OffersCount { count: 0 })?;
     Ok(Response::default())
 }
@@ -36,7 +36,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
@@ -112,7 +112,7 @@ pub fn create_offer(
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut offers_count = offers_count_storage(deps.storage).load().unwrap();
@@ -159,7 +159,7 @@ pub fn execute_update_trade_arbitrator(
     _env: Env,
     info: MessageInfo,
     arbitrator: Addr,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set. LOCAL-660
     let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
 
@@ -183,7 +183,7 @@ pub fn execute_update_last_traded(
     env: Env,
     info: MessageInfo,
     offer_id: String,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
     let hub_config = get_hub_config(&deps.querier, hub_addr.addr.to_string());
 
@@ -214,7 +214,7 @@ pub fn create_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
     assert_ownership(info.sender, admin)?;
@@ -248,7 +248,7 @@ pub fn delete_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
     assert_ownership(info.sender, admin)?;
@@ -270,7 +270,7 @@ pub fn update_offer(
     _env: Env,
     info: MessageInfo,
     msg: OfferUpdateMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
@@ -287,7 +287,7 @@ pub fn update_offer(
     Ok(res)
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
@@ -295,7 +295,7 @@ fn increment_trades_count(
     deps: DepsMut,
     info: MessageInfo,
     offer_id: String,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
     let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
 

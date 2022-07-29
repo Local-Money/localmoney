@@ -4,17 +4,11 @@ use cosmwasm_std::{Addr, StdError, Uint128};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum GuardError {
+pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
     #[error("Invalid state change.")]
     InvalidStateChange { from: OfferState, to: OfferState },
-    #[error("Invalid trade state change.")]
-    InvalidTradeStateChange {
-        from: TradeState,
-        from_allowed: TradeState,
-        to: TradeState,
-    },
     #[error("Amount is outside of offer amount range.")]
     AmountError {
         amount: Uint128,
@@ -31,14 +25,30 @@ pub enum GuardError {
     },
     #[error("Hub Already Registered.")]
     HubAlreadyRegistered {},
-    #[error("Unauthorized Release.")]
-    UnauthorizedRelease {
-        caller: Addr,
-        seller: Addr,
-        arbitrator: Addr,
+    #[error("This trade has expired.")]
+    TradeExpired {
+        timeout: u64,
+        expired_at: u64,
+        created_at: u64,
     },
-    #[error("Governance not found.")]
-    GovernanceNotFound { gov_addr: Addr },
-    #[error("Invalid reply message id.")]
-    InvalidReply {},
+    #[error("Fund escrow error.")]
+    FundEscrowError {
+        required_amount: Uint128,
+        sent_amount: Uint128,
+    },
+    #[error("Offer not found.")]
+    OfferNotFound { offer_id: String },
+    #[error("Invalid trade state change.")]
+    InvalidTradeStateChange { from: TradeState, to: TradeState },
+    #[error("Refund error: Not Expired")]
+    RefundErrorNotExpired { message: String, trade: String },
+    #[error("Distribution hasn't started yet.")]
+    DistributionNotStarted {},
+    #[error("Only past periods can be claimed.")]
+    DistributionClaimInvalidPeriod {},
+    #[error("Trade state is invalid.")]
+    InvalidTradeState {
+        current: TradeState,
+        expected: TradeState,
+    },
 }

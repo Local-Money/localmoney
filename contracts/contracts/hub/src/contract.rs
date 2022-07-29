@@ -1,9 +1,9 @@
 use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw20::Denom;
+use localterra_protocol::errors::ContractError;
+use localterra_protocol::errors::ContractError::Unauthorized;
 
-use crate::errors::HubError;
-use crate::errors::HubError::Unauthorized;
 use crate::state::{ADMIN, CONFIG};
 use localterra_protocol::hub::{Admin, ExecuteMsg, HubConfig, InstantiateMsg, QueryMsg};
 use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
@@ -16,7 +16,7 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
-) -> Result<Response, HubError> {
+) -> Result<Response, ContractError> {
     let admin = Admin {
         addr: msg.admin_addr.clone(),
     };
@@ -32,7 +32,7 @@ pub fn execute(
     _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, HubError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateConfig(config) => update_config(deps, info, config),
         ExecuteMsg::UpdateAdmin { admin_addr } => update_admin(deps, info, admin_addr),
@@ -43,10 +43,13 @@ fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     config: HubConfig,
-) -> Result<Response, HubError> {
+) -> Result<Response, ContractError> {
     let admin = ADMIN.load(deps.storage).unwrap();
     if !info.sender.eq(&admin.addr) {
-        return Err(Unauthorized {});
+        return Err(Unauthorized {
+            owner: admin.addr.clone(),
+            caller: info.sender.clone(),
+        });
     }
     CONFIG.save(deps.storage, &config).unwrap();
     let local_denom = match config.local_denom {
@@ -85,10 +88,17 @@ fn update_config(
     Ok(res)
 }
 
-fn update_admin(deps: DepsMut, info: MessageInfo, new_admin: Addr) -> Result<Response, HubError> {
+fn update_admin(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_admin: Addr,
+) -> Result<Response, ContractError> {
     let mut admin = ADMIN.load(deps.storage).unwrap();
     if !info.sender.eq(&admin.addr) {
-        return Err(Unauthorized {});
+        return Err(Unauthorized {
+            owner: admin.addr.clone(),
+            caller: info.sender.clone(),
+        });
     }
 
     let old_admin = admin.addr.clone();

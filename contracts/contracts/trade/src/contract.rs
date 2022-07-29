@@ -8,6 +8,11 @@ use std::str::FromStr;
 
 use localterra_protocol::constants::{FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT};
 use localterra_protocol::denom_utils::denom_to_string;
+use localterra_protocol::errors::ContractError;
+use localterra_protocol::errors::ContractError::{
+    FundEscrowError, HubAlreadyRegistered, InvalidTradeStateChange, OfferNotFound,
+    RefundErrorNotExpired, TradeExpired,
+};
 use localterra_protocol::guards::{
     assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
@@ -24,9 +29,6 @@ use localterra_protocol::trade::{
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
-use crate::errors::TradeError;
-use crate::errors::TradeError::HubAlreadyRegistered;
-
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
@@ -35,7 +37,7 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
 
@@ -45,7 +47,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
         ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
@@ -59,7 +61,7 @@ pub fn execute(
     }
 }
 
-fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, TradeError> {
+fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, ContractError> {
     //Load Offer
     let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
@@ -71,7 +73,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         hub_cfg.offer_addr.to_string(),
     );
     if offer.is_none() {
-        return Err(TradeError::OfferNotFound {
+        return Err(OfferNotFound {
             offer_id: new_trade.offer_id.to_string(),
         });
     }
@@ -156,7 +158,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradeError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
@@ -211,7 +213,7 @@ fn fund_escrow(
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     let offer = load_offer(
@@ -226,7 +228,7 @@ fn fund_escrow(
         trade.state = TradeState::RequestExpired;
         TradeModel::store(deps.storage, &trade).unwrap();
 
-        return Err(TradeError::Expired {
+        return Err(TradeExpired {
             timeout: REQUEST_TIMEOUT,
             expired_at: env.block.time.seconds() + REQUEST_TIMEOUT,
             created_at: trade.created_at,
@@ -250,7 +252,7 @@ fn fund_escrow(
     if balance.amount >= trade.amount {
         trade.state = TradeState::EscrowFunded;
     } else {
-        return Err(TradeError::FundEscrowError {
+        return Err(FundEscrowError {
             required_amount: trade.amount.clone(),
             sent_amount: balance.amount.clone(),
         });
@@ -272,7 +274,7 @@ fn dispute_escrow(
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO check escrow funding timer*
     // Only the buyer or seller can start a dispute
@@ -328,7 +330,7 @@ fn accept_request(
     _env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer can accept the request
     assert_ownership(info.sender, trade.buyer.clone()).unwrap();
@@ -357,7 +359,7 @@ fn fiat_deposited(
     deps: DepsMut,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
@@ -386,7 +388,7 @@ fn cancel_request(
     deps: DepsMut,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer or seller can cancel the trade.
     assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
@@ -396,7 +398,7 @@ fn cancel_request(
     if !((trade.state == TradeState::RequestCreated)
         || (trade.state == TradeState::RequestAccepted))
     {
-        return Err(TradeError::InvalidStateChange {
+        return Err(InvalidTradeStateChange {
             from: trade.state,
             to: TradeState::RequestCanceled,
         });
@@ -413,11 +415,9 @@ fn release_escrow(
     deps: DepsMut,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradeError> {
+) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     let trade_denom = denom_to_string(&trade.denom);
-
-    let arbitrator = trade.arbitrator.clone().unwrap_or(Addr::unchecked(""));
     if trade.seller.eq(&info.sender) {
         assert_trade_state_change_is_valid(
             trade.state.clone(),
@@ -426,9 +426,8 @@ fn release_escrow(
         )
         .unwrap();
     } else {
-        return Err(TradeError::Unauthorized {
+        return Err(ContractError::Unauthorized {
             owner: trade.seller.clone(),
-            arbitrator: arbitrator.clone(),
             caller: info.sender.clone(),
         });
     }
@@ -581,7 +580,7 @@ fn handle_swap_reply(_deps: DepsMut, msg: Reply) -> StdResult<Response> {
     Ok(res)
 }
 
-fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, TradeError> {
+fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, ContractError> {
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
     let trade = TradeModel::from_store(deps.storage, &trade_id);
     assert_trade_state_change_is_valid(
@@ -595,7 +594,7 @@ fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, 
     // no one except arbitrator can refund if the trade is in arbitration
     let expired = env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT;
     if !expired {
-        return Err(TradeError::RefundErrorNotExpired {
+        return Err(RefundErrorNotExpired {
             message:
                 "Only expired trades that are not disputed can be refunded by non-arbitrators."
                     .to_string(),
