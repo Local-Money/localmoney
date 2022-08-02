@@ -26,7 +26,9 @@ pub fn instantiate(
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    offers_count_storage(deps.storage).save(&OffersCount { count: 0 })?;
+    offers_count_storage(deps.storage)
+        .save(&OffersCount { count: 0 })
+        .unwrap();
     Ok(Response::default())
 }
 
@@ -161,7 +163,7 @@ pub fn execute_update_trade_arbitrator(
     arbitrator: Addr,
 ) -> Result<Response, ContractError> {
     // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set. LOCAL-660
-    let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
+    let mut trade = trades().load(deps.storage, &info.sender.as_str()).unwrap();
 
     trade.arbitrator = arbitrator.clone();
 
@@ -221,14 +223,16 @@ pub fn create_arbitrator(
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
-    arbitrators().save(
-        deps.storage,
-        &index,
-        &Arbitrator {
-            arbitrator: arbitrator.clone(),
-            asset: asset.clone(),
-        },
-    )?;
+    arbitrators()
+        .save(
+            deps.storage,
+            &index,
+            &Arbitrator {
+                arbitrator: arbitrator.clone(),
+                asset: asset.clone(),
+            },
+        )
+        .unwrap();
 
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
@@ -255,7 +259,7 @@ pub fn delete_arbitrator(
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
-    arbitrators().remove(deps.storage, &index)?;
+    arbitrators().remove(deps.storage, &index).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "delete_arbitrator")

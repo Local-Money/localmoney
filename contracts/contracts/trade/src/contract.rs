@@ -14,7 +14,7 @@ use localterra_protocol::errors::ContractError::{
     RefundErrorNotExpired, TradeExpired,
 };
 use localterra_protocol::guards::{
-    assert_caller_is_buyer_or_seller, assert_ownership, assert_trade_state_and_type,
+    assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub::HubConfig;
@@ -278,7 +278,7 @@ fn dispute_escrow(
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO check escrow funding timer*
     // Only the buyer or seller can start a dispute
-    assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
+    assert_sender_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
         .unwrap();
 
     // Users can only start a dispute once the buyer has clicked `mark paid` after the fiat has been deposited
@@ -294,14 +294,17 @@ fn dispute_escrow(
 
     // Assign a pseudo random arbitrator to the trade
     // TODO this needs to update the TradeAddr::arbitrator field in the trades() indexedmap of the offer contract
-    let arbitrator: Arbitrator = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: trade.offer_contract.clone().to_string(),
-        msg: to_binary(&OfferQueryMsg::ArbitratorRandom {
-            random_value: (env.block.time.seconds() % 100) as u32, // Generates a range of 0..99
-            asset: trade.asset.clone(),
-        })
-        .unwrap(),
-    }))?;
+    let arbitrator: Arbitrator = deps
+        .querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: trade.offer_contract.clone().to_string(),
+            msg: to_binary(&OfferQueryMsg::ArbitratorRandom {
+                random_value: (env.block.time.seconds() % 100) as u32, // Generates a range of 0..99
+                asset: trade.asset.clone(),
+            })
+            .unwrap(),
+        }))
+        .unwrap();
 
     trade.arbitrator = Some(arbitrator.arbitrator);
 
@@ -391,7 +394,7 @@ fn cancel_request(
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer or seller can cancel the trade.
-    assert_caller_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
+    assert_sender_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
         .unwrap();
 
     // You can only cancel the trade if the current TradeState is Created or Accepted
