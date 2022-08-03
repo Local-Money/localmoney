@@ -17,7 +17,6 @@ use localterra_protocol::guards::{
     assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
-use localterra_protocol::hub::HubConfig;
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
@@ -63,8 +62,7 @@ pub fn execute(
 
 fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, ContractError> {
     //Load Offer
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     let offer_id = new_trade.offer_id.clone();
     let offer = load_offer(
@@ -435,8 +433,7 @@ fn release_escrow(
         });
     }
 
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_cfg = get_hub_config(deps.as_ref());
     let offer = load_offer(
         &deps.querier,
         trade.offer_id.clone(),

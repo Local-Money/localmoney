@@ -8,7 +8,6 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
-use localterra_protocol::hub::HubConfig;
 use localterra_protocol::hub_utils::{
     get_hub_admin, get_hub_config, register_hub_internal, HubAddr, HUB_ADDR,
 };
@@ -186,8 +185,7 @@ pub fn execute_update_last_traded(
     info: MessageInfo,
     offer_id: String,
 ) -> Result<Response, ContractError> {
-    let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
-    let hub_config = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_config = get_hub_config(deps.as_ref());
 
     // Only allows to execute_update_last_traded if called by trade
     if info.sender.ne(&hub_config.trade_addr) {
@@ -300,8 +298,7 @@ fn increment_trades_count(
     info: MessageInfo,
     offer_id: String,
 ) -> Result<Response, ContractError> {
-    let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
-    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     //Check if caller is Trade Contract
     if info.sender.ne(&hub_cfg.trade_addr) {
