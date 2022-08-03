@@ -182,12 +182,12 @@ pub fn execute_update_last_traded(
     info: MessageInfo,
     offer_id: String,
 ) -> Result<Response, ContractError> {
-    let hub_config = get_hub_config(deps.as_ref());
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     // Only allows to execute_update_last_traded if called by trade
-    if info.sender.ne(&hub_config.trade_addr) {
+    if info.sender.ne(&hub_cfg.trade_addr) {
         return Err(Unauthorized {
-            owner: hub_config.trade_addr,
+            owner: hub_cfg.trade_addr,
             caller: info.sender.clone(),
         });
     }
