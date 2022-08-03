@@ -10,7 +10,7 @@ use localterra_protocol::errors::ContractError::{
     DistributionClaimInvalidPeriod, DistributionNotStarted, HubAlreadyRegistered,
     InvalidTradeState, Unauthorized,
 };
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HUB_ADDR};
+use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::load_offer;
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
 use localterra_protocol::trading_incentives::{
@@ -118,8 +118,7 @@ fn register_trade(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     //Only callable by the Trade Contract.
     if hub_cfg.trade_addr.ne(&info.sender) {
@@ -257,8 +256,7 @@ fn start_distribution(
 }
 
 fn get_rewards_denom(deps: Deps) -> String {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_cfg = get_hub_config(deps.clone());
     match hub_cfg.local_denom {
         Denom::Native(name) => name,
         Denom::Cw20(addr) => addr.to_string(),

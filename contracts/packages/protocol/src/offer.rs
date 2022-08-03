@@ -113,7 +113,6 @@ pub enum QueryOrder {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    HubAddr {},
     State {},
     Offer {
         id: String,

@@ -1,22 +1,24 @@
 use crate::hub::{HubConfig, QueryMsg};
-use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, Response, Storage, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, Deps, QueryRequest, Response, Storage, WasmQuery};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-pub fn get_hub_config(querier: &QuerierWrapper, hub_addr: String) -> HubConfig {
-    querier
+pub fn get_hub_config(deps: Deps) -> HubConfig {
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: hub_addr,
+            contract_addr: hub_addr.addr.to_string(),
             msg: to_binary(&QueryMsg::Config {}).unwrap(),
         }))
         .unwrap()
 }
 
-pub fn get_hub_admin(querier: &QuerierWrapper, hub_addr: String) -> Addr {
-    querier
+pub fn get_hub_admin(deps: Deps) -> Addr {
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: hub_addr,
+            contract_addr: hub_addr.addr.to_string(),
             msg: to_binary(&QueryMsg::Admin {}).unwrap(),
         }))
         .unwrap()
@@ -45,7 +47,9 @@ pub fn register_hub_internal<E>(
             },
         )
         .unwrap();
-    let res = Response::new().add_attribute("hub_addr", hub_addr.to_string());
+    let res = Response::new()
+        .add_attribute("action", "register_hub")
+        .add_attribute("hub_addr", hub_addr.to_string());
 
     Ok(res)
 }

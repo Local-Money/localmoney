@@ -22,7 +22,9 @@ pub fn instantiate(
     };
     ADMIN.save(deps.storage, &admin).unwrap();
 
-    let res = Response::new().add_attribute("admin_addr", msg.admin_addr.to_string());
+    let res = Response::new()
+        .add_attribute("action", "instantiate_hub")
+        .add_attribute("admin_addr", msg.admin_addr.to_string());
     Ok(res)
 }
 
@@ -76,6 +78,7 @@ fn update_config(
     }));
 
     let res = Response::new()
+        .add_attribute("action", "update_config")
         .add_submessage(offer_register_hub)
         .add_submessage(trade_register_hub)
         .add_submessage(trading_incentives_register_hub)
@@ -105,7 +108,8 @@ fn update_admin(
     admin.addr = new_admin.clone();
     ADMIN.save(deps.storage, &admin).unwrap();
 
-    let res = Response::default()
+    let res = Response::new()
+        .add_attribute("action", "update_admin")
         .add_attribute("old_admin", old_admin)
         .add_attribute("new_admin", new_admin);
     Ok(res)
