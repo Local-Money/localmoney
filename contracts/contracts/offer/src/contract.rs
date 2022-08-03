@@ -26,7 +26,9 @@ pub fn instantiate(
     offers_count_storage(deps.storage)
         .save(&OffersCount { count: 0 })
         .unwrap();
-    Ok(Response::default())
+
+    let res = Response::new().add_attribute("action", "instantiate_offer");
+    Ok(res)
 }
 
 #[entry_point]
@@ -47,11 +49,9 @@ pub fn execute(
         }
         ExecuteMsg::UpdateTradeArbitrator { arbitrator } => {
             // TODO merge this call with the query random arbitrator call. LOCAL-660
-            execute_update_trade_arbitrator(deps, env, info, arbitrator)
+            update_trade_arbitrator(deps, env, info, arbitrator)
         }
-        ExecuteMsg::UpdateLastTraded { offer_id } => {
-            execute_update_last_traded(deps, env, info, offer_id)
-        }
+        ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::IncrementTradesCount { offer_id } => {
             increment_trades_count(deps, info, offer_id)
@@ -152,7 +152,7 @@ pub fn create_offer(
     Ok(res)
 }
 
-pub fn execute_update_trade_arbitrator(
+pub fn update_trade_arbitrator(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -168,7 +168,7 @@ pub fn execute_update_trade_arbitrator(
         .unwrap();
 
     let res = Response::new()
-        .add_attribute("action", "execute_update_trade_arbitrator")
+        .add_attribute("action", "update_trade_arbitrator")
         .add_attribute("tradeAddr", info.sender)
         .add_attribute("arbitrator", arbitrator)
         .add_attribute("timestamp", _env.block.time.seconds().to_string());
@@ -176,7 +176,7 @@ pub fn execute_update_trade_arbitrator(
     Ok(res)
 }
 
-pub fn execute_update_last_traded(
+pub fn update_last_traded(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -197,7 +197,7 @@ pub fn execute_update_last_traded(
     let offer = offer_model.update_last_traded(env.block.time.seconds());
 
     let res = Response::new()
-        .add_attribute("action", "execute_update_last_traded")
+        .add_attribute("action", "update_last_traded")
         .add_attribute("tradeAddr", info.sender)
         .add_attribute("offer_id", &offer.id)
         .add_attribute("last_traded_at", &offer.last_traded_at.to_string());
@@ -309,6 +309,7 @@ fn increment_trades_count(
     OfferModel::store(deps.storage, &offer).unwrap();
 
     let res = Response::new()
+        .add_attribute("action", "increment_trades_count")
         .add_attribute("offer_id", offer.id)
         .add_attribute("trades_count", offer.trades_count.to_string());
     Ok(res)

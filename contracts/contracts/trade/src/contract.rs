@@ -37,7 +37,8 @@ pub fn instantiate(
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    Ok(Response::default())
+    let res = Response::new().add_attribute("action", "instantiate_trade");
+    Ok(res)
 }
 
 #[entry_point]
@@ -127,8 +128,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
-        .add_submessage(increment_submsg)
         .add_attribute("action", "create_trade")
+        .add_submessage(increment_submsg)
         .add_attribute("trade_id", trade_id)
         .add_attribute("offer_id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string())
@@ -313,6 +314,7 @@ fn dispute_escrow(
     let sub_message = SubMsg::new(CosmosMsg::Wasm(execute_msg));
 
     let res = Response::new()
+        .add_attribute("action", "dispute_escrow")
         .add_submessage(sub_message)
         .add_attribute("state", trade.state.to_string())
         .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string());
@@ -372,7 +374,7 @@ fn fiat_deposited(
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
-        .add_attribute("action", "accept_request")
+        .add_attribute("action", "fiat_deposited")
         .add_attribute("trade_id", trade_id)
         .add_attribute("state", trade.state.to_string());
 
@@ -402,7 +404,7 @@ fn cancel_request(
     // Update trade State to TradeState::RequestCanceled
     trade.state = TradeState::RequestCanceled;
     TradeModel::store(deps.storage, &trade).unwrap();
-    let res = Response::new();
+    let res = Response::new().add_attribute("action", "cancel_request");
     Ok(res)
 }
 
@@ -605,7 +607,9 @@ fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, 
     let denom = denom_to_string(&trade.denom);
     let refund_amount = vec![Coin::new(amount.u128(), denom.clone())];
     let send_msg = create_send_msg(trade.seller, refund_amount);
-    let res = Response::new().add_submessage(SubMsg::new(send_msg));
+    let res = Response::new()
+        .add_attribute("action", "refund_escrow")
+        .add_submessage(SubMsg::new(send_msg));
     Ok(res)
 }
 

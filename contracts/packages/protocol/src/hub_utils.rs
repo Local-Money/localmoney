@@ -47,7 +47,9 @@ pub fn register_hub_internal<E>(
             },
         )
         .unwrap();
-    let res = Response::new().add_attribute("hub_addr", hub_addr.to_string());
+    let res = Response::new()
+        .add_attribute("action", "register_hub")
+        .add_attribute("hub_addr", hub_addr.to_string());
 
     Ok(res)
 }
