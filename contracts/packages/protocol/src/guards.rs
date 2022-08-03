@@ -1,7 +1,7 @@
 use crate::errors::ContractError;
 use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{Addr, StdError, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 
 pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), ContractError> {
     if caller.eq(&owner) {
@@ -11,16 +11,16 @@ pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), ContractError> 
     }
 }
 
-pub fn assert_caller_is_buyer_or_seller(
-    caller: Addr,
+pub fn assert_sender_is_buyer_or_seller(
+    sender: Addr,
     buyer: Addr,
     seller: Addr,
 ) -> Result<(), ContractError> {
-    if caller.eq(&buyer) || caller.eq(&seller) {
+    if sender.eq(&buyer) || sender.eq(&seller) {
         Ok(())
     } else {
-        Err(ContractError::UnauthorizedUser {
-            caller,
+        Err(ContractError::InvalidSender {
+            sender,
             buyer,
             seller,
         })
@@ -41,9 +41,7 @@ pub fn assert_trade_state_change_is_valid(
 
 pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), ContractError> {
     if min >= max {
-        Err(ContractError::Std(StdError::generic_err(
-            "Min amount must be greater than Max amount.",
-        )))
+        Err(ContractError::InvalidMinMax { min, max })
     } else {
         Ok(())
     }
@@ -56,7 +54,7 @@ pub fn assert_value_in_range(
 ) -> Result<(), ContractError> {
     //Check that amount is inside Offer limits
     if amount > max || amount < min {
-        return Err(ContractError::AmountError {
+        return Err(ContractError::InvalidOfferAmount {
             amount,
             min_amount: min,
             max_amount: max,
@@ -69,9 +67,11 @@ pub fn assert_value_in_range(
 pub fn assert_range_0_to_99(random_value: usize) -> Result<(), ContractError> {
     // No need to check `random_value < 0` since datatype is an unsigned integer
     if random_value > 99 {
-        Err(ContractError::Std(StdError::generic_err(
-            "Value out of range: 0..99.",
-        )))
+        Err(ContractError::ValueOutOfRange {
+            value: random_value,
+            range_start: 0,
+            range_end: 99,
+        })
     } else {
         Ok(())
     }
@@ -90,8 +90,12 @@ pub fn assert_trade_state_and_type(
     } else if offer_type == &OfferType::Buy && trade.state == TradeState::RequestAccepted {
         Ok(())
     } else {
-        Err(ContractError::Std(StdError::generic_err(
-            "Incorrect sender funding the trade.", // TODO: use custom error. LOCAL-734
-        )))
+        Err(ContractError::InvalidTradeState {
+            current: trade.state.clone(),
+            expected: match offer_type {
+                OfferType::Buy => TradeState::RequestAccepted,
+                OfferType::Sell => TradeState::RequestCreated,
+            },
+        })
     }
 }
