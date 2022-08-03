@@ -17,7 +17,7 @@ use localterra_protocol::guards::{
     assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HubAddr, HUB_ADDR};
+use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
 use localterra_protocol::offer::{
     load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
@@ -142,7 +142,6 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 #[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Trade { id } => to_binary(&query_trade(deps, id)?),
         QueryMsg::Trades {
             user,
@@ -158,11 +157,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
-}
-
-fn query_config(deps: Deps) -> StdResult<HubAddr> {
-    let cfg = HUB_ADDR.load(deps.storage).unwrap();
-    Ok(cfg)
 }
 
 fn query_trade(deps: Deps, id: String) -> StdResult<Trade> {

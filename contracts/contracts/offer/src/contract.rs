@@ -8,9 +8,7 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
-use localterra_protocol::hub_utils::{
-    get_hub_admin, get_hub_config, register_hub_internal, HubAddr, HUB_ADDR,
-};
+use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
     offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
     OfferUpdateMsg, OffersCount, QueryMsg,
@@ -64,7 +62,6 @@ pub fn execute(
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::HubAddr {} => to_binary(&query_hub_addr(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Offers {
@@ -215,8 +212,7 @@ pub fn create_arbitrator(
     arbitrator: Addr,
     asset: FiatCurrency,
 ) -> Result<Response, ContractError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+    let admin = get_hub_admin(deps.as_ref());
     assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
@@ -251,8 +247,7 @@ pub fn delete_arbitrator(
     arbitrator: Addr,
     asset: FiatCurrency,
 ) -> Result<Response, ContractError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+    let admin = get_hub_admin(deps.as_ref());
     assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
@@ -317,11 +312,6 @@ fn increment_trades_count(
         .add_attribute("offer_id", offer.id)
         .add_attribute("trades_count", offer.trades_count.to_string());
     Ok(res)
-}
-
-fn query_hub_addr(deps: Deps) -> StdResult<HubAddr> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    Ok(hub_addr)
 }
 
 fn query_state(deps: Deps) -> StdResult<OffersCount> {

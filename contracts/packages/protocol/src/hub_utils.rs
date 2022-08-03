@@ -1,7 +1,5 @@
 use crate::hub::{HubConfig, QueryMsg};
-use cosmwasm_std::{
-    to_binary, Addr, Deps, QuerierWrapper, QueryRequest, Response, Storage, WasmQuery,
-};
+use cosmwasm_std::{to_binary, Addr, Deps, QueryRequest, Response, Storage, WasmQuery};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,10 +14,11 @@ pub fn get_hub_config(deps: Deps) -> HubConfig {
         .unwrap()
 }
 
-pub fn get_hub_admin(querier: &QuerierWrapper, hub_addr: String) -> Addr {
-    querier
+pub fn get_hub_admin(deps: Deps) -> Addr {
+    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
+    deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: hub_addr,
+            contract_addr: hub_addr.addr.to_string(),
             msg: to_binary(&QueryMsg::Admin {}).unwrap(),
         }))
         .unwrap()
