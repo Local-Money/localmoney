@@ -6,7 +6,6 @@
   border: 1px solid $border;
   border-radius: 8px;
   box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
-  min-width: 256px;
 }
 
 .card-active {
@@ -16,7 +15,6 @@
 }
 
 .offer {
-
   &.collapsed {
     display: flex;
     justify-content: space-between;
@@ -45,7 +43,9 @@
           font-size: 12px;
           color: $gray600;
         }
-        .limit, .rate, .content {
+        .limit,
+        .rate,
+        .content {
           font-size: 15px;
           color: $gray700;
         }
@@ -59,7 +59,9 @@
         padding: 8px 16px;
         border-radius: 8px;
 
-        .divider {display: none;}
+        .divider {
+          display: none;
+        }
         .wrap {
           width: 100%;
           flex-direction: row;
@@ -67,7 +69,6 @@
           gap: 24px;
           justify-content: space-between;
         }
-
       }
     }
 
@@ -84,9 +85,8 @@
         color: $base-text;
       }
     }
-  }//end collapsed
-
-}//end offer
+  } //end collapsed
+} //end offer
 
 .buy-sell {
   display: inline-flex;
@@ -176,11 +176,18 @@ select {
     background-position-y: 11px;
   }
 
-  &.bg-gray100 {background-color: $gray100;}
-  &.bg-gray150 {background-color: $gray150;}
-  &.bg-gray300 {background-color: $gray300;}
-  &.bg-surface {background-color: $surface;}
-
+  &.bg-gray100 {
+    background-color: $gray100;
+  }
+  &.bg-gray150 {
+    background-color: $gray150;
+  }
+  &.bg-gray300 {
+    background-color: $gray300;
+  }
+  &.bg-surface {
+    background-color: $surface;
+  }
 }
 
 // BUTTONS
@@ -225,18 +232,30 @@ button {
     background-color: $surface;
     color: $base-text;
 
-    p {margin-right: 16px;}
+    p {
+      margin-right: 16px;
+    }
   }
 
   // Background Color
-  &.bg-gray300 {background-color: $gray300;}
-  &.bg-gray600 {background-color: $gray600;}
-  &.bg-surface {background-color: $surface;}
+  &.bg-gray300 {
+    background-color: $gray300;
+  }
+  &.bg-gray600 {
+    background-color: $gray600;
+  }
+  &.bg-surface {
+    background-color: $surface;
+  }
 
   // Text Color
   &.clr-base-text,
-  &.clr-base-text p {color: $base-text;}
+  &.clr-base-text p {
+    color: $base-text;
+  }
 
   &.clr-primary,
-  &.clr-primary p {color: $primary;}
+  &.clr-primary p {
+    color: $primary;
+  }
 }
