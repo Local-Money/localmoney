@@ -1,13 +1,23 @@
 <script setup lang="ts">
+//TODO clear unused method
+
 const widgetActive = ref(false);
 function toggleWidget() {
   widgetActive.value = !widgetActive.value;
 }
+
+// const widgetActive = ref(false);
+// function hoverIn() {
+//   widgetActive.value = true;
+// }
+// function hoverOut() {
+//   widgetActive.value = false;
+// }
 </script>
 
 <template>
-  <div class="wrap-widget" @click="toggleWidget">
-    <div class="wrap-btn">
+  <div class="wrap-widget">
+    <div class="wrap-btn" @click="toggleWidget">
       <div class="badge">
         <p>3</p>
       </div>
@@ -130,6 +140,7 @@ function toggleWidget() {
         </ul>
       </div>
     </div>
+    <div class="widget-close" @click="toggleWidget" v-if="widgetActive" />
   </div>
 </template>
 
@@ -139,10 +150,10 @@ function toggleWidget() {
 .wrap-widget {
   display: flex;
   flex-direction: row-reverse;
-  z-index: 999;
 
   .wrap-btn {
     position: relative;
+    z-index: 100;
     cursor: pointer;
     .badge {
       display: flex;
@@ -188,7 +199,7 @@ function toggleWidget() {
     min-width: 400px;
     margin-top: 64px;
     margin-right: -72px;
-    z-index: 1000;
+    z-index: 100;
     background-color: $surface;
     border: 1px solid $border;
     border-radius: 8px;
@@ -222,6 +233,7 @@ function toggleWidget() {
         font-size: 14px;
         padding: 16px 24px;
         cursor: pointer;
+        z-index: 100;
 
         &:hover {
           background: $gray150;
@@ -250,6 +262,14 @@ function toggleWidget() {
         }
       }
     }
+  }
+  .widget-close {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    z-index: 99;
   }
 }
 </style>
