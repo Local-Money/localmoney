@@ -20,15 +20,100 @@
         />
       </svg>
     </div>
-    <div class="widget card">
+    <div class="widget">
       <p class="title">Notifications</p>
       <div class="content">
         <ul>
-          <li class="item">Item 01</li>
-          <li class="item">Item 01</li>
-          <li class="item">Item 01</li>
-          <li class="item">Item 01</li>
-          <li class="item">Item 01</li>
+          <li class="item">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 8L12.01 12"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 16L12 16"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wrap">
+              <p class="status">You have a new trade request</p>
+              <p class="addr">from kujira6...6yp193</p>
+            </div>
+            <p class="timestamp">2h ago</p>
+          </li>
+          <li class="item">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 8L12.01 12"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 16L12 16"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wrap">
+              <p class="status">You have a new trade request</p>
+              <p class="addr">from kujira6...6yp193</p>
+            </div>
+            <p class="timestamp">2h ago</p>
+          </li>
+          <li class="item">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 8L12.01 12"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 16L12 16"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wrap">
+              <p class="status">You have a new trade request</p>
+              <p class="addr">from kujira6...6yp193</p>
+            </div>
+            <p class="timestamp">2h ago</p>
+          </li>
         </ul>
       </div>
     </div>
@@ -63,11 +148,58 @@
 
   .widget {
     position: absolute;
+    min-width: 400px;
     margin-top: 24px;
+    right: 32px;
     z-index: 1000;
+    background-color: $surface;
+    border: 1px solid $border;
+    border-radius: 8px;
+    box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
 
-    .item {
-      padding: 8px 0;
+    .title {
+      font-size: 18px;
+      font-weight: $bold;
+      padding: 16px 24px;
+      border-bottom: 1px solid $border;
+    }
+
+    .content {
+      .item {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 14px;
+        padding: 16px 24px;
+        border-bottom: 1px solid $border;
+        cursor: pointer;
+
+        &:hover {
+          background: $gray150;
+        }
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .icon {
+          width: 20px;
+          height: 20px;
+          stroke: $base-text;
+        }
+
+        .wrap {
+          flex-grow: 2;
+        }
+
+        .addr {
+          font-size: 14px;
+          color: $gray700;
+        }
+        .timestamp {
+          font-size: 14px;
+          color: $gray900;
+        }
+      }
     }
   }
 }
