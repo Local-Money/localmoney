@@ -1,5 +1,16 @@
 @import "tokens.scss";
 
+body {
+  &::-webkit-scrollbar {
+    width: 8px;
+    background: $gray100;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $gray300;
+    border-radius: 56px;
+  }
+}
+
 .card {
   padding: 24px;
   background-color: $surface;

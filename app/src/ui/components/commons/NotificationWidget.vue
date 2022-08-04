@@ -137,6 +137,66 @@ function toggleWidget() {
             </div>
             <p class="timestamp">2h ago</p>
           </li>
+          <li class="item">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 8L12.01 12"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 16L12 16"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wrap">
+              <p class="status">You have a new trade request</p>
+              <p class="addr">from kujira6...6yp193</p>
+            </div>
+            <p class="timestamp">2h ago</p>
+          </li>
+          <li class="item">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 8L12.01 12"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.01 16L12 16"
+                stroke="inherit"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wrap">
+              <p class="status">You have a new trade request</p>
+              <p class="addr">from kujira6...6yp193</p>
+            </div>
+            <p class="timestamp">2h ago</p>
+          </li>
         </ul>
       </div>
     </div>
@@ -233,6 +293,17 @@ function toggleWidget() {
     }
 
     .content {
+      max-height: 300px;
+      background: $gray200;
+      overflow-y: scroll;
+      &::-webkit-scrollbar {
+        width: 8px;
+        background: $surface;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: $gray300;
+        border-radius: 56px;
+      }
       .item {
         display: flex;
         justify-content: space-between;
