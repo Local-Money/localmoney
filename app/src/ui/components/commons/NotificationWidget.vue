@@ -1,7 +1,12 @@
-<script></script>
+<script setup lang="ts">
+const widgetActive = ref(false);
+function toggleWidget() {
+  widgetActive.value = !widgetActive.value;
+}
+</script>
 
 <template>
-  <div class="wrap-widget">
+  <div class="wrap-widget" @click="toggleWidget">
     <div class="wrap-btn">
       <div class="badge">
         <p>3</p>
@@ -25,7 +30,7 @@
         </svg>
       </div>
     </div>
-    <div class="widget">
+    <div class="widget" v-if="widgetActive">
       <div class="header">
         <p class="title">Notifications</p>
         <p class="mark-read">Mark all as read</p>
@@ -134,6 +139,7 @@
 .wrap-widget {
   display: flex;
   flex-direction: row-reverse;
+  z-index: 999;
 
   .wrap-btn {
     position: relative;
@@ -197,7 +203,7 @@
 
       .title {
         font-size: 18px;
-        font-weight: $bold;
+        font-weight: $semi-bold;
       }
       .mark-read {
         font-size: 12px;
