@@ -23,8 +23,8 @@ use localterra_protocol::offer::{
     load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
 use localterra_protocol::trade::{
-    Asset, AssetInfo, ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
-    TradeModel, TradeState, TraderRole,
+    ExecuteMsg, InstantiateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeState,
+    TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -484,17 +484,7 @@ fn release_escrow(
             id: SWAP_REPLY_ID,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: hub_cfg.local_market_addr.to_string(),
-                msg: to_binary(&SwapMsg {
-                    swap: Swap {
-                        offer_asset: Asset {
-                            info: AssetInfo::NativeToken {
-                                denom: trade_denom.to_string(),
-                            },
-                            amount: burn_amount.clone(),
-                        },
-                    },
-                })
-                .unwrap(),
+                msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
                 funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
             }),
             gas_limit: None,

@@ -3,13 +3,31 @@
   "title": "hub_config",
   "type": "object",
   "required": [
+    "burn_fee_pct",
+    "chain_fee_collector_addr",
+    "chain_fee_pct",
     "local_denom",
     "local_market_addr",
     "offer_addr",
     "trade_addr",
-    "trading_incentives_addr"
+    "trading_incentives_addr",
+    "warchest_addr",
+    "warchest_fee_pct"
   ],
   "properties": {
+    "burn_fee_pct": {
+      "type": "integer",
+      "format": "uint128",
+      "minimum": 0.0
+    },
+    "chain_fee_collector_addr": {
+      "$ref": "#/definitions/Addr"
+    },
+    "chain_fee_pct": {
+      "type": "integer",
+      "format": "uint128",
+      "minimum": 0.0
+    },
     "local_denom": {
       "$ref": "#/definitions/Denom"
     },
@@ -24,6 +42,14 @@
     },
     "trading_incentives_addr": {
       "$ref": "#/definitions/Addr"
+    },
+    "warchest_addr": {
+      "$ref": "#/definitions/Addr"
+    },
+    "warchest_fee_pct": {
+      "type": "integer",
+      "format": "uint128",
+      "minimum": 0.0
     }
   },
   "definitions": {
