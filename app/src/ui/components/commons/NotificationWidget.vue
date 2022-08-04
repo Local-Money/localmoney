@@ -19,7 +19,7 @@ function toggleWidget() {
   <div class="wrap-widget">
     <div class="wrap-btn" @click="toggleWidget">
       <div class="badge">
-        <p>3</p>
+        <p>2</p>
       </div>
       <div class="btn">
         <svg viewBox="0 0 24 24" fill="none">
@@ -156,11 +156,15 @@ function toggleWidget() {
     z-index: 100;
     cursor: pointer;
     .badge {
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2px 7px;
+      align-content: flex-start;
+
       position: absolute;
+      z-index: 101;
       right: 10px;
       background: $primary;
       border-radius: 56px;
@@ -190,6 +194,10 @@ function toggleWidget() {
         svg {
           stroke: $primary;
         }
+      }
+      &:active {
+        transform: scale(0.9);
+        z-index: 99;
       }
     }
   }

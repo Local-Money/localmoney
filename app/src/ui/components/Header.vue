@@ -31,7 +31,6 @@ const isMobile = computed(() => width.value <= 550);
 
       <NavMobile v-if="isMobile" />
       <NavDesktop v-else />
-      <NotificationWidget />
       <WalletButton />
     </div>
   </header>
