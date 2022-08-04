@@ -21,7 +21,10 @@
       </svg>
     </div>
     <div class="widget">
-      <p class="title">Notifications</p>
+      <div class="header">
+        <p class="title">Notifications</p>
+        <p class="mark-read">Mark all as read</p>
+      </div>
       <div class="content">
         <ul>
           <li class="item">
@@ -124,6 +127,9 @@
 @import "../../style/tokens.scss";
 
 .wrap-widget {
+  display: flex;
+  flex-direction: row-reverse;
+
   .btn {
     width: 40px;
     height: 40px;
@@ -149,42 +155,54 @@
   .widget {
     position: absolute;
     min-width: 400px;
-    margin-top: 24px;
-    right: 32px;
+    margin-top: 64px;
+    margin-right: -72px;
     z-index: 1000;
     background-color: $surface;
     border: 1px solid $border;
     border-radius: 8px;
     box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
 
-    .title {
-      font-size: 18px;
-      font-weight: $bold;
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 16px 24px;
       border-bottom: 1px solid $border;
+
+      .title {
+        font-size: 18px;
+        font-weight: $bold;
+      }
+      .mark-read {
+        font-size: 12px;
+        text-decoration: underline;
+        color: $gray700;
+        cursor: pointer;
+      }
     }
 
     .content {
       .item {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         gap: 16px;
         font-size: 14px;
         padding: 16px 24px;
-        border-bottom: 1px solid $border;
         cursor: pointer;
 
         &:hover {
           background: $gray150;
         }
         &:last-child {
-          border-bottom: none;
+          margin-bottom: 8px;
         }
 
         .icon {
           width: 20px;
           height: 20px;
-          stroke: $base-text;
+          stroke: $primary;
         }
 
         .wrap {
@@ -196,7 +214,7 @@
           color: $gray700;
         }
         .timestamp {
-          font-size: 14px;
+          font-size: 12px;
           color: $gray900;
         }
       }
