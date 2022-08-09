@@ -172,8 +172,7 @@
   width: 100%;
   height: 400px;
   right: 0;
-  bottom: 0;
-  padding-bottom: 400px;
+  bottom: 32px;
   z-index: 100;
   background-color: $surface;
   border: 1px solid $border;
