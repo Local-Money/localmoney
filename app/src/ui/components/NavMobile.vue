@@ -97,7 +97,10 @@ function toggleWidget() {
       </li>
     </ul>
   </nav>
-  <NotificationWidgetMobile v-if="widgetActive" />
+
+  <transition name="widget-transition">
+    <NotificationWidgetMobile v-if="widgetActive" />
+  </transition>
 
   <transition name="widget-fade">
     <div class="widget-close" @click="toggleWidget" v-if="widgetActive" />
@@ -202,6 +205,29 @@ nav {
   top: 0;
   z-index: 99;
 }
+
+.widget-transition-enter-active,
+.widget-transition-leave-active {
+  transition: all 0.3s ease;
+}
+
+.widget-transition-enter-from {
+  transform: translateY(100%);
+}
+.widget-transition-enter-to {
+}
+
+.widget-transition-leave-from {
+}
+.widget-transition-leave-to {
+  transform: translateY(100%);
+}
+
+// .widget-transition-enter-from,
+// .widget-transition-leave-to {
+//   transform: translateY(0px);
+//   opacity: 0;
+// }
 
 .widget-fade-enter-active,
 .widget-fade-leave-active {
