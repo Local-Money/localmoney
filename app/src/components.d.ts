@@ -25,6 +25,7 @@ declare module '@vue/runtime-core' {
     NavDesktop: typeof import('./ui/components/NavDesktop.vue')['default']
     NavMobile: typeof import('./ui/components/NavMobile.vue')['default']
     NotificationWidget: typeof import('./ui/components/commons/NotificationWidget.vue')['default']
+    NotificationWidgetMobile: typeof import('./ui/components/commons/NotificationWidgetMobile.vue')['default']
     RightArrow: typeof import('./ui/components/commons/RightArrow.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
