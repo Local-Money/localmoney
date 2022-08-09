@@ -199,7 +199,7 @@ function toggleWidget() {
 
   .wrap-btn {
     position: relative;
-    z-index: 100;
+    z-index: 50;
     cursor: pointer;
     .badge {
       width: 24px;
@@ -210,7 +210,7 @@ function toggleWidget() {
       align-content: flex-start;
 
       position: absolute;
-      z-index: 101;
+      z-index: 51;
       right: 10px;
       background: $primary;
       border-radius: 56px;
