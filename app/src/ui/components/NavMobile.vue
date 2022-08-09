@@ -98,7 +98,10 @@ function toggleWidget() {
     </ul>
   </nav>
   <NotificationWidgetMobile v-if="widgetActive" />
-  <div class="widget-close" @click="toggleWidget" v-if="widgetActive" />
+
+  <transition name="widget-fade">
+    <div class="widget-close" @click="toggleWidget" v-if="widgetActive" />
+  </transition>
 </template>
 
 <style lang="scss" scoped>
@@ -153,7 +156,8 @@ nav {
 
       position: absolute;
       z-index: 101;
-      right: 10px;
+      top: -8px;
+      right: -12px;
       background: $primary;
       border-radius: 56px;
 
@@ -164,14 +168,13 @@ nav {
       }
     }
     .btn {
-      width: 40px;
-      height: 40px;
+      width: 24px;
+      height: 24px;
       background: $surface;
       border-radius: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 24px;
 
       svg {
         width: 20px;
@@ -198,5 +201,14 @@ nav {
   left: 0;
   top: 0;
   z-index: 99;
+}
+
+.widget-fade-enter-active,
+.widget-fade-leave-active {
+  transition: opacity 0.3s;
+}
+.widget-fade-enter-from,
+.widget-fade-leave-to {
+  opacity: 0;
 }
 </style>
