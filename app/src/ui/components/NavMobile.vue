@@ -2,6 +2,8 @@
 const widgetActive = ref(false);
 function toggleWidget() {
   widgetActive.value = !widgetActive.value;
+  const noScroll = document.body;
+  noScroll.classList.toggle("body-no-scroll");
 }
 </script>
 

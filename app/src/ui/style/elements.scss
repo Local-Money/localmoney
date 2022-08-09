@@ -11,6 +11,10 @@ body {
   }
 }
 
+.body-no-scroll {
+  overflow-y: hidden;
+}
+
 .card {
   padding: 24px;
   background-color: $surface;

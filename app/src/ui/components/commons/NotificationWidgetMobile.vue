@@ -173,8 +173,8 @@
   height: 400px;
   right: 0;
   bottom: 0;
+  padding-bottom: 400px;
   z-index: 100;
-  overscroll-behavior: contain;
   background-color: $surface;
   border: 1px solid $border;
   border-radius: 8px;
@@ -203,6 +203,7 @@
     height: 300px;
     background: $gray200;
     overflow-y: scroll;
+    overscroll-behavior: contain;
     &::-webkit-scrollbar {
       width: 8px;
       background: $surface;
