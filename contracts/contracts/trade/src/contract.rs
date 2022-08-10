@@ -518,52 +518,59 @@ fn release_escrow(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
-        SWAP_REPLY_ID => handle_swap_reply(deps, msg),
+        SWAP_REPLY_ID => handle_swap_reply(deps, env, msg),
         id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
     }
 }
 
-fn handle_swap_reply(_deps: DepsMut, msg: Reply) -> StdResult<Response> {
+fn handle_swap_reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
+    let hub_cfg = get_hub_config(deps.as_ref());
+    let local_denom = denom_to_string(&hub_cfg.local_denom);
+
     let attributes = msg
         .result
         .unwrap()
         .events
         .iter()
-        .find(|evt| evt.ty.eq("wasm"))
+        .find(|evt| evt.ty.eq("coin_received"))
         .unwrap()
         .attributes
         .clone();
-    let return_amount = attributes
-        .iter()
-        .find(|attr| attr.key.eq("return_amount"))
-        .unwrap()
-        .value
-        .clone();
-    let ask_asset = attributes
-        .iter()
-        .find(|attr| attr.key.eq("ask_asset"))
-        .unwrap()
-        .value
-        .clone();
 
-    //Burn $LOCAL
-    let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
-        amount: vec![coin(
-            u128::from_str(return_amount.as_str()).unwrap(),
-            ask_asset.clone(),
-        )],
+    let contract_address = env.contract.address.to_string();
+    let mut attributes_iter = attributes.windows(2);
+    let local_received = attributes_iter.find(|attrs| {
+        let attr_0 = &attrs[0];
+        let attr_1 = &attrs[1];
+        attr_0.key.eq("receiver")
+            && attr_0.value.eq(&contract_address)
+            && attr_1.value.contains(local_denom.as_str())
     });
 
-    let res = Response::new()
-        .add_attributes(vec![
-            ("event", "swap_reply"),
-            ("burn_amount", return_amount.as_str()),
-            ("demon", ask_asset.as_str()),
-        ])
-        .add_submessage(SubMsg::new(burn_msg));
-    Ok(res)
+    match local_received {
+        None => Err(StdError::generic_err("Swap failed")),
+        Some(local) => {
+            let amount = local[1].value.replace(local_denom.as_str(), "");
+            //Burn $LOCAL
+            let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
+                amount: vec![coin(
+                    u128::from_str(amount.as_str()).unwrap(),
+                    local_denom.clone(),
+                )],
+            });
+
+            let res = Response::new()
+                .add_attributes(vec![
+                    ("event", "swap_reply"),
+                    ("burn_amount", amount.as_str()),
+                    ("demom", local_denom.as_str()),
+                ])
+                .add_submessage(SubMsg::new(burn_msg));
+            Ok(res)
+        }
+    }
 }
 
 fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, ContractError> {
