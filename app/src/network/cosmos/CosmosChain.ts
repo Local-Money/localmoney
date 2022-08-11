@@ -18,12 +18,12 @@ import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/chain-error'
 
 export class CosmosChain implements Chain {
-  private readonly config: CosmosConfig
+  protected config: CosmosConfig
   private hubInfo: HubInfo
 
-  private signer?: OfflineSigner | OfflineDirectSigner
-  private account?: AccountData
-  private cwClient?: CosmWasmClient | SigningCosmWasmClient
+  protected signer?: OfflineSigner | OfflineDirectSigner
+  protected account?: AccountData
+  protected cwClient?: CosmWasmClient | SigningCosmWasmClient
 
   constructor(config: CosmosConfig, hubInfo: HubInfo) {
     this.config = config
