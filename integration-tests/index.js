@@ -28,8 +28,8 @@ const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { pre
 const makerAccounts = await makerWallet.getAccounts();
 const makerAddr = makerAccounts[0].address;
 console.log('makerAddr', makerAddr);
-//const local_denom = { "native": `factory/${makerAddr}/local` }
-const local_denom = { "native": process.env.DENOM }
+const local_denom = { "native": process.env.LOCAL_DENOM }
+const offer_denom = { "native": process.env.OFFER_DENOM };
 
 const makerClient = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, makerWallet, {
   broadcastTimeoutMs: 30 * 1000,
@@ -67,8 +67,13 @@ async function setupProtocol(codeIds) {
       offer_addr: offerInstantiateResult.contractAddress,
       trade_addr: tradeInstantiateResult.contractAddress,
       trading_incentives_addr: tradeIncentivesInstantiateResult.contractAddress,
-      local_market_addr: makerAddr, //TODO: use actual address
-      local_denom
+      local_market_addr: process.env.LOCAL_MARKET,
+      local_denom,
+      chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
+      warchest_addr: process.env.WARCHEST_ADDR,
+      warchest_fee_pct: "50",
+      chain_fee_pct: "10",
+      burn_fee_pct: "40",
     }
   }
   console.log('Hub Update Config - Msg = ', JSON.stringify(updatedConfigMsg));
@@ -88,7 +93,7 @@ async function create_offers(offer_addr) {
           min_amount,
           max_amount,
           rate: "1",
-          denom: local_denom,
+          denom: offer_denom,
         },
       },
     },
@@ -183,7 +188,7 @@ async function test(codeIds) {
       // TODO replace tradeAddr to hubConfig.trade_addr
       tradeAddr = hubCfg.trade_addr
       console.log("**Trade created with Id:", tradeId);
-      return makerClient.getBalance(tradeAddr, local_denom.native);
+      return makerClient.getBalance(tradeAddr, offer_denom.native);
     }).then((balance) => {
       console.log("Escrow initial balance: ", JSON.stringify(balance))
       console.log("*Accepting Trade Request");
@@ -193,7 +198,7 @@ async function test(codeIds) {
       console.log("Accept Trade Request Result:", r);
       console.log("*Funding Escrow*");
       console.log('makerAddr:',makerAddr);
-      const funds = coins(min_amount, process.env.DENOM);
+      const funds = coins(min_amount, offer_denom.native);
       return makerClient.execute(makerAddr, hubCfg.trade_addr, {"fund_escrow":{"trade_id": tradeId}}, "auto", "fund_escrow", funds);
     }).then((r) => {
       //Query State
@@ -203,7 +208,7 @@ async function test(codeIds) {
       } else {
         console.log("%Error%");
       }
-      return makerClient.getBalance(tradeAddr, local_denom.native);
+      return makerClient.getBalance(tradeAddr, offer_denom.native);
     }).then((balance) => {
       console.log("Escrow balance: ", JSON.stringify(balance))
       return makerClient.queryContractSmart(hubCfg.trade_addr, {"trade":{"id": tradeId}});
@@ -224,7 +229,7 @@ async function test(codeIds) {
     }).then((r) => {
       //Query State
       console.log("Trade Release Result:", r);
-      return makerClient.getBalance(tradeAddr, local_denom.native);
+      return makerClient.getBalance(tradeAddr, offer_denom.native);
     }).then((balance) => {
       console.log("Escrow final balance: ", JSON.stringify(balance))
       return makerClient.queryContractSmart(hubCfg.trade_addr, {"trade":{"id": tradeId}});

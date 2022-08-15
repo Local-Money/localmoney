@@ -1,13 +1,16 @@
-use crate::errors::TradingIncentivesError;
-use crate::errors::TradingIncentivesError::HubAlreadyRegistered;
 use crate::state::{DISTRIBUTION, TOTAL_VOLUME, TRADER_VOLUME};
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, QueryRequest,
-    StdError, StdResult, Storage, SubMsg, WasmQuery,
+    StdResult, Storage, SubMsg, WasmQuery,
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal, HUB_ADDR};
+use localterra_protocol::errors::ContractError;
+use localterra_protocol::errors::ContractError::{
+    DistributionClaimInvalidPeriod, DistributionNotStarted, HubAlreadyRegistered,
+    InvalidTradeState, Unauthorized,
+};
+use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::load_offer;
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
 use localterra_protocol::trading_incentives::{
@@ -22,7 +25,7 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, TradingIncentivesError> {
+) -> Result<Response, ContractError> {
     let period_duration = 604800u64; //1 week in seconds
     let distribution_periods = 51u8;
     let total_duration = period_duration * distribution_periods as u64;
@@ -57,7 +60,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, TradingIncentivesError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterTrade { trade } => register_trade(deps, env, info, trade),
         ExecuteMsg::ClaimRewards { period } => claim_rewards(deps, env, info, period),
@@ -114,13 +117,15 @@ fn register_trade(
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, TradingIncentivesError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+) -> Result<Response, ContractError> {
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     //Only callable by the Trade Contract.
     if hub_cfg.trade_addr.ne(&info.sender) {
-        return Err(TradingIncentivesError::Unauthorized {});
+        return Err(Unauthorized {
+            owner: hub_cfg.trade_addr.clone(),
+            caller: info.sender.clone(),
+        });
     }
 
     let trade: Trade = deps
@@ -143,7 +148,10 @@ fn register_trade(
     let maker = offer.owner.to_string();
 
     if trade.state != TradeState::EscrowReleased {
-        return Err(TradingIncentivesError::Unauthorized {});
+        return Err(InvalidTradeState {
+            current: trade.state.clone(),
+            expected: TradeState::EscrowReleased,
+        });
     }
 
     let amount = trade.amount.clone();
@@ -182,20 +190,16 @@ fn claim_rewards(
     env: Env,
     info: MessageInfo,
     period: u8,
-) -> Result<Response, TradingIncentivesError> {
+) -> Result<Response, ContractError> {
     let distribution = get_distribution_info(env, deps.storage).unwrap();
     let rewards_denom = get_rewards_denom(deps.as_ref());
 
     if distribution.start_time.eq(&0u64) {
-        return Err(TradingIncentivesError::Std(StdError::generic_err(
-            "Distribution hasn't started yet.",
-        )));
+        return Err(DistributionNotStarted {});
     }
 
     if period >= distribution.current_period {
-        return Err(TradingIncentivesError::Std(StdError::generic_err(
-            "Only past periods can be claimed.",
-        )));
+        return Err(DistributionClaimInvalidPeriod {});
     }
 
     let amount =
@@ -223,7 +227,7 @@ fn start_distribution(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-) -> Result<Response, TradingIncentivesError> {
+) -> Result<Response, ContractError> {
     let mut distribution = DISTRIBUTION.load(deps.storage).unwrap();
     let rewards_denom = get_rewards_denom(deps.as_ref());
 
@@ -252,14 +256,13 @@ fn start_distribution(
 }
 
 fn get_rewards_denom(deps: Deps) -> String {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let hub_cfg = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+    let hub_cfg = get_hub_config(deps.clone());
     match hub_cfg.local_denom {
         Denom::Native(name) => name,
         Denom::Cw20(addr) => addr.to_string(),
     }
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, TradingIncentivesError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }

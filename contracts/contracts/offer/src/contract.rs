@@ -5,13 +5,10 @@ use cosmwasm_std::{
 use cw_storage_plus::Bound;
 
 use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::errors::GuardError;
-use localterra_protocol::errors::GuardError::{HubAlreadyRegistered, Unauthorized};
+use localterra_protocol::errors::ContractError;
+use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
-use localterra_protocol::hub::HubConfig;
-use localterra_protocol::hub_utils::{
-    get_hub_admin, get_hub_config, register_hub_internal, HubAddr, HUB_ADDR,
-};
+use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
     offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
     OfferUpdateMsg, OffersCount, QueryMsg,
@@ -25,9 +22,13 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, GuardError> {
-    offers_count_storage(deps.storage).save(&OffersCount { count: 0 })?;
-    Ok(Response::default())
+) -> Result<Response, ContractError> {
+    offers_count_storage(deps.storage)
+        .save(&OffersCount { count: 0 })
+        .unwrap();
+
+    let res = Response::new().add_attribute("action", "instantiate_offer");
+    Ok(res)
 }
 
 #[entry_point]
@@ -36,7 +37,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
@@ -48,11 +49,9 @@ pub fn execute(
         }
         ExecuteMsg::UpdateTradeArbitrator { arbitrator } => {
             // TODO merge this call with the query random arbitrator call. LOCAL-660
-            execute_update_trade_arbitrator(deps, env, info, arbitrator)
+            update_trade_arbitrator(deps, env, info, arbitrator)
         }
-        ExecuteMsg::UpdateLastTraded { offer_id } => {
-            execute_update_last_traded(deps, env, info, offer_id)
-        }
+        ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::IncrementTradesCount { offer_id } => {
             increment_trades_count(deps, info, offer_id)
@@ -63,7 +62,6 @@ pub fn execute(
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::HubAddr {} => to_binary(&query_hub_addr(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
         QueryMsg::Offers {
@@ -112,7 +110,7 @@ pub fn create_offer(
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut offers_count = offers_count_storage(deps.storage).load().unwrap();
@@ -154,14 +152,14 @@ pub fn create_offer(
     Ok(res)
 }
 
-pub fn execute_update_trade_arbitrator(
+pub fn update_trade_arbitrator(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     arbitrator: Addr,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set. LOCAL-660
-    let mut trade = trades().load(deps.storage, &info.sender.as_str())?;
+    let mut trade = trades().load(deps.storage, &info.sender.as_str()).unwrap();
 
     trade.arbitrator = arbitrator.clone();
 
@@ -170,7 +168,7 @@ pub fn execute_update_trade_arbitrator(
         .unwrap();
 
     let res = Response::new()
-        .add_attribute("action", "execute_update_trade_arbitrator")
+        .add_attribute("action", "update_trade_arbitrator")
         .add_attribute("tradeAddr", info.sender)
         .add_attribute("arbitrator", arbitrator)
         .add_attribute("timestamp", _env.block.time.seconds().to_string());
@@ -178,19 +176,18 @@ pub fn execute_update_trade_arbitrator(
     Ok(res)
 }
 
-pub fn execute_update_last_traded(
+pub fn update_last_traded(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     offer_id: String,
-) -> Result<Response, GuardError> {
-    let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
-    let hub_config = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+) -> Result<Response, ContractError> {
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     // Only allows to execute_update_last_traded if called by trade
-    if info.sender.ne(&hub_config.trade_addr) {
+    if info.sender.ne(&hub_cfg.trade_addr) {
         return Err(Unauthorized {
-            owner: hub_config.trade_addr,
+            owner: hub_cfg.trade_addr,
             caller: info.sender.clone(),
         });
     }
@@ -200,7 +197,7 @@ pub fn execute_update_last_traded(
     let offer = offer_model.update_last_traded(env.block.time.seconds());
 
     let res = Response::new()
-        .add_attribute("action", "execute_update_last_traded")
+        .add_attribute("action", "update_last_traded")
         .add_attribute("tradeAddr", info.sender)
         .add_attribute("offer_id", &offer.id)
         .add_attribute("last_traded_at", &offer.last_traded_at.to_string());
@@ -214,21 +211,22 @@ pub fn create_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
-) -> Result<Response, GuardError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+) -> Result<Response, ContractError> {
+    let admin = get_hub_admin(deps.as_ref());
     assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
-    arbitrators().save(
-        deps.storage,
-        &index,
-        &Arbitrator {
-            arbitrator: arbitrator.clone(),
-            asset: asset.clone(),
-        },
-    )?;
+    arbitrators()
+        .save(
+            deps.storage,
+            &index,
+            &Arbitrator {
+                arbitrator: arbitrator.clone(),
+                asset: asset.clone(),
+            },
+        )
+        .unwrap();
 
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
@@ -248,14 +246,13 @@ pub fn delete_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     asset: FiatCurrency,
-) -> Result<Response, GuardError> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    let admin = get_hub_admin(&deps.querier, hub_addr.addr.to_string());
+) -> Result<Response, ContractError> {
+    let admin = get_hub_admin(deps.as_ref());
     assert_ownership(info.sender, admin)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 
-    arbitrators().remove(deps.storage, &index)?;
+    arbitrators().remove(deps.storage, &index).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "delete_arbitrator")
@@ -270,7 +267,7 @@ pub fn update_offer(
     _env: Env,
     info: MessageInfo,
     msg: OfferUpdateMsg,
-) -> Result<Response, GuardError> {
+) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
@@ -287,7 +284,7 @@ pub fn update_offer(
     Ok(res)
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, GuardError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
@@ -295,9 +292,8 @@ fn increment_trades_count(
     deps: DepsMut,
     info: MessageInfo,
     offer_id: String,
-) -> Result<Response, GuardError> {
-    let hub_addr = query_hub_addr(deps.as_ref()).unwrap();
-    let hub_cfg: HubConfig = get_hub_config(&deps.querier, hub_addr.addr.to_string());
+) -> Result<Response, ContractError> {
+    let hub_cfg = get_hub_config(deps.as_ref());
 
     //Check if caller is Trade Contract
     if info.sender.ne(&hub_cfg.trade_addr) {
@@ -313,14 +309,10 @@ fn increment_trades_count(
     OfferModel::store(deps.storage, &offer).unwrap();
 
     let res = Response::new()
+        .add_attribute("action", "increment_trades_count")
         .add_attribute("offer_id", offer.id)
         .add_attribute("trades_count", offer.trades_count.to_string());
     Ok(res)
-}
-
-fn query_hub_addr(deps: Deps) -> StdResult<HubAddr> {
-    let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
-    Ok(hub_addr)
 }
 
 fn query_state(deps: Deps) -> StdResult<OffersCount> {

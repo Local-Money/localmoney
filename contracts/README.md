@@ -1,5 +1,3 @@
-![Build & Tests](https://github.com/Local-Terra/localterra-contracts/actions/workflows/rust.yml/badge.svg)
+# Local Money Smart Contracts
 
-# LocalTerra Smart Contracts
-
-CosmWasm Smart Contracts for LocalTerra marketplace.
+CosmWasm Smart Contracts for Local Money P2P Marketplace.
