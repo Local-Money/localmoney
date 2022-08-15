@@ -5,18 +5,6 @@
     {
       "type": "object",
       "required": [
-        "config"
-      ],
-      "properties": {
-        "config": {
-          "type": "object"
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "trade"
       ],
       "properties": {
@@ -43,14 +31,11 @@
         "trades": {
           "type": "object",
           "required": [
-            "index",
             "limit",
+            "role",
             "user"
           ],
           "properties": {
-            "index": {
-              "$ref": "#/definitions/TradesIndex"
-            },
             "last_value": {
               "type": [
                 "string",
@@ -61,6 +46,9 @@
               "type": "integer",
               "format": "uint32",
               "minimum": 0.0
+            },
+            "role": {
+              "$ref": "#/definitions/TraderRole"
             },
             "state": {
               "anyOf": [
@@ -102,7 +90,7 @@
         "settled_for_taker"
       ]
     },
-    "TradesIndex": {
+    "TraderRole": {
       "type": "string",
       "enum": [
         "seller",
