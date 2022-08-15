@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import NavDesktop from './NavDesktop.vue'
-import NavMobile from './NavMobile.vue'
+import NavDesktop from "./NavDesktop.vue";
+import NavMobile from "./NavMobile.vue";
 
 // TODO - Make isMobile global
-const width = ref(window.innerWidth)
-const listener = () => { width.value = window.innerWidth }
-onMounted(() => { window.addEventListener('resize', listener) })
-onUnmounted(() => { window.removeEventListener('resize', listener) })
-const isMobile = computed(() => width.value <= 550)
+const width = ref(window.innerWidth);
+const listener = () => {
+  width.value = window.innerWidth;
+};
+onMounted(() => {
+  window.addEventListener("resize", listener);
+});
+onUnmounted(() => {
+  window.removeEventListener("resize", listener);
+});
+const isMobile = computed(() => width.value <= 550);
 </script>
 
 <template>
@@ -50,26 +56,26 @@ header {
       align-content: center;
 
       .logo {
-      width: 220px;
-      height: 42px;
-      background-size: cover;
-      background-image: $logo-horizontal-dark;
-    }
+        width: 220px;
+        height: 42px;
+        background-size: cover;
+        background-image: $logo-horizontal-dark;
+      }
 
-    .badge-testnet {
-      display: flex;
-      margin-left: 24px;
-      align-items: center;
+      .badge-testnet {
+        display: flex;
+        margin-left: 24px;
+        align-items: center;
 
-      p {
-        font-size: 13px;
-        color: $primary;
-        font-weight: 400;
-        background-color: $surface;
-        border-radius: 8px;
-        padding: 6px 14px;
+        p {
+          font-size: 13px;
+          color: $primary;
+          font-weight: 400;
+          background-color: $surface;
+          border-radius: 8px;
+          padding: 6px 14px;
         }
-    }
+      }
     }
 
     @media only screen and (max-width: 550px) {
@@ -77,7 +83,6 @@ header {
       padding: 0px;
 
       .wrap-logo {
-
         padding: 16px 0 0 16px;
 
         a {
@@ -86,16 +91,16 @@ header {
         }
 
         .logo {
-        width: 32px;
-        height: 32px;
-        margin-top: 0px;
-        margin-left: 0px;
-        background-size: cover;
-        background-image: $logo-icon-dark;
+          width: 32px;
+          height: 32px;
+          margin-top: 0px;
+          margin-left: 0px;
+          background-size: cover;
+          background-image: $logo-icon-dark;
         }
 
         .badge-testnet {
-        margin-left: 16px;
+          margin-left: 16px;
         }
       }
     }

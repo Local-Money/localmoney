@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 defineComponent({
-  name: 'NavDesktop',
-})
+  name: "NavDesktop",
+});
 </script>
 
 <template>
@@ -54,6 +54,7 @@ defineComponent({
           <p>My Trades</p>
         </router-link>
       </li>
+      <li class="item"><NotificationWidget /></li>
     </ul>
   </nav>
 </template>
@@ -62,42 +63,41 @@ defineComponent({
 @import "../style/tokens.scss";
 
 nav {
+  display: flex;
+  justify-content: space-between;
+  margin-left: auto;
+
+  ul {
     display: flex;
-    justify-content: space-between;
-    margin-left: auto;
 
-    ul {
-        display: flex;
-        margin-right: 32px;
-
-        li {
-            padding: 0 20px;
-        }
-
-        a {
-            display: inline-block;
-            height: 40px;
-            font-size: 14px;
-            color: $base-text;
-
-            &:hover {
-                color: $gray900;
-                .icon-24 {
-                    stroke: $primary;
-                }
-            }
-
-            .icon-24 {
-                vertical-align: middle;
-            }
-
-            p {
-                display: inline-block;
-                vertical-align: middle;
-                line-height: 40px;
-                margin-left: 16px;
-            }
-        }
+    li {
+      padding: 0 20px;
     }
+
+    a {
+      display: inline-block;
+      height: 40px;
+      font-size: 14px;
+      color: $base-text;
+
+      &:hover {
+        color: $gray900;
+        .icon-24 {
+          stroke: $primary;
+        }
+      }
+
+      .icon-24 {
+        vertical-align: middle;
+      }
+
+      p {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 40px;
+        margin-left: 16px;
+      }
+    }
+  }
 }
 </style>
