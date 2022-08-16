@@ -1,7 +1,9 @@
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { Decimal } from '@cosmjs/math'
+import dotenv from 'dotenv'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
+dotenv.config()
 
 export class TestCosmosChain extends CosmosChain {
   async connectWallet(): Promise<void> {
