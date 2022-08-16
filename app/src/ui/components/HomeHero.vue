@@ -40,7 +40,7 @@ const isMobile = computed(() => width.value <= 550);
         <p>Want to know more about us?</p>
 
         <div class="wrap-btns">
-          <a href="https://localp2p.money/local-litepaper.pdf" target="_blank">
+          <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
             <button class="primary">Litepaper</button>
           </a>
 
