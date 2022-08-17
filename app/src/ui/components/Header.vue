@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import NavDesktop from "./NavDesktop.vue";
-import NavMobile from "./NavMobile.vue";
+import NavDesktop from './NavDesktop.vue'
+import NavMobile from './NavMobile.vue'
 
 // TODO - Make isMobile global
-const width = ref(window.innerWidth);
+const width = ref(window.innerWidth)
 const listener = () => {
-  width.value = window.innerWidth;
-};
+  width.value = window.innerWidth
+}
 onMounted(() => {
-  window.addEventListener("resize", listener);
-});
+  window.addEventListener('resize', listener)
+})
 onUnmounted(() => {
-  window.removeEventListener("resize", listener);
-});
-const isMobile = computed(() => width.value <= 550);
+  window.removeEventListener('resize', listener)
+})
+const isMobile = computed(() => width.value <= 550)
 </script>
 
 <template>
