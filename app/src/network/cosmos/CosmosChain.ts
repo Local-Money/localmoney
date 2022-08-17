@@ -19,7 +19,7 @@ import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/
 
 export class CosmosChain implements Chain {
   protected config: CosmosConfig
-  private hubInfo: HubInfo
+  protected hubInfo: HubInfo
 
   protected signer?: OfflineSigner | OfflineDirectSigner
   protected account?: AccountData
@@ -36,7 +36,6 @@ export class CosmosChain implements Chain {
       this.hubInfo.hubAddress,
       { config: {} },
     ) as HubConfig
-    // console.log("Factory config >> ", this.hubInfo.hubConfig)
   }
 
   async connectWallet() {
@@ -64,16 +63,14 @@ export class CosmosChain implements Chain {
 
   async createOffer(postOffer: PostOffer) {
     const msg = { create: { offer: postOffer } }
-    console.log('Create offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(
+        await this.cwClient.execute(
           this.getWalletAddress(),
           this.hubInfo.hubConfig.offer_addr,
           msg,
           'auto',
         )
-        console.log('Create offer result >> ', result)
       }
       catch (e) {
         throw new DefaultError()
@@ -86,16 +83,14 @@ export class CosmosChain implements Chain {
 
   async updateOffer(updateOffer: PatchOffer) {
     const msg = { update_offer: { offer_update: updateOffer } }
-    console.log('Update offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(
+        await this.cwClient.execute(
           this.getWalletAddress(),
           this.hubInfo.hubConfig.offer_addr,
           msg,
           'auto',
         )
-        console.log('Update offer result >> ', result)
       }
       catch (e) {
         throw new DefaultError()
@@ -109,7 +104,7 @@ export class CosmosChain implements Chain {
   async fetchMyOffers() {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
-        const response = await this.cwClient.queryContractSmart(
+        return await this.cwClient.queryContractSmart(
           this.hubInfo.hubConfig.offer_addr,
           {
             offers: {
@@ -118,8 +113,6 @@ export class CosmosChain implements Chain {
               order: 'asc',
             },
           }) as GetOffer[]
-        console.log('response >> ', response)
-        return response
       }
       catch (e) {
         throw new DefaultError()

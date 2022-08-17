@@ -1,4 +1,4 @@
-import {TestCosmosChain} from "~/network/cosmos/TestCosmosChain";
+import { TestCosmosChain } from '~/network/cosmos/TestCosmosChain'
 import type {
   Denom,
   FetchOffersArgs,
