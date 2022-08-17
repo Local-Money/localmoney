@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import useNotificationSystem from '~/notification/Notification'
+import { useClientStore } from '~/stores/client'
 
 const notification = useNotificationSystem()
+const client = useClientStore()
+
+const isConnected = computed(() => client.userWallet.isConnected)
 const widgetActive = ref(false)
 
 function toggleWidget() {
@@ -77,7 +81,7 @@ function toggleWidget() {
         </router-link>
       </li>
 
-      <li class="item">
+      <li v-if="isConnected" class="item">
         <div class="wrap-btn" @click="toggleWidget">
           <div v-if="notification.notificationCount() > 0" class="badge">
             <p>{{ notification.notificationCount() }}</p>
