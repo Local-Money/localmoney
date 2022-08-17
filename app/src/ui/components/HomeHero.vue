@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import { usePriceStore } from "~/stores/price";
-import { FiatCurrency } from "~/types/components.interface";
-const price = usePriceStore();
-const { getPrice } = storeToRefs(price);
-const { fetchPrice } = price;
+import { storeToRefs } from 'pinia'
+import { usePriceStore } from '~/stores/price'
+import { FiatCurrency } from '~/types/components.interface'
+const price = usePriceStore()
+const { getPrice } = storeToRefs(price)
+const { fetchPrice } = price
 
 onMounted(async () => {
-  await fetchPrice(FiatCurrency.BRL);
-});
+  await fetchPrice(FiatCurrency.BRL)
+})
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 // TODO - Make isMobile global
-const width = ref(window.innerWidth);
+const width = ref(window.innerWidth)
 const listener = () => {
-  width.value = window.innerWidth;
-};
+  width.value = window.innerWidth
+}
 onMounted(() => {
-  window.addEventListener("resize", listener);
-});
+  window.addEventListener('resize', listener)
+})
 onUnmounted(() => {
-  window.removeEventListener("resize", listener);
-});
-const isMobile = computed(() => width.value <= 550);
+  window.removeEventListener('resize', listener)
+})
+const isMobile = computed(() => width.value <= 550)
 </script>
 
 <template>
@@ -82,7 +82,7 @@ const isMobile = computed(() => width.value <= 550);
     </div>
 
     <div v-if="!isMobile" class="wrap-img">
-      <img src="../assets/header-img.png" alt="" />
+      <img src="../assets/header-img.png" alt="">
     </div>
   </section>
 </template>
