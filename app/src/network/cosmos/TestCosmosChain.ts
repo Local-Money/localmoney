@@ -1,8 +1,11 @@
+import type { CosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { Decimal } from '@cosmjs/math'
 import dotenv from 'dotenv'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
+import type { HubConfig } from '~/types/components.interface'
+import type { HubInfo } from '~/network/cosmos/config'
 dotenv.config()
 
 export class TestCosmosChain extends CosmosChain {
@@ -18,5 +21,18 @@ export class TestCosmosChain extends CosmosChain {
         denom: this.config.coinMinimalDenom,
       },
     })
+  }
+
+  getCwClient(): CosmWasmClient | SigningCosmWasmClient | undefined {
+    return this.cwClient
+  }
+
+  async updateHub(hubAddress: string) {
+    const hubConfig = await this.cwClient!.queryContractSmart(hubAddress, { config: {} }) as HubConfig
+    this.hubInfo = { hubAddress, hubConfig }
+  }
+
+  getHubInfo(): HubInfo {
+    return this.hubInfo
   }
 }

@@ -1,0 +1,11 @@
+[
+  {
+    "offer_type": "buy",
+    "fiat_currency": "COP",
+    "min_amount": "1000000",
+    "max_amount":  "250000000",
+    "rate": "1",
+    "denom": { "native": "ukuji" },
+    "maker_contact": "todo"
+  }
+]
