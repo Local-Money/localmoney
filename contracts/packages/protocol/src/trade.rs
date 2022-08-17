@@ -62,22 +62,7 @@ pub struct SwapMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct Swap {
-    pub offer_asset: Asset,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Asset {
-    pub info: AssetInfo,
-    pub amount: Uint128,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum AssetInfo {
-    Token { contract_addr: String },
-    NativeToken { denom: String },
-}
+pub struct Swap {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -219,3 +204,7 @@ pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
     };
     IndexedMap::new("trades", indexes)
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct MigrateMsg {}

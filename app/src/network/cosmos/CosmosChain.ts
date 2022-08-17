@@ -107,9 +107,7 @@ export class CosmosChain implements Chain {
         const response = await this.cwClient.queryContractSmart(
           this.hubInfo.hubConfig.offer_addr,
           {
-            // TODO: update this query when new contracts are deployed
-            // offers: {
-            offers_query: {
+            offers: {
               owner: this.getWalletAddress(),
               limit: 10,
               order: 'asc',
@@ -131,22 +129,11 @@ export class CosmosChain implements Chain {
     if (!this.cwClient)
       await this.init()
     try {
-      // TODO: update this query when new contracts are deployed
-      // const queryMsg = {
-      //   offers_by: {
-      //     fiat_currency: args.fiatCurrency,
-      //     offer_type: args.offerType,
-      //     denom: args.denom,
-      //     // min: "",
-      //     // max: "",
-      //     limit: 10,
-      //     order: 'asc',
-      //   },
-      // }
       const queryMsg = {
-        offers_by_type_fiat: {
+        offers_by: {
           fiat_currency: args.fiatCurrency,
           offer_type: args.offerType,
+          denom: args.denom,
           // min: "",
           // max: "",
           limit: 10,
@@ -197,14 +184,14 @@ export class CosmosChain implements Chain {
         await this.init()
       try {
         // Query of trades as buyer
-        const queryAsBuyerMsg = { trades: { user: userAddr, index: 'buyer', limit: 100 } }
+        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 100 } }
         const tradesAsBuyer = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryAsBuyerMsg,
         ) as TradeInfo[]
 
         // Query of trades as seller
-        const queryAsSellerMsg = { trades: { user: userAddr, index: 'seller', limit: 100 } }
+        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 100 } }
         const tradesAsSeller = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryAsSellerMsg,

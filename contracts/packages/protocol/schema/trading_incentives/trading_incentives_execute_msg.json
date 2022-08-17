@@ -3,12 +3,6 @@
   "title": "trading_incentives_execute_msg",
   "oneOf": [
     {
-      "type": "string",
-      "enum": [
-        "start_distribution"
-      ]
-    },
-    {
       "type": "object",
       "required": [
         "register_trade"
@@ -17,13 +11,9 @@
         "register_trade": {
           "type": "object",
           "required": [
-            "maker",
             "trade"
           ],
           "properties": {
-            "maker": {
-              "type": "string"
-            },
             "trade": {
               "type": "string"
             }
@@ -35,10 +25,10 @@
     {
       "type": "object",
       "required": [
-        "claim"
+        "claim_rewards"
       ],
       "properties": {
-        "claim": {
+        "claim_rewards": {
           "type": "object",
           "required": [
             "period"
@@ -50,6 +40,18 @@
               "minimum": 0.0
             }
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "start_distribution"
+      ],
+      "properties": {
+        "start_distribution": {
+          "type": "object"
         }
       },
       "additionalProperties": false

@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "trade_swap",
+  "type": "object",
+  "required": [
+    "swap"
+  ],
+  "properties": {
+    "swap": {
+      "$ref": "#/definitions/Swap"
+    }
+  },
+  "definitions": {
+    "Swap": {
+      "type": "object"
+    }
+  }
+}
