@@ -131,9 +131,6 @@ export const useClientStore = defineStore({
     },
     async fetchMyTrades() {
       this.trades = ListResult.loading()
-      await this.fetchTrades()
-    },
-    async fetchTrades() {
       try {
         const tradesList = await this.client.fetchTrades()
         this.trades = ListResult.success(tradesList)
