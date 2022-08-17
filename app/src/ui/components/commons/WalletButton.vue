@@ -3,9 +3,7 @@ import { onUnmounted } from 'vue-demi'
 import { useClientStore } from '~/stores/client'
 import { formatAddress } from '~/shared'
 import useNotificationSystem from '~/notification/Notification'
-
 const notification = useNotificationSystem()
-const notificationCount = notification.badgeCount
 
 const client = useClientStore()
 const userWallet = computed(() => client.userWallet)
@@ -14,12 +12,6 @@ function connectWallet() {
   nextTick(async () => {
     await client.connectWallet()
     await notification.register()
-  })
-}
-
-function readNotification() {
-  nextTick(async () => {
-    await notification.readAllNotifications()
   })
 }
 
@@ -37,9 +29,6 @@ onUnmounted(() => {
       connect
     </p>
     <img src="../../assets/ic_wallet.svg" alt="Connect your wallet">
-  </button>
-  <button v-if="userWallet.isConnected" class="wallet" @click="readNotification()">
-    {{ notificationCount }}
   </button>
 </template>
 

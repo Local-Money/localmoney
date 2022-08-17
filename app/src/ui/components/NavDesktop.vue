@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import { defineComponent } from "vue";
-
-defineComponent({
-  name: "NavDesktop",
-});
 </script>
 
 <template>
@@ -54,7 +49,9 @@ defineComponent({
           <p>My Trades</p>
         </router-link>
       </li>
-      <li class="item"><NotificationWidget /></li>
+      <li class="item">
+        <NotificationWidget />
+      </li>
     </ul>
   </nav>
 </template>

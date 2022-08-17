@@ -1,25 +1,35 @@
 <script setup lang="ts">
-//TODO clear unused method
+import { useRouter } from 'vue-router'
+import useNotificationSystem from '~/notification/Notification'
+import { useClientStore } from '~/stores/client'
+import { formatAddress, timeSince } from '~/shared'
+import type { Notification } from '~/stores/notification'
 
-const widgetActive = ref(false);
+const notification = useNotificationSystem()
+const client = useClientStore()
+const router = useRouter()
+const isConnected = computed(() => client.userWallet.isConnected)
+
+const widgetActive = ref(false)
 function toggleWidget() {
-  widgetActive.value = !widgetActive.value;
+  widgetActive.value = !widgetActive.value
 }
 
-// const widgetActive = ref(false);
-// function hoverIn() {
-//   widgetActive.value = true;
-// }
-// function hoverOut() {
-//   widgetActive.value = false;
-// }
+async function showTrade(n: Notification) {
+  await notification.readNotification(n)
+  await router.push({
+    name: 'TradeDetail',
+    params: { id: n.id },
+  })
+  toggleWidget()
+}
 </script>
 
 <template>
-  <div class="wrap-widget">
+  <div v-if="isConnected" class="wrap-widget">
     <div class="wrap-btn" @click="toggleWidget">
-      <div class="badge">
-        <p>4</p>
+      <div v-if="notification.notificationCount() > 0" class="badge">
+        <p>{{ notification.notificationCount() }}</p>
       </div>
       <div class="btn">
         <svg viewBox="0 0 24 24" fill="none">
@@ -40,30 +50,19 @@ function toggleWidget() {
         </svg>
       </div>
     </div>
-    <div class="widget" v-if="widgetActive">
+    <div v-if="widgetActive" class="widget">
       <div class="header">
         <p class="title">Notifications</p>
-        <p class="mark-read">Mark all as read</p>
+        <p class="mark-read" @click="notification.readAllNotifications()">Mark all as read</p>
       </div>
       <div class="content">
-        <ul>
-          <li class="item">
-            <svg class="icon" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M20 6L9 17L4 12"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <div class="wrap">
-              <p class="status">Trade finished successfully</p>
-              <p class="addr">from kujira6...6yp193</p>
-            </div>
-            <p class="timestamp">15s ago</p>
-          </li>
-          <li class="item">
+        <ul v-if="notification.notificationCount() > 0">
+          <li
+            v-for="n in notification.notifications()"
+            :key="`${n.id}_${n.state}`"
+            class="item"
+            @click="showTrade(n)"
+          >
             <svg class="icon" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
@@ -88,105 +87,18 @@ function toggleWidget() {
               />
             </svg>
             <div class="wrap">
-              <p class="status">Buyer is waiting for funds</p>
-              <p class="addr">from kujira6...6yp193</p>
+              <p class="status">{{ n.message }}</p>
+              <p class="addr">from {{ formatAddress(n.sender) }}</p>
             </div>
-            <p class="timestamp">35m ago</p>
+            <p class="timestamp">{{ timeSince(n.time) }}</p>
           </li>
-          <li class="item">
-            <svg class="icon" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.01 8L12.01 12"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.01 16L12 16"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <div class="wrap">
-              <p class="status">The seller is waiting for your payment</p>
-              <p class="addr">from kujira6...6yp193</p>
-            </div>
-            <p class="timestamp">2h ago</p>
-          </li>
-          <li class="item">
-            <svg class="icon" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.01 8L12.01 12"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.01 16L12 16"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <div class="wrap">
-              <p class="status">You have a new trade request</p>
-              <p class="addr">from kujira6...6yp193</p>
-            </div>
-            <p class="timestamp">2h ago</p>
-          </li>
-          <li class="item">
-            <svg class="icon" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.01 8L12.01 12"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.01 16L12 16"
-                stroke="inherit"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <div class="wrap">
-              <p class="status">You have a new trade request</p>
-              <p class="addr">from kujira6...6yp193</p>
-            </div>
-            <p class="timestamp">2h ago</p>
-          </li>
-        </ul>
+        </ul >
+        <div v-else class="item">
+          <p>No notifications yet</p>
+        </div>
       </div>
     </div>
-    <div class="widget-close" @click="toggleWidget" v-if="widgetActive" />
+    <div v-if="widgetActive" class="widget-close" @click="toggleWidget" />
   </div>
 </template>
 

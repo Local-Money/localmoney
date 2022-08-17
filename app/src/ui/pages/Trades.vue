@@ -4,7 +4,7 @@ import TradeHistoryItem from '../components/trades/TradeHistoryItem.vue'
 import { useClientStore } from '~/stores/client'
 import { TradeState } from '~/types/components.interface'
 import { checkValidOffer } from '~/utils/validations'
-import useNotificationSystem from "~/notification/Notification";
+import useNotificationSystem from '~/notification/Notification'
 
 const notification = useNotificationSystem()
 const client = useClientStore()

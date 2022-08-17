@@ -1,9 +1,13 @@
 <script setup lang="ts">
-const widgetActive = ref(false);
+import useNotificationSystem from '~/notification/Notification'
+
+const notification = useNotificationSystem()
+const widgetActive = ref(false)
+
 function toggleWidget() {
-  widgetActive.value = !widgetActive.value;
-  const noScroll = document.body;
-  noScroll.classList.toggle("body-no-scroll");
+  widgetActive.value = !widgetActive.value
+  const noScroll = document.body
+  noScroll.classList.toggle('body-no-scroll')
 }
 </script>
 
@@ -72,10 +76,11 @@ function toggleWidget() {
           </svg>
         </router-link>
       </li>
+
       <li class="item">
         <div class="wrap-btn" @click="toggleWidget">
-          <div class="badge">
-            <p>4</p>
+          <div v-if="notification.notificationCount() > 0" class="badge">
+            <p>{{ notification.notificationCount() }}</p>
           </div>
           <div class="btn">
             <svg viewBox="0 0 24 24" fill="none">
@@ -101,11 +106,11 @@ function toggleWidget() {
   </nav>
 
   <transition name="widget-transition">
-    <NotificationWidgetMobile v-if="widgetActive" />
+    <NotificationWidgetMobile v-if="widgetActive" @toggleWidget="toggleWidget()" />
   </transition>
 
   <transition name="widget-fade">
-    <div class="widget-close" @click="toggleWidget" v-if="widgetActive" />
+    <div v-if="widgetActive" class="widget-close" @click="toggleWidget" />
   </transition>
 </template>
 
