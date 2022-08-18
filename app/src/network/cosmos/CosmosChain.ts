@@ -124,7 +124,6 @@ export class CosmosChain implements Chain {
   }
 
   async fetchOffers(args: FetchOffersArgs) {
-    console.log('args >>> ', args)
     // TODO: fix init
     if (!this.cwClient)
       await this.init()
@@ -140,12 +139,10 @@ export class CosmosChain implements Chain {
           order: 'asc',
         },
       }
-      const response = await this.cwClient!.queryContractSmart(
+      return await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
-        queryMsg
+        queryMsg,
       ) as GetOffer[]
-      console.log('response >>> ', response)
-      return response
     }
     catch (e) {
       throw new DefaultError()
@@ -187,14 +184,14 @@ export class CosmosChain implements Chain {
         await this.init()
       try {
         // Query of trades as buyer
-        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 100 } }
+        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 10 } }
         const tradesAsBuyer = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryAsBuyerMsg,
         ) as TradeInfo[]
 
         // Query of trades as seller
-        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 100 } }
+        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 10 } }
         const tradesAsSeller = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryAsSellerMsg,
@@ -206,6 +203,7 @@ export class CosmosChain implements Chain {
         return response
       }
       catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     }

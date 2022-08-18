@@ -6,7 +6,8 @@ import dotenv from 'dotenv'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
 import type { HubConfig } from '~/types/components.interface'
 import type { HubInfo } from '~/network/cosmos/config'
-dotenv.config()
+if (!window)
+  dotenv.config()
 
 export class TestCosmosChain extends CosmosChain {
   async connectWallet(): Promise<void> {

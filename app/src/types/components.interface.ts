@@ -28,9 +28,9 @@ export interface OfferTypeLabel {
 }
 
 export interface GetOffer extends PatchOffer {
-  id: String
-  owner: String
-  rate: String
+  id: string
+  owner: string
+  rate: string
   denom: Denom
   min_amount: string
   max_amount: string
