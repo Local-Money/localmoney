@@ -50,7 +50,7 @@ export interface Chain {
   openDispute(tradeId: string): Promise<void>
 }
 
-export enum ChainClient { mock = 'MOCK', kujira = 'KUJIRA', juno = 'JUNO', testCosmos = 'TEST_COSMOS' }
+export enum ChainClient { mock = 'MOCK', kujira = 'KUJIRA', juno = 'JUNO', testCosmos = 'TEST_COSMOS', dev = 'DEV' }
 
 // Centralized place to instantiate chain client and inject dependencies if needed
 export function chainFactory(client: ChainClient): Chain {
@@ -63,5 +63,7 @@ export function chainFactory(client: ChainClient): Chain {
       return new CosmosChain(JUNO_CONFIG, JUNO_HUB_INFO)
     case ChainClient.testCosmos:
       return new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
+    case ChainClient.dev:
+      return new CosmosChain(TEST_CONFIG, TEST_HUB_INFO)
   }
 }

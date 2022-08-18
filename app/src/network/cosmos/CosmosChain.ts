@@ -135,7 +135,6 @@ export class CosmosChain implements Chain {
   }
 
   async fetchOffers(args: FetchOffersArgs) {
-    console.log("args >>> ", args);
     // TODO: fix init
     if (!this.cwClient) await this.init();
     try {
@@ -149,15 +148,14 @@ export class CosmosChain implements Chain {
           limit: 10,
           order: "asc",
         },
-      };
-      const response = (await this.cwClient!.queryContractSmart(
+      }
+      return await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
-        queryMsg
-      )) as GetOffer[];
-      console.log("response >>> ", response);
-      return response;
-    } catch (e) {
-      throw new DefaultError();
+        queryMsg,
+      ) as GetOffer[]
+    }
+    catch (e) {
+      throw new DefaultError()
     }
   }
 
@@ -193,29 +191,27 @@ export class CosmosChain implements Chain {
       if (!this.cwClient) await this.init();
       try {
         // Query of trades as buyer
-        const queryAsBuyerMsg = {
-          trades: { user: userAddr, role: "buyer", limit: 100 },
-        };
-        const tradesAsBuyer = (await this.cwClient!.queryContractSmart(
+        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 10 } }
+        const tradesAsBuyer = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryAsBuyerMsg
         )) as TradeInfo[];
 
         // Query of trades as seller
-        const queryAsSellerMsg = {
-          trades: { user: userAddr, role: "seller", limit: 100 },
-        };
-        const tradesAsSeller = (await this.cwClient!.queryContractSmart(
+        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 10 } }
+        const tradesAsSeller = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryAsSellerMsg
         )) as TradeInfo[];
 
         // Join all trades
-        const response: TradeInfo[] = tradesAsBuyer.concat(tradesAsSeller);
-        console.log("response >>> ", response);
-        return response;
-      } catch (e) {
-        throw new DefaultError();
+        const response: TradeInfo[] = tradesAsBuyer.concat(tradesAsSeller)
+        console.log('response >>> ', response)
+        return response
+      }
+      catch (e) {
+        console.error(e)
+        throw new DefaultError()
       }
     } else {
       throw new WalletNotConnected();
