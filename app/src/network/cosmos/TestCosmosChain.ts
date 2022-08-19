@@ -6,13 +6,16 @@ import dotenv from 'dotenv'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
 import type { HubConfig } from '~/types/components.interface'
 import type { HubInfo } from '~/network/cosmos/config'
-if (!window)
+
+if (!window) {
   dotenv.config()
+}
 
 export class TestCosmosChain extends CosmosChain {
+  public seed = ''
+
   async connectWallet(): Promise<void> {
-    const seed = process.env.SEED ? process.env.SEED : ''
-    this.signer = await DirectSecp256k1HdWallet.fromMnemonic(seed, { prefix: process.env.ADDR_PREFIX })
+    this.signer = await DirectSecp256k1HdWallet.fromMnemonic(this.seed, { prefix: process.env.ADDR_PREFIX })
     // get first account
     const accounts = await this.signer.getAccounts()
     this.account = accounts[0]
@@ -29,7 +32,7 @@ export class TestCosmosChain extends CosmosChain {
   }
 
   async updateHub(hubAddress: string) {
-    const hubConfig = await this.cwClient!.queryContractSmart(hubAddress, { config: {} }) as HubConfig
+    const hubConfig = (await this.cwClient!.queryContractSmart(hubAddress, { config: {} })) as HubConfig
     this.hubInfo = { hubAddress, hubConfig }
   }
 

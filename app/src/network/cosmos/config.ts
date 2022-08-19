@@ -77,7 +77,7 @@ export const TEST_CONFIG: CosmosConfig = {
 }
 
 export const TEST_HUB_INFO: HubInfo = {
-  hubAddress: process.env.HUB,
+  hubAddress: process.env.HUB ? process.env.HUB : '',
   hubConfig: {
     offer_addr: 'kujira1cryjuex5uxstsstr8j50qpm4g9828nlr0l5uunlwvj0e7umdv7yq2m4rrt',
     trade_addr: 'kujira1kl8fyh4245lqj3ht5cl099eswuhgds4k9zdfv6hrhf3xu8xplzyqs8vklx',
