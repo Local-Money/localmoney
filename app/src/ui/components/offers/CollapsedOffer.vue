@@ -22,6 +22,7 @@ const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(usdRate, props.offer.rate)
   return `${props.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
 })
+const tradeOrTrades = computed(() => props.offer.trades_count === 1 ? 'trade' : 'trades')
 </script>
 
 <template>
@@ -31,7 +32,7 @@ const offerPrice = computed(() => {
         {{ formatAddress(offer.owner) }}
       </p>
       <p class="n-trades">
-        0 trades
+        {{ offer.trades_count }} {{ tradeOrTrades }}
       </p>
     </div>
 

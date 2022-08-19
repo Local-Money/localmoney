@@ -47,6 +47,7 @@ const fiatAmountStr = computed(() => {
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.rate))
+const tradeOrTrades = computed(() => tradeInfo.value.offer.trades_count === 1 ? 'trade' : 'trades')
 
 function fetchTrade(id: string) {
   nextTick(async () => {
@@ -157,7 +158,7 @@ onUnmounted(() => {
               {{ formatAddress(counterparty) }}
             </p>
             <p class="rating">
-              0 trades
+              {{ tradeInfo.offer.trades_count }} {{ tradeOrTrades }}
             </p>
           </div>
           <div class="trade-info">

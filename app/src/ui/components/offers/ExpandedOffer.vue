@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import CurrencyInput from '../CurrencyInput.vue'
 import {
   calculateFiatPriceByRate,
@@ -52,6 +53,7 @@ const minMaxCryptoStr = computed(() => {
   const max = (parseInt(props.offer.max_amount.toString()) / 1000000).toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
+const tradeOrTrades = computed(() => props.offer.trades_count === 1 ? 'trade' : 'trades')
 
 function newTrade() {
   const newTrade: NewTrade = {
@@ -147,7 +149,7 @@ onUnmounted(() => {
         {{ formatAddress(offer.owner) }}
       </p>
       <p class="n-trades">
-        0 trades
+        {{ offer.trades_count }} {{ tradeOrTrades }}
       </p>
     </div>
 
