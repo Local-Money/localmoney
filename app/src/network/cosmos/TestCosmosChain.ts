@@ -27,8 +27,11 @@ export class TestCosmosChain extends CosmosChain {
     })
   }
 
-  getCwClient(): CosmWasmClient | SigningCosmWasmClient | undefined {
-    return this.cwClient
+  getCwClient(): CosmWasmClient | SigningCosmWasmClient {
+    if (this.cwClient === undefined) {
+      throw new Error('Error, cwClient is undefined. Please call connectWallet() first.')
+    }
+    return this.cwClient!
   }
 
   async updateHub(hubAddress: string) {

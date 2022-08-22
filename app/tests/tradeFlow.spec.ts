@@ -101,10 +101,28 @@ describe('Trade Lifecycle Happy Path', () => {
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
-    let trade = (await makerClient.fetchTrades())[0]
-    expect(trade.trade.state).toBe(TradeState.request_created)
-    await makerClient.acceptTradeRequest(trade.trade.id)
-    trade = (await makerClient.fetchTrades())[0]
-    expect(trade.trade.state).toBe(TradeState.request_accepted)
+    let tradeInfo = (await makerClient.fetchTrades())[0]
+    expect(tradeInfo.trade.state).toBe(TradeState.request_created)
+    await makerClient.acceptTradeRequest(tradeInfo.trade.id)
+    tradeInfo = (await makerClient.fetchTrades())[0]
+    expect(tradeInfo.trade.state).toBe(TradeState.request_accepted)
+  })
+  // Taker funds the escrow
+  it('taker should fund the escrow', async () => {
+    const tradeAddr = makerClient.getHubInfo().hubConfig.trade_addr
+    let tradeInfo = (await takerClient.fetchTrades())[0] // This time we'll query the trade as the taker.
+
+    const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, tradeInfo.trade.denom.native)).amount
+    await takerClient.fundEscrow(tradeInfo.trade.id, tradeInfo.trade.amount, tradeInfo.offer.denom)
+    const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, tradeInfo.trade.denom.native)).amount
+    tradeInfo = (await takerClient.fetchTrades())[0]
+    expect(tradeInfo.trade.state).toBe(TradeState.escrow_funded)
+    expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(tradeInfo.trade.amount) * 1.01)
+  })
+  it('maker should mark trade as paid (fiat_deposited)', async () => {
+    const tradeInfo = (await makerClient.fetchTrades())[0]
+    await makerClient.setFiatDeposited(tradeInfo.trade.id)
+    const trade = await makerClient.fetchTradeDetail(tradeInfo.trade.id)
+    expect(trade.state).toBe(TradeState.fiat_deposited)
   })
 })
