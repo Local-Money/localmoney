@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import useNotificationSystem from '~/notification/Notification'
-import { useClientStore } from '~/stores/client'
-import { formatAddress, timeSince } from '~/shared'
-import type { Notification } from '~/stores/notification'
+import { useRouter } from "vue-router";
+import useNotificationSystem from "~/notification/Notification";
+import { useClientStore } from "~/stores/client";
+import { formatAddress, timeSince } from "~/shared";
+import type { Notification } from "~/stores/notification";
 
-const notification = useNotificationSystem()
-const client = useClientStore()
-const router = useRouter()
-const isConnected = computed(() => client.userWallet.isConnected)
+const notification = useNotificationSystem();
+const client = useClientStore();
+const router = useRouter();
+const isConnected = computed(() => client.userWallet.isConnected);
 
-const widgetActive = ref(false)
+const widgetActive = ref(false);
 function toggleWidget() {
-  widgetActive.value = !widgetActive.value
+  widgetActive.value = !widgetActive.value;
 }
 
 async function showTrade(n: Notification) {
-  await notification.readNotification(n)
+  await notification.readNotification(n);
   await router.push({
-    name: 'TradeDetail',
+    name: "TradeDetail",
     params: { id: n.id },
-  })
-  toggleWidget()
+  });
+  toggleWidget();
 }
 </script>
 
@@ -53,7 +53,9 @@ async function showTrade(n: Notification) {
     <div v-if="widgetActive" class="widget">
       <div class="header">
         <p class="title">Notifications</p>
-        <p class="mark-read" @click="notification.readAllNotifications()">Mark all as read</p>
+        <p class="mark-read" @click="notification.readAllNotifications()">
+          Mark all as read
+        </p>
       </div>
       <div class="content">
         <ul v-if="notification.notificationCount() > 0">
@@ -92,7 +94,7 @@ async function showTrade(n: Notification) {
             </div>
             <p class="timestamp">{{ timeSince(n.time) }}</p>
           </li>
-        </ul >
+        </ul>
         <div v-else class="item">
           <p>No notifications yet</p>
         </div>
@@ -111,7 +113,6 @@ async function showTrade(n: Notification) {
 
   .wrap-btn {
     position: relative;
-    z-index: 50;
     cursor: pointer;
     .badge {
       width: 24px;
@@ -155,7 +156,7 @@ async function showTrade(n: Notification) {
       }
       &:active {
         transform: scale(0.9);
-        z-index: 99;
+        z-index: 51;
       }
     }
   }
