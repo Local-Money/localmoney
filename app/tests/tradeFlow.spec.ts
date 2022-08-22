@@ -9,6 +9,7 @@ import { createHubUpdateConfigMsg } from './utils/hub_utils'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { TestCosmosChain } from '~/network/cosmos/TestCosmosChain'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
+import { TradeState } from '~/types/components.interface'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -29,6 +30,7 @@ describe('Trade Lifecycle Happy Path', () => {
 
     if (process.env.HUB) {
       await makerClient.updateHub(process.env.HUB)
+      await takerClient.updateHub(process.env.HUB)
     } else {
       // Instantiate all contracts
       const walletAddress = makerClient.getWalletAddress()
@@ -61,6 +63,7 @@ describe('Trade Lifecycle Happy Path', () => {
       )
       await cwClient.execute(walletAddress, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
       await makerClient.updateHub(hubInstantiateResult.contractAddress)
+      await takerClient.updateHub(hubInstantiateResult.contractAddress)
       expect(makerClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
     }
   })
@@ -79,7 +82,7 @@ describe('Trade Lifecycle Happy Path', () => {
     }
   })
   // Create Trade
-  it('should create a trade', async () => {
+  it('taker should create a trade', async () => {
     const createdOffer = offers[0] as PostOffer
     const offersResult = await makerClient.fetchOffers({
       denom: createdOffer.denom,
@@ -91,7 +94,17 @@ describe('Trade Lifecycle Happy Path', () => {
     const offer = offersResult[0] as GetOffer
     expect(offer).toHaveProperty('id')
 
-    await makerClient.openTrade({ amount: offer.min_amount, offer_id: offer.id, taker: makerClient.getWalletAddress() })
-    await makerClient.fetchTrades()
+    const makerTradesCount = (await makerClient.fetchTrades()).length
+    await takerClient.openTrade({ amount: offer.min_amount, offer_id: offer.id, taker: takerClient.getWalletAddress() })
+    const newMakerTradesCount = (await makerClient.fetchTrades()).length
+    expect(newMakerTradesCount).toBeGreaterThan(makerTradesCount)
+  })
+  // Maker accepts the trade request
+  it('maker should accept the trade request', async () => {
+    let trade = (await makerClient.fetchTrades())[0]
+    expect(trade.trade.state).toBe(TradeState.request_created)
+    await makerClient.acceptTradeRequest(trade.trade.id)
+    trade = (await makerClient.fetchTrades())[0]
+    expect(trade.trade.state).toBe(TradeState.request_accepted)
   })
 })
