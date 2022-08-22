@@ -5,7 +5,7 @@
     "min_amount": "100000",
     "max_amount":  "2500000",
     "rate": "1",
-    "denom": { "native": "ukuji" },
+    "denom": { "native": "factory/kujira1x99v9geawldrvex3gy6efc9qghp89zggcksu89/usdc" },
     "maker_contact": "todo"
   }
 ]

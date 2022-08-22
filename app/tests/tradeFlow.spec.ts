@@ -17,6 +17,8 @@ Object.assign(global, { TextEncoder, TextDecoder })
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
 let offersCount = 0
+let tradeId = '0'
+
 describe('Trade Lifecycle Happy Path', () => {
   jest.setTimeout(30 * 1000)
   beforeAll(async () => {
@@ -96,33 +98,39 @@ describe('Trade Lifecycle Happy Path', () => {
 
     const makerTradesCount = (await makerClient.fetchTrades()).length
     await takerClient.openTrade({ amount: offer.min_amount, offer_id: offer.id, taker: takerClient.getWalletAddress() })
-    const newMakerTradesCount = (await makerClient.fetchTrades()).length
+    const trades = await makerClient.fetchTrades()
+    const newMakerTradesCount = trades.length
+    tradeId = trades[0].trade.id
     expect(newMakerTradesCount).toBeGreaterThan(makerTradesCount)
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
-    let tradeInfo = (await makerClient.fetchTrades())[0]
-    expect(tradeInfo.trade.state).toBe(TradeState.request_created)
-    await makerClient.acceptTradeRequest(tradeInfo.trade.id)
-    tradeInfo = (await makerClient.fetchTrades())[0]
-    expect(tradeInfo.trade.state).toBe(TradeState.request_accepted)
+    let trade = await makerClient.fetchTradeDetail(tradeId)
+    expect(trade.state).toBe(TradeState.request_created)
+    await makerClient.acceptTradeRequest(trade.id)
+    trade = await makerClient.fetchTradeDetail(tradeId)
+    expect(trade.state).toBe(TradeState.request_accepted)
   })
   // Taker funds the escrow
   it('taker should fund the escrow', async () => {
     const tradeAddr = makerClient.getHubInfo().hubConfig.trade_addr
-    let tradeInfo = (await takerClient.fetchTrades())[0] // This time we'll query the trade as the taker.
+    let trade = await takerClient.fetchTradeDetail(tradeId)
 
-    const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, tradeInfo.trade.denom.native)).amount
-    await takerClient.fundEscrow(tradeInfo.trade.id, tradeInfo.trade.amount, tradeInfo.offer.denom)
-    const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, tradeInfo.trade.denom.native)).amount
-    tradeInfo = (await takerClient.fetchTrades())[0]
-    expect(tradeInfo.trade.state).toBe(TradeState.escrow_funded)
-    expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(tradeInfo.trade.amount) * 1.01)
+    const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
+    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
+    trade = await takerClient.fetchTradeDetail(tradeId)
+    expect(trade.state).toBe(TradeState.escrow_funded)
+    expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(trade.amount) * 1.01)
   })
   it('maker should mark trade as paid (fiat_deposited)', async () => {
-    const tradeInfo = (await makerClient.fetchTrades())[0]
-    await makerClient.setFiatDeposited(tradeInfo.trade.id)
-    const trade = await makerClient.fetchTradeDetail(tradeInfo.trade.id)
+    await makerClient.setFiatDeposited(tradeId)
+    const trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.fiat_deposited)
+  })
+  it('taker should release the trade.', async () => {
+    await takerClient.releaseEscrow(tradeId)
+    const trade = await takerClient.fetchTradeDetail(tradeId)
+    expect(trade.state).toBe(TradeState.escrow_released)
   })
 })
