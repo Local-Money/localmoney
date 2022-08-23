@@ -48,51 +48,62 @@ function toggleModal() {
 @import "../style/pages.scss";
 
 .wrap-title {
+  display: flex;
+  justify-content: space-between;
+
+  .inner-wrap {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
 
-    .inner-wrap {
-        display: flex;
-        align-items: center;
+    .btn-add {
+      width: 40px;
+      height: 40px;
+      background-color: $surface;
+      border-radius: 8px;
+      margin-left: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
 
-        .btn-add {
-            width: 40px;
-            height: 40px;
-            background-color: $surface;
-            border-radius: 8px;
-            margin-left: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-
-            svg {
-                stroke: $primary;
-                vertical-align: middle;
-            }
-        }
+      svg {
+        stroke: $primary;
+        vertical-align: middle;
+      }
     }
+  }
 }
 
 button {
-    margin-top: 32px;
-    background-color: $surface;
-    color: $primary;
+  margin-top: 32px;
+  background-color: $surface;
+  color: $primary;
 }
 
 .modal {
-    position: fixed;
-    width: 100%;
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  backdrop-filter: blur(10px);
+
+  @media only screen and (max-width: $mobile) {
     height: 100vh;
-    left: 0;
-    top: 0;
-    backdrop-filter: blur(10px);
+    padding: 16px;
+  }
 }
 
 .modal-content {
-    display: inline-flex;
-    background-color: $gray150;
-    margin-top: 10%;
-    z-index: 100;
+  display: inline-flex;
+  background-color: $gray150;
+  margin-top: 10%;
+  z-index: 100;
+
+  @media only screen and (max-width: $mobile) {
+    height: 50vh;
+    overflow: scroll;
+    margin-top: 4px;
+  }
 }
 </style>

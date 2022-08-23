@@ -215,6 +215,12 @@ watch(margin, () => {
       }
     }
   }
+
+  .currency {
+    @media only screen and (max-width: $mobile) {
+      flex-direction: column;
+    }
+  }
 }
 
 .divider {
@@ -245,7 +251,7 @@ watch(margin, () => {
 .btns {
   display: flex;
   justify-content: flex-end;
-  gap: 24px;
+  gap: 16px;
   margin-top: 0px;
 }
 </style>
