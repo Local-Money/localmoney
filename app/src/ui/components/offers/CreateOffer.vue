@@ -91,11 +91,11 @@ watch(margin, () => {
 
     <div class="inner-content">
       <div class="currency">
-        <div class="filter">
+        <div class="wrap">
           <label for="crypto">I want to {{ offerType }}</label>
           <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
         </div>
-        <div class="filter">
+        <div class="wrap">
           <label for="currency">and {{ fiatLabel }} in</label>
           <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
         </div>
@@ -131,15 +131,15 @@ watch(margin, () => {
           />
         </div>
       </div>
-      <div class="wrap-price">
-        <div class="margin">
+      <div class="market-price">
+        <div class="wrap">
           <label for="">Market price</label>
           <select v-model="margin" class="bg-surface">
             <option value="above">Above</option>
             <option value="below">Below</option>
           </select>
         </div>
-        <div class="margin-offset">
+        <div class="wrap">
           <label for="currency">Margin Offset</label>
           <input
             v-model="marginOffset"
@@ -151,7 +151,9 @@ watch(margin, () => {
         </div>
       </div>
     </div>
+
     <div class="divider" />
+
     <div class="footer">
       <div class="fiat-price">
         <p class="value">
@@ -177,20 +179,41 @@ watch(margin, () => {
   flex-direction: column;
 }
 
-.buy-sell {
-  display: flex;
-  margin: 24px 0 24px;
-}
-
 .header-wrap {
   display: flex;
   justify-content: space-between;
   align-items: center;
 
-  .value {
-    font-size: 16px;
-    color: $base-text;
-    font-weight: $semi-bold;
+  .buy-sell {
+    display: flex;
+    margin: 24px 0 24px;
+  }
+}
+
+.inner-content {
+  .currency,
+  .min-max,
+  .market-price {
+    display: flex;
+    gap: 24px;
+
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+
+      label {
+        font-size: 14px;
+        font-weight: 400;
+        color: $gray900;
+        margin-bottom: 8px;
+      }
+
+      input {
+        width: 100%;
+        background-color: $background;
+      }
+    }
   }
 }
 
@@ -201,57 +224,8 @@ watch(margin, () => {
   margin: 32px 0;
 }
 
-.wrap-price {
-  display: flex;
-  justify-items: center;
-  align-content: center;
-  gap: 24px;
-
-  .margin,
-  .margin-offset {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    label {
-      font-size: 14px;
-      font-weight: 400;
-      color: $gray900;
-    }
-  }
-
-  input {
-    width: 100%;
-    background-color: $background;
-  }
-}
-
 .min-max {
-  display: inline-flex;
-  flex-basis: content;
   margin-bottom: 24px;
-
-  .wrap {
-    display: flex;
-    flex-direction: column;
-
-    &:last-child {
-      margin-left: 24px;
-    }
-
-    label {
-      font-size: 14px;
-      font-weight: 400;
-      color: $gray900;
-      margin-bottom: 8px;
-    }
-  }
-
-  input {
-    width: 100%;
-    background-color: $background;
-  }
 }
 
 .footer {
@@ -273,36 +247,5 @@ watch(margin, () => {
   justify-content: flex-end;
   gap: 24px;
   margin-top: 0px;
-}
-
-.currency {
-  display: flex;
-
-  .filter {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-
-    &:last-child {
-      margin-left: 24px;
-    }
-
-    label {
-      font-size: 14px;
-      font-weight: 400;
-      color: $gray900;
-      margin-bottom: 8px;
-    }
-
-    @media only screen and (max-width: 550px) {
-      margin-left: 0;
-      max-width: none;
-
-      select {
-        max-width: none;
-        height: 48px;
-      }
-    }
-  }
 }
 </style>
