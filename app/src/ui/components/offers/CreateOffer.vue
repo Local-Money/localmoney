@@ -37,6 +37,9 @@ const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value);
   return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`;
 });
+const fiatLabel = computed(() =>
+  offerType.value === "sell" ? "receive" : "pay"
+);
 
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(
@@ -84,28 +87,53 @@ watch(margin, () => {
           Sell
         </button>
       </div>
-      <div class="price">
-        <p class="value">
-          {{ offerPrice }}
-        </p>
-      </div>
     </div>
 
     <div class="inner-content">
       <div class="currency">
         <div class="filter">
-          <label for="crypto">Crypto</label>
+          <label for="crypto">I want to {{ offerType }}</label>
           <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
         </div>
         <div class="filter">
-          <label for="currency">Currency (FIAT)</label>
+          <label for="currency">and {{ fiatLabel }} in</label>
           <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
         </div>
       </div>
       <div class="divider" />
+      <div class="min-max">
+        <div class="wrap">
+          <label>Min amount of {{ microDenomToDenom(selectedCrypto) }}</label>
+          <CurrencyInput
+            v-model="minAmount"
+            :placeholder="0"
+            :options="{
+              currency: 'USD',
+              currencyDisplay: 'hidden',
+              hideCurrencySymbolOnFocus: false,
+              hideGroupingSeparatorOnFocus: false,
+              precision: 2,
+            }"
+          />
+        </div>
+        <div class="wrap">
+          <label>Max amount of {{ microDenomToDenom(selectedCrypto) }}</label>
+          <CurrencyInput
+            v-model="maxAmount"
+            :placeholder="0"
+            :options="{
+              currency: 'USD',
+              currencyDisplay: 'hidden',
+              hideCurrencySymbolOnFocus: false,
+              hideGroupingSeparatorOnFocus: false,
+              precision: 2,
+            }"
+          />
+        </div>
+      </div>
       <div class="wrap-price">
         <div class="margin">
-          <label for="">Margin</label>
+          <label for="">Market price</label>
           <select v-model="margin" class="bg-surface">
             <option value="above">Above</option>
             <option value="below">Below</option>
@@ -122,43 +150,20 @@ watch(margin, () => {
           />
         </div>
       </div>
-
-      <div class="min-max">
-        <div class="wrap">
-          <label>Min amount:</label>
-          <CurrencyInput
-            v-model="minAmount"
-            :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
-          />
-        </div>
-        <div class="wrap">
-          <label>Max amount:</label>
-          <CurrencyInput
-            v-model="maxAmount"
-            :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
-          />
-        </div>
-      </div>
     </div>
-    <div class="btns">
-      <button class="secondary" @click="$emit('cancel')">Cancel</button>
-      <button class="primary" :disabled="!valid" @click="createOffer()">
-        Create
-      </button>
+    <div class="divider" />
+    <div class="footer">
+      <div class="fiat-price">
+        <p class="value">
+          1 {{ microDenomToDenom(selectedCrypto) }} = {{ offerPrice }}
+        </p>
+      </div>
+      <div class="btns">
+        <button class="secondary" @click="$emit('cancel')">Cancel</button>
+        <button class="primary" :disabled="!valid" @click="createOffer()">
+          Create
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -201,7 +206,6 @@ watch(margin, () => {
   justify-items: center;
   align-content: center;
   gap: 24px;
-  margin-bottom: 24px;
 
   .margin,
   .margin-offset {
@@ -226,6 +230,7 @@ watch(margin, () => {
 .min-max {
   display: inline-flex;
   flex-basis: content;
+  margin-bottom: 24px;
 
   .wrap {
     display: flex;
@@ -249,11 +254,25 @@ watch(margin, () => {
   }
 }
 
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+
+  .fiat-price {
+    .label {
+      font-size: 12px;
+      color: $gray700;
+    }
+  }
+}
+
 .btns {
   display: flex;
   justify-content: flex-end;
   gap: 24px;
-  margin-top: 24px;
+  margin-top: 0px;
 }
 
 .currency {
