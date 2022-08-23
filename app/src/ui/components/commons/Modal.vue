@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{ modalActive: Boolean }>()
+const props = defineProps<{ modalActive: Boolean }>();
 </script>
 
 <template>

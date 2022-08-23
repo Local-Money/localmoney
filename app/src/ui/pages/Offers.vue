@@ -87,7 +87,6 @@ button {
   left: 0;
   top: 0;
   backdrop-filter: blur(10px);
-  z-index: 100;
 }
 
 .modal-content {
