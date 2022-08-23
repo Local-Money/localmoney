@@ -17,6 +17,37 @@ export function formatFiatAmount(amount) {
   return amount.toFixed(2)
 }
 
+export function getTradeCounterParty(walletAddress, trade) {
+  return walletAddress === trade.seller ? trade.buyer : trade.seller
+}
+
+export function timeSince(date) {
+  const seconds = Math.floor((new Date() - date) / 1000)
+
+  let interval = seconds / 31536000
+
+  if (interval > 1) {
+    return `${Math.floor(interval)}y ago`
+  }
+  interval = seconds / 2592000
+  if (interval > 1) {
+    return `${Math.floor(interval)}m ago`
+  }
+  interval = seconds / 86400
+  if (interval > 1) {
+    return `${Math.floor(interval)}d ago`
+  }
+  interval = seconds / 3600
+  if (interval > 1) {
+    return `${Math.floor(interval)}h ago`
+  }
+  interval = seconds / 60
+  if (interval > 1) {
+    return `${Math.floor(interval)}m ago`
+  }
+  return `${Math.floor(seconds)}s ago`
+}
+
 export function formatTradeState(state) {
   return {
     request_created: 'Expired',
