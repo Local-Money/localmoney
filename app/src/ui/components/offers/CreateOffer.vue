@@ -1,45 +1,48 @@
 <script setup lang="ts">
-import CurrencyInput from '../CurrencyInput.vue'
+import CurrencyInput from "../CurrencyInput.vue";
 import {
   calculateFiatPriceByRate,
   convertMarginRateToOfferRate,
   formatAmount,
-} from '~/shared'
-import { usePriceStore } from '~/stores/price'
-import type { PostOffer } from '~/types/components.interface'
-import { FiatCurrency, OfferType } from '~/types/components.interface'
-import { useClientStore } from '~/stores/client'
+} from "~/shared";
+import { usePriceStore } from "~/stores/price";
+import type { PostOffer } from "~/types/components.interface";
+import { FiatCurrency, OfferType } from "~/types/components.interface";
+import { useClientStore } from "~/stores/client";
 import {
   defaultMicroDenomAvailable,
   denomsAvailable,
   microDenomToDenom,
-} from '~/utils/denom'
-import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
+} from "~/utils/denom";
+import { fiatsAvailable, getFiatInfo } from "~/utils/fiat";
 
 const emit = defineEmits<{
-  (e: 'cancel'): void
-}>()
-const client = useClientStore()
-const priceStore = usePriceStore()
+  (e: "cancel"): void;
+}>();
+const client = useClientStore();
+const priceStore = usePriceStore();
 
-const selectedCrypto = ref(defaultMicroDenomAvailable())
-const minAmount = ref(0)
-const maxAmount = ref(0)
-const margin = ref('above')
-const marginOffset = ref('')
-const marginOffsetUnmasked = ref(0)
-const rate = ref(0)
-const offerType = ref<OfferType>(OfferType.buy)
-const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
-const valid = computed(() => maxAmount.value > minAmount.value)
-const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value))
+const selectedCrypto = ref(defaultMicroDenomAvailable());
+const minAmount = ref(0);
+const maxAmount = ref(0);
+const margin = ref("above");
+const marginOffset = ref("");
+const marginOffsetUnmasked = ref(0);
+const rate = ref(0);
+const offerType = ref<OfferType>(OfferType.buy);
+const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS);
+const valid = computed(() => maxAmount.value > minAmount.value);
+const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value));
 const offerPrice = computed(() => {
-  const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value)
-  return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
-})
+  const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value);
+  return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`;
+});
 
 function calculateMarginRate() {
-  rate.value = convertMarginRateToOfferRate(margin.value, marginOffsetUnmasked.value)
+  rate.value = convertMarginRateToOfferRate(
+    margin.value,
+    marginOffsetUnmasked.value
+  );
 }
 function createOffer() {
   const postOffer: PostOffer = {
@@ -49,17 +52,17 @@ function createOffer() {
     denom: { native: selectedCrypto.value },
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
-    maker_contact: 'NoContactProvided',
-  }
-  client.createOffer(postOffer)
-  emit('cancel')
+    maker_contact: "NoContactProvided",
+  };
+  client.createOffer(postOffer);
+  emit("cancel");
 }
 watch(marginOffset, () => {
-  calculateMarginRate()
-})
+  calculateMarginRate();
+});
 watch(margin, () => {
-  calculateMarginRate()
-})
+  calculateMarginRate();
+});
 </script>
 
 <template>
@@ -88,32 +91,24 @@ watch(margin, () => {
       </div>
     </div>
 
-    <div class="card">
+    <div class="inner-content">
       <div class="currency">
         <div class="filter">
           <label for="crypto">Crypto</label>
-          <CustomSelect
-            v-model="selectedCrypto"
-            :options="denomsAvailable"/>
+          <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
         </div>
         <div class="filter">
           <label for="currency">Currency (FIAT)</label>
-          <CustomSelect
-            v-model="fiatCurrency"
-            :options="fiatsAvailable"/>
+          <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
         </div>
       </div>
       <div class="divider" />
       <div class="wrap-price">
         <div class="margin">
           <label for="">Margin</label>
-          <select v-model="margin" class="bg-gray300">
-            <option value="above">
-              Above
-            </option>
-            <option value="below">
-              Below
-            </option>
+          <select v-model="margin" class="bg-surface">
+            <option value="above">Above</option>
+            <option value="below">Below</option>
           </select>
         </div>
         <div class="margin-offset">
@@ -124,7 +119,7 @@ watch(margin, () => {
             type="text"
             placeholder="0%"
             @maska="marginOffsetUnmasked = $event.target.dataset.maskRawValue"
-          >
+          />
         </div>
       </div>
 
@@ -160,9 +155,7 @@ watch(margin, () => {
       </div>
     </div>
     <div class="btns">
-      <button class="secondary" @click="$emit('cancel')">
-        Cancel
-      </button>
+      <button class="secondary" @click="$emit('cancel')">Cancel</button>
       <button class="primary" :disabled="!valid" @click="createOffer()">
         Create
       </button>
@@ -175,122 +168,122 @@ watch(margin, () => {
 @import "../../style/elements.scss";
 
 .main-wrap {
-    display: inline-flex;
-    flex-direction: column;
+  display: inline-flex;
+  flex-direction: column;
 }
 
 .buy-sell {
-    display: flex;
-    margin: 24px 0 24px;
+  display: flex;
+  margin: 24px 0 24px;
 }
 
 .header-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-    .value {
-        font-size: 16px;
-        color: $base-text;
-        font-weight: $semi-bold;
-    }
+  .value {
+    font-size: 16px;
+    color: $base-text;
+    font-weight: $semi-bold;
+  }
 }
 
 .divider {
-    width: 100%;
-    height: 1px;
-    background-color: $border;
-    margin: 32px 0;
+  width: 100%;
+  height: 1px;
+  background-color: $border;
+  margin: 32px 0;
 }
 
 .wrap-price {
+  display: flex;
+  justify-items: center;
+  align-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  .margin,
+  .margin-offset {
+    width: 100%;
     display: flex;
-    justify-items: center;
-    align-content: center;
-    gap: 24px;
-    margin-bottom: 24px;
+    flex-direction: column;
+    gap: 8px;
 
-    .margin,
-    .margin-offset {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-
-        label {
-            font-size: 14px;
-            font-weight: 400;
-            color: $gray900;
-        }
+    label {
+      font-size: 14px;
+      font-weight: 400;
+      color: $gray900;
     }
+  }
 
-    input {
-        width: 100%;
-        background-color: $background;
-    }
+  input {
+    width: 100%;
+    background-color: $background;
+  }
 }
 
 .min-max {
-    display: inline-flex;
-    flex-basis: content;
+  display: inline-flex;
+  flex-basis: content;
 
-    .wrap {
-        display: flex;
-        flex-direction: column;
+  .wrap {
+    display: flex;
+    flex-direction: column;
 
-        &:last-child {
-            margin-left: 24px;
-        }
-
-        label {
-            font-size: 14px;
-            font-weight: 400;
-            color: $gray900;
-            margin-bottom: 8px;
-        }
+    &:last-child {
+      margin-left: 24px;
     }
 
-    input {
-        width: 100%;
-        background-color: $background;
+    label {
+      font-size: 14px;
+      font-weight: 400;
+      color: $gray900;
+      margin-bottom: 8px;
     }
+  }
+
+  input {
+    width: 100%;
+    background-color: $background;
+  }
 }
 
 .btns {
-    display: flex;
-    justify-content: flex-end;
-    gap: 24px;
-    margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  margin-top: 24px;
 }
 
 .currency {
+  display: flex;
+
+  .filter {
     display: flex;
+    flex-direction: column;
+    width: 100%;
 
-    .filter {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-
-        &:last-child {
-            margin-left: 24px;
-        }
-
-        label {
-            font-size: 14px;
-            font-weight: 400;
-            color: $gray900;
-            margin-bottom: 8px;
-        }
-
-        @media only screen and (max-width: 550px) {
-            margin-left: 0;
-            max-width: none;
-
-            select {
-                max-width: none;
-                height: 48px;
-            }
-        }
+    &:last-child {
+      margin-left: 24px;
     }
+
+    label {
+      font-size: 14px;
+      font-weight: 400;
+      color: $gray900;
+      margin-bottom: 8px;
+    }
+
+    @media only screen and (max-width: 550px) {
+      margin-left: 0;
+      max-width: none;
+
+      select {
+        max-width: none;
+        height: 48px;
+      }
+    }
+  }
 }
 </style>
