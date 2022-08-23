@@ -1,51 +1,51 @@
 <script setup lang="ts">
-import CurrencyInput from "../CurrencyInput.vue";
+import CurrencyInput from '../CurrencyInput.vue'
 import {
   calculateFiatPriceByRate,
   convertMarginRateToOfferRate,
   formatAmount,
-} from "~/shared";
-import { usePriceStore } from "~/stores/price";
-import type { PostOffer } from "~/types/components.interface";
-import { FiatCurrency, OfferType } from "~/types/components.interface";
-import { useClientStore } from "~/stores/client";
+} from '~/shared'
+import { usePriceStore } from '~/stores/price'
+import type { PostOffer } from '~/types/components.interface'
+import { FiatCurrency, OfferType } from '~/types/components.interface'
+import { useClientStore } from '~/stores/client'
 import {
   defaultMicroDenomAvailable,
   denomsAvailable,
   microDenomToDenom,
-} from "~/utils/denom";
-import { fiatsAvailable, getFiatInfo } from "~/utils/fiat";
+} from '~/utils/denom'
+import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
 
 const emit = defineEmits<{
-  (e: "cancel"): void;
-}>();
-const client = useClientStore();
-const priceStore = usePriceStore();
+  (e: 'cancel'): void
+}>()
+const client = useClientStore()
+const priceStore = usePriceStore()
 
-const selectedCrypto = ref(defaultMicroDenomAvailable());
-const minAmount = ref(0);
-const maxAmount = ref(0);
-const margin = ref("above");
-const marginOffset = ref("");
-const marginOffsetUnmasked = ref(0);
-const rate = ref(0);
-const offerType = ref<OfferType>(OfferType.buy);
-const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS);
-const valid = computed(() => maxAmount.value > minAmount.value);
-const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value));
+const selectedCrypto = ref(defaultMicroDenomAvailable())
+const minAmount = ref(0)
+const maxAmount = ref(0)
+const margin = ref('above')
+const marginOffset = ref('')
+const marginOffsetUnmasked = ref(0)
+const rate = ref(0)
+const offerType = ref<OfferType>(OfferType.buy)
+const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
+const valid = computed(() => maxAmount.value > minAmount.value)
+const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value))
 const offerPrice = computed(() => {
-  const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value);
-  return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`;
-});
+  const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value)
+  return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
+})
 const fiatLabel = computed(() =>
-  offerType.value === "sell" ? "receive" : "pay"
-);
+  offerType.value === 'sell' ? 'receive' : 'pay',
+)
 
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(
     margin.value,
-    marginOffsetUnmasked.value
-  );
+    marginOffsetUnmasked.value,
+  )
 }
 function createOffer() {
   const postOffer: PostOffer = {
@@ -55,17 +55,17 @@ function createOffer() {
     denom: { native: selectedCrypto.value },
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
-    maker_contact: "NoContactProvided",
-  };
-  client.createOffer(postOffer);
-  emit("cancel");
+    maker_contact: 'NoContactProvided',
+  }
+  client.createOffer(postOffer)
+  emit('cancel')
 }
 watch(marginOffset, () => {
-  calculateMarginRate();
-});
+  calculateMarginRate()
+})
 watch(margin, () => {
-  calculateMarginRate();
-});
+  calculateMarginRate()
+})
 </script>
 
 <template>
@@ -135,8 +135,12 @@ watch(margin, () => {
         <div class="wrap">
           <label for="">Market price</label>
           <select v-model="margin" class="bg-surface">
-            <option value="above">Above</option>
-            <option value="below">Below</option>
+            <option value="above">
+              Above
+            </option>
+            <option value="below">
+              Below
+            </option>
           </select>
         </div>
         <div class="wrap">
@@ -147,7 +151,7 @@ watch(margin, () => {
             type="text"
             placeholder="0%"
             @maska="marginOffsetUnmasked = $event.target.dataset.maskRawValue"
-          />
+          >
         </div>
       </div>
     </div>
@@ -161,7 +165,9 @@ watch(margin, () => {
         </p>
       </div>
       <div class="btns">
-        <button class="secondary" @click="$emit('cancel')">Cancel</button>
+        <button class="secondary" @click="$emit('cancel')">
+          Cancel
+        </button>
         <button class="primary" :disabled="!valid" @click="createOffer()">
           Create
         </button>

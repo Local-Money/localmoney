@@ -1,12 +1,26 @@
 @import "tokens.scss";
 
+body {
+  &::-webkit-scrollbar {
+    width: 8px;
+    background: $gray100;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $gray300;
+    border-radius: 56px;
+  }
+}
+
+.body-no-scroll {
+  overflow-y: hidden;
+}
+
 .card {
   padding: 24px;
   background-color: $surface;
   border: 1px solid $border;
   border-radius: 8px;
   box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
-  min-width: 256px;
 }
 
 .card-active {
