@@ -22,6 +22,7 @@ const gasPrice = GasPrice.fromString(process.env.GAS_PRICE);
 const makerWallet = await DirectSecp256k1HdWallet.fromMnemonic(maker_seed, { prefix: process.env.ADDR_PREFIX });
 const makerAccounts = await makerWallet.getAccounts();
 const makerAddr = makerAccounts[0].address;
+const codeIdsPath = '../app/tests/fixtures/codeIds.json'
 console.log('makerAddr', makerAddr);
 
 const makerClient = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, makerWallet, {
@@ -53,7 +54,7 @@ async function deploy(contract) {
       let c = contracts[i];
       codeIds[getContractNameFromPath(c)] = await uploadContract(c, makerAddr);
     }
-    fs.writeFileSync("codeIds.json", JSON.stringify(codeIds), "utf8");
+    fs.writeFileSync(codeIdsPath, JSON.stringify(codeIds), "utf8");
   } else {
     //Filter by name
     let codeIds = JSON.parse(fs.readFileSync("codeIds.json", "utf8"));
@@ -73,7 +74,7 @@ async function deploy(contract) {
         }
       }
     }
-    fs.writeFileSync("codeIds.json", JSON.stringify(codeIds), "utf8");
+    fs.writeFileSync(codeIdsPath, JSON.stringify(codeIds), "utf8");
   }
   console.log("Deploy Finished!", JSON.stringify(codeIds));
 }
