@@ -63,10 +63,16 @@ async function showTrade(n: Notification) {
             />
           </svg>
           <div class="wrap">
-            <p class="status">{{ n.message }}</p>
-            <p class="addr">from {{ formatAddress(n.sender) }}</p>
+            <p class="status">
+              {{ n.message }}
+            </p>
+            <p class="addr">
+              from {{ formatAddress(n.sender) }}
+            </p>
           </div>
-          <p class="timestamp">{{ timeSince(n.time) }}</p>
+          <p class="timestamp">
+            {{ timeSince(n.time) }}
+          </p>
         </li>
       </ul>
       <div v-else class="item">

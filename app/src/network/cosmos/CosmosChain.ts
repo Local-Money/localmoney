@@ -34,7 +34,7 @@ export class CosmosChain implements Chain {
     this.cwClient = await CosmWasmClient.connect(this.config.rpcUrl)
     this.hubInfo.hubConfig = await this.cwClient.queryContractSmart(
       this.hubInfo.hubAddress,
-      { config: {} },
+      { config: {} }
     ) as HubConfig
     // console.log("Factory config >> ", this.hubInfo.hubConfig)
   }
@@ -70,7 +70,7 @@ export class CosmosChain implements Chain {
           this.getWalletAddress(),
           this.hubInfo.hubConfig.offer_addr,
           msg,
-          'auto',
+          'auto'
         )
         console.log('Create offer result >> ', result)
       } catch (e) {
@@ -90,7 +90,7 @@ export class CosmosChain implements Chain {
           this.getWalletAddress(),
           this.hubInfo.hubConfig.offer_addr,
           msg,
-          'auto',
+          'auto'
         )
         console.log('Update offer result >> ', result)
       } catch (e) {
@@ -126,8 +126,9 @@ export class CosmosChain implements Chain {
   async fetchOffers(args: FetchOffersArgs) {
     console.log('args >>> ', args)
     // TODO: fix init
-    if (!this.cwClient)
+    if (!this.cwClient) {
       await this.init()
+    }
     try {
       const queryMsg = {
         offers_by: {
@@ -161,7 +162,7 @@ export class CosmosChain implements Chain {
           this.getWalletAddress(),
           this.hubInfo.hubConfig.trade_addr,
           msg,
-          'auto',
+          'auto'
         )
         console.log('Open Trade result >> ', result)
         // TODO should we try to get this info this way?
@@ -180,21 +181,22 @@ export class CosmosChain implements Chain {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
       // TODO fix init
-      if (!this.cwClient)
+      if (!this.cwClient) {
         await this.init()
+      }
       try {
         // Query of trades as buyer
         const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 100 } }
         const tradesAsBuyer = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
-          queryAsBuyerMsg,
+          queryAsBuyerMsg
         ) as TradeInfo[]
 
         // Query of trades as seller
         const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 100 } }
         const tradesAsSeller = await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
-          queryAsSellerMsg,
+          queryAsSellerMsg
         ) as TradeInfo[]
 
         // Join all trades
@@ -211,12 +213,13 @@ export class CosmosChain implements Chain {
 
   async fetchTradeDetail(tradeId: string) {
     // TODO fix init
-    if (!this.cwClient)
+    if (!this.cwClient) {
       await this.init()
+    }
     try {
       const response = await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.trade_addr,
-        { trade: { id: tradeId } },
+        { trade: { id: tradeId } }
       ) as Trade
       console.log('response >>> ', response)
       return response
@@ -265,7 +268,7 @@ export class CosmosChain implements Chain {
   private async changeTradeState(
     tradeId: string,
     msg: Record<string, unknown>,
-    funds?: Coin[],
+    funds?: Coin[]
   ) {
     console.log('Trade State >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
@@ -276,7 +279,7 @@ export class CosmosChain implements Chain {
           msg,
           'auto',
           undefined,
-          funds,
+          funds
         )
         console.log('Trade State result >> ', result)
       } catch (e) {

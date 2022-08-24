@@ -16,7 +16,7 @@ const fiatCurrency = computed(() => props.offer.fiat_currency)
 const price = computed(() => {
   return `${props.offer.fiat_currency} ${formatAmount(
     calculateFiatPriceByRate(usdRate.value, props.offer.rate),
-    false,
+    false
   )}`
 })
 const limit = computed(() => {

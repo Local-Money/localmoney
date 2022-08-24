@@ -12,6 +12,7 @@ import type { GetOffer, OfferTypeLabel } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
+const emit = defineEmits<{ (e: 'select'): void }>()
 const { t } = useI18n()
 const priceStore = usePriceStore()
 
@@ -63,7 +64,7 @@ const offerPrice = computed(() => {
       <p class="value">
         {{ offerPrice }}
       </p>
-      <button class="primary bg-gray300" type="button" @click="$emit('select')">
+      <button class="primary bg-gray300" type="button" @click="emit('select')">
         {{ offerTypeLabels[offer.offer_type] }}
       </button>
     </div>

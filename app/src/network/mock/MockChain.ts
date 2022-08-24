@@ -100,9 +100,9 @@ class MockChain implements Chain {
 
   private async changeTradeState(tradeId: string, state: TradeState) {
     const selectedTrade = myTrades.find(trade => trade.trade.addr === tradeId)
-    if (selectedTrade)
+    if (selectedTrade) {
       selectedTrade.trade.state = state
-
+    }
     trade.state = state
   }
 }

@@ -9,13 +9,14 @@ import type { GetOffer } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
+const emit = defineEmits<{ (e: 'select'): void }>()
 const priceStore = usePriceStore()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 const usdRate = computed(() => priceStore.getPrice(props.offer.fiat_currency))
 const offerPrice = computed(() => {
   return `${props.offer.fiat_currency} ${formatAmount(
       calculateFiatPriceByRate(usdRate.value, props.offer.rate),
-      false,
+      false
   )}`
 })
 </script>
@@ -59,7 +60,7 @@ const offerPrice = computed(() => {
       <p class="value">
         {{ offerPrice }}
       </p>
-      <button class="secondary bg-gray300" type="button" @click="$emit('select')">
+      <button class="secondary bg-gray300" type="button" @click="emit('select')">
         edit
       </button>
     </div>

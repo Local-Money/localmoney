@@ -24,7 +24,7 @@ const openTrades = computed(() => {
         TradeState.escrow_funded,
         TradeState.fiat_deposited,
         TradeState.escrow_disputed,
-      ].includes(tradeInfo.trade.state),
+      ].includes(tradeInfo.trade.state)
   )
 })
 
@@ -38,7 +38,7 @@ const closedTrades = computed(() => {
         TradeState.escrow_released,
         TradeState.settled_for_maker,
         TradeState.settled_for_taker,
-      ].includes(tradeInfo.trade.state),
+      ].includes(tradeInfo.trade.state)
   )
 })
 

@@ -6,10 +6,9 @@ import { ExpandableItem } from "~/ui/components/util/ExpandableItem";
 import { usePriceStore } from "~/stores/price";
 import {
   defaultMicroDenomAvailable,
-  microDenomToDenom,
   denomsAvailable,
 } from "~/utils/denom";
-import { fiatsAvailable, getFiatInfo } from "~/utils/fiat";
+import { fiatsAvailable } from "~/utils/fiat";
 import { checkValidOffer } from "~/utils/validations";
 
 const client = useClientStore();

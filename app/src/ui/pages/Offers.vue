@@ -1,8 +1,4 @@
 <script setup type="ts">
-import CreateOffer from '~/ui/components/offers/CreateOffer.vue'
-import ListMyOffers from '~/ui/components/myOffers/ListMyOffers.vue'
-import Modal from '~/ui/components/commons/Modal.vue'
-
 const modalActive = ref(false)
 function toggleModal() {
   modalActive.value = !modalActive.value

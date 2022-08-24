@@ -2,24 +2,24 @@
 // https://github.com/vueuse/head
 // you can use this to manipulate the document head in any components,
 // they will be rendered correctly in the html results with vite-ssg
-import { ChainClient } from "~/network/Chain";
-import { useClientStore } from "~/stores/client";
-import "./ui/style/reset.scss";
+import { ChainClient } from '~/network/Chain'
+import { useClientStore } from '~/stores/client'
+import './ui/style/reset.scss'
 
-const client = useClientStore();
-client.setClient(ChainClient.kujira); // required to properly init chain
-const loading = computed(() => client.loadingState);
+const client = useClientStore()
+client.setClient(ChainClient.kujira) // required to properly init chain
+const loading = computed(() => client.loadingState)
 
 useHead({
-  title: "Local Money - TESTNET",
+  title: 'Local Money - TESTNET',
   meta: [
     {
-      name: "description",
+      name: 'description',
       content:
-        "Local is a decentralized P2P marketplace for the multi-chain world.",
+        'Local is a decentralized P2P marketplace for the multi-chain world.',
     },
   ],
-});
+})
 </script>
 
 <template>

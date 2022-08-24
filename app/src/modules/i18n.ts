@@ -11,7 +11,7 @@ const messages = Object.fromEntries(
     .map(([key, value]) => {
       const yaml = key.endsWith('.yaml')
       return [key.slice(14, yaml ? -5 : -4), value.default]
-    }),
+    })
 )
 
 export const install: UserModule = ({ app }) => {

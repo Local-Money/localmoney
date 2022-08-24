@@ -40,7 +40,7 @@ const offerPrice = computed(() => {
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(
     margin.value,
-    marginOffsetUnmasked.value,
+    marginOffsetUnmasked.value
   )
 }
 function createOffer() {

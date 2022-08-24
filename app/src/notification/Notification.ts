@@ -47,8 +47,9 @@ class NotificationHandler {
 let notificationHandler: NotificationHandler
 
 const useNotificationSystem = () => {
-  if (!notificationHandler)
+  if (!notificationHandler) {
     notificationHandler = new NotificationHandler()
+  }
   return notificationHandler
 }
 

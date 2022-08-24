@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import CurrencyInput from '../CurrencyInput.vue'
 import {
   calculateFiatPriceByRate,
   convertOfferRateToMarginRate,
@@ -14,6 +13,7 @@ import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
+const emit = defineEmits<{ (e: 'cancel'): void }>()
 const priceStore = usePriceStore()
 const client = useClientStore()
 
@@ -266,7 +266,7 @@ onUnmounted(() => {
         </div>
 
         <div class="wrap-btns">
-          <button class="secondary" @click="$emit('cancel')">
+          <button class="secondary" @click="emit('cancel')">
             cancel
           </button>
           <button class="primary" :disabled="!valid" @click="newTrade()">

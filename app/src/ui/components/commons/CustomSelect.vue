@@ -17,17 +17,17 @@ const emit = defineEmits<{
     :options="[...options.keys()]"
     :searchable="false"
     :clearable="false"
-    @update:model-value="emit('update:modelValue', $event)"
+    @update:modelValue="emit('update:modelValue', $event)"
   >
     <template #selected-option>
       <div class="wrap" v-bind="info = getSelectInfo(options, modelValue)">
-        <img v-if="info.icon" :src="info.icon" />
+        <img v-if="info.icon" :src="info.icon">
         <p>{{ info.display }}</p>
       </div>
     </template>
     <template #option="{ label }">
       <div class="wrap" v-bind="info = getSelectInfo(options, label)">
-        <img v-if="info.icon" :src="info.icon" />
+        <img v-if="info.icon" :src="info.icon">
         <p>{{ info.display }}</p>
       </div>
     </template>

@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
-import useNotificationSystem from "~/notification/Notification";
-import { useClientStore } from "~/stores/client";
-import { formatAddress, timeSince } from "~/shared";
-import type { Notification } from "~/stores/notification";
+import { useRouter } from 'vue-router'
+import useNotificationSystem from '~/notification/Notification'
+import { useClientStore } from '~/stores/client'
+import { formatAddress, timeSince } from '~/shared'
+import type { Notification } from '~/stores/notification'
 
-const notification = useNotificationSystem();
-const client = useClientStore();
-const router = useRouter();
-const isConnected = computed(() => client.userWallet.isConnected);
+const notification = useNotificationSystem()
+const client = useClientStore()
+const router = useRouter()
+const isConnected = computed(() => client.userWallet.isConnected)
 
-const widgetActive = ref(false);
+const widgetActive = ref(false)
 function toggleWidget() {
-  widgetActive.value = !widgetActive.value;
+  widgetActive.value = !widgetActive.value
 }
 
 async function showTrade(n: Notification) {
-  await notification.readNotification(n);
+  await notification.readNotification(n)
   await router.push({
-    name: "TradeDetail",
+    name: 'TradeDetail',
     params: { id: n.id },
-  });
-  toggleWidget();
+  })
+  toggleWidget()
 }
 </script>
 
@@ -52,7 +52,9 @@ async function showTrade(n: Notification) {
     </div>
     <div v-if="widgetActive" class="widget">
       <div class="header">
-        <p class="title">Notifications</p>
+        <p class="title">
+          Notifications
+        </p>
         <p class="mark-read" @click="notification.readAllNotifications()">
           Mark all as read
         </p>
@@ -89,10 +91,16 @@ async function showTrade(n: Notification) {
               />
             </svg>
             <div class="wrap">
-              <p class="status">{{ n.message }}</p>
-              <p class="addr">from {{ formatAddress(n.sender) }}</p>
+              <p class="status">
+                {{ n.message }}
+              </p>
+              <p class="addr">
+                from {{ formatAddress(n.sender) }}
+              </p>
             </div>
-            <p class="timestamp">{{ timeSince(n.time) }}</p>
+            <p class="timestamp">
+              {{ timeSince(n.time) }}
+            </p>
           </li>
         </ul>
         <div v-else class="item">

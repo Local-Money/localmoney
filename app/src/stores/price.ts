@@ -36,6 +36,7 @@ export const usePriceStore = defineStore({
   getters: { getPrice: state => (fiatCurrency: FiatCurrency) => state.prices[fiatCurrency] },
 })
 
-if (import.meta.hot)
+if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(usePriceStore, import.meta.hot))
+}
 

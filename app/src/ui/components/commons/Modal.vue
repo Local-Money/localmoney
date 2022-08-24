@@ -1,11 +1,12 @@
 <script setup lang="ts">
-const props = defineProps<{ modalActive: Boolean }>();
+const props = defineProps<{ modalActive: Boolean }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 </script>
 
 <template>
   <transition name="modal-animation">
     <div v-if="modalActive" class="modal">
-      <div class="modal-outside" @click="$emit('close')" />
+      <div class="modal-outside" @click="emit('close')" />
       <div class="modal-inner">
         <!-- Modal Content -->
         <slot />
