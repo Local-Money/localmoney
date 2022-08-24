@@ -3,9 +3,11 @@
     "offer_type": "buy",
     "fiat_currency": "BRL",
     "min_amount": "100000",
-    "max_amount":  "2500000",
+    "max_amount": "2500000",
     "rate": "1",
-    "denom": null,
+    "denom": {
+      "native": ""
+    },
     "maker_contact": "todo"
   }
 ]
