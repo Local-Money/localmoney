@@ -306,6 +306,7 @@ export class CosmosChain implements Chain {
         );
         console.log("Trade State result >> ", result);
       } catch (e) {
+        console.error(e)
         // TODO manage error
         throw new DefaultError();
       }
