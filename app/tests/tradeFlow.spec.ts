@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
 import codeIds from './fixtures/codeIds.json'
-import { createHubUpdateConfigMsg } from './utils/hub_utils'
+import { createHubUpdateConfigMsg } from './utils'
 import { DefaultError } from '~/network/chain-error'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { TestCosmosChain } from '~/network/cosmos/TestCosmosChain'
@@ -75,6 +75,7 @@ describe('trade lifecycle happy path', () => {
   if (process.env.CREATE_OFFERS) {
     it('should create offer', async () => {
       offersCount = (await makerClient.fetchMyOffers()).length
+      offers[0].denom = { native: process.env.OFFER_DENOM! }
       await makerClient.createOffer(offers[0] as PostOffer)
     })
   }
@@ -140,6 +141,7 @@ describe('trade lifecycle happy path', () => {
 describe('trade invalid state changes', () => {
   it('should create offer', async () => {
     offersCount = (await makerClient.fetchMyOffers()).length
+    offers[0].denom = { native: process.env.OFFER_DENOM! }
     await makerClient.createOffer(offers[0] as PostOffer)
   })
   it('should fail to fund a trade in request_created state', async () => {
