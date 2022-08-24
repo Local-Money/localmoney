@@ -245,6 +245,7 @@ watch(margin, () => {
   justify-content: space-between;
   align-items: center;
   gap: 24px;
+  margin
 
   .fiat-price {
     .label {

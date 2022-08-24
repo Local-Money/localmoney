@@ -101,7 +101,7 @@ button {
   z-index: 100;
 
   @media only screen and (max-width: $mobile) {
-    height: 50vh;
+    height: calc(100vh - 104px);
     overflow: scroll;
     margin-top: 4px;
   }
