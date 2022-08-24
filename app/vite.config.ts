@@ -43,7 +43,7 @@ export default defineConfig({
     }),
     // https://github.com/antfu/unplugin-vue-components
     Components({
-      dirs: ['src/ui/components'],
+      dirs: ['src/ui'],
       extensions: ['vue'],
       include: [/\.vue$/, /\.vue\?vue/],
       dts: 'src/components.d.ts',
@@ -62,6 +62,8 @@ export default defineConfig({
   ssgOptions: {
     script: 'async',
     formatting: 'minify',
-    onFinished() { generateSitemap() },
+    onFinished() {
+      generateSitemap()
+    },
   },
 })

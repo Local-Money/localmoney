@@ -1,3 +1,21 @@
 {
-  "extends": "@antfu"
+  "root": true,
+  "extends": ["@antfu"],
+  "rules": {
+    "curly": ["error", "all"],
+    "@typescript-eslint/brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+    "@typescript-eslint/comma-dangle": ["error", {
+      "arrays": "always-multiline",
+      "objects": "only-multiline",
+      "imports": "always-multiline",
+      "exports": "never",
+      "functions": "never",
+      "enums": "only-multiline"
+    }],
+    "no-console": "warn",
+    "no-alert": "warn",
+    "vue/v-on-event-hyphenation": ["error", "never", {
+      "autofix": true
+    }]
+  }
 }
