@@ -1,11 +1,11 @@
 [
   {
     "offer_type": "buy",
-    "fiat_currency": "COP",
+    "fiat_currency": "BRL",
     "min_amount": "100000",
     "max_amount":  "2500000",
     "rate": "1",
-    "denom": { "native": "factory/kujira1x99v9geawldrvex3gy6efc9qghp89zggcksu89/usdc" },
+    "denom": { "native": "factory/kujira19kzn39d4cvzf4dsdnn98p73dsxy9zsv84yehw2/usdc" },
     "maker_contact": "todo"
   }
 ]

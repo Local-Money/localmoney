@@ -231,6 +231,7 @@ export class CosmosChain implements Chain {
         const result = await this.cwClient.execute(this.getWalletAddress(), tradeId, msg, 'auto', undefined, funds)
         console.log('Trade State result >> ', result)
       } catch (e) {
+        console.error(e)
         // TODO manage error
         throw new DefaultError()
       }
