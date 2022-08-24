@@ -41,6 +41,17 @@ const fiatLabel = computed(() =>
   offerType.value === 'sell' ? 'receive' : 'pay',
 )
 
+// TODO - Make isMobile global
+const width = ref(window.innerWidth)
+const listener = () => { width.value = window.innerWidth }
+onMounted(() => { window.addEventListener('resize', listener) })
+onUnmounted(() => { window.removeEventListener('resize', listener) })
+const isMobile = computed(() => width.value <= 550)
+
+// Get the viewport height and store in a variable
+const vh = window.innerHeight * 0.01
+document.documentElement.style.setProperty('--vh', `${vh}px`)
+
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(
     margin.value,
@@ -69,24 +80,27 @@ watch(margin, () => {
 </script>
 
 <template>
-  <div class="main-wrap">
-    <p>Create Offer</p>
+  <div class="main-wrap card">
     <div class="header-wrap">
-      <div class="buy-sell">
-        <button
-          :class="{ focus: offerType === 'buy' }"
-          @click="offerType = 'buy'"
-        >
-          Buy
-        </button>
-        <div class="separator" />
-        <button
-          :class="{ focus: offerType === 'sell' }"
-          @click="offerType = 'sell'"
-        >
-          Sell
-        </button>
+      <p>Create Offer</p>
+      <div v-if="isMobile" class="close" @click="$emit('cancel')">
+        X
       </div>
+    </div>
+    <div class="buy-sell">
+      <button
+        :class="{ focus: offerType === 'buy' }"
+        @click="offerType = 'buy'"
+      >
+        Buy
+      </button>
+      <div class="separator" />
+      <button
+        :class="{ focus: offerType === 'sell' }"
+        @click="offerType = 'sell'"
+      >
+        Sell
+      </button>
     </div>
 
     <div class="inner-content">
@@ -154,6 +168,13 @@ watch(margin, () => {
           >
         </div>
       </div>
+      <div class="divider" />
+      <div class="chat">
+        <div class="wrap">
+          <label for="crypto">Your Telegram handle so traders can reach you</label>
+          <input type="text">
+        </div>
+      </div>
     </div>
 
     <div class="divider" />
@@ -183,23 +204,29 @@ watch(margin, () => {
 .main-wrap {
   display: inline-flex;
   flex-direction: column;
+
+  @media only screen and (max-width: $mobile) {
+    height: 300px;
+
+    overflow: scroll;
+  }
 }
 
 .header-wrap {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
 
-  .buy-sell {
+.buy-sell {
     display: flex;
     margin: 24px 0 24px;
   }
-}
 
 .inner-content {
   .currency,
   .min-max,
-  .market-price {
+  .market-price, .chat {
     display: flex;
     gap: 24px;
 
@@ -245,12 +272,10 @@ watch(margin, () => {
   justify-content: space-between;
   align-items: center;
   gap: 24px;
-  margin
 
   .fiat-price {
-    .label {
+    @media only screen and (max-width: $mobile) {
       font-size: 12px;
-      color: $gray700;
     }
   }
 }

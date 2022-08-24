@@ -35,7 +35,7 @@ function toggleModal() {
       <!-- <button @click="toggleModal">Create a new offer</button> -->
 
       <Modal :modal-active="modalActive" @close="toggleModal()">
-        <div class="modal-content card">
+        <div class="modal-content">
           <CreateOffer @cancel="toggleModal()" />
         </div>
       </Modal>
@@ -89,8 +89,7 @@ button {
   backdrop-filter: blur(10px);
 
   @media only screen and (max-width: $mobile) {
-    height: 100vh;
-    padding: 16px;
+
   }
 }
 
@@ -101,9 +100,7 @@ button {
   z-index: 100;
 
   @media only screen and (max-width: $mobile) {
-    height: calc(100vh - 104px);
-    overflow: scroll;
-    margin-top: 4px;
+    margin-top: 0;
   }
 }
 </style>
