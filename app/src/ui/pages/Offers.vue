@@ -35,7 +35,7 @@ function toggleModal() {
       <!-- <button @click="toggleModal">Create a new offer</button> -->
 
       <Modal :modal-active="modalActive" @close="toggleModal()">
-        <div class="modal-content card">
+        <div class="modal-content">
           <CreateOffer @cancel="toggleModal()" />
         </div>
       </Modal>
@@ -94,5 +94,9 @@ button {
   background-color: $gray150;
   margin-top: 10%;
   z-index: 100;
+
+  @media only screen and (max-width: $mobile) {
+    margin-top: 0;
+  }
 }
 </style>
