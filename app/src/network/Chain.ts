@@ -1,24 +1,7 @@
-import { TestCosmosChain } from '~/network/cosmos/TestCosmosChain'
-import type {
-  Denom,
-  FetchOffersArgs,
-  GetOffer,
-  NewTrade,
-  PatchOffer,
-  PostOffer,
-  Trade,
-  TradeInfo,
-} from '~/types/components.interface'
+import type { Denom, FetchOffersArgs, GetOffer, NewTrade, PatchOffer, PostOffer, Trade, TradeInfo } from '~/types/components.interface'
 import MockChain from '~/network/mock/MockChain'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
-import {
-  JUNO_CONFIG,
-  JUNO_HUB_INFO,
-  KUJIRA_CONFIG,
-  KUJIRA_HUB_INFO,
-  TEST_CONFIG,
-  TEST_HUB_INFO,
-} from '~/network/cosmos/config'
+import { JUNO_CONFIG, JUNO_HUB_INFO, KUJIRA_CONFIG, KUJIRA_HUB_INFO, TEST_CONFIG, TEST_HUB_INFO } from '~/network/cosmos/config'
 
 export interface Chain {
   init(): void
@@ -60,7 +43,6 @@ export enum ChainClient {
   mock = 'MOCK',
   kujira = 'KUJIRA',
   juno = 'JUNO',
-  testCosmos = 'TEST_COSMOS',
   dev = 'DEV',
 }
 
@@ -73,8 +55,6 @@ export function chainFactory(client: ChainClient): Chain {
       return new CosmosChain(KUJIRA_CONFIG, KUJIRA_HUB_INFO)
     case ChainClient.juno:
       return new CosmosChain(JUNO_CONFIG, JUNO_HUB_INFO)
-    case ChainClient.testCosmos:
-      return new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
     case ChainClient.dev:
       return new CosmosChain(TEST_CONFIG, TEST_HUB_INFO)
   }

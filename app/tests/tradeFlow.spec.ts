@@ -6,11 +6,11 @@ import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
 import codeIds from './fixtures/codeIds.json'
 import { createHubUpdateConfigMsg } from './utils'
+import { TestCosmosChain } from './TestCosmosChain'
 import { DefaultError } from '~/network/chain-error'
-import { ChainClient, chainFactory } from '~/network/Chain'
-import type { TestCosmosChain } from '~/network/cosmos/TestCosmosChain'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
+import { TEST_CONFIG, TEST_HUB_INFO } from '~/network/cosmos/config'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -22,11 +22,11 @@ let tradeId = '0'
 
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
-  makerClient = chainFactory(ChainClient.testCosmos) as TestCosmosChain
+  makerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
   makerClient.seed = process.env.TAKER_SEED!
   await makerClient.connectWallet()
 
-  takerClient = chainFactory(ChainClient.testCosmos) as TestCosmosChain
+  takerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
   takerClient.seed = process.env.MAKER_SEED!
   await takerClient.connectWallet()
 
