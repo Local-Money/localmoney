@@ -84,7 +84,10 @@ watch(margin, () => {
     <div class="header-wrap">
       <p>Create Offer</p>
       <div v-if="isMobile" class="close" @click="$emit('cancel')">
-        X
+        <svg class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M6 6L18 18" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </div>
     </div>
     <div class="buy-sell">
@@ -168,18 +171,19 @@ watch(margin, () => {
           >
         </div>
       </div>
+
       <div class="divider" />
+
       <div class="chat">
         <div class="wrap">
-          <label for="crypto">Your Telegram handle so traders can reach you</label>
-          <input type="text">
+          <label for="crypto">Telegram username (?)</label>
+          <input type="text" placeholder="t.me/your-user-name">
         </div>
       </div>
+      <div class="divider" />
     </div>
 
-    <div class="divider" />
-
-    <div class="footer">
+    <div class="wrap-footer">
       <div class="fiat-price">
         <p class="value">
           1 {{ microDenomToDenom(selectedCrypto) }} = {{ offerPrice }}
@@ -202,13 +206,17 @@ watch(margin, () => {
 @import "../../style/elements.scss";
 
 .main-wrap {
-  display: inline-flex;
+  position: relative;
+  display: flex;
   flex-direction: column;
+  gap: 0px;
+  background-color: $gray150 !important;
 
   @media only screen and (max-width: $mobile) {
-    height: 300px;
-
-    overflow: scroll;
+    width: 100%;
+    height: 600vh;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow-y: scroll;
   }
 }
 
@@ -216,12 +224,14 @@ watch(margin, () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  svg {stroke: $gray600;}
 }
 
 .buy-sell {
-    display: flex;
-    margin: 24px 0 24px;
-  }
+  display: flex;
+  margin: 24px 0 24px;
+}
 
 .inner-content {
   .currency,
@@ -229,6 +239,9 @@ watch(margin, () => {
   .market-price, .chat {
     display: flex;
     gap: 24px;
+    margin-bottom: 24px;
+
+    &:last-child {margin-bottom: 0;}
 
     .wrap {
       display: flex;
@@ -240,6 +253,10 @@ watch(margin, () => {
         font-weight: 400;
         color: $gray900;
         margin-bottom: 8px;
+
+        @media only screen and (max-width: $mobile) {
+        font-size: 12px;
+        }
       }
 
       input {
@@ -263,27 +280,27 @@ watch(margin, () => {
   margin: 32px 0;
 }
 
-.min-max {
-  margin-bottom: 24px;
-}
-
-.footer {
+.wrap-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 24px;
+
+  @media only screen and (max-width: $mobile) {
+    padding-bottom: 64px;
+  }
 
   .fiat-price {
     @media only screen and (max-width: $mobile) {
       font-size: 12px;
     }
   }
-}
 
-.btns {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  margin-top: 0px;
+  .btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 0px;
+  }
 }
 </style>

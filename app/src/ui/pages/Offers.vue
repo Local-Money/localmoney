@@ -87,10 +87,6 @@ button {
   left: 0;
   top: 0;
   backdrop-filter: blur(10px);
-
-  @media only screen and (max-width: $mobile) {
-
-  }
 }
 
 .modal-content {
