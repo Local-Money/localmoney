@@ -12,8 +12,9 @@ import { useClientStore } from '~/stores/client'
 import {
   defaultMicroDenomAvailable,
   denomsAvailable,
+  microDenomToDenom,
 } from '~/utils/denom'
-import { fiatsAvailable } from '~/utils/fiat'
+import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -36,6 +37,20 @@ const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value)
   return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
 })
+const fiatLabel = computed(() =>
+  offerType.value === 'sell' ? 'receive' : 'pay',
+)
+
+// TODO - Make isMobile global
+const width = ref(window.innerWidth)
+const listener = () => { width.value = window.innerWidth }
+onMounted(() => { window.addEventListener('resize', listener) })
+onUnmounted(() => { window.removeEventListener('resize', listener) })
+const isMobile = computed(() => width.value <= 550)
+
+// Get the viewport height and store in a variable
+const vh = window.innerHeight * 0.01
+document.documentElement.style.setProperty('--vh', `${vh}px`)
 
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(
@@ -65,70 +80,47 @@ watch(margin, () => {
 </script>
 
 <template>
-  <div class="main-wrap">
-    <p>Create Offer</p>
+  <div class="main-wrap card">
     <div class="header-wrap">
-      <div class="buy-sell">
-        <button
-          :class="{ focus: offerType === 'buy' }"
-          @click="offerType = 'buy'"
-        >
-          Buy
-        </button>
-        <div class="separator" />
-        <button
-          :class="{ focus: offerType === 'sell' }"
-          @click="offerType = 'sell'"
-        >
-          Sell
-        </button>
-      </div>
-      <div class="price">
-        <p class="value">
-          {{ offerPrice }}
-        </p>
+      <p>Create Offer</p>
+      <div v-if="isMobile" class="close" @click="$emit('cancel')">
+        <svg class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M6 6L18 18" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </div>
     </div>
+    <div class="buy-sell">
+      <button
+        :class="{ focus: offerType === 'buy' }"
+        @click="offerType = 'buy'"
+      >
+        Buy
+      </button>
+      <div class="separator" />
+      <button
+        :class="{ focus: offerType === 'sell' }"
+        @click="offerType = 'sell'"
+      >
+        Sell
+      </button>
+    </div>
 
-    <div class="card">
+    <div class="inner-content">
       <div class="currency">
-        <div class="filter">
-          <label for="crypto">Crypto</label>
+        <div class="wrap">
+          <label for="crypto">I want to {{ offerType }}</label>
           <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
         </div>
-        <div class="filter">
-          <label for="currency">Currency (FIAT)</label>
+        <div class="wrap">
+          <label for="currency">and {{ fiatLabel }} in</label>
           <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
         </div>
       </div>
       <div class="divider" />
-      <div class="wrap-price">
-        <div class="margin">
-          <label for="">Margin</label>
-          <select v-model="margin" class="bg-gray300">
-            <option value="above">
-              Above
-            </option>
-            <option value="below">
-              Below
-            </option>
-          </select>
-        </div>
-        <div class="margin-offset">
-          <label for="currency">Margin Offset</label>
-          <input
-            v-model="marginOffset"
-            v-maska="['##%', '#%']"
-            type="text"
-            placeholder="0%"
-            @maska="marginOffsetUnmasked = $event.target.dataset.maskRawValue"
-          >
-        </div>
-      </div>
-
       <div class="min-max">
         <div class="wrap">
-          <label>Min amount:</label>
+          <label>Min amount of {{ microDenomToDenom(selectedCrypto) }}</label>
           <CurrencyInput
             v-model="minAmount"
             :placeholder="0"
@@ -142,7 +134,7 @@ watch(margin, () => {
           />
         </div>
         <div class="wrap">
-          <label>Max amount:</label>
+          <label>Max amount of {{ microDenomToDenom(selectedCrypto) }}</label>
           <CurrencyInput
             v-model="maxAmount"
             :placeholder="0"
@@ -156,14 +148,55 @@ watch(margin, () => {
           />
         </div>
       </div>
+      <div class="market-price">
+        <div class="wrap">
+          <label for="">Market price</label>
+          <select v-model="margin" class="bg-surface">
+            <option value="above">
+              Above
+            </option>
+            <option value="below">
+              Below
+            </option>
+          </select>
+        </div>
+        <div class="wrap">
+          <label for="currency">Margin Offset</label>
+          <input
+            v-model="marginOffset"
+            v-maska="['##%', '#%']"
+            type="text"
+            placeholder="0%"
+            @maska="marginOffsetUnmasked = $event.target.dataset.maskRawValue"
+          >
+        </div>
+      </div>
+
+      <div class="divider" />
+
+      <div class="chat">
+        <div class="wrap">
+          <label for="crypto">Telegram username (?)</label>
+          <input type="text" placeholder="t.me/your-user-name">
+        </div>
+      </div>
+      <div class="divider" />
     </div>
-    <div class="btns">
-      <button class="secondary" @click="$emit('cancel')">
-        Cancel
-      </button>
-      <button class="primary" :disabled="!valid" @click="createOffer()">
-        Create
-      </button>
+
+    <div class="wrap-footer">
+      <div class="fiat-price">
+        <p class="value">
+          1 {{ microDenomToDenom(selectedCrypto) }} = {{ offerPrice }}
+        </p>
+      </div>
+      <div class="btns">
+        <button class="secondary" @click="$emit('cancel')">
+          Cancel
+        </button>
+        <button class="primary" :disabled="!valid" @click="createOffer()">
+          Create
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -173,13 +206,18 @@ watch(margin, () => {
 @import "../../style/elements.scss";
 
 .main-wrap {
-  display: inline-flex;
-  flex-direction: column;
-}
-
-.buy-sell {
+  position: relative;
   display: flex;
-  margin: 24px 0 24px;
+  flex-direction: column;
+  gap: 0px;
+  background-color: $gray150 !important;
+
+  @media only screen and (max-width: $mobile) {
+    width: 100%;
+    height: 600vh;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow-y: scroll;
+  }
 }
 
 .header-wrap {
@@ -187,10 +225,51 @@ watch(margin, () => {
   justify-content: space-between;
   align-items: center;
 
-  .value {
-    font-size: 16px;
-    color: $base-text;
-    font-weight: $semi-bold;
+  svg {stroke: $gray600;}
+}
+
+.buy-sell {
+  display: flex;
+  margin: 24px 0 24px;
+}
+
+.inner-content {
+  .currency,
+  .min-max,
+  .market-price, .chat {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+
+    &:last-child {margin-bottom: 0;}
+
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+
+      label {
+        font-size: 14px;
+        font-weight: 400;
+        color: $gray900;
+        margin-bottom: 8px;
+
+        @media only screen and (max-width: $mobile) {
+        font-size: 12px;
+        }
+      }
+
+      input {
+        width: 100%;
+        background-color: $background;
+      }
+    }
+  }
+
+  .currency {
+    @media only screen and (max-width: $mobile) {
+      flex-direction: column;
+    }
   }
 }
 
@@ -201,94 +280,27 @@ watch(margin, () => {
   margin: 32px 0;
 }
 
-.wrap-price {
+.wrap-footer {
   display: flex;
-  justify-items: center;
-  align-content: center;
+  justify-content: space-between;
+  align-items: center;
   gap: 24px;
-  margin-bottom: 24px;
 
-  .margin,
-  .margin-offset {
-    width: 100%;
+  @media only screen and (max-width: $mobile) {
+    padding-bottom: 64px;
+  }
+
+  .fiat-price {
+    @media only screen and (max-width: $mobile) {
+      font-size: 12px;
+    }
+  }
+
+  .btns {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    label {
-      font-size: 14px;
-      font-weight: 400;
-      color: $gray900;
-    }
-  }
-
-  input {
-    width: 100%;
-    background-color: $background;
-  }
-}
-
-.min-max {
-  display: inline-flex;
-  flex-basis: content;
-
-  .wrap {
-    display: flex;
-    flex-direction: column;
-
-    &:last-child {
-      margin-left: 24px;
-    }
-
-    label {
-      font-size: 14px;
-      font-weight: 400;
-      color: $gray900;
-      margin-bottom: 8px;
-    }
-  }
-
-  input {
-    width: 100%;
-    background-color: $background;
-  }
-}
-
-.btns {
-  display: flex;
-  justify-content: flex-end;
-  gap: 24px;
-  margin-top: 24px;
-}
-
-.currency {
-  display: flex;
-
-  .filter {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-
-    &:last-child {
-      margin-left: 24px;
-    }
-
-    label {
-      font-size: 14px;
-      font-weight: 400;
-      color: $gray900;
-      margin-bottom: 8px;
-    }
-
-    @media only screen and (max-width: 550px) {
-      margin-left: 0;
-      max-width: none;
-
-      select {
-        max-width: none;
-        height: 48px;
-      }
-    }
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 0px;
   }
 }
 </style>

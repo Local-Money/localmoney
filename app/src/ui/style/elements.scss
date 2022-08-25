@@ -17,7 +17,7 @@ body {
 
 .card {
   padding: 24px;
-  background-color: $surface;
+  background-color: $gray200;
   border: 1px solid $border;
   border-radius: 8px;
   box-shadow: 0px 2px 25px rgba(0, 0, 0, 0.05);
@@ -138,16 +138,23 @@ body {
     color: $primary;
   }
 
-  @media only screen and (max-width: 550px) {
+  @media only screen and (max-width: $mobile) {
     margin-top: 0;
+    height: 40px;
     max-width: none;
     margin-bottom: 16px;
+    border: 0;
+    overflow: visible;
 
     button {
-      height: 48px;
+      height: 40px;
+      border-radius: 8px;
     }
     .separator {
-      height: 48px;
+      height: 0;
+    }
+    .focus {
+      border-radius: 8px;
     }
   }
 }
