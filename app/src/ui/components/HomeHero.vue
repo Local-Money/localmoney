@@ -37,12 +37,10 @@ const isMobile = computed(() => width.value <= 550)
           <span class="text-primary">Local</span> is a decentralized P2P marketplace for the crypto multi-chain world.
         </p>
         <div class="wrap-cta">
-          <p>Want to know more about us?</p>
-
           <div class="wrap-btns">
-            <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
+            <!-- <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
               <button class="primary">Litepaper</button>
-            </a>
+            </a> -->
 
             <a href="https://twitter.com/TeamLocalMoney" target="_blank">
               <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -63,6 +61,40 @@ const isMobile = computed(() => width.value <= 550)
                 />
               </svg>
             </a>
+
+            <a href="https://github.com/Local-Money" target="_blank">
+              <svg class="social-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M12 2C6.475 2 2 6.58819 2 12.2529C2 16.7899 4.8625 20.6219 8.8375 21.9804C9.3375 22.0701 9.525 21.7625 9.525 21.4934C9.525 21.2499 9.5125 20.4425 9.5125 19.5838C7 20.058 6.35 18.9558 6.15 18.3791C6.0375 18.0843 5.55 17.1743 5.125 16.9308C4.775 16.7386 4.275 16.2644 5.1125 16.2516C5.9 16.2388 6.4625 16.9949 6.65 17.3025C7.55 18.8533 8.9875 18.4175 9.5625 18.1484C9.65 17.4819 9.9125 17.0334 10.2 16.777C7.975 16.5207 5.65 15.6364 5.65 11.7147C5.65 10.5997 6.0375 9.67689 6.675 8.95918C6.575 8.70286 6.225 7.65193 6.775 6.24215C6.775 6.24215 7.6125 5.97301 9.525 7.29308C10.325 7.06239 11.175 6.94704 12.025 6.94704C12.875 6.94704 13.725 7.06239 14.525 7.29308C16.4375 5.9602 17.275 6.24215 17.275 6.24215C17.825 7.65193 17.475 8.70286 17.375 8.95918C18.0125 9.67689 18.4 10.5868 18.4 11.7147C18.4 15.6492 16.0625 16.5207 13.8375 16.777C14.2 17.0975 14.5125 17.7126 14.5125 18.6738C14.5125 20.0452 14.5 21.1474 14.5 21.4934C14.5 21.7625 14.6875 22.0829 15.1875 21.9804C17.1727 21.2933 18.8977 19.9852 20.1198 18.2402C21.3419 16.4952 21.9995 14.4012 22 12.2529C22 6.58819 17.525 2 12 2Z"
+                  fill="inherit"
+                />
+              </svg>
+            </a>
+
+            <a href="https://local-money.medium.com/" target="_blank">
+              <svg class="social-icon" width="32" height="32" viewBox="0 0 256 146" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M72.2 0c39.877 0 72.2 32.549 72.2 72.696 0 40.148-32.326 72.694-72.2 72.694-39.872 0-72.2-32.546-72.2-72.694C0 32.55 32.325 0 72.2 0Zm115.3 4.258c19.938 0 36.101 30.638 36.101 68.438h.003c0 37.791-16.163 68.438-36.1 68.438-19.939 0-36.101-30.647-36.101-68.438 0-37.79 16.16-68.438 36.098-68.438Zm55.803 7.129c7.011 0 12.697 27.449 12.697 61.31 0 33.85-5.684 61.31-12.697 61.31-7.013 0-12.694-27.452-12.694-61.31 0-33.859 5.684-61.31 12.694-61.31Z"
+                  fill="inherit"
+                />
+              </svg>
+            </a>
+
+            <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
+              <svg class="social-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                  stroke="inherit"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path d="M14 2V8H20" stroke="#202225" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 13H8" stroke="#202225" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16 17H8" stroke="#202225" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10 9H9H8" stroke="#202225" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
@@ -81,7 +113,7 @@ const isMobile = computed(() => width.value <= 550)
 section {
   display: flex;
   flex-direction: column;
-  padding: 64px 24px 24px;
+  padding: 24px 24px 24px;
 }
 
 .separator {
@@ -101,19 +133,24 @@ section {
 
 .wrap-title {
   width: 55%;
+  padding: 32px 0 40px 0;
 }
 
 .wrap-img {
-  width: 45%;
+  position: relative;
+  width: 40%;
+  overflow: hidden;
+  //clip-path: inset(0 0 100px 0);
 
   img {
+    position: absolute;
     width: 100%;
-    padding: 0 24px;
+    padding: 0 32px 0 0;
   }
 }
 
 h1 {
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 600;
   line-height: 120%;
 }
@@ -123,7 +160,7 @@ h1 {
 }
 .sub-title {
   width: 80%;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 400;
   margin-bottom: 32px;
 
