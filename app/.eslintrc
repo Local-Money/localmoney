@@ -1,9 +1,11 @@
 {
   "root": true,
-  "extends": ["@antfu"],
+  "extends": ["prettier", "@antfu"],
+  "plugins": ["prettier"],
   "rules": {
+    "prettier/prettier": ["error"],
     "curly": ["error", "all"],
-    "@typescript-eslint/brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+    "@typescript-eslint/brace-style": ["error", "1tbs", { "allowSingleLine": false }],
     "@typescript-eslint/comma-dangle": ["error", {
       "arrays": "always-multiline",
       "objects": "only-multiline",

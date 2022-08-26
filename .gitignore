@@ -2,3 +2,5 @@
 node_modules/
 artifacts/
 .DS_Store
+.env
+codeIds.json

@@ -16,7 +16,6 @@ import type { Chain } from '~/network/Chain'
 import { TradeState } from '~/types/components.interface'
 
 class MockChain implements Chain {
-  private ownerPublicKey = 'terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7'
 
   async init() {
     return await someDelay()
@@ -27,7 +26,7 @@ class MockChain implements Chain {
   }
 
   getWalletAddress(): string {
-    return this.ownerPublicKey
+    return 'terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7'
   }
 
   async fetchOffers({ fiatCurrency, offerType }: FetchOffersArgs) {
@@ -40,7 +39,7 @@ class MockChain implements Chain {
 
   async fetchMyOffers() {
     await someDelay()
-    return myOffers.filter(offer => offer.owner === this.ownerPublicKey) as GetOffer[]
+    return myOffers.filter(offer => offer.owner === this.getWalletAddress()) as GetOffer[]
   }
 
   async createOffer(postOffer: PostOffer) {
