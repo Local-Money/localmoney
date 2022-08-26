@@ -58,8 +58,7 @@ watch(offerType, async () => await fetchOffers())
 </script>
 
 <template>
-  <section>
-    <div class="separator" />
+  <section class="page">
     <p class="offers-section-title">Top offers from the community</p>
     <section class="offers-filter">
       <div class="buy-sell">

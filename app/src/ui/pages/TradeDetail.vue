@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import {
-  calculateFiatPriceByRate,
-  convertOfferRateToMarginRate,
-  formatAddress,
-  formatAmount,
-} from '~/shared'
+import { calculateFiatPriceByRate, convertOfferRateToMarginRate, formatAddress, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
@@ -20,20 +15,17 @@ const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
 const stepOneChecked = computed(() => {
   return (
-    tradeInfo.value.trade.state === 'escrow_funded'
-      || tradeInfo.value.trade.state === 'fiat_deposited'
-      || tradeInfo.value.trade.state === 'escrow_released'
+    tradeInfo.value.trade.state === 'escrow_funded' ||
+    tradeInfo.value.trade.state === 'fiat_deposited' ||
+    tradeInfo.value.trade.state === 'escrow_released'
   )
 })
 const stepTwoChecked = computed(() => {
-  return (
-    tradeInfo.value.trade.state === 'fiat_deposited'
-      || tradeInfo.value.trade.state === 'escrow_released'
-  )
+  return tradeInfo.value.trade.state === 'fiat_deposited' || tradeInfo.value.trade.state === 'escrow_released'
 })
 const stepThreeChecked = computed(() => tradeInfo.value.trade.state === 'escrow_released')
 const isBuyer = computed(() => tradeInfo.value.trade.buyer === walletAddress.value)
-const buyOrSell = computed(() => isBuyer.value ? 'Buy' : 'Sell')
+const buyOrSell = computed(() => (isBuyer.value ? 'Buy' : 'Sell'))
 const counterparty = computed(() => {
   const trade = tradeInfo.value.trade
   return walletAddress.value === trade.seller ? trade.buyer : trade.seller
@@ -61,9 +53,7 @@ onBeforeMount(() => {
   fetchTrade(route.params.id as string)
 })
 
-onMounted(() => {
-
-})
+onMounted(() => {})
 
 onUnmounted(() => {
   clearInterval(refreshInterval)
@@ -71,7 +61,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main v-if="tradeInfo" v-bind="trade = tradeInfo.trade">
+  <main v-if="tradeInfo" class="page" v-bind="(trade = tradeInfo.trade)">
     <h3>{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
     <section class="stepper card">
       <!-- Step 1 -->
@@ -82,9 +72,7 @@ onUnmounted(() => {
             <p>1</p>
           </div>
         </div>
-        <p :class="stepOneChecked ? 'step-checked' : ''">
-          waiting for funds
-        </p>
+        <p :class="stepOneChecked ? 'step-checked' : ''">waiting for funds</p>
       </div>
 
       <!-- Step 2 -->
@@ -95,9 +83,7 @@ onUnmounted(() => {
             <p>2</p>
           </div>
         </div>
-        <p :class="stepTwoChecked ? 'step-checked' : ''">
-          waiting for payment
-        </p>
+        <p :class="stepTwoChecked ? 'step-checked' : ''">waiting for payment</p>
       </div>
 
       <!-- Step 3 -->
@@ -108,47 +94,30 @@ onUnmounted(() => {
             <p>3</p>
           </div>
         </div>
-        <p :class="stepThreeChecked ? 'step-checked' : ''">
-          waiting for funds release
-        </p>
+        <p :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
       </div>
 
       <div class="step-status">
         <div class="separator" />
         <div class="wrap">
           <p>time remaining</p>
-          <p class="step-time-left">
-            ?? min
-          </p>
+          <p class="step-time-left">?? min</p>
         </div>
         <div class="icon">
-          <svg
-            class="icon-24"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+          <svg class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
-            <path
-              d="M12 6V12L16 14"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+            <path d="M12 6V12L16 14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </div>
       </div>
     </section>
     <section class="wrap">
-      <section class="chat card">
-        Chat will be here
-      </section>
+      <section class="chat card">Chat will be here</section>
       <div class="inner-wrap">
         <section class="trade-summary card">
           <div class="trader-info">
@@ -156,45 +125,26 @@ onUnmounted(() => {
             <p class="trader">
               {{ formatAddress(counterparty) }}
             </p>
-            <p class="rating">
-              0 trades
-            </p>
+            <p class="rating">0 trades</p>
           </div>
           <div class="trade-info">
-            <p class="label">
-              Price
-            </p>
+            <p class="label">Price</p>
             <div class="current-price">
-              <p class="mkt-rate">
-                {{ marginRate.marginOffset }}%
-                {{ marginRate.margin }} market
-              </p>
+              <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
               <p class="price">
                 {{ offerPrice }}
               </p>
             </div>
-            <p class="label">
-              Transaction summary
-            </p>
+            <p class="label">Transaction summary</p>
             <div class="transaction">
               <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">
-                  You will get
-                </p>
-                <p v-else class="list-item-label">
-                  You will send
-                </p>
-                <p class="value">
-                  {{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}
-                </p>
+                <p v-if="isBuyer" class="list-item-label">You will get</p>
+                <p v-else class="list-item-label">You will send</p>
+                <p class="value">{{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}</p>
               </div>
               <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">
-                  You will send
-                </p>
-                <p v-else class="list-item-label">
-                  You will get
-                </p>
+                <p v-if="isBuyer" class="list-item-label">You will send</p>
+                <p v-else class="list-item-label">You will get</p>
                 <p class="value fiat">
                   {{ fiatAmountStr }}
                 </p>
@@ -202,14 +152,11 @@ onUnmounted(() => {
             </div>
           </div>
         </section>
-        <TradeActions
-          :trade-info="tradeInfo"
-          :wallet-address="walletAddress"
-        />
+        <TradeActions :trade-info="tradeInfo" :wallet-address="walletAddress" />
       </div>
     </section>
   </main>
-  <main v-else>
+  <main v-else class="page">
     <div class="error-state card">
       <p>You need to connect your wallet</p>
     </div>
@@ -217,7 +164,7 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@import "../style/pages.scss";
+@import '../style/pages.scss';
 
 .stepper {
   display: flex;
