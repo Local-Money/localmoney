@@ -118,7 +118,7 @@ section {
 
 .separator {
   width: 100%;
-  margin: 0 auto 80px;
+  margin: 0 auto 56px;
   height: 1px;
   background-color: $border;
 

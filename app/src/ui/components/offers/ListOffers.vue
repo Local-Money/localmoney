@@ -156,7 +156,7 @@ section {
   display: inline-flex;
   flex-direction: column;
   width: 100%;
-  max-width: 200px;
+  max-width: 216px;
   margin-left: 24px;
 
   @media only screen and (max-width: $mobile) {
@@ -173,7 +173,7 @@ section {
 }
 
 .offers-section-title {
-  font-size: 20px;
+  font-size: 24px;
   margin-bottom: 40px;
   color: $gray900;
   font-weight: 600;
