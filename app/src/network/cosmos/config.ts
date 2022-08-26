@@ -63,3 +63,28 @@ export const KUJIRA_HUB_INFO: HubInfo = {
     },
   },
 }
+
+// TEST
+export const TEST_CONFIG: CosmosConfig = {
+  chainId: 'harpoon-2',
+  chainName: 'Kujira Localnet',
+  lcdUrl: 'http://0.0.0.0:1317',
+  rpcUrl: 'http://0.0.0.0:26657',
+  addressPrefix: 'kujira',
+  coinDenom: 'KUJI',
+  coinMinimalDenom: 'ukuji',
+  coinDecimals: 6,
+}
+
+export const TEST_HUB_INFO: HubInfo = {
+  hubAddress: process.env.HUB ? process.env.HUB : '',
+  hubConfig: {
+    offer_addr: 'kujira1cryjuex5uxstsstr8j50qpm4g9828nlr0l5uunlwvj0e7umdv7yq2m4rrt',
+    trade_addr: 'kujira1kl8fyh4245lqj3ht5cl099eswuhgds4k9zdfv6hrhf3xu8xplzyqs8vklx',
+    trading_incentives_addr: 'kujira1t7tjl3fegh8m9yn37eks2m2qaelcz2kuvyyzpp28vcx42vame65sevwhhh',
+    local_market_addr: 'kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w',
+    local_denom: {
+      native: 'factory/kujira16g2rahf5846rxzp3fwlswy08fz8ccuwkgthh5j/local',
+    },
+  },
+}

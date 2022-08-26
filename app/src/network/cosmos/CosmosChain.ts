@@ -7,7 +7,8 @@ import type {
   Denom,
   FetchOffersArgs,
   GetOffer,
-  HubConfig, NewTrade,
+  HubConfig,
+  NewTrade,
   PatchOffer,
   PostOffer,
   Trade,
@@ -18,12 +19,12 @@ import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/chain-error'
 
 export class CosmosChain implements Chain {
-  private readonly config: CosmosConfig
-  private hubInfo: HubInfo
+  protected config: CosmosConfig
+  protected hubInfo: HubInfo
 
-  private signer?: OfflineSigner | OfflineDirectSigner
-  private account?: AccountData
-  private cwClient?: CosmWasmClient | SigningCosmWasmClient
+  protected signer?: OfflineSigner | OfflineDirectSigner
+  protected account?: AccountData
+  protected cwClient?: CosmWasmClient | SigningCosmWasmClient
 
   constructor(config: CosmosConfig, hubInfo: HubInfo) {
     this.config = config
@@ -32,11 +33,7 @@ export class CosmosChain implements Chain {
 
   async init() {
     this.cwClient = await CosmWasmClient.connect(this.config.rpcUrl)
-    this.hubInfo.hubConfig = await this.cwClient.queryContractSmart(
-      this.hubInfo.hubAddress,
-      { config: {} },
-    ) as HubConfig
-    // console.log("Factory config >> ", this.hubInfo.hubConfig)
+    this.hubInfo.hubConfig = (await this.cwClient.queryContractSmart(this.hubInfo.hubAddress, { config: {} })) as HubConfig
   }
 
   async connectWallet() {
@@ -45,9 +42,9 @@ export class CosmosChain implements Chain {
     } else {
       await CosmosChain.suggestChain(this.config)
       await window.keplr.enable(this.config.chainId)
-      this.signer = await window.getOfflineSignerAuto(this.config.chainId);
+      this.signer = await window.getOfflineSignerAuto(this.config.chainId)
       // get first account
-      [this.account] = await this.signer.getAccounts()
+      ;[this.account] = await this.signer.getAccounts()
       this.cwClient = await SigningCosmWasmClient.connectWithSigner(this.config.rpcUrl, this.signer, {
         gasPrice: {
           amount: Decimal.fromUserInput('0.0025', 100),
@@ -63,16 +60,9 @@ export class CosmosChain implements Chain {
 
   async createOffer(postOffer: PostOffer) {
     const msg = { create: { offer: postOffer } }
-    console.log('Create offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(
-          this.getWalletAddress(),
-          this.hubInfo.hubConfig.offer_addr,
-          msg,
-          'auto',
-        )
-        console.log('Create offer result >> ', result)
+        await this.cwClient.execute(this.getWalletAddress(), this.hubInfo.hubConfig.offer_addr, msg, 'auto')
       } catch (e) {
         throw new DefaultError()
       }
@@ -83,16 +73,9 @@ export class CosmosChain implements Chain {
 
   async updateOffer(updateOffer: PatchOffer) {
     const msg = { update_offer: { offer_update: updateOffer } }
-    console.log('Update offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(
-          this.getWalletAddress(),
-          this.hubInfo.hubConfig.offer_addr,
-          msg,
-          'auto',
-        )
-        console.log('Update offer result >> ', result)
+        await this.cwClient.execute(this.getWalletAddress(), this.hubInfo.hubConfig.offer_addr, msg, 'auto')
       } catch (e) {
         throw new DefaultError()
       }
@@ -104,17 +87,13 @@ export class CosmosChain implements Chain {
   async fetchMyOffers() {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
-        const response = await this.cwClient.queryContractSmart(
-          this.hubInfo.hubConfig.offer_addr,
-          {
-            offers: {
-              owner: this.getWalletAddress(),
-              limit: 10,
-              order: 'asc',
-            },
-          }) as GetOffer[]
-        console.log('response >> ', response)
-        return response
+        return (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
+          offers: {
+            owner: this.getWalletAddress(),
+            limit: 10,
+            order: 'asc',
+          },
+        })) as GetOffer[]
       } catch (e) {
         throw new DefaultError()
       }
@@ -124,10 +103,8 @@ export class CosmosChain implements Chain {
   }
 
   async fetchOffers(args: FetchOffersArgs) {
-    console.log('args >>> ', args)
     // TODO: fix init
-    if (!this.cwClient)
-      await this.init()
+    if (!this.cwClient) await this.init()
     try {
       const queryMsg = {
         offers_by: {
@@ -140,12 +117,7 @@ export class CosmosChain implements Chain {
           order: 'asc',
         },
       }
-      const response = await this.cwClient!.queryContractSmart(
-        this.hubInfo.hubConfig.offer_addr,
-        queryMsg
-      ) as GetOffer[]
-      console.log('response >>> ', response)
-      return response
+      return (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.offer_addr, queryMsg)) as GetOffer[]
     } catch (e) {
       throw new DefaultError()
     }
@@ -157,12 +129,7 @@ export class CosmosChain implements Chain {
     console.log('Open Trade msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(
-          this.getWalletAddress(),
-          this.hubInfo.hubConfig.trade_addr,
-          msg,
-          'auto',
-        )
+        const result = await this.cwClient.execute(this.getWalletAddress(), this.hubInfo.hubConfig.trade_addr, msg, 'auto')
         console.log('Open Trade result >> ', result)
         // TODO should we try to get this info this way?
         response = result.logs[0].events[2].attributes[1].value
@@ -180,28 +147,22 @@ export class CosmosChain implements Chain {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
       // TODO fix init
-      if (!this.cwClient)
-        await this.init()
+      if (!this.cwClient) await this.init()
       try {
         // Query of trades as buyer
-        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 100 } }
-        const tradesAsBuyer = await this.cwClient!.queryContractSmart(
-          this.hubInfo.hubConfig.trade_addr,
-          queryAsBuyerMsg,
-        ) as TradeInfo[]
+        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 10 } }
+        const tradesAsBuyer = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, queryAsBuyerMsg)) as TradeInfo[]
 
         // Query of trades as seller
-        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 100 } }
-        const tradesAsSeller = await this.cwClient!.queryContractSmart(
-          this.hubInfo.hubConfig.trade_addr,
-          queryAsSellerMsg,
-        ) as TradeInfo[]
+        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 10 } }
+        const tradesAsSeller = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, queryAsSellerMsg)) as TradeInfo[]
 
         // Join all trades
         const response: TradeInfo[] = tradesAsBuyer.concat(tradesAsSeller)
         console.log('response >>> ', response)
         return response
       } catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     } else {
@@ -211,13 +172,9 @@ export class CosmosChain implements Chain {
 
   async fetchTradeDetail(tradeId: string) {
     // TODO fix init
-    if (!this.cwClient)
-      await this.init()
+    if (!this.cwClient) await this.init()
     try {
-      const response = await this.cwClient!.queryContractSmart(
-        this.hubInfo.hubConfig.trade_addr,
-        { trade: { id: tradeId } },
-      ) as Trade
+      const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, { trade: { id: tradeId } })) as Trade
       console.log('response >>> ', response)
       return response
     } catch (e) {
@@ -227,59 +184,63 @@ export class CosmosChain implements Chain {
   }
 
   async acceptTradeRequest(tradeId: string) {
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { accept_request: { trade_id: tradeId } })
+    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
+      accept_request: { trade_id: tradeId },
+    })
   }
 
   async cancelTradeRequest(tradeId: string) {
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { cancel_request: { trade_id: tradeId } })
+    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
+      cancel_request: { trade_id: tradeId },
+    })
   }
 
   async fundEscrow(tradeId: string, amount: string, denom: Denom) {
     let fundAmount = Number(amount)
     const localFee = fundAmount * 0.01
     fundAmount += localFee
-    const funds: Coin[] = [{
-      amount: `${fundAmount}`,
-      denom: denom.native,
-    }]
+    const funds: Coin[] = [
+      {
+        amount: `${fundAmount}`,
+        denom: denom.native,
+      },
+    ]
     console.log(funds)
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { fund_escrow: { trade_id: tradeId } }, funds)
   }
 
   async setFiatDeposited(tradeId: string) {
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { fiat_deposited: { trade_id: tradeId } })
+    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
+      fiat_deposited: { trade_id: tradeId },
+    })
   }
 
   async releaseEscrow(tradeId: string) {
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { release_escrow: { trade_id: tradeId } })
+    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
+      release_escrow: { trade_id: tradeId },
+    })
   }
 
   async refundEscrow(tradeId: string) {
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { refund_escrow: { trade_id: tradeId } })
+    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
+      refund_escrow: { trade_id: tradeId },
+    })
   }
 
   async openDispute(tradeId: string) {
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { dispute_escrow: { trade_id: tradeId } })
+    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
+      dispute_escrow: { trade_id: tradeId },
+    })
   }
 
-  private async changeTradeState(
-    tradeId: string,
-    msg: Record<string, unknown>,
-    funds?: Coin[],
-  ) {
+  private async changeTradeState(tradeId: string, msg: Record<string, unknown>, funds?: Coin[]) {
     console.log('Trade State >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(
-          this.getWalletAddress(),
-          tradeId,
-          msg,
-          'auto',
-          undefined,
-          funds,
-        )
+        const result = await this.cwClient.execute(this.getWalletAddress(), tradeId, msg, 'auto', undefined, funds)
         console.log('Trade State result >> ', result)
       } catch (e) {
+        console.error(e)
         // TODO manage error
         throw new DefaultError()
       }
@@ -323,17 +284,21 @@ export class CosmosChain implements Chain {
           bech32PrefixConsPub: `${config.addressPrefix}valconspub`,
         },
         // List of all coin/tokens used in this chain.
-        currencies: [{
-          coinDenom: config.coinDenom,
-          coinMinimalDenom: config.coinMinimalDenom,
-          coinDecimals: config.coinDecimals,
-        }],
+        currencies: [
+          {
+            coinDenom: config.coinDenom,
+            coinMinimalDenom: config.coinMinimalDenom,
+            coinDecimals: config.coinDecimals,
+          },
+        ],
         // List of coin/tokens used as a fee token in this chain.
-        feeCurrencies: [{
-          coinDenom: config.coinDenom,
-          coinMinimalDenom: config.coinMinimalDenom,
-          coinDecimals: config.coinDecimals,
-        }],
+        feeCurrencies: [
+          {
+            coinDenom: config.coinDenom,
+            coinMinimalDenom: config.coinMinimalDenom,
+            coinDecimals: config.coinDecimals,
+          },
+        ],
       })
     } catch (e) {
       console.log(e)
