@@ -83,7 +83,7 @@ function mapTradeInfoToNotification(wallet: string, tradeInfo: TradeInfo): Notif
 
 // TODO define message for each state
 function getMessageByState(_: TradeState): string {
-  return 'You have a open trade'
+  return 'You have a new trade'
 }
 
 export interface Notification {

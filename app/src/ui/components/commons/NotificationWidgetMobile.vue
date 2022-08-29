@@ -64,8 +64,8 @@ async function showTrade(n: Notification) {
           </p>
         </li>
       </ul>
-      <div v-else class="item">
-        <p>No notifications yet</p>
+      <div v-else class="empty-state">
+        <p>Nothing new here.</p>
       </div>
     </div>
   </div>
@@ -153,6 +153,16 @@ async function showTrade(n: Notification) {
         font-size: 12px;
         color: $gray900;
       }
+    }
+    .empty-state {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-size: 14px;
+      color: $gray700;
     }
   }
 }
