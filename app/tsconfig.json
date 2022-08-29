@@ -14,13 +14,7 @@
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "types": [
-      "vite/client",
-      "vue/ref-macros",
-      "vite-plugin-pages/client",
-      "vite-plugin-vue-layouts/client",
-      "jest"
-    ],
+    "types": ["vite/client", "vue/ref-macros", "vite-plugin-pages/client", "vite-plugin-vue-layouts/client", "jest"],
     "paths": {
       "~/*": ["src/*"]
     }

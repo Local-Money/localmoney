@@ -27,18 +27,8 @@ const stepLabels = {
     ],
   },
   sell: {
-    buyer: [
-      'Waiting for funds',
-      'Please make the payment',
-      'Waiting for funds release',
-      'Trade finished',
-    ],
-    seller: [
-      'Please fund the trade',
-      'Waiting for payment',
-      'Please release the funds',
-      'Trade finished',
-    ],
+    buyer: ['Waiting for funds', 'Please make the payment', 'Waiting for funds release', 'Trade finished'],
+    seller: ['Please fund the trade', 'Waiting for payment', 'Please release the funds', 'Trade finished'],
   },
 }
 
@@ -95,7 +85,11 @@ const fromTo = computed(() => {
 const stepLabel = computed(() => {
   const labelIdx = step.value - 1
   const type = props.tradeInfo.offer.offer_type
-  if (isBuying.value) { return stepLabels[type].buyer[labelIdx] } else { return stepLabels[type].seller[labelIdx] }
+  if (isBuying.value) {
+    return stepLabels[type].buyer[labelIdx]
+  } else {
+    return stepLabels[type].seller[labelIdx]
+  }
 })
 
 function startTradeDetailRefresh() {
@@ -122,21 +116,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="card offer collapsed" v-bind="trade = tradeInfo.trade">
+  <div class="card offer collapsed" v-bind="(trade = tradeInfo.trade)">
     <div class="trade-type">
-      <p class="type">
-        {{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }}
-      </p>
-      <p class="wallet-addr">
-        {{ fromTo }} {{ formatAddress(counterparty) }}
-      </p>
+      <p class="type">{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }}</p>
+      <p class="wallet-addr">{{ fromTo }} {{ formatAddress(counterparty) }}</p>
     </div>
 
     <div class="info">
       <div class="wrap">
-        <p class="label">
-          Status
-        </p>
+        <p class="label">Status</p>
         <p class="content">
           {{ stepLabel }}
         </p>
@@ -145,9 +133,7 @@ onUnmounted(() => {
       <div class="divider" />
 
       <div class="wrap">
-        <p class="label">
-          Amount
-        </p>
+        <p class="label">Amount</p>
         <p class="content">
           {{ formatAmount(trade.amount) }}
           {{ microDenomToDenom(trade.denom.native) }}
@@ -157,27 +143,21 @@ onUnmounted(() => {
       <div class="divider" />
 
       <div class="wrap">
-        <p class="label">
-          Time remaining
-        </p>
-        <p class="content">
-          ?? min
-        </p>
+        <p class="label">Time remaining</p>
+        <p class="content">?? min</p>
       </div>
     </div>
 
     <div class="price">
       <router-link :to="`/trade/${trade.id}`">
-        <button class="primary bg-gray300">
-          view trade
-        </button>
+        <button class="primary bg-gray300">view trade</button>
       </router-link>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 .collapsed {
   margin-bottom: 24px;

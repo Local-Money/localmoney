@@ -123,9 +123,5 @@ export function tradeCanBeReleased(tradeInfo, walletAddr) {
 
 export function tradeCanBeRefunded(tradeInfo, walletAddr) {
   const { trade } = tradeInfo
-  return (
-    trade.state === 'escrow_funded'
-        && tradeInfo.expired
-        && trade.sender === walletAddr
-  )
+  return trade.state === 'escrow_funded' && tradeInfo.expired && trade.sender === walletAddr
 }

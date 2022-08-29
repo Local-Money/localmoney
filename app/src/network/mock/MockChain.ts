@@ -16,7 +16,6 @@ import type { Chain } from '~/network/Chain'
 import { TradeState } from '~/types/components.interface'
 
 class MockChain implements Chain {
-
   async init() {
     return await someDelay()
   }
@@ -34,12 +33,14 @@ class MockChain implements Chain {
     console.log('offers :>> ', offers)
     console.log(offerType)
     console.log('fiatCurrency :>> ', fiatCurrency)
-    return offers.filter(offer => offer.offer_type === offerType).filter(offer => offer.fiat_currency === fiatCurrency) as GetOffer[]
+    return offers
+      .filter((offer) => offer.offer_type === offerType)
+      .filter((offer) => offer.fiat_currency === fiatCurrency) as GetOffer[]
   }
 
   async fetchMyOffers() {
     await someDelay()
-    return myOffers.filter(offer => offer.owner === this.getWalletAddress()) as GetOffer[]
+    return myOffers.filter((offer) => offer.owner === this.getWalletAddress()) as GetOffer[]
   }
 
   async createOffer(postOffer: PostOffer) {
@@ -52,7 +53,7 @@ class MockChain implements Chain {
     await someDelay()
   }
 
-  async openTrade(trade: NewTrade) {
+  async openTrade(_: NewTrade) {
     await someDelay()
     return '110_2_2'
   }
@@ -98,7 +99,7 @@ class MockChain implements Chain {
   }
 
   private async changeTradeState(tradeId: string, state: TradeState) {
-    const selectedTrade = myTrades.find(trade => trade.trade.addr === tradeId)
+    const selectedTrade = myTrades.find((trade) => trade.trade.addr === tradeId)
     if (selectedTrade) {
       selectedTrade.trade.state = state
     }
@@ -108,7 +109,7 @@ class MockChain implements Chain {
 
 function sleep(ms: number) {
   console.log('sleep', ms)
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 async function someDelay(min = 800, max = 1800) {

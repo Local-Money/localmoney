@@ -15,8 +15,7 @@ useHead({
   meta: [
     {
       name: 'description',
-      content:
-        'Local is a decentralized P2P marketplace for the multi-chain world.',
+      content: 'Local is a decentralized P2P marketplace for the multi-chain world.',
     },
   ],
 })
@@ -30,12 +29,12 @@ useHead({
 </template>
 
 <style lang="scss">
-@import "./ui/style/tokens.scss";
+@import './ui/style/tokens.scss';
 
 /* Main Style */
 body {
   margin: 0 auto;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   color: $base-text;
   background-color: $background;
   min-width: 1000px;
@@ -48,7 +47,7 @@ body {
 button {
   height: 40px;
   border-radius: 8px;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 700;
   cursor: pointer;
 }

@@ -60,9 +60,17 @@ export interface PostOffer {
   maker_contact: string
 }
 
-export enum FiatCurrency { BRL = 'BRL', ARS = 'ARS', COP = 'COP' }
+export enum FiatCurrency {
+  BRL = 'BRL',
+  ARS = 'ARS',
+  COP = 'COP',
+}
 
-export enum OfferState { active = 'active', paused = 'paused', archived = 'archive' }
+export enum OfferState {
+  active = 'active',
+  paused = 'paused',
+  archived = 'archive',
+}
 
 export interface FetchOffersArgs {
   fiatCurrency: FiatCurrency

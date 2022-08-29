@@ -33,7 +33,9 @@ export class CosmosChain implements Chain {
 
   async init() {
     this.cwClient = await CosmWasmClient.connect(this.config.rpcUrl)
-    this.hubInfo.hubConfig = (await this.cwClient.queryContractSmart(this.hubInfo.hubAddress, { config: {} })) as HubConfig
+    this.hubInfo.hubConfig = (await this.cwClient.queryContractSmart(this.hubInfo.hubAddress, {
+      config: {},
+    })) as HubConfig
     // console.log("Factory config >> ", this.hubInfo.hubConfig)
   }
 
@@ -64,7 +66,12 @@ export class CosmosChain implements Chain {
     console.log('Create offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(this.getWalletAddress(), this.hubInfo.hubConfig.offer_addr, msg, 'auto')
+        const result = await this.cwClient.execute(
+          this.getWalletAddress(),
+          this.hubInfo.hubConfig.offer_addr,
+          msg,
+          'auto'
+        )
         console.log('Create offer result >> ', result)
       } catch (e) {
         throw new DefaultError()
@@ -79,7 +86,12 @@ export class CosmosChain implements Chain {
     console.log('Update offer msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(this.getWalletAddress(), this.hubInfo.hubConfig.offer_addr, msg, 'auto')
+        const result = await this.cwClient.execute(
+          this.getWalletAddress(),
+          this.hubInfo.hubConfig.offer_addr,
+          msg,
+          'auto'
+        )
         console.log('Update offer result >> ', result)
       } catch (e) {
         throw new DefaultError()
@@ -124,7 +136,10 @@ export class CosmosChain implements Chain {
           order: 'asc',
         },
       }
-      const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.offer_addr, queryMsg)) as GetOffer[]
+      const response = (await this.cwClient!.queryContractSmart(
+        this.hubInfo.hubConfig.offer_addr,
+        queryMsg
+      )) as GetOffer[]
       console.log('response >>> ', response)
       return response
     } catch (e) {
@@ -138,7 +153,12 @@ export class CosmosChain implements Chain {
     console.log('Open Trade msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(this.getWalletAddress(), this.hubInfo.hubConfig.trade_addr, msg, 'auto')
+        const result = await this.cwClient.execute(
+          this.getWalletAddress(),
+          this.hubInfo.hubConfig.trade_addr,
+          msg,
+          'auto'
+        )
         console.log('Open Trade result >> ', result)
         // TODO should we try to get this info this way?
         response = result.logs[0].events[2].attributes[1].value
@@ -162,11 +182,17 @@ export class CosmosChain implements Chain {
       try {
         // Query of trades as buyer
         const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 100 } }
-        const tradesAsBuyer = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, queryAsBuyerMsg)) as TradeInfo[]
+        const tradesAsBuyer = (await this.cwClient!.queryContractSmart(
+          this.hubInfo.hubConfig.trade_addr,
+          queryAsBuyerMsg
+        )) as TradeInfo[]
 
         // Query of trades as seller
         const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 100 } }
-        const tradesAsSeller = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, queryAsSellerMsg)) as TradeInfo[]
+        const tradesAsSeller = (await this.cwClient!.queryContractSmart(
+          this.hubInfo.hubConfig.trade_addr,
+          queryAsSellerMsg
+        )) as TradeInfo[]
 
         // Join all trades
         const response: TradeInfo[] = tradesAsBuyer.concat(tradesAsSeller)
@@ -186,7 +212,9 @@ export class CosmosChain implements Chain {
       await this.init()
     }
     try {
-      const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, { trade: { id: tradeId } })) as Trade
+      const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, {
+        trade: { id: tradeId },
+      })) as Trade
       console.log('response >>> ', response)
       return response
     } catch (e) {
