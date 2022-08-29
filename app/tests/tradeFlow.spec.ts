@@ -23,11 +23,11 @@ let tradeId = '0'
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
   makerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
-  makerClient.seed = process.env.TAKER_SEED!
+  makerClient.seed = process.env.MAKER_SEED!
   await makerClient.connectWallet()
 
   takerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
-  takerClient.seed = process.env.MAKER_SEED!
+  takerClient.seed = process.env.TAKER_SEED!
   await takerClient.connectWallet()
 
   if (process.env.HUB) {
