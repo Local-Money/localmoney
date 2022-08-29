@@ -13,20 +13,20 @@ const emit = defineEmits<{
 <template>
   <v-select
     class=""
-    :model-value="modelValue"
+    :modelValue="modelValue"
     :options="[...options.keys()]"
     :searchable="false"
     :clearable="false"
-    @update:model-value="emit('update:modelValue', $event)"
+    @update:modelValue="emit('update:modelValue', $event)"
   >
     <template #selected-option>
-      <div class="wrap" v-bind="info = getSelectInfo(options, modelValue)">
+      <div class="wrap" v-bind="(info = getSelectInfo(options, modelValue))">
         <img v-if="info.icon" :src="info.icon" />
         <p>{{ info.display }}</p>
       </div>
     </template>
     <template #option="{ label }">
-      <div class="wrap" v-bind="info = getSelectInfo(options, label)">
+      <div class="wrap" v-bind="(info = getSelectInfo(options, label))">
         <img v-if="info.icon" :src="info.icon" />
         <p>{{ info.display }}</p>
       </div>
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 </template>
 
 <style lang="scss">
-@import "../../style/tokens";
+@import '../../style/tokens';
 
 .v-select {
   --vs-border-color: #33363c;
@@ -66,7 +66,7 @@ const emit = defineEmits<{
   .vs__actions {
     svg {
       fill: $gray600;
-      stroke: 1px;
+      stroke: $gray600;
     }
   }
 
@@ -97,7 +97,7 @@ const emit = defineEmits<{
     padding: 0;
   }
   .vs--single.vs--open .vs__selected {
-    display: relative;
+    position: relative;
   }
 }
 .vs--single.vs--open .vs__selected {

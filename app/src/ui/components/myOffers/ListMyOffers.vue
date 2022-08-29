@@ -6,23 +6,24 @@ import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import type { GetOffer } from '~/types/components.interface'
 import { OfferState } from '~/types/components.interface'
-import { ListResult } from '~/stores/ListResult'
+import type { ListResult } from '~/stores/ListResult'
 import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
 const myOffersResult = computed<ListResult<GetOffer>>(() => client.myOffers)
 const page = reactive({
-  myOffers: <ExpandableItem<GetOffer>[]>[],
-  archiveOffers: <GetOffer[]>[],
+  myOffers: [] as ExpandableItem<GetOffer>[],
+  archiveOffers: [] as GetOffer[],
 })
 client.$subscribe((mutation, state) => {
   if (state.myOffers.isSuccess()) {
     page.myOffers = state.myOffers.data
-        .filter(offer => checkValidOffer(offer) && offer.state !== OfferState.archived)
-        .flatMap(offer => new ExpandableItem(offer))
+      .filter((offer) => checkValidOffer(offer) && offer.state !== OfferState.archived)
+      .flatMap((offer) => new ExpandableItem(offer))
 
-    page.archiveOffers = state.myOffers.data
-        .filter(offer => checkValidOffer(offer) && offer.state === OfferState.archived)
+    page.archiveOffers = state.myOffers.data.filter(
+      (offer) => checkValidOffer(offer) && offer.state === OfferState.archived
+    )
   }
 })
 const expandedMyOffer = ref()
@@ -37,8 +38,9 @@ function hasArchivedOffers() {
 
 function expandOfferItem(offer: ExpandableItem<GetOffer>) {
   if (expandedMyOffer.value !== offer) {
-    if (expandedMyOffer.value != null)
+    if (expandedMyOffer.value != null) {
       expandedMyOffer.value.isExpanded = false
+    }
 
     offer.isExpanded = true
     expandedMyOffer.value = offer
@@ -61,10 +63,7 @@ onMounted(async () => {
 
 <template>
   <section>
-    <ListContentResult
-      :result="myOffersResult"
-      :emptyStateMsg="'There is no offers available yet'"
-    >
+    <ListContentResult :result="myOffersResult" emptyStateMsg="There is no offers available yet">
       <!-- My Offers section -->
       <section v-if="hasOffers()" class="offers-list">
         <!-- Offers for -->
@@ -76,31 +75,19 @@ onMounted(async () => {
             :class="offer.isExpanded ? 'card-active' : ''"
           >
             <!-- Collapsed Offer -->
-            <CollapsedMyOffer
-              v-if="!offer.isExpanded"
-              :offer="offer.data"
-              @select="expandOfferItem(offer)"
-            />
+            <CollapsedMyOffer v-if="!offer.isExpanded" :offer="offer.data" @select="expandOfferItem(offer)" />
             <!-- Expanded Offer Desktop -->
-            <ExpandedMyOffer
-              v-else
-              :offer="offer.data"
-              @cancel="collapseOfferItem(offer)"
-            />
+            <ExpandedMyOffer v-else :offer="offer.data" @cancel="collapseOfferItem(offer)" />
           </li>
         </ul>
       </section>
       <section v-else-if="!hasOffers()" class="card">
-        <p>
-          Nothing here yet
-        </p>
+        <p>Nothing here yet</p>
       </section>
 
       <!-- End My Offers section -->
       <!-- Archived offers table -->
-      <h3 v-if="hasArchivedOffers()">
-        Archived Offers
-      </h3>
+      <h3 v-if="hasArchivedOffers()">Archived Offers</h3>
       <section v-if="hasArchivedOffers()" class="archived-offers-table card">
         <div class="table-header">
           <div class="col-1">
@@ -120,11 +107,7 @@ onMounted(async () => {
           </div>
           <div class="col-6" />
         </div>
-        <ArchivedOfferItem
-          v-for="offer in page.archiveOffers"
-          :key="offer.id"
-          :offer="offer"
-        />
+        <ArchivedOfferItem v-for="offer in page.archiveOffers" :key="offer.id" :offer="offer" />
       </section>
       <!-- End Archived offers table -->
     </ListContentResult>
@@ -133,28 +116,22 @@ onMounted(async () => {
   <!-- Expanded Offer Mobile -->
   <div v-if="false" class="expanded-mobile">
     <div class="owner">
-      <p class="wallet">
-        terra12242343
-      </p>
-      <p class="n-trades">
-        352 trades
-      </p>
+      <p class="wallet">terra12242343</p>
+      <p class="n-trades">352 trades</p>
     </div>
 
     <div class="payment-info">
-      <p class="note">
-        Nubank, Itaú, C6, Mercado Pago, Inter, Caixa, Bradesco
-      </p>
+      <p class="note">Nubank, Itaú, C6, Mercado Pago, Inter, Caixa, Bradesco</p>
     </div>
 
     <form action="">
       <div class="input">
         <label for="buy">I want to buy</label>
-        <input ref="buyAmountInput" type="text" placeholder="100.00">
+        <input ref="buyAmountInput" type="text" placeholder="100.00" />
       </div>
       <div class="input">
         <label for="sell">I will receive</label>
-        <input type="text" placeholder="100.00">
+        <input type="text" placeholder="100.00" />
         <p>Min - 1 | Max - 50</p>
       </div>
     </form>
@@ -162,68 +139,44 @@ onMounted(async () => {
     <div class="receipt">
       <div class="price">
         <div class="wrap-price">
-          <p class="label">
-            Price
-          </p>
-          <p class="ticker">
-            Will refresh in 47s
-          </p>
+          <p class="label">Price</p>
+          <p class="ticker">Will refresh in 47s</p>
         </div>
         <div class="wrap">
-          <p class="margin">
-            4% above market
-          </p>
-          <p class="value">
-            COL$ 3.695,59
-          </p>
+          <p class="margin">4% above market</p>
+          <p class="value">COL$ 3.695,59</p>
         </div>
       </div>
 
       <div class="sumary">
-        <p class="label">
-          Transaction sumary
-        </p>
+        <p class="label">Transaction sumary</p>
         <div class="wrap">
           <div class="item">
-            <p class="info">
-              Trading Fee
-            </p>
+            <p class="info">Trading Fee</p>
             <p>COL$ 3.695,59</p>
           </div>
           <div class="item">
-            <p class="info">
-              You will get
-            </p>
-            <p class="price-get">
-              100.00
-            </p>
+            <p class="info">You will get</p>
+            <p class="price-get">100.00</p>
           </div>
           <div class="item">
-            <p class="info">
-              You will pay
-            </p>
-            <p class="price-pay">
-              COP$ 348.892,53
-            </p>
+            <p class="info">You will pay</p>
+            <p class="price-pay">COP$ 348.892,53</p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="wrap-btns">
-      <button class="secondary">
-        cancel
-      </button>
-      <button class="primary">
-        open transaction
-      </button>
+      <button class="secondary">cancel</button>
+      <button class="primary">open transaction</button>
     </div>
   </div>
   <!-- Expanded Offer Mobile -->
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 /* ----------- BUY SELL ROW */
 .separator {
@@ -260,7 +213,7 @@ onMounted(async () => {
     background-color: $surface;
     border-radius: 8px;
     border: 1px solid $border;
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
     font-weight: 600;
     color: $base-text;
@@ -365,7 +318,7 @@ onMounted(async () => {
 
     input {
       width: 100%;
-      font-family: "Poppins", sans-serif;
+      font-family: 'Poppins', sans-serif;
       font-size: 16px;
       font-weight: 800;
       line-height: 24px;

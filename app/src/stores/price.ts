@@ -2,9 +2,15 @@ import { acceptHMRUpdate, defineStore } from 'pinia'
 import { FiatCurrency } from '~/types/components.interface'
 
 const fetchPrices = {
-  [FiatCurrency.BRL]: async () => { return 4.88 },
-  [FiatCurrency.ARS]: async () => { return 118.49 },
-  [FiatCurrency.COP]: async () => { return 3977.33 },
+  [FiatCurrency.BRL]: async () => {
+    return 4.88
+  },
+  [FiatCurrency.ARS]: async () => {
+    return 118.49
+  },
+  [FiatCurrency.COP]: async () => {
+    return 3977.33
+  },
 }
 
 async function fetchAllPrices() {
@@ -33,9 +39,9 @@ export const usePriceStore = defineStore({
       this.prices = await fetchAllPrices()
     },
   },
-  getters: { getPrice: state => (fiatCurrency: FiatCurrency) => state.prices[fiatCurrency] },
+  getters: { getPrice: (state) => (fiatCurrency: FiatCurrency) => state.prices[fiatCurrency] },
 })
 
-if (import.meta.hot)
+if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(usePriceStore, import.meta.hot))
-
+}

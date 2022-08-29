@@ -22,5 +22,5 @@ export default {
 </script>
 
 <template>
-  <input ref="inputRef" :value="formattedValue" :placeholder="placeholder">
+  <input ref="inputRef" :value="formattedValue" :placeholder="placeholder" />
 </template>

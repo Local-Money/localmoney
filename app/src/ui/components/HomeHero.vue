@@ -30,11 +30,10 @@ const isMobile = computed(() => width.value <= 550)
   <section>
     <div class="wrap-title">
       <h1 class="title">
-        {{ t("intro.welcome") }}
+        {{ t('intro.welcome') }}
       </h1>
       <p class="sub-title">
-        <span class="text-primary">Local</span> is a decentralized P2P
-        marketplace for the multi-chain world.
+        <span class="text-primary">Local</span> is a decentralized P2P marketplace for the multi-chain world.
       </p>
       <div class="wrap-cta">
         <p>Want to know more about us?</p>
@@ -82,13 +81,13 @@ const isMobile = computed(() => width.value <= 550)
     </div>
 
     <div v-if="!isMobile" class="wrap-img">
-      <img src="../assets/header-img.png" alt="">
+      <img src="../assets/header-img.png" />
     </div>
   </section>
 </template>
 
 <style lang="scss" scoped>
-@import "../style/tokens.scss";
+@import '../style/tokens.scss';
 
 section {
   display: flex;

@@ -49,15 +49,17 @@ async function openDispute(id: string) {
       <TradeAction
         v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
         message="Review the request and accept the trade"
-        button-label="accept trade"
+        buttonLabel="accept trade"
         @actionClick="acceptTradeRequest(tradeInfo.trade.id)"
       />
       <!-- #2 step or #1 step -->
       <!-- if #2 step: The Buyer accepted the request and needs to wait for the Seller to deposit crypto on escrow -->
       <!-- if #1 step: The Buyer requested a trade and the Seller should accept the trade by depositing the crypto on escrow -->
       <TradeAction
-        v-if="(tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created')
-          || (tradeInfo.trade.state === 'request_accepted')"
+        v-if="
+          (tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
+          tradeInfo.trade.state === 'request_accepted'
+        "
         message="Waiting for the trade to be funded"
       />
       <!-- #3 step or #2 step -->
@@ -65,21 +67,15 @@ async function openDispute(id: string) {
       <TradeAction
         v-if="tradeInfo.trade.state === 'escrow_funded'"
         message="Only press the mark as paid after you made the payment"
-        button-label="mark as paid"
+        buttonLabel="mark as paid"
         @actionClick="setFiatDeposited(tradeInfo.trade.id)"
       />
       <!-- #4 step or #3 step -->
       <!-- After the off-chain payment, the Buyer needs to wait for the Seller to release the funds on escrow -->
-      <TradeAction
-        v-if="tradeInfo.trade.state === 'fiat_deposited'"
-        message="Waiting for funds to be released"
-      />
+      <TradeAction v-if="tradeInfo.trade.state === 'fiat_deposited'" message="Waiting for funds to be released" />
       <!-- #5 step or #4 step -->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
-      <TradeAction
-        v-if="tradeInfo.trade.state === 'escrow_released'"
-        message="Trade finished successfully"
-      />
+      <TradeAction v-if="tradeInfo.trade.state === 'escrow_released'" message="Trade finished successfully" />
     </div>
 
     <!-- # If the user is selling crypto (Seller) -->
@@ -94,32 +90,28 @@ async function openDispute(id: string) {
       <!-- if #2 step: The Seller needs to deposit crypto on escrow to enable the Buyer to transfer the Fiat -->
       <!-- if #1 step: The Buyer requested a trade and the Seller should accept the trade by depositing the crypto on escrow -->
       <TradeAction
-        v-if="(tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created')
-          || (tradeInfo.trade.state === 'request_accepted')"
+        v-if="
+          (tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
+          tradeInfo.trade.state === 'request_accepted'
+        "
         message="Please fund the trade"
-        button-label="fund trade"
+        buttonLabel="fund trade"
         @actionClick="fundEscrow(tradeInfo.trade.id)"
       />
       <!-- #3 step or #2 step -->
       <!-- The crypto is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
-      <TradeAction
-        v-if="tradeInfo.trade.state === 'escrow_funded'"
-        message="Waiting for payment from the buyer"
-      />
+      <TradeAction v-if="tradeInfo.trade.state === 'escrow_funded'" message="Waiting for payment from the buyer" />
       <!-- #4 step or #3 step -->
       <!-- After the off-chain payment, the Seller needs to check the off-chain payment and release the crypto on the escrow to the Buyer -->
       <TradeAction
         v-if="tradeInfo.trade.state === 'fiat_deposited'"
         message="Only release the funds after confirming the payment"
-        button-label="release funds"
+        buttonLabel="release funds"
         @actionClick="releaseEscrow(tradeInfo.trade.id)"
       />
       <!-- #5 step or #4 step -->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
-      <TradeAction
-        v-if="tradeInfo.trade.state === 'escrow_released'"
-        message="Trade finished successfully"
-      />
+      <TradeAction v-if="tradeInfo.trade.state === 'escrow_released'" message="Trade finished successfully" />
     </div>
     <!-- Trade expired -->
     <!-- TODO the expired will change to a TradeState -->
@@ -144,9 +136,12 @@ async function openDispute(id: string) {
 
   <section class="wrap sub-actions">
     <button
-      v-if="(tradeInfo.trade.state === 'request_created'
-        || tradeInfo.trade.state === 'request_accepted'
-        || (tradeInfo.trade.state === 'escrow_funded' && isBuyer)) && !tradeInfo.expired"
+      v-if="
+        (tradeInfo.trade.state === 'request_created' ||
+          tradeInfo.trade.state === 'request_accepted' ||
+          (tradeInfo.trade.state === 'escrow_funded' && isBuyer)) &&
+        !tradeInfo.expired
+      "
       class="tertiary"
       @click="cancelTradeRequest(tradeInfo.trade.id)"
     >
@@ -164,7 +159,8 @@ async function openDispute(id: string) {
     <button
       v-if="tradeInfo.trade.state === 'fiat_deposited'"
       class="tertiary"
-      disabled @click="openDispute(tradeInfo.trade.id)"
+      disabled
+      @click="openDispute(tradeInfo.trade.id)"
     >
       open dispute
     </button>
@@ -172,7 +168,7 @@ async function openDispute(id: string) {
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/pages";
+@import '../../style/pages';
 
 .actions {
   margin-top: 24px;

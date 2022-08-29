@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import CurrencyInput from '../CurrencyInput.vue'
-import {
-  calculateFiatPriceByRate,
-  convertMarginRateToOfferRate,
-  formatAmount,
-} from '~/shared'
+import { calculateFiatPriceByRate, convertMarginRateToOfferRate, formatAmount } from '~/shared'
 import { usePriceStore } from '~/stores/price'
 import type { PostOffer } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import {
-  defaultMicroDenomAvailable,
-  denomsAvailable,
-  microDenomToDenom,
-} from '~/utils/denom'
+import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
 import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
 
 const emit = defineEmits<{
@@ -37,15 +29,19 @@ const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value)
   return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
 })
-const fiatLabel = computed(() =>
-  offerType.value === 'sell' ? 'receive' : 'pay',
-)
+const fiatLabel = computed(() => (offerType.value === 'sell' ? 'receive' : 'pay'))
 
 // TODO - Make isMobile global
 const width = ref(window.innerWidth)
-const listener = () => { width.value = window.innerWidth }
-onMounted(() => { window.addEventListener('resize', listener) })
-onUnmounted(() => { window.removeEventListener('resize', listener) })
+const listener = () => {
+  width.value = window.innerWidth
+}
+onMounted(() => {
+  window.addEventListener('resize', listener)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', listener)
+})
 const isMobile = computed(() => width.value <= 550)
 
 // Get the viewport height and store in a variable
@@ -53,10 +49,7 @@ const vh = window.innerHeight * 0.01
 document.documentElement.style.setProperty('--vh', `${vh}px`)
 
 function calculateMarginRate() {
-  rate.value = convertMarginRateToOfferRate(
-    margin.value,
-    marginOffsetUnmasked.value,
-  )
+  rate.value = convertMarginRateToOfferRate(margin.value, marginOffsetUnmasked.value)
 }
 function createOffer() {
   const postOffer: PostOffer = {
@@ -91,19 +84,9 @@ watch(margin, () => {
       </div>
     </div>
     <div class="buy-sell">
-      <button
-        :class="{ focus: offerType === 'buy' }"
-        @click="offerType = 'buy'"
-      >
-        Buy
-      </button>
+      <button :class="{ focus: offerType === 'buy' }" @click="offerType = 'buy'">Buy</button>
       <div class="separator" />
-      <button
-        :class="{ focus: offerType === 'sell' }"
-        @click="offerType = 'sell'"
-      >
-        Sell
-      </button>
+      <button :class="{ focus: offerType === 'sell' }" @click="offerType = 'sell'">Sell</button>
     </div>
 
     <div class="inner-content">
@@ -152,12 +135,8 @@ watch(margin, () => {
         <div class="wrap">
           <label for="">Market price</label>
           <select v-model="margin" class="bg-surface">
-            <option value="above">
-              Above
-            </option>
-            <option value="below">
-              Below
-            </option>
+            <option value="above">Above</option>
+            <option value="below">Below</option>
           </select>
         </div>
         <div class="wrap">
@@ -168,7 +147,7 @@ watch(margin, () => {
             type="text"
             placeholder="0%"
             @maska="marginOffsetUnmasked = $event.target.dataset.maskRawValue"
-          >
+          />
         </div>
       </div>
 
@@ -177,7 +156,7 @@ watch(margin, () => {
       <div class="chat">
         <div class="wrap">
           <label for="crypto">Telegram username (?)</label>
-          <input type="text" placeholder="t.me/your-user-name">
+          <input type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
       <div class="divider" />
@@ -185,25 +164,19 @@ watch(margin, () => {
 
     <div class="wrap-footer">
       <div class="fiat-price">
-        <p class="value">
-          1 {{ microDenomToDenom(selectedCrypto) }} = {{ offerPrice }}
-        </p>
+        <p class="value">1 {{ microDenomToDenom(selectedCrypto) }} = {{ offerPrice }}</p>
       </div>
       <div class="btns">
-        <button class="secondary" @click="$emit('cancel')">
-          Cancel
-        </button>
-        <button class="primary" :disabled="!valid" @click="createOffer()">
-          Create
-        </button>
+        <button class="secondary" @click="$emit('cancel')">Cancel</button>
+        <button class="primary" :disabled="!valid" @click="createOffer()">Create</button>
       </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
-@import "../../style/elements.scss";
+@import '../../style/tokens.scss';
+@import '../../style/elements.scss';
 
 .main-wrap {
   position: relative;
@@ -225,7 +198,9 @@ watch(margin, () => {
   justify-content: space-between;
   align-items: center;
 
-  svg {stroke: $gray600;}
+  svg {
+    stroke: $gray600;
+  }
 }
 
 .buy-sell {
@@ -236,12 +211,15 @@ watch(margin, () => {
 .inner-content {
   .currency,
   .min-max,
-  .market-price, .chat {
+  .market-price,
+  .chat {
     display: flex;
     gap: 24px;
     margin-bottom: 24px;
 
-    &:last-child {margin-bottom: 0;}
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     .wrap {
       display: flex;
@@ -255,7 +233,7 @@ watch(margin, () => {
         margin-bottom: 8px;
 
         @media only screen and (max-width: $mobile) {
-        font-size: 12px;
+          font-size: 12px;
         }
       }
 

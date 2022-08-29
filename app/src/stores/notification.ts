@@ -20,12 +20,19 @@ export const useNotificationStore = defineStore({
       const wallet = this.client.userWallet.address
       const openTrades = trades.filter((tradeInfo) => {
         const counterParty = getTradeCounterParty(wallet, tradeInfo.trade)
-        return !tradeInfo.expired && tradeInfo.trade.state === TradeState.request_created && tradeInfo.offer.owner !== counterParty
+        return (
+          !tradeInfo.expired &&
+          tradeInfo.trade.state === TradeState.request_created &&
+          tradeInfo.offer.owner !== counterParty
+        )
       })
       const notifications = this.store.get(wallet) ?? []
       openTrades.forEach((tradeInfo) => {
-        const found = notifications.find((n) => n.id === tradeInfo.trade.id && n.state === tradeInfo.trade.state) !== undefined
-        if (!found) notifications.push(mapTradeInfoToNotification(wallet, tradeInfo))
+        const found =
+          notifications.find((n) => n.id === tradeInfo.trade.id && n.state === tradeInfo.trade.state) !== undefined
+        if (!found) {
+          notifications.push(mapTradeInfoToNotification(wallet, tradeInfo))
+        }
       })
       await this.addNotifications(notifications)
     },
@@ -56,7 +63,9 @@ export const useNotificationStore = defineStore({
     async cleanNotification() {
       const notifications = this.notifications()
       notifications.forEach((notification, index) => {
-        if (notification.isAlreadyRead) notifications.slice(index, 1)
+        if (notification.isAlreadyRead) {
+          notifications.slice(index, 1)
+        }
       })
     },
   },
