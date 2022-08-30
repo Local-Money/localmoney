@@ -107,7 +107,7 @@ pub struct Trade {
 pub struct TradeStateItem {
     pub actor: Addr,
     pub state: TradeState,
-    pub timestamp: String,
+    pub timestamp: u64,
 }
 
 pub struct TradeModel<'a> {

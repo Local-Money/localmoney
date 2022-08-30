@@ -102,7 +102,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let new_trade_state = TradeStateItem {
         actor: new_trade.taker.clone(),
         state: TradeState::RequestCreated,
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     let trade_state_history = vec![new_trade_state];
 
@@ -260,7 +260,7 @@ fn fund_escrow(
         let new_trade_state = TradeStateItem {
             actor: info.sender.clone(),
             state: trade.state.clone(),
-            timestamp: env.block.time.seconds().to_string(),
+            timestamp: env.block.time.seconds(),
         };
         trade.state_history.push(new_trade_state);
     } else {
@@ -310,7 +310,7 @@ fn dispute_escrow(
     let new_trade_state = TradeStateItem {
         actor: info.sender,
         state: trade.state.clone(),
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
 
@@ -373,7 +373,7 @@ fn accept_request(
     let new_trade_state = TradeStateItem {
         actor: info.sender,
         state: trade.state.clone(),
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
 
@@ -409,7 +409,7 @@ fn fiat_deposited(
     let new_trade_state = TradeStateItem {
         actor: info.sender,
         state: trade.state.clone(),
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
 
@@ -453,7 +453,7 @@ fn cancel_request(
     let new_trade_state = TradeStateItem {
         actor: info.sender,
         state: trade.state.clone(),
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
 
@@ -497,7 +497,7 @@ fn release_escrow(
     let new_trade_state = TradeStateItem {
         actor: info.sender,
         state: trade.state.clone(),
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
 
@@ -660,7 +660,7 @@ fn refund_escrow(
     let new_trade_state = TradeStateItem {
         actor: info.sender,
         state: trade.state.clone(),
-        timestamp: env.block.time.seconds().to_string(),
+        timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
 
