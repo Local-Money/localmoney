@@ -67,7 +67,6 @@ const emit = defineEmits<{
     padding: 4px 4px;
     svg {
       fill: $gray600;
-      stroke: $gray600;
     }
   }
 
