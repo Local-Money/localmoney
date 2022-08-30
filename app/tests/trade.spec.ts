@@ -1,16 +1,13 @@
 import { TextDecoder, TextEncoder } from 'util'
 
-import type { InstantiateResult, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import dotenv from 'dotenv'
 import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
-import codeIds from './fixtures/codeIds.json'
-import { createHubUpdateConfigMsg, setupProtocol } from './utils'
-import { TestCosmosChain } from './network/TestCosmosChain'
+import { setupProtocol } from './utils'
+import type { TestCosmosChain } from './network/TestCosmosChain'
 import { DefaultError } from '~/network/chain-error'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
-import { TEST_CONFIG, TEST_HUB_INFO } from '~/network/cosmos/config'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -27,7 +24,7 @@ beforeAll(async () => {
   takerClient = result.takerClient
 })
 
-describe('trade lifecycle happy path', () => {
+describe.skip('trade lifecycle happy path', () => {
   // Create Offer
   if (process.env.CREATE_OFFERS) {
     it('should create offer', async () => {

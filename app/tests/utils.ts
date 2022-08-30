@@ -66,6 +66,7 @@ export async function setupProtocol() {
     await makerClient.updateHub(hubInstantiateResult.contractAddress)
     await takerClient.updateHub(hubInstantiateResult.contractAddress)
     expect(makerClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
+    console.log('Hub Address:', hubInstantiateResult.contractAddress)
   }
   return { makerClient, takerClient }
 }
