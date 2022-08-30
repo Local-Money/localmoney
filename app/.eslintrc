@@ -1,19 +1,37 @@
 {
-  "extends": [
-    "@antfu",
-    "prettier"
-  ],
-  "plugins": [
-    "prettier"
-  ],
+  "root": true,
+  "extends": ["@antfu", "prettier"],
+  "plugins": ["prettier"],
   "rules": {
-    "brace-style": [
-      "error",
-      "1tbs"
-    ],
-    "prettier/prettier": [
-      "error"
-    ],
-    "max-statements-per-line": ["error", { "max": 3 }]
+    "prettier/prettier": ["error", {
+      "bracketSpacing": true,
+      "printWidth": 120,
+      "semi": false,
+      "singleQuote": true,
+      "tabWidth": 2,
+      "trailingComma": "es5",
+      "endOfLine": "auto"
+    }],
+    "curly": ["error", "all"],
+    "arrow-parens": ["error", "always"],
+    "operator-linebreak": ["error", "after"],
+    "@typescript-eslint/brace-style": ["error", "1tbs", { "allowSingleLine": false }],
+    "@typescript-eslint/comma-dangle": ["error", {
+      "arrays": "always-multiline",
+      "objects": "only-multiline",
+      "imports": "always-multiline",
+      "exports": "never",
+      "functions": "never",
+      "enums": "only-multiline"
+    }],
+    "no-console": "warn",
+    "no-alert": "warn",
+    "vue/attribute-hyphenation": ["error", "never"],
+    "vue/v-on-event-hyphenation": ["error", "never"],
+    "vue/operator-linebreak": ["off"],
+    "vue/html-indent": ["off"],
+    "vue/singleline-html-element-content-newline": "off",
+    "vue/html-closing-bracket-spacing": "off",
+    "vue/no-extra-parens": "off"
   }
 }

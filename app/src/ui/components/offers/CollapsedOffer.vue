@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  calculateFiatPriceByRate,
-  convertOfferRateToMarginRate,
-  formatAddress,
-  formatAmount,
-} from '~/shared'
+import { calculateFiatPriceByRate, convertOfferRateToMarginRate, formatAddress, formatAmount } from '~/shared'
 import { usePriceStore } from '~/stores/price'
 import { OfferType } from '~/types/components.interface'
 import type { GetOffer, OfferTypeLabel } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
+const emit = defineEmits<{ (e: 'select'): void }>()
 const { t } = useI18n()
 const priceStore = usePriceStore()
 
@@ -30,16 +26,12 @@ const offerPrice = computed(() => {
       <p class="wallet-addr">
         {{ formatAddress(offer.owner) }}
       </p>
-      <p class="n-trades">
-        0 trades
-      </p>
+      <p class="n-trades">0 trades</p>
     </div>
 
     <div class="info">
       <div class="wrap">
-        <p class="label">
-          Limits
-        </p>
+        <p class="label">Limits</p>
         <p class="limit">
           {{ formatAmount(offer.min_amount) }} -
           {{ formatAmount(offer.max_amount) }}
@@ -49,13 +41,8 @@ const offerPrice = computed(() => {
 
       <div class="divider" />
       <div class="wrap">
-        <p class="label">
-          Price
-        </p>
-        <p class="rate">
-          {{ marginRate.marginOffset }}%
-          {{ marginRate.margin }} market
-        </p>
+        <p class="label">Price</p>
+        <p class="rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
       </div>
     </div>
 
@@ -63,7 +50,7 @@ const offerPrice = computed(() => {
       <p class="value">
         {{ offerPrice }}
       </p>
-      <button class="primary bg-gray300" type="button" @click="$emit('select')">
+      <button class="primary bg-gray300" type="button" @click="emit('select')">
         {{ offerTypeLabels[offer.offer_type] }}
       </button>
     </div>
@@ -71,7 +58,7 @@ const offerPrice = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 .collapsed {
   .owner {
@@ -89,7 +76,6 @@ const offerPrice = computed(() => {
       color: $gray700;
       margin-top: 4px;
     }
-
   }
 }
 </style>

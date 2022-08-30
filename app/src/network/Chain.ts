@@ -1,7 +1,23 @@
-import type { Denom, FetchOffersArgs, GetOffer, NewTrade, PatchOffer, PostOffer, Trade, TradeInfo } from '~/types/components.interface'
+import type {
+  Denom,
+  FetchOffersArgs,
+  GetOffer,
+  NewTrade,
+  PatchOffer,
+  PostOffer,
+  Trade,
+  TradeInfo,
+} from '~/types/components.interface'
 import MockChain from '~/network/mock/MockChain'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
-import { JUNO_CONFIG, JUNO_HUB_INFO, KUJIRA_CONFIG, KUJIRA_HUB_INFO, TEST_CONFIG, TEST_HUB_INFO } from '~/network/cosmos/config'
+import {
+  JUNO_CONFIG,
+  JUNO_HUB_INFO,
+  KUJIRA_CONFIG,
+  KUJIRA_HUB_INFO,
+  TEST_CONFIG,
+  TEST_HUB_INFO,
+} from '~/network/cosmos/config'
 
 export interface Chain {
   init(): void

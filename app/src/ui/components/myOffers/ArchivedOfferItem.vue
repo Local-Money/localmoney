@@ -16,7 +16,7 @@ const fiatCurrency = computed(() => props.offer.fiat_currency)
 const price = computed(() => {
   return `${props.offer.fiat_currency} ${formatAmount(
     calculateFiatPriceByRate(usdRate.value, props.offer.rate),
-    false,
+    false
   )}`
 })
 const limit = computed(() => {
@@ -25,7 +25,7 @@ const limit = computed(() => {
   const denom = microDenomToDenom(props.offer.denom.native)
   return `${min} - ${max} ${denom}`
 })
-const type = computed(() => props.offer.offer_type === OfferType.buy ? 'Buying' : 'Selling')
+const type = computed(() => (props.offer.offer_type === OfferType.buy ? 'Buying' : 'Selling'))
 
 function unarchive() {
   client.unarchiveOffer({ ...props.offer })
@@ -54,15 +54,13 @@ onMounted(() => {
       <p>{{ price }}</p>
     </div>
     <div class="col-6 unarchive">
-      <p @click="unarchive()">
-        Unarchive
-      </p>
+      <p @click="unarchive()">Unarchive</p>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens";
+@import '../../style/tokens';
 
 .wrap-table-item {
   display: flex;

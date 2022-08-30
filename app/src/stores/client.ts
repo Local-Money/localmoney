@@ -10,10 +10,7 @@ import type {
   TradeInfo,
   UserWallet,
 } from '~/types/components.interface'
-import {
-  LoadingState,
-  OfferState,
-} from '~/types/components.interface'
+import { LoadingState, OfferState } from '~/types/components.interface'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
 
@@ -140,7 +137,7 @@ export const useClientStore = defineStore({
     },
     async fetchTradeDetail(tradeId: string) {
       await this.fetchMyTrades()
-      const currentTrade = this.trades.data.find(tradeInf => tradeInf.trade.id === tradeId)
+      const currentTrade = this.trades.data.find((tradeInf) => tradeInf.trade.id === tradeId)
       // TODO error case
       if (currentTrade !== undefined) {
         currentTrade.trade = await this.client.fetchTradeDetail(tradeId)
@@ -241,6 +238,6 @@ export const useClientStore = defineStore({
   },
 })
 
-if (import.meta.hot)
+if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useClientStore, import.meta.hot))
-
+}

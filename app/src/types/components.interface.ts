@@ -1,14 +1,14 @@
 export class LoadingState {
   isLoading: Boolean
-  label: String
-  transaction: String
-  private constructor(isLoading: Boolean, label: String, transaction: String) {
+  label: string
+  transaction: string
+  private constructor(isLoading: Boolean, label: string, transaction: string) {
     this.isLoading = isLoading
     this.label = label
     this.transaction = transaction
   }
 
-  static show(label: String, transaction: String = ''): LoadingState {
+  static show(label: string, transaction = ''): LoadingState {
     return new LoadingState(true, label, transaction)
   }
 
@@ -23,8 +23,8 @@ export enum OfferType {
 }
 
 export interface OfferTypeLabel {
-  [OfferType.buy]: String
-  [OfferType.sell]: String
+  [OfferType.buy]: string
+  [OfferType.sell]: string
 }
 
 export interface GetOffer extends PatchOffer {
@@ -43,9 +43,9 @@ export interface GetOffer extends PatchOffer {
 }
 
 export interface PatchOffer {
-  id: String
+  id: string
   state: OfferState
-  rate: String
+  rate: string
   min_amount: string
   max_amount: string
 }
@@ -53,16 +53,24 @@ export interface PatchOffer {
 export interface PostOffer {
   offer_type: OfferType
   fiat_currency: FiatCurrency
-  rate: String
+  rate: string
   denom: Denom
   min_amount: string
   max_amount: string
-  maker_contact: String
+  maker_contact: string
 }
 
-export enum FiatCurrency { BRL = 'BRL', ARS = 'ARS', COP = 'COP' }
+export enum FiatCurrency {
+  BRL = 'BRL',
+  ARS = 'ARS',
+  COP = 'COP',
+}
 
-export enum OfferState { active = 'active', paused = 'paused', archived = 'archive' }
+export enum OfferState {
+  active = 'active',
+  paused = 'paused',
+  archived = 'archive',
+}
 
 export interface FetchOffersArgs {
   fiatCurrency: FiatCurrency

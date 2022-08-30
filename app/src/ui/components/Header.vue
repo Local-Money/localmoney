@@ -37,7 +37,7 @@ const isMobile = computed(() => width.value <= 550)
 </template>
 
 <style lang="scss" scoped>
-@import "../style/tokens.scss";
+@import '../style/tokens.scss';
 
 header {
   background-color: $background;
