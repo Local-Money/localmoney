@@ -43,6 +43,10 @@ const emit = defineEmits<{
 
   height: 40px;
 
+  @media only screen and (max-width: $mobile) {
+    height: 48px;
+  }
+
   .vs__dropdown-menu {
     background: $surface;
 

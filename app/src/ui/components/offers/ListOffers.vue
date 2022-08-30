@@ -103,10 +103,6 @@ watch(offerType, async () => await fetchOffers())
 <style lang="scss" scoped>
 @import '../../style/tokens.scss';
 
-section {
-  margin-bottom: 56px;
-}
-
 /* ----------- BUY SELL ROW */
 .separator {
   margin: 0 auto 80px;
@@ -121,9 +117,11 @@ section {
 
 .offers-filter {
   display: flex;
+  margin-bottom: 56px;
 
   @media only screen and (max-width: $mobile) {
     display: block;
+    margin-bottom: 32px;
   }
 }
 
@@ -156,12 +154,14 @@ section {
   @media only screen and (max-width: $mobile) {
     font-size: 18px;
     margin-bottom: 32px;
+    text-align: center;
   }
 }
 
 /* ----------- OFFER LIST */
 .offers-list {
   margin-top: 40px;
+  margin-bottom: 56px;
 
   @media only screen and (max-width: $mobile) {
     margin-top: 24px;

@@ -132,9 +132,12 @@ const isMobile = computed(() => width.value <= 550)
           </div>
         </div>
       </div>
-      <div v-if="!isMobile" class="wrap-img">
+      <div class="wrap-img">
         <img src="../assets/header-img-2.png" alt="" />
       </div>
+      <!-- <div v-if="!isMobile" class="wrap-img">
+        <img src="../assets/header-img-2.png" alt="" />
+      </div> -->
     </div>
   </section>
 </template>
@@ -172,10 +175,6 @@ section {
 .wrap-img {
   position: relative;
   width: 50%;
-
-  //border-bottom: 1px solid $border;
-
-  //clip-path: inset(0 0 100px 0);
 
   img {
     position: absolute;
@@ -240,23 +239,38 @@ h1 {
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    padding: 24px 0 32px;
+    padding: 24px 0 24px;
+
+    .wrap-hero {
+      display: flex;
+      flex-direction: column-reverse;
+      margin: 8px 0 8px;
+    }
+
+    .wrap-img {
+      position: relative;
+      width: 100%;
+      display: flex;
+
+      img {
+        position: relative;
+        width: 100%;
+        padding: 0 56px 8px;
+      }
+    }
 
     h1 {
       font-size: 38px;
     }
 
     .sub-title {
-      font-size: 22px;
+      font-size: 18px;
     }
 
     .wrap-title {
       width: 100%;
       text-align: center;
-    }
-
-    .wrap-img {
-      width: 50%;
+      padding: 16px 24px;
     }
 
     .sub-title {

@@ -140,14 +140,14 @@ body {
 
   @media only screen and (max-width: $mobile) {
     margin-top: 0;
-    height: 40px;
+    height: 48px;
     max-width: none;
     margin-bottom: 16px;
     border: 0;
     overflow: visible;
 
     button {
-      height: 40px;
+      height: 48px;
       border-radius: 8px;
     }
     .separator {
@@ -194,7 +194,7 @@ select {
   background-position-y: 8px;
 
   @media only screen and (max-width: $mobile) {
-    height: 40px;
+    height: 48px;
     background-position-y: 11px;
   }
 
