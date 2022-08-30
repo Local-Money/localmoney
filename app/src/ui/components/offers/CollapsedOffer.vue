@@ -65,6 +65,11 @@ const offerPrice = computed(() => {
     display: flex;
     flex-direction: column;
 
+    @media only screen and (max-width: $mobile) {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+
     .wallet-addr {
       font-size: 18px;
       font-weight: 600;
