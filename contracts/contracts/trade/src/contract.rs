@@ -276,7 +276,7 @@ fn dispute_escrow(
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO: check escrow funding timer*
     // Only the buyer or seller can start a dispute
-    assert_sender_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
+    assert_sender_is_buyer_or_seller(info.sender.clone(), trade.buyer.clone(), trade.seller.clone())
         .unwrap();
 
     // Users can only start a dispute once the buyer has clicked `mark paid` after the fiat has been deposited
@@ -290,6 +290,7 @@ fn dispute_escrow(
     // Update trade State to TradeState::Disputed
     trade.state = TradeState::EscrowDisputed;
 
+    /*
     // Assign a pseudo random arbitrator to the trade
     let arbitrator: Arbitrator = deps
         .querier
@@ -302,8 +303,9 @@ fn dispute_escrow(
             .unwrap(),
         }))
         .unwrap();
+     */
 
-    trade.arbitrator = Some(arbitrator.arbitrator);
+    trade.arbitrator = Some(info.sender.clone());
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
