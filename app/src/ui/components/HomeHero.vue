@@ -136,7 +136,6 @@ const isMobile = computed(() => width.value <= 550)
         <img src="../assets/header-img-2.png" alt="" />
       </div>
     </div>
-    <!-- <div class="separator"></div> -->
   </section>
 </template>
 
@@ -162,33 +161,36 @@ section {
 
 .wrap-hero {
   display: flex;
-  margin-bottom: 40px;
+  margin: 8px 0 40px;
 }
 
 .wrap-title {
   width: 55%;
-  padding: 32px 0 40px 0;
+  padding: 40px 0 40px 0;
 }
 
 .wrap-img {
   position: relative;
-  width: 40%;
-  overflow: hidden;
+  width: 50%;
+
   //border-bottom: 1px solid $border;
-  padding: 0 24px;
+
   //clip-path: inset(0 0 100px 0);
 
   img {
     position: absolute;
     width: 100%;
-    padding: 0 40px 0 0;
+    padding: 0 0 0 64px;
   }
 }
 
 h1 {
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 600;
   line-height: 120%;
+  @media only screen and (max-width: 1155px) {
+    font-size: 32px;
+  }
 }
 
 .title {
