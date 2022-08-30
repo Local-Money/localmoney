@@ -47,9 +47,12 @@ pub fn execute(
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
             delete_arbitrator(deps, info, arbitrator, asset)
         }
-        ExecuteMsg::UpdateTradeArbitrator { arbitrator } => {
+        ExecuteMsg::UpdateTradeArbitrator {
+            trade_id,
+            arbitrator,
+        } => {
             // TODO merge this call with the query random arbitrator call. LOCAL-660
-            update_trade_arbitrator(deps, env, info, arbitrator)
+            update_trade_arbitrator(deps, env, info, arbitrator, trade_id)
         }
         ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
@@ -157,6 +160,7 @@ pub fn update_trade_arbitrator(
     _env: Env,
     info: MessageInfo,
     arbitrator: Addr,
+    trade_id: String,
 ) -> Result<Response, ContractError> {
     // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set. LOCAL-660
     let mut trade = trades().load(deps.storage, &info.sender.as_str()).unwrap();

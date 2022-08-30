@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
     DisputeEscrow { trade_id: String },
     FiatDeposited { trade_id: String },
     CancelRequest { trade_id: String },
-    RegisterHub {},
+    RegisterHub {}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -57,8 +57,25 @@ pub fn execute(
         ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, info, trade_id),
         ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, trade_id),
         ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
-        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
+        ExecuteMsg::RegisterHub {} => register_hub(deps, info)
     }
+}
+
+fn update_arbitrator(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    trade_id: String,
+    arbitrator: Addr,
+) -> Result<Response, ContractError> {
+    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let hub_cfg = get_hub_config(deps);
+    if vec![trade.buyer, trade.seller].contains(&info.sender) {
+
+    }
+    trade.arbitrator = Some(arbitrator);
+    TradeModel::store(deps.storage, &trade).unwrap();
+    Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -246,7 +263,7 @@ fn fund_escrow(
         .find(|&coin| &coin.denom == &denom)
         .unwrap_or(&default);
 
-    // TODO only accept exact funding amounts, return otherwise
+    // TODO: only accept exact funding amounts, return otherwise
     if balance.amount >= trade.amount {
         trade.state = TradeState::EscrowFunded;
     } else {
@@ -274,7 +291,7 @@ fn dispute_escrow(
     trade_id: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
-    // TODO check escrow funding timer*
+    // TODO: check escrow funding timer*
     // Only the buyer or seller can start a dispute
     assert_sender_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
         .unwrap();
@@ -291,7 +308,7 @@ fn dispute_escrow(
     trade.state = TradeState::EscrowDisputed;
 
     // Assign a pseudo random arbitrator to the trade
-    // TODO this needs to update the TradeAddr::arbitrator field in the trades() indexedmap of the offer contract
+    // TODO: this needs to update the TradeAddr::arbitrator field in the trades() indexedmap of the offer contract
     let arbitrator: Arbitrator = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -305,22 +322,11 @@ fn dispute_escrow(
         .unwrap();
 
     trade.arbitrator = Some(arbitrator.arbitrator);
-
     TradeModel::store(deps.storage, &trade).unwrap();
-    // Update TradeAddr::Arbitrator in offer contract storage to enable querying by arbirator
-    let execute_msg = WasmMsg::Execute {
-        contract_addr: trade.offer_contract.to_string(),
-        funds: vec![],
-        msg: to_binary(&UpdateTradeArbitrator {
-            arbitrator: trade.arbitrator.clone().unwrap(),
-        })
-        .unwrap(),
-    };
-    let sub_message = SubMsg::new(CosmosMsg::Wasm(execute_msg));
 
     let res = Response::new()
         .add_attribute("action", "dispute_escrow")
-        .add_submessage(sub_message)
+        .add_attribute("trade_id", trade.id.clone())
         .add_attribute("state", trade.state.to_string())
         .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string());
 
@@ -648,7 +654,7 @@ fn _settle_dispute() -> () {
 }
 
 pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
-    amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO use constant / config
+    amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO: use constant / config
 }
 
 fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
