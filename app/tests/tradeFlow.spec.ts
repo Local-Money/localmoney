@@ -63,6 +63,8 @@ beforeAll(async () => {
       tradeInstantiateResult.contractAddress,
       tradingIncentivesResult.contractAddress
     )
+    console.log(`hub: ${hubInstantiateResult.contractAddress}`)
+    console.log(`updateConfig: ${JSON.stringify(updatedConfigMsg)}`)
     await cwClient.execute(walletAddress, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
     await makerClient.updateHub(hubInstantiateResult.contractAddress)
     await takerClient.updateHub(hubInstantiateResult.contractAddress)
