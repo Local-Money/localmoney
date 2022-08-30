@@ -41,7 +41,11 @@ const emit = defineEmits<{
   --vs-border-color: #33363c;
   --vs-border-radius: 8px;
 
-  height: 48px;
+  height: 40px;
+
+  @media only screen and (max-width: $mobile) {
+    height: 48px;
+  }
 
   .vs__dropdown-menu {
     background: $surface;
@@ -56,7 +60,7 @@ const emit = defineEmits<{
     background: $surface;
     height: inherit;
     margin: 0;
-    padding: 8px;
+    padding: 4px 8px;
   }
 
   .vs__dropdown-option--highlight {
@@ -64,9 +68,9 @@ const emit = defineEmits<{
   }
 
   .vs__actions {
+    padding: 4px 4px;
     svg {
       fill: $gray600;
-      stroke: $gray600;
     }
   }
 
@@ -79,7 +83,7 @@ const emit = defineEmits<{
       width: 24px;
     }
     p {
-      margin-left: 8px;
+      margin-left: 10px;
       font-size: 14px;
       font-weight: 600;
       color: $base-text;

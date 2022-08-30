@@ -151,14 +151,14 @@ watch(margin, () => {
         </div>
       </div>
 
-      <div class="divider" />
+      <!-- <div class="divider" />
 
       <div class="chat">
         <div class="wrap">
           <label for="crypto">Telegram username (?)</label>
           <input type="text" placeholder="t.me/your-user-name" />
         </div>
-      </div>
+      </div> -->
       <div class="divider" />
     </div>
 
