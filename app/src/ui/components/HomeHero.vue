@@ -27,7 +27,7 @@ const isMobile = computed(() => width.value <= 550)
 </script>
 
 <template>
-  <section class="page-wide">
+  <section class="page">
     <div class="wrap-hero">
       <div class="wrap-title">
         <h1 class="title">
@@ -98,12 +98,11 @@ const isMobile = computed(() => width.value <= 550)
           </div>
         </div>
       </div>
-
       <div v-if="!isMobile" class="wrap-img">
         <img src="../assets/header-img-2.png" alt="" />
       </div>
     </div>
-    <div class="separator"></div>
+    <!-- <div class="separator"></div> -->
   </section>
 </template>
 
@@ -129,6 +128,7 @@ section {
 
 .wrap-hero {
   display: flex;
+  margin-bottom: 40px;
 }
 
 .wrap-title {
@@ -140,17 +140,19 @@ section {
   position: relative;
   width: 40%;
   overflow: hidden;
+  //border-bottom: 1px solid $border;
+  padding: 0 24px;
   //clip-path: inset(0 0 100px 0);
 
   img {
     position: absolute;
     width: 100%;
-    padding: 0 32px 0 0;
+    padding: 0 40px 0 0;
   }
 }
 
 h1 {
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 600;
   line-height: 120%;
 }
