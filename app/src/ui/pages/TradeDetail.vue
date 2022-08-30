@@ -152,7 +152,7 @@ onUnmounted(() => {
             </div>
           </div>
         </section>
-        <TradeActions :trade-info="tradeInfo" :wallet-address="walletAddress" />
+        <TradeActions :tradeInfo="tradeInfo" :walletAddress="walletAddress" />
       </div>
     </section>
   </main>

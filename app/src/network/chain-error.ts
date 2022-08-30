@@ -23,4 +23,3 @@ export class WalletNotConnected extends ChainError {
     Object.setPrototypeOf(this, WalletNotConnected.prototype)
   }
 }
-

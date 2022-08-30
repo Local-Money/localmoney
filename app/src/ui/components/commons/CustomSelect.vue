@@ -13,11 +13,11 @@ const emit = defineEmits<{
 <template>
   <v-select
     class=""
-    :model-value="modelValue"
+    :modelValue="modelValue"
     :options="[...options.keys()]"
     :searchable="false"
     :clearable="false"
-    @update:model-value="emit('update:modelValue', $event)"
+    @update:modelValue="emit('update:modelValue', $event)"
   >
     <template #selected-option>
       <div class="wrap" v-bind="(info = getSelectInfo(options, modelValue))">
@@ -67,7 +67,7 @@ const emit = defineEmits<{
     padding: 4px 4px;
     svg {
       fill: $gray600;
-      stroke: 1px;
+      stroke: $gray600;
     }
   }
 
@@ -98,7 +98,7 @@ const emit = defineEmits<{
     padding: 0;
   }
   .vs--single.vs--open .vs__selected {
-    display: relative;
+    position: relative;
   }
 }
 .vs--single.vs--open .vs__selected {

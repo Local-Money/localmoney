@@ -24,21 +24,12 @@ async function showTrade(n: Notification) {
 <template>
   <div class="wrap-widget">
     <div class="header">
-      <p class="title">
-        Notifications
-      </p>
-      <p class="mark-read">
-        Mark all as read
-      </p>
+      <p class="title">Notifications</p>
+      <p class="mark-read">Mark all as read</p>
     </div>
     <div class="content">
       <ul v-if="notification.notificationCount() > 0">
-        <li
-          v-for="n in notification.notifications()"
-          :key="`${n.id}_${n.state}`"
-          class="item"
-          @click="showTrade(n)"
-        >
+        <li v-for="n in notification.notifications()" :key="`${n.id}_${n.state}`" class="item" @click="showTrade(n)">
           <svg class="icon" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
@@ -63,21 +54,25 @@ async function showTrade(n: Notification) {
             />
           </svg>
           <div class="wrap">
-            <p class="status">{{ n.message }}</p>
+            <p class="status">
+              {{ n.message }}
+            </p>
             <p class="addr">from {{ formatAddress(n.sender) }}</p>
           </div>
-          <p class="timestamp">{{ timeSince(n.time) }}</p>
+          <p class="timestamp">
+            {{ timeSince(n.time) }}
+          </p>
         </li>
       </ul>
-      <div v-else class="item">
-        <p>No notifications yet</p>
+      <div v-else class="empty-state">
+        <p>Nothing new here.</p>
       </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 .wrap-widget {
   position: fixed;
@@ -158,6 +153,16 @@ async function showTrade(n: Notification) {
         font-size: 12px;
         color: $gray900;
       }
+    }
+    .empty-state {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-size: 14px;
+      color: $gray700;
     }
   }
 }

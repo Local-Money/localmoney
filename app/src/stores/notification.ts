@@ -20,26 +20,30 @@ export const useNotificationStore = defineStore({
       const wallet = this.client.userWallet.address
       const openTrades = trades.filter((tradeInfo) => {
         const counterParty = getTradeCounterParty(wallet, tradeInfo.trade)
-        return !tradeInfo.expired
-            && tradeInfo.trade.state === TradeState.request_created
-            && tradeInfo.offer.owner !== counterParty
+        return (
+          !tradeInfo.expired &&
+          tradeInfo.trade.state === TradeState.request_created &&
+          tradeInfo.offer.owner !== counterParty
+        )
       })
       const notifications = this.store.get(wallet) ?? []
       openTrades.forEach((tradeInfo) => {
-        const found = notifications.find(n => n.id === tradeInfo.trade.id && n.state === tradeInfo.trade.state) !== undefined
-        if (!found)
+        const found =
+          notifications.find((n) => n.id === tradeInfo.trade.id && n.state === tradeInfo.trade.state) !== undefined
+        if (!found) {
           notifications.push(mapTradeInfoToNotification(wallet, tradeInfo))
+        }
       })
       await this.addNotifications(notifications)
     },
     async addNotifications(notifications: Notification[]) {
       const wallet = this.client.userWallet.address
-      this.badgeCount = notifications.filter(notification => !notification.isAlreadyRead).length
+      this.badgeCount = notifications.filter((notification) => !notification.isAlreadyRead).length
       this.store.set(wallet, notifications)
     },
     notifications(): Notification[] {
       const wallet = this.client.userWallet.address
-      return this.store.get(wallet)?.filter(notification => !notification.isAlreadyRead) ?? []
+      return this.store.get(wallet)?.filter((notification) => !notification.isAlreadyRead) ?? []
     },
     async markAsRead(notification: Notification) {
       const wallet = this.client.userWallet.address
@@ -53,14 +57,15 @@ export const useNotificationStore = defineStore({
     },
     async markAllAsRead() {
       const notifications = this.notifications()
-      notifications.forEach(notification => notification.isAlreadyRead = true)
+      notifications.forEach((notification) => (notification.isAlreadyRead = true))
       this.badgeCount = 0
     },
     async cleanNotification() {
       const notifications = this.notifications()
       notifications.forEach((notification, index) => {
-        if (notification.isAlreadyRead)
+        if (notification.isAlreadyRead) {
           notifications.slice(index, 1)
+        }
       })
     },
   },
@@ -78,7 +83,7 @@ function mapTradeInfoToNotification(wallet: string, tradeInfo: TradeInfo): Notif
 
 // TODO define message for each state
 function getMessageByState(_: TradeState): string {
-  return 'You have a open trade'
+  return 'You have a new trade'
 }
 
 export interface Notification {

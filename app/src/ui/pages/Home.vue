@@ -1,5 +1,4 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <main>
@@ -9,5 +8,5 @@
 </template>
 
 <style lang="scss">
-@import "../style/pages.scss";
+@import '../style/pages.scss';
 </style>

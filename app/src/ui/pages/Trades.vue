@@ -58,9 +58,9 @@ onUnmounted(async () => {})
   <main class="page">
     <h3>Open Trades</h3>
     <!-- Open Trades section -->
-    <ListContentResult :result="tradeResult" empty-state-msg="There is no trades here yet">
+    <ListContentResult :result="tradeResult" emptyStateMsg="There is no trades here yet">
       <section v-if="hasOpenTrades">
-        <TradeOpenItem v-for="tradeInfo in openTrades" :key="tradeInfo.trade.addr" :trade-info="tradeInfo" />
+        <TradeOpenItem v-for="tradeInfo in openTrades" :key="tradeInfo.trade.addr" :tradeInfo="tradeInfo" />
       </section>
       <section v-else class="card">
         <p>Nothing here yet</p>
@@ -89,7 +89,7 @@ onUnmounted(async () => {})
             <p>Status</p>
           </div>
         </div>
-        <TradeHistoryItem v-for="tradeInfo in closedTrades" :key="tradeInfo.trade.addr" :trade-info="tradeInfo" />
+        <TradeHistoryItem v-for="tradeInfo in closedTrades" :key="tradeInfo.trade.addr" :tradeInfo="tradeInfo" />
       </section>
     </ListContentResult>
     <!-- End Trades History section -->

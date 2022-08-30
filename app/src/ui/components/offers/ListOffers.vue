@@ -1,41 +1,40 @@
 <script setup lang="ts">
-import type { GetOffer } from "~/types/components.interface";
-import { FiatCurrency, OfferType } from "~/types/components.interface";
-import { useClientStore } from "~/stores/client";
-import { ExpandableItem } from "~/ui/components/util/ExpandableItem";
-import { usePriceStore } from "~/stores/price";
-import {
-  defaultMicroDenomAvailable,
-  microDenomToDenom,
-  denomsAvailable,
-} from "~/utils/denom";
-import { fiatsAvailable, getFiatInfo } from "~/utils/fiat";
-import { checkValidOffer } from "~/utils/validations";
+import type { GetOffer } from '~/types/components.interface'
+import { FiatCurrency, OfferType } from '~/types/components.interface'
+import { useClientStore } from '~/stores/client'
+import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
+import { usePriceStore } from '~/stores/price'
+import { defaultMicroDenomAvailable, denomsAvailable } from '~/utils/denom'
+import { fiatsAvailable } from '~/utils/fiat'
+import { checkValidOffer } from '~/utils/validations'
 
-const client = useClientStore();
-const priceStore = usePriceStore();
-const offersResult = computed(() => client.offers);
-const page = reactive({ offers: <ExpandableItem<GetOffer>[]>[] });
+const client = useClientStore()
+const priceStore = usePriceStore()
+const offersResult = computed(() => client.offers)
+const page = reactive({ offers: [] as ExpandableItem<GetOffer>[] })
 client.$subscribe((mutation, state) => {
-  if (state.offers.isSuccess())
+  if (state.offers.isSuccess()) {
     page.offers = state.offers.data
       .filter((offer) => checkValidOffer(offer))
-      .flatMap((offer) => new ExpandableItem(offer));
-});
+      .flatMap((offer) => new ExpandableItem(offer))
+  }
+})
 
-const selectedCrypto = ref<string>(defaultMicroDenomAvailable());
-const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS);
-const offerType = ref<OfferType>(OfferType.sell);
-const selectedOffer = ref<ExpandableItem<GetOffer> | null>(null);
+const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
+const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
+const offerType = ref<OfferType>(OfferType.sell)
+const selectedOffer = ref<ExpandableItem<GetOffer> | null>(null)
 
 function selectOffer(offer: ExpandableItem<GetOffer>) {
-  if (selectedOffer.value !== null) selectedOffer.value.isExpanded = false;
-  offer.isExpanded = true;
-  selectedOffer.value = offer;
+  if (selectedOffer.value !== null) {
+    selectedOffer.value.isExpanded = false
+  }
+  offer.isExpanded = true
+  selectedOffer.value = offer
 }
 
 function unselectOffer(offer: ExpandableItem<GetOffer>) {
-  offer.isExpanded = false;
+  offer.isExpanded = false
 }
 
 async function fetchOffers() {
@@ -54,7 +53,6 @@ onMounted(async () => {
 watch(fiatCurrency, async () => await fetchOffers())
 watch(selectedCrypto, async () => await fetchOffers())
 watch(offerType, async () => await fetchOffers())
-
 </script>
 
 <template>
@@ -62,32 +60,20 @@ watch(offerType, async () => await fetchOffers())
     <p class="offers-section-title">Top offers from the community</p>
     <section class="offers-filter">
       <div class="buy-sell">
-        <button
-          class="buy"
-          :class="{ focus: offerType === OfferType.sell }"
-          @click="offerType = OfferType.sell"
-        >
+        <button class="buy" :class="{ focus: offerType === OfferType.sell }" @click="offerType = OfferType.sell">
           buy
         </button>
-        <button
-          class="sell"
-          :class="{ focus: offerType === OfferType.buy }"
-          @click="offerType = OfferType.buy"
-        >
+        <button class="sell" :class="{ focus: offerType === OfferType.buy }" @click="offerType = OfferType.buy">
           sell
         </button>
       </div>
       <div class="filter">
         <label for="crypto">Crypto</label>
-        <CustomSelect
-            v-model="selectedCrypto"
-            :options="denomsAvailable"/>
+        <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
-        <CustomSelect
-            v-model="fiatCurrency"
-            :options="fiatsAvailable"/>
+        <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
       </div>
     </section>
 
@@ -95,10 +81,7 @@ watch(offerType, async () => await fetchOffers())
       <h3 v-if="offerType === OfferType.sell">Buy from these sellers</h3>
       <h3 v-if="offerType === OfferType.buy">Sell to these buyers</h3>
       <!-- Offers for -->
-      <ListContentResult
-        :result="offersResult"
-        :emptyStateMsg="'There is no offers available yet'"
-      >
+      <ListContentResult :result="offersResult" emptyStateMsg="There is no offers available yet">
         <ul>
           <li
             v-for="offer in page.offers"
@@ -107,17 +90,9 @@ watch(offerType, async () => await fetchOffers())
             :class="offer.isExpanded ? 'card-active' : ''"
           >
             <!-- Collapsed Offer -->
-            <CollapsedOffer
-              v-if="!offer.isExpanded"
-              :offer="offer.data"
-              @select="selectOffer(offer)"
-            />
+            <CollapsedOffer v-if="!offer.isExpanded" :offer="offer.data" @select="selectOffer(offer)" />
             <!-- Expanded Offer Desktop -->
-            <ExpandedOffer
-              v-else
-              :offer="offer.data"
-              @cancel="unselectOffer(offer)"
-            />
+            <ExpandedOffer v-else :offer="offer.data" @cancel="unselectOffer(offer)" />
           </li>
         </ul>
       </ListContentResult>
@@ -126,7 +101,7 @@ watch(offerType, async () => await fetchOffers())
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 section {
   margin-bottom: 56px;
