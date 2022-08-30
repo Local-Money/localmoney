@@ -18,7 +18,7 @@ use localterra_protocol::guards::{
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded, UpdateTradeArbitrator};
+use localterra_protocol::offer::ExecuteMsg::{UpdateLastTraded};
 use localterra_protocol::offer::{
     load_offer, Arbitrator, Offer, OfferType, QueryMsg as OfferQueryMsg, TradeInfo,
 };
@@ -59,23 +59,6 @@ pub fn execute(
         ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info)
     }
-}
-
-fn update_arbitrator(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    trade_id: String,
-    arbitrator: Addr,
-) -> Result<Response, ContractError> {
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
-    let hub_cfg = get_hub_config(deps);
-    if vec![trade.buyer, trade.seller].contains(&info.sender) {
-
-    }
-    trade.arbitrator = Some(arbitrator);
-    TradeModel::store(deps.storage, &trade).unwrap();
-    Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -308,7 +291,6 @@ fn dispute_escrow(
     trade.state = TradeState::EscrowDisputed;
 
     // Assign a pseudo random arbitrator to the trade
-    // TODO: this needs to update the TradeAddr::arbitrator field in the trades() indexedmap of the offer contract
     let arbitrator: Arbitrator = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {

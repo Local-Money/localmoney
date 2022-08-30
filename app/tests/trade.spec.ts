@@ -1,30 +1,20 @@
-import { TextDecoder, TextEncoder } from 'util'
+/**
+ * @jest-environment ./src/tests/local-env
+ */
 
-import dotenv from 'dotenv'
-import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
-import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import { DefaultError } from '~/network/chain-error'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
-dotenv.config()
-Object.assign(global, { TextEncoder, TextDecoder })
-
-let makerClient: TestCosmosChain
-let takerClient: TestCosmosChain
 let offersCount = 0
 let tradeId = '0'
 
-jest.setTimeout(30 * 1000)
-beforeAll(async () => {
-  const result = await setupProtocol()
-  makerClient = result.makerClient
-  takerClient = result.takerClient
-})
-
 describe('trade lifecycle happy path', () => {
+  const makerClient = globalThis.makerClient as TestCosmosChain
+  const takerClient = globalThis.takerClient as TestCosmosChain
+
   // Create Offer
   if (process.env.CREATE_OFFERS) {
     it('should create offer', async () => {

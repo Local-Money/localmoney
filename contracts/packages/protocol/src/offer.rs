@@ -92,10 +92,6 @@ pub enum ExecuteMsg {
         arbitrator: Addr,
         asset: FiatCurrency,
     },
-    UpdateTradeArbitrator {
-        trade_id: String,
-        arbitrator: Addr,
-    },
     UpdateLastTraded {
         offer_id: String,
     },

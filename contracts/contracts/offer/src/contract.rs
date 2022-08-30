@@ -14,7 +14,7 @@ use localterra_protocol::offer::{
     OfferUpdateMsg, OffersCount, QueryMsg,
 };
 
-use crate::state::{arbitrators, offers_count_read, offers_count_storage, trades};
+use crate::state::{arbitrators, offers_count_read, offers_count_storage};
 
 #[entry_point]
 pub fn instantiate(
@@ -46,13 +46,6 @@ pub fn execute(
         }
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
             delete_arbitrator(deps, info, arbitrator, asset)
-        }
-        ExecuteMsg::UpdateTradeArbitrator {
-            trade_id,
-            arbitrator,
-        } => {
-            // TODO merge this call with the query random arbitrator call. LOCAL-660
-            update_trade_arbitrator(deps, env, info, arbitrator, trade_id)
         }
         ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
@@ -151,31 +144,6 @@ pub fn create_offer(
         .add_attribute("min_amount", offer.min_amount.to_string())
         .add_attribute("max_amount", offer.max_amount.to_string())
         .add_attribute("owner", offer.owner);
-
-    Ok(res)
-}
-
-pub fn update_trade_arbitrator(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    arbitrator: Addr,
-    trade_id: String,
-) -> Result<Response, ContractError> {
-    // TODO assert the calling contract can only update its own arbitrator and only if the arbitrator is not yet set. LOCAL-660
-    let mut trade = trades().load(deps.storage, &info.sender.as_str()).unwrap();
-
-    trade.arbitrator = arbitrator.clone();
-
-    trades()
-        .save(deps.storage, trade.trade.as_str(), &trade)
-        .unwrap();
-
-    let res = Response::new()
-        .add_attribute("action", "update_trade_arbitrator")
-        .add_attribute("tradeAddr", info.sender)
-        .add_attribute("arbitrator", arbitrator)
-        .add_attribute("timestamp", _env.block.time.seconds().to_string());
 
     Ok(res)
 }
