@@ -114,11 +114,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening trade...')
       try {
         const trade_id = await this.client.openTrade(trade)
-        await this.fetchMyTrades()
-        await this.router.push({
-          name: 'TradeDetail',
-          params: { id: trade_id },
-        })
+        const route = trade_id === '' ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
+        await this.router.push(route)
       } catch (e) {
         // TODO handle error
         alert((e as ChainError).message)
