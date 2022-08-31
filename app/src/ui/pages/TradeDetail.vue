@@ -157,8 +157,11 @@ onUnmounted(() => {
     </section>
   </main>
   <main v-else class="page">
-    <div class="error-state card">
+    <div v-if="!client.userWallet.isConnected" class="error-state card">
       <p>You need to connect your wallet</p>
+    </div>
+    <div v-else class="loading-state">
+      <Loading />
     </div>
   </main>
 </template>
@@ -232,6 +235,12 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 32px;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  margin-top: 92px;
 }
 
 .wrap {
