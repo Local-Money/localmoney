@@ -6,7 +6,7 @@ function toggleModal() {
 </script>
 
 <template>
-  <main>
+  <section class="page">
     <div class="wrap-title">
       <div class="inner-wrap">
         <h3>My Offers</h3>
@@ -27,7 +27,7 @@ function toggleModal() {
       </Modal>
     </div>
     <ListMyOffers />
-  </main>
+  </section>
 </template>
 
 <style lang="scss" scoped>

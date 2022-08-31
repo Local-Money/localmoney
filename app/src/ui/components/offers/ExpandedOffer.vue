@@ -265,7 +265,7 @@ onUnmounted(() => {
 
         <div class="wrap-btns">
           <button class="secondary" @click="emit('cancel')">cancel</button>
-          <button class="primary" :disabled="!valid" @click="newTrade()">open trade</button>
+          <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
         </div>
       </div>
     </div>
@@ -288,9 +288,9 @@ onUnmounted(() => {
   }
 
   @media only screen and (max-width: $mobile) {
-    .owner {
-      display: inline-flex;
-    }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 
@@ -325,7 +325,7 @@ onUnmounted(() => {
       }
 
       .input {
-        margin-bottom: 24px;
+        margin-bottom: 8px;
       }
 
       input {
@@ -368,7 +368,7 @@ onUnmounted(() => {
       @media only screen and (max-width: $mobile) {
         border-top: 1px solid $border;
         padding-top: 24px;
-        margin-top: 8px;
+        margin-top: 24px;
       }
 
       .price {
@@ -392,6 +392,8 @@ onUnmounted(() => {
 
           @media only screen and (max-width: $mobile) {
             flex-direction: column;
+            gap: 4px;
+            padding: 16px 24px;
           }
 
           .ticker {

@@ -55,7 +55,7 @@ onUnmounted(async () => {})
 </script>
 
 <template>
-  <main>
+  <main class="page">
     <h3>Open Trades</h3>
     <!-- Open Trades section -->
     <ListContentResult :result="tradeResult" emptyStateMsg="There is no trades here yet">
