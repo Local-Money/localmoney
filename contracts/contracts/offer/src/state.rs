@@ -1,7 +1,8 @@
 use cosmwasm_std::{Addr, Storage};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
-use localterra_protocol::offer::{Arbitrator, OffersCount, TradeAddr};
+
+use localterra_protocol::offer::{OffersCount, TradeAddr};
 
 pub static STATE_KEY: &[u8] = b"state";
 
@@ -30,35 +31,6 @@ pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
         ),
     };
     IndexedMap::new("trades", indexes)
-}
-
-pub struct ArbitratorIndexes<'a> {
-    // pk goes to second tuple element
-    pub arbitrator: MultiIndex<'a, Addr, Arbitrator, Vec<u8>>,
-    pub asset: MultiIndex<'a, String, Arbitrator, Vec<u8>>,
-}
-
-impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Arbitrator>> + '_> {
-        let v: Vec<&dyn Index<Arbitrator>> = vec![&self.arbitrator, &self.asset];
-        Box::new(v.into_iter())
-    }
-}
-
-pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexes<'a>> {
-    let indexes = ArbitratorIndexes {
-        arbitrator: MultiIndex::new(
-            |d: &Arbitrator| d.arbitrator.clone(),
-            "arbitrators",
-            "arbitrators__arbitrator",
-        ),
-        asset: MultiIndex::new(
-            |d: &Arbitrator| d.fiat.clone().to_string(),
-            "arbitrators",
-            "arbitrators__asset",
-        ),
-    };
-    IndexedMap::new("arbitrators", indexes)
 }
 
 pub fn offers_count_storage(storage: &mut dyn Storage) -> Singleton<OffersCount> {

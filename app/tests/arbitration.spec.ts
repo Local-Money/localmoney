@@ -35,6 +35,8 @@ describe('arbitration tests', () => {
       fiatCurrency: createdOffer.fiat_currency,
       offerType: createdOffer.offer_type,
     })
+    // Register arbitrator
+    await takerClient.
 
     // Create a Trade and set it to `fiat_deposited` state.
     const offer = offersResult[0] as GetOffer

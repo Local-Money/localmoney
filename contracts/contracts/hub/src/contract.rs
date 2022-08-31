@@ -1,14 +1,15 @@
 use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw20::Denom;
+
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::Unauthorized;
-
-use crate::state::{ADMIN, CONFIG};
 use localterra_protocol::hub::{Admin, ExecuteMsg, HubConfig, InstantiateMsg, QueryMsg};
 use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
 use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
 use localterra_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
+
+use crate::state::{ADMIN, CONFIG};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

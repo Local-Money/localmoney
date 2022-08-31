@@ -21,6 +21,10 @@ export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, t
 }
 
 export async function setupProtocol() {
+  const adminClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
+  adminClient.seed = process.env.ADMIN_SEED!
+  await adminClient.connectWallet()
+
   const makerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
   makerClient.seed = process.env.MAKER_SEED!
   await makerClient.connectWallet()
@@ -30,20 +34,21 @@ export async function setupProtocol() {
   await takerClient.connectWallet()
 
   if (process.env.HUB) {
+    await adminClient.updateHub(process.env.HUB)
     await makerClient.updateHub(process.env.HUB)
     await takerClient.updateHub(process.env.HUB)
   } else {
     // Instantiate all contracts
-    const walletAddress = makerClient.getWalletAddress()
-    const cwClient = makerClient.getCwClient() as SigningCosmWasmClient
+    const admAddress = adminClient.getWalletAddress()
+    const adminCwClient = adminClient.getCwClient() as SigningCosmWasmClient
 
-    const instantiateMsg = { admin_addr: walletAddress }
+    const instantiateMsg = { admin_addr: admAddress }
     const { hub, offer, trade, trading_incentives } = codeIds
-    const hubInstantiateResult = await cwClient.instantiate(walletAddress, hub, instantiateMsg, 'hub', 'auto')
-    const offerInstantiateResult = await cwClient.instantiate(walletAddress, offer, instantiateMsg, 'offer', 'auto')
-    const tradeInstantiateResult = await cwClient.instantiate(walletAddress, trade, instantiateMsg, 'trade', 'auto')
-    const tradingIncentivesResult = await cwClient.instantiate(
-      walletAddress,
+    const hubInstantiateResult = await adminCwClient.instantiate(admAddress, hub, instantiateMsg, 'hub', 'auto')
+    const offerInstantiateResult = await adminCwClient.instantiate(admAddress, offer, instantiateMsg, 'offer', 'auto')
+    const tradeInstantiateResult = await adminCwClient.instantiate(admAddress, trade, instantiateMsg, 'trade', 'auto')
+    const tradingIncentivesResult = await adminCwClient.instantiate(
+      admAddress,
       trading_incentives,
       instantiateMsg,
       'trading_incentives',
@@ -62,10 +67,14 @@ export async function setupProtocol() {
       tradeInstantiateResult.contractAddress,
       tradingIncentivesResult.contractAddress
     )
-    await cwClient.execute(walletAddress, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
+    await adminCwClient.execute(admAddress, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
+    await adminClient.updateHub(hubInstantiateResult.contractAddress)
     await makerClient.updateHub(hubInstantiateResult.contractAddress)
     await takerClient.updateHub(hubInstantiateResult.contractAddress)
+    expect(adminClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
     expect(makerClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
+    expect(takerClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
+    // eslint-disable-next-line no-console
     console.log('Hub Address:', hubInstantiateResult.contractAddress)
   }
   return { makerClient, takerClient }

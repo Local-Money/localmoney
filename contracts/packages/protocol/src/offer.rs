@@ -1,6 +1,5 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
-// use crate::errors::GuardError;
 use crate::denom_utils::denom_to_string;
 use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{
@@ -77,27 +76,12 @@ pub struct OfferUpdateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     //TODO: Change to Create(OfferMsg)
-    Create {
-        offer: OfferMsg,
-    },
+    Create { offer: OfferMsg },
     RegisterHub {},
-    UpdateOffer {
-        offer_update: OfferUpdateMsg,
-    },
-    NewArbitrator {
-        arbitrator: Addr,
-        fiat: FiatCurrency,
-    },
-    DeleteArbitrator {
-        arbitrator: Addr,
-        asset: FiatCurrency,
-    },
-    UpdateLastTraded {
-        offer_id: String,
-    },
-    IncrementTradesCount {
-        offer_id: String,
-    },
+    UpdateOffer { offer_update: OfferUpdateMsg },
+
+    UpdateLastTraded { offer_id: String },
+    IncrementTradesCount { offer_id: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -129,20 +113,6 @@ pub enum QueryMsg {
         max: Option<String>,
         order: QueryOrder,
         limit: u32,
-    },
-    Arbitrator {
-        arbitrator: Addr,
-    },
-    Arbitrators {
-        last_value: Option<String>,
-        limit: u32,
-    },
-    ArbitratorAsset {
-        asset: FiatCurrency,
-    },
-    ArbitratorRandom {
-        random_value: u32,
-        asset: FiatCurrency,
     },
 }
 

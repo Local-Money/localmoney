@@ -1,5 +1,6 @@
 use cosmwasm_std::Uint128;
 use cw_storage_plus::{Item, Map};
+
 use localterra_protocol::trading_incentives::Distribution;
 
 pub const DISTRIBUTION: Item<Distribution> = Item::new("distribution");

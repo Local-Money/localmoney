@@ -1,20 +1,17 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response,
-    StdResult, Storage,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
 };
-use cw_storage_plus::Bound;
 
-use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
-use localterra_protocol::guards::{assert_min_g_max, assert_ownership, assert_range_0_to_99};
-use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
+use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
+use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, Arbitrator, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState,
-    OfferUpdateMsg, OffersCount, QueryMsg,
+    offers, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, OfferUpdateMsg,
+    OffersCount, QueryMsg,
 };
 
-use crate::state::{arbitrators, offers_count_read, offers_count_storage};
+use crate::state::{offers_count_read, offers_count_storage};
 
 #[entry_point]
 pub fn instantiate(
@@ -39,17 +36,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::NewArbitrator {
-            arbitrator,
-            fiat: asset,
-        } => create_arbitrator(deps, info, arbitrator, asset),
-        ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
-            delete_arbitrator(deps, info, arbitrator, asset)
-        }
         ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
-        ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::IncrementTradesCount { offer_id } => {
             increment_trades_count(deps, info, offer_id)
         }
@@ -85,19 +75,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             max,
             order,
             limit,
-        )?),
-        QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
-        QueryMsg::Arbitrators { last_value, limit } => {
-            to_binary(&query_arbitrators(deps, last_value, limit)?)
-        }
-        QueryMsg::ArbitratorAsset { asset } => to_binary(&query_arbitrator_asset(deps, asset)?),
-        QueryMsg::ArbitratorRandom {
-            random_value,
-            asset,
-        } => to_binary(&query_arbitrator_random(
-            deps,
-            random_value as usize,
-            asset,
         )?),
     }
 }
@@ -178,57 +155,6 @@ pub fn update_last_traded(
     Ok(res)
 }
 
-pub fn create_arbitrator(
-    deps: DepsMut,
-    info: MessageInfo,
-    arbitrator: Addr,
-    fiat: FiatCurrency,
-) -> Result<Response, ContractError> {
-    let admin = get_hub_admin(deps.as_ref());
-    // assert_ownership(info.sender, admin)?;
-
-    let index = arbitrator.clone().to_string() + &fiat.to_string();
-
-    arbitrators()
-        .save(
-            deps.storage,
-            &index,
-            &Arbitrator {
-                arbitrator: arbitrator.clone(),
-                fiat: fiat.clone(),
-            },
-        )
-        .unwrap();
-
-    let res = Response::new()
-        .add_attribute("action", "create_arbitrator")
-        .add_attribute("arbitrator", arbitrator.to_string())
-        .add_attribute("asset", fiat.to_string());
-
-    Ok(res)
-}
-
-pub fn delete_arbitrator(
-    deps: DepsMut,
-    info: MessageInfo,
-    arbitrator: Addr,
-    asset: FiatCurrency,
-) -> Result<Response, ContractError> {
-    let admin = get_hub_admin(deps.as_ref());
-    assert_ownership(info.sender, admin)?;
-
-    let index = arbitrator.clone().to_string() + &asset.to_string();
-
-    arbitrators().remove(deps.storage, &index).unwrap();
-
-    let res = Response::new()
-        .add_attribute("action", "delete_arbitrator")
-        .add_attribute("arbitrator", arbitrator.to_string())
-        .add_attribute("asset", asset.to_string());
-
-    Ok(res)
-}
-
 pub fn update_offer(
     deps: DepsMut,
     _env: Env,
@@ -293,84 +219,4 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: String) -> StdResult<Offer> {
         .unwrap_or_default()
         .unwrap();
     Ok(offer)
-}
-
-pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let result = arbitrators()
-        .idx
-        .arbitrator
-        .prefix(arbitrator)
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrators(
-    deps: Deps,
-    last_value: Option<String>,
-    limit: u32,
-) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let range_from = match last_value {
-        Some(addr) => Some(Bound::ExclusiveRaw(addr.into())),
-        None => None,
-    };
-
-    let result = arbitrators()
-        .range(storage, range_from, None, Order::Descending)
-        .take(limit as usize)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrator_asset(deps: Deps, asset: FiatCurrency) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let result: Vec<Arbitrator> = arbitrators()
-        .idx
-        .asset
-        .prefix(asset.clone().to_string())
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrator_random(
-    deps: Deps,
-    random_value: usize,
-    asset: FiatCurrency,
-) -> StdResult<Arbitrator> {
-    assert_range_0_to_99(random_value).unwrap();
-
-    let storage = deps.storage;
-
-    let result: Vec<Arbitrator> = arbitrators()
-        .idx
-        .asset
-        .prefix(asset.to_string())
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    let arbitrator_count = result.len();
-
-    // Random range: 0..99
-    // Mapped range: 0..result.len()-1
-    // Formula is:
-    // RandomValue * (MaxMappedRange + 1) / (MaxRandomRange + 1)
-    let random_index = random_value * arbitrator_count / (99 + 1);
-
-    Ok(result[random_index].clone())
 }
