@@ -13,12 +13,14 @@ Object.assign(global, { TextEncoder, TextDecoder })
 
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
+let adminClient: TestCosmosChain
 
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
   const result = await setupProtocol()
   makerClient = result.makerClient
   takerClient = result.takerClient
+  adminClient = result.adminClient
 })
 
 describe('arbitration tests', () => {
@@ -35,8 +37,12 @@ describe('arbitration tests', () => {
       fiatCurrency: createdOffer.fiat_currency,
       offerType: createdOffer.offer_type,
     })
+
     // Register arbitrator
-    await takerClient.
+    await adminClient.newArbitrator({
+      arbitrator: adminClient.getWalletAddress(),
+      fiat: createdOffer.fiat_currency,
+    })
 
     // Create a Trade and set it to `fiat_deposited` state.
     const offer = offersResult[0] as GetOffer

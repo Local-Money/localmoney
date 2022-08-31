@@ -140,3 +140,8 @@ export interface UserWallet {
   isConnected: boolean
   address: string
 }
+
+export interface Arbitrator {
+  arbitrator: string
+  fiat: FiatCurrency
+}

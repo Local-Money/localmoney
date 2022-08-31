@@ -3,6 +3,7 @@ import myOffers from '~/network/mock/fixtures/offers/my-offers.json'
 import myTrades from '~/network/mock/fixtures/trades/my-trades.json'
 import trade from '~/network/mock/fixtures/trade/open-trade-info.json'
 import type {
+  Arbitrator,
   Denom,
   FetchOffersArgs,
   GetOffer,
@@ -104,6 +105,10 @@ class MockChain implements Chain {
       selectedTrade.trade.state = state
     }
     trade.state = state
+  }
+
+  newArbitrator(_arbitrator: Arbitrator): Promise<void> {
+    return Promise.resolve(undefined)
   }
 }
 

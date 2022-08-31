@@ -71,10 +71,6 @@ pub enum QueryMsg {
     ArbitratorAsset {
         asset: FiatCurrency,
     },
-    ArbitratorRandom {
-        random_value: u32,
-        asset: FiatCurrency,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -136,7 +132,7 @@ pub struct Trade {
     pub denom: Denom,
     pub amount: Uint128,
     pub state: TradeState,
-    pub asset: FiatCurrency,
+    pub fiat: FiatCurrency,
 }
 
 pub struct TradeModel<'a> {

@@ -1,4 +1,5 @@
 import type {
+  Arbitrator,
   Denom,
   FetchOffersArgs,
   GetOffer,
@@ -53,6 +54,8 @@ export interface Chain {
   refundEscrow(tradeId: string): Promise<void>
 
   openDispute(tradeId: string): Promise<void>
+
+  newArbitrator(arbitrator: Arbitrator): Promise<void>
 }
 
 export enum ChainClient {

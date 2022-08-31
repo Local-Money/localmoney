@@ -77,5 +77,5 @@ export async function setupProtocol() {
     // eslint-disable-next-line no-console
     console.log('Hub Address:', hubInstantiateResult.contractAddress)
   }
-  return { makerClient, takerClient }
+  return { adminClient, makerClient, takerClient }
 }

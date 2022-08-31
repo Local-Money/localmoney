@@ -60,10 +60,9 @@ pub fn execute(
         ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, info, trade_id),
         ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, trade_id),
         ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
-        ExecuteMsg::NewArbitrator {
-            arbitrator,
-            fiat: asset,
-        } => create_arbitrator(deps, info, arbitrator, asset),
+        ExecuteMsg::NewArbitrator { arbitrator, fiat } => {
+            create_arbitrator(deps, info, arbitrator, fiat)
+        }
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
             delete_arbitrator(deps, info, arbitrator, asset)
         }
@@ -123,7 +122,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             created_at: env.block.time.seconds(),
             denom: offer.denom.clone(),
             amount: new_trade.amount.clone(),
-            asset: offer.fiat_currency,
+            fiat: offer.fiat_currency,
         },
     )
     .trade;
@@ -172,14 +171,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query_arbitrators(deps, last_value, limit)?)
         }
         QueryMsg::ArbitratorAsset { asset } => to_binary(&query_arbitrator_asset(deps, asset)?),
-        QueryMsg::ArbitratorRandom {
-            random_value,
-            asset,
-        } => to_binary(&query_arbitrator_random(
-            deps,
-            random_value as usize,
-            asset,
-        )?),
     }
 }
 
@@ -575,9 +566,10 @@ pub fn create_arbitrator(
     arbitrator: Addr,
     fiat: FiatCurrency,
 ) -> Result<Response, ContractError> {
-    let admin = get_hub_admin(deps.as_ref());
-    assert_ownership(info.sender, admin)?;
+    // let admin = get_hub_admin(deps.as_ref());
+    // assert_ownership(info.sender, admin)?;
 
+    /*
     let index = arbitrator.clone().to_string() + &fiat.to_string();
 
     arbitrators()
@@ -590,6 +582,7 @@ pub fn create_arbitrator(
             },
         )
         .unwrap();
+     */
 
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
@@ -622,7 +615,7 @@ pub fn delete_arbitrator(
 
 fn dispute_escrow(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
@@ -647,20 +640,8 @@ fn dispute_escrow(
     // Update trade State to TradeState::Disputed
     trade.state = TradeState::EscrowDisputed;
 
-    /*
-    // Assign a pseudo random arbitrator to the trade
-    let arbitrator: Arbitrator = deps
-        .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: trade.offer_contract.clone().to_string(),
-            msg: to_binary(&OfferQueryMsg::ArbitratorRandom {
-                random_value: (env.block.time.seconds() % 100) as u32, // Generates a range of 0..99
-                asset: trade.asset.clone(),
-            })
-            .unwrap(),
-        }))
-        .unwrap();
-     */
+    let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
+    get_arbitrator_random(deps.as_ref(), random_seed as usize, trade.fiat.clone());
 
     trade.arbitrator = Some(info.sender.clone());
     TradeModel::store(deps.storage, &trade).unwrap();
@@ -767,24 +748,17 @@ pub fn query_arbitrator_asset(deps: Deps, asset: FiatCurrency) -> StdResult<Vec<
     Ok(result)
 }
 
-pub fn query_arbitrator_random(
-    deps: Deps,
-    random_value: usize,
-    asset: FiatCurrency,
-) -> StdResult<Arbitrator> {
+pub fn get_arbitrator_random(deps: Deps, random_value: usize, fiat: FiatCurrency) -> Arbitrator {
     assert_range_0_to_99(random_value).unwrap();
-
     let storage = deps.storage;
-
     let result: Vec<Arbitrator> = arbitrators()
         .idx
         .asset
-        .prefix(asset.to_string())
+        .prefix(fiat.to_string())
         .range(storage, None, None, Order::Descending)
         .take(10)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
-
     let arbitrator_count = result.len();
 
     // Random range: 0..99
@@ -792,8 +766,7 @@ pub fn query_arbitrator_random(
     // Formula is:
     // RandomValue * (MaxMappedRange + 1) / (MaxRandomRange + 1)
     let random_index = random_value * arbitrator_count / (99 + 1);
-
-    Ok(result[random_index].clone())
+    result[random_index].clone()
 }
 //endregion
 
