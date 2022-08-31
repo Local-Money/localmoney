@@ -8,7 +8,7 @@ export const useNotificationStore = defineStore({
   state: () => {
     return {
       store: useLocalStorage('notification', new Map<string, Notification[]>()),
-      lastSeem: useLocalStorage('last_seem', new Map<string, number>()),
+      lastSeen: useLocalStorage('last_seem', new Map<string, number>()),
       client: useClientStore(),
       badgeCount: 0,
     }
@@ -17,13 +17,13 @@ export const useNotificationStore = defineStore({
     async fetchNotifications() {
       const trades = await this.client.client.fetchTrades()
       const wallet = this.client.userWallet.address
-      const lastSeem = this.lastSeem.get(wallet) ?? 0
+      const lastSeen = this.lastSeen.get(wallet) ?? 0
       let notifications = this.notifications()
       trades.forEach((tradeInfo) => {
         if (!tradeInfo.expired) {
           tradeInfo.trade.state_history.forEach((state) => {
             const time = state.timestamp * 1000
-            if (time > lastSeem && state.actor !== wallet) {
+            if (time > lastSeen && state.actor !== wallet) {
               const notification = toNotification(tradeInfo.trade.id, state.state, state.actor, time)
               const found = notifications.find(
                 (n) =>
@@ -61,7 +61,7 @@ export const useNotificationStore = defineStore({
         notifications[index].isAlreadyRead = true
         this.badgeCount--
         this.addNotifications(notifications)
-        this.lastSeem.set(wallet, Date.now())
+        this.lastSeen.set(wallet, Date.now())
       }
     },
     async markAllAsRead() {
@@ -71,7 +71,7 @@ export const useNotificationStore = defineStore({
         n.isAlreadyRead = true
       })
       this.addNotifications(notifications)
-      this.lastSeem.set(wallet, Date.now())
+      this.lastSeen.set(wallet, Date.now())
     },
     async cleanNotification() {
       const notifications = this.notifications()

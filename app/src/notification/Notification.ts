@@ -1,7 +1,7 @@
 import type { Notification } from '~/stores/notification'
 import { useNotificationStore } from '~/stores/notification'
 
-const millisecond = 10 * 1000
+const interval = 10 * 1000
 
 class NotificationHandler {
   private store
@@ -15,7 +15,7 @@ class NotificationHandler {
     await this.handle()
     this.interval = setInterval(() => {
       this.handle()
-    }, millisecond)
+    }, interval)
   }
 
   public async unregister() {
