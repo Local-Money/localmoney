@@ -159,11 +159,9 @@ export class CosmosChain implements Chain {
           'auto'
         )
         console.log('Open Trade result >> ', result)
-
         const trade_id = result.logs[0].events
           .find((e) => e.type === 'wasm')
           ?.attributes.find((a) => a.key === 'trade_id')?.value
-
         return trade_id ?? ''
       } catch (e) {
         throw new DefaultError()
