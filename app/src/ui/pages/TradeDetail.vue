@@ -42,6 +42,7 @@ const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.o
 
 function fetchTrade(id: string) {
   nextTick(async () => {
+    console.log('heeeey')
     tradeInfo.value = await client.fetchTradeDetail(id)
     refreshInterval = setInterval(async () => {
       tradeInfo.value = await client.fetchTradeDetail(id)

@@ -1,7 +1,7 @@
 import type { Notification } from '~/stores/notification'
 import { useNotificationStore } from '~/stores/notification'
 
-const millisecond = 15000
+const millisecond = 10 * 1000
 
 class NotificationHandler {
   private store
@@ -23,12 +23,16 @@ class NotificationHandler {
     clearInterval(this.interval)
   }
 
-  public async readNotification(notification: Notification) {
-    await this.store.markAsRead(notification)
+  public readNotification(notification: Notification) {
+    this.store.markAsRead(notification)
+  }
+
+  public async readAllNotification() {
+    await this.store.markAllAsRead()
   }
 
   public notifications(): Notification[] {
-    return this.store.notifications()
+    return this.store.notifications().reverse()
   }
 
   public notificationCount(): number {

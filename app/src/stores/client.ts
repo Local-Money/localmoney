@@ -114,6 +114,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening trade...')
       try {
         const trade_id = await this.client.openTrade(trade)
+        await this.fetchMyTrades()
         await this.router.push({
           name: 'TradeDetail',
           params: { id: trade_id },

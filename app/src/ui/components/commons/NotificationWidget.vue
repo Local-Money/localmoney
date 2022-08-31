@@ -16,12 +16,16 @@ function toggleWidget() {
 }
 
 async function showTrade(n: Notification) {
-  await notification.readNotification(n)
+  notification.readNotification(n)
   await router.push({
     name: 'TradeDetail',
     params: { id: n.id },
   })
   toggleWidget()
+}
+
+async function readAll() {
+  await notification.readAllNotification()
 }
 </script>
 
@@ -53,7 +57,7 @@ async function showTrade(n: Notification) {
     <div v-if="widgetActive" class="widget">
       <div class="header">
         <p class="title">Notifications</p>
-        <p class="mark-read" @click="notification.readAllNotifications()">Mark all as read</p>
+        <p class="mark-read" @click="readAll()">Mark all as read</p>
       </div>
       <div class="content">
         <ul v-if="notification.notificationCount() > 0">

@@ -19,13 +19,17 @@ async function showTrade(n: Notification) {
   })
   emit('toggleWidget')
 }
+
+async function readAll() {
+  await notification.readAllNotification()
+}
 </script>
 
 <template>
   <div class="wrap-widget">
     <div class="header">
       <p class="title">Notifications</p>
-      <p class="mark-read">Mark all as read</p>
+      <p class="mark-read" @click="readAll()">Mark all as read</p>
     </div>
     <div class="content">
       <ul v-if="notification.notificationCount() > 0">

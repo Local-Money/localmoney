@@ -17,46 +17,63 @@ export const useNotificationStore = defineStore({
     async fetchNotifications() {
       const trades = await this.client.client.fetchTrades()
       const wallet = this.client.userWallet.address
-      const newNotifications: Notification[] = []
       const lastSeem = this.lastSeem.get(wallet) ?? 0
-      const notifications = this.notifications()
+      let notifications = this.notifications()
       trades.forEach((tradeInfo) => {
         if (!tradeInfo.expired) {
-          tradeInfo.trade.state_history.reverse().forEach((state) => {
+          tradeInfo.trade.state_history.forEach((state) => {
             const time = state.timestamp * 1000
             if (time > lastSeem && state.actor !== wallet) {
               const notification = toNotification(tradeInfo.trade.id, state.state, state.actor, time)
-              if (!notifications.includes(notification)) {
-                newNotifications.push(notification)
+              const found = notifications.find(
+                (n) =>
+                  n.id === notification.id &&
+                  n.state === notification.state &&
+                  n.time === notification.time &&
+                  n.sender === notification.sender
+              )
+              if (!found) {
+                notifications.push(notification)
               }
             }
           })
+        } else {
+          // clears the storage of notifications of expired trades that have been read
+          notifications = notifications.filter((n) => n.id !== tradeInfo.trade.id && n.isAlreadyRead) ?? notifications
         }
       })
-      await this.addNotifications(newNotifications)
+      this.addNotifications(notifications)
     },
-    async addNotifications(notifications: Notification[]) {
-      this.cleanNotification()
+    addNotifications(notifications: Notification[]) {
       const wallet = this.client.userWallet.address
-      this.badgeCount = notifications.length
       this.store.set(wallet, notifications)
+      this.badgeCount = this.notifications().length
     },
     notifications(): Notification[] {
       const wallet = this.client.userWallet.address
       return this.store.get(wallet)?.filter((notification) => !notification.isAlreadyRead) ?? []
     },
-    async markAsRead(notification: Notification) {
+    markAsRead(notification: Notification) {
       const wallet = this.client.userWallet.address
       const notifications = this.store.get(wallet) ?? []
       const index = notifications.indexOf(notification)
       if (index > -1) {
         notifications[index].isAlreadyRead = true
-        await this.addNotifications(notifications)
         this.badgeCount--
+        this.addNotifications(notifications)
         this.lastSeem.set(wallet, Date.now())
       }
     },
-    cleanNotification() {
+    async markAllAsRead() {
+      const wallet = this.client.userWallet.address
+      const notifications = this.store.get(wallet) ?? []
+      notifications.forEach((n) => {
+        n.isAlreadyRead = true
+      })
+      this.addNotifications(notifications)
+      this.lastSeem.set(wallet, Date.now())
+    },
+    async cleanNotification() {
       const notifications = this.notifications()
       notifications.forEach((notification, index) => {
         if (notification.isAlreadyRead) {
