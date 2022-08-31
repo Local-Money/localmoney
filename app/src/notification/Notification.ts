@@ -27,10 +27,6 @@ class NotificationHandler {
     await this.store.markAsRead(notification)
   }
 
-  public async readAllNotifications() {
-    await this.store.markAllAsRead()
-  }
-
   public notifications(): Notification[] {
     return this.store.notifications()
   }

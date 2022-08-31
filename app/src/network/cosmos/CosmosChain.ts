@@ -199,6 +199,7 @@ export class CosmosChain implements Chain {
         console.log('response >>> ', response)
         return response
       } catch (e) {
+        console.log(e)
         throw new DefaultError()
       }
     } else {

@@ -1,15 +1,14 @@
 import { defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
-import type { TradeInfo } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { getTradeCounterParty } from '~/shared'
 
 export const useNotificationStore = defineStore({
   id: 'notification',
   state: () => {
     return {
       store: useLocalStorage('notification', new Map<string, Notification[]>()),
+      lastSeem: useLocalStorage('last_seem', new Map<string, number>()),
       client: useClientStore(),
       badgeCount: 0,
     }
@@ -18,27 +17,28 @@ export const useNotificationStore = defineStore({
     async fetchNotifications() {
       const trades = await this.client.client.fetchTrades()
       const wallet = this.client.userWallet.address
-      const openTrades = trades.filter((tradeInfo) => {
-        const counterParty = getTradeCounterParty(wallet, tradeInfo.trade)
-        return (
-          !tradeInfo.expired &&
-          tradeInfo.trade.state === TradeState.request_created &&
-          tradeInfo.offer.owner !== counterParty
-        )
-      })
-      const notifications = this.store.get(wallet) ?? []
-      openTrades.forEach((tradeInfo) => {
-        const found =
-          notifications.find((n) => n.id === tradeInfo.trade.id && n.state === tradeInfo.trade.state) !== undefined
-        if (!found) {
-          notifications.push(mapTradeInfoToNotification(wallet, tradeInfo))
+      const newNotifications: Notification[] = []
+      const lastSeem = this.lastSeem.get(wallet) ?? 0
+      const notifications = this.notifications()
+      trades.forEach((tradeInfo) => {
+        if (!tradeInfo.expired) {
+          tradeInfo.trade.state_history.reverse().forEach((state) => {
+            const time = state.timestamp * 1000
+            if (time > lastSeem && state.actor !== wallet) {
+              const notification = toNotification(tradeInfo.trade.id, state.state, state.actor, time)
+              if (!notifications.includes(notification)) {
+                newNotifications.push(notification)
+              }
+            }
+          })
         }
       })
-      await this.addNotifications(notifications)
+      await this.addNotifications(newNotifications)
     },
     async addNotifications(notifications: Notification[]) {
+      this.cleanNotification()
       const wallet = this.client.userWallet.address
-      this.badgeCount = notifications.filter((notification) => !notification.isAlreadyRead).length
+      this.badgeCount = notifications.length
       this.store.set(wallet, notifications)
     },
     notifications(): Notification[] {
@@ -53,14 +53,10 @@ export const useNotificationStore = defineStore({
         notifications[index].isAlreadyRead = true
         await this.addNotifications(notifications)
         this.badgeCount--
+        this.lastSeem.set(wallet, Date.now())
       }
     },
-    async markAllAsRead() {
-      const notifications = this.notifications()
-      notifications.forEach((notification) => (notification.isAlreadyRead = true))
-      this.badgeCount = 0
-    },
-    async cleanNotification() {
+    cleanNotification() {
       const notifications = this.notifications()
       notifications.forEach((notification, index) => {
         if (notification.isAlreadyRead) {
@@ -71,19 +67,37 @@ export const useNotificationStore = defineStore({
   },
 })
 
-function mapTradeInfoToNotification(wallet: string, tradeInfo: TradeInfo): Notification {
-  const state = tradeInfo.trade.state
-  const id = tradeInfo.trade.id
-  const sender = getTradeCounterParty(wallet, tradeInfo.trade)
+function toNotification(id: string, state: TradeState, sender: string, time: number): Notification {
   const message = getMessageByState(state)
-  const time = Date.now()
-  const isAlreadyRead = false
-  return { state, id, message, sender, time, isAlreadyRead }
+  return { state, id, message, sender, time, isAlreadyRead: false }
 }
 
 // TODO define message for each state
-function getMessageByState(_: TradeState): string {
-  return 'You have a new trade'
+function getMessageByState(state: TradeState): string {
+  switch (state) {
+    case TradeState.request_created:
+      return 'You have a new Trade request'
+    case TradeState.request_accepted:
+      return 'Your Trade was accepted'
+    case TradeState.request_canceled:
+      return 'Your Trade was canceled'
+    case TradeState.request_expired:
+      return 'A Trade has been expired'
+    case TradeState.escrow_funded:
+      return 'Your Trade has funds in the escrow'
+    case TradeState.escrow_refunded:
+      return 'escrow_refunded'
+    case TradeState.fiat_deposited:
+      return 'The Trade was marked as fiat deposited'
+    case TradeState.escrow_released:
+      return 'Trade finished with success'
+    case TradeState.escrow_disputed:
+      return 'The trade is in dispute'
+    case TradeState.settled_for_maker:
+      return 'The dispute was decided in favor of the maker'
+    case TradeState.settled_for_taker:
+      return 'The dispute was decided in favor of the taker'
+  }
 }
 
 export interface Notification {
