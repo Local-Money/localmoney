@@ -57,7 +57,7 @@ async function showTrade(n: Notification) {
             <p class="status">
               {{ n.message }}
             </p>
-            <p class="addr">from {{ formatAddress(n.sender) }}</p>
+            <p class="addr">with {{ formatAddress(n.sender) }}</p>
           </div>
           <p class="timestamp">
             {{ timeSince(n.time) }}

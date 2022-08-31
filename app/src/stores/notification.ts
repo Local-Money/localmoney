@@ -72,31 +72,30 @@ function toNotification(id: string, state: TradeState, sender: string, time: num
   return { state, id, message, sender, time, isAlreadyRead: false }
 }
 
-// TODO define message for each state
 function getMessageByState(state: TradeState): string {
   switch (state) {
     case TradeState.request_created:
-      return 'You have a new Trade request'
+      return 'New trade request'
     case TradeState.request_accepted:
-      return 'Your Trade was accepted'
+      return 'Trade request was accepted'
     case TradeState.request_canceled:
-      return 'Your Trade was canceled'
+      return 'Trade has been canceled'
     case TradeState.request_expired:
-      return 'A Trade has been expired'
+      return 'Trade expired'
     case TradeState.escrow_funded:
-      return 'Your Trade has funds in the escrow'
+      return 'Trade has been funded'
     case TradeState.escrow_refunded:
-      return 'escrow_refunded'
+      return 'Trade refunded'
     case TradeState.fiat_deposited:
-      return 'The Trade was marked as fiat deposited'
+      return 'Fiat deposited'
     case TradeState.escrow_released:
-      return 'Trade finished with success'
+      return 'Trade finished successfully'
     case TradeState.escrow_disputed:
-      return 'The trade is in dispute'
+      return 'Trade in dispute'
     case TradeState.settled_for_maker:
-      return 'The dispute was decided in favor of the maker'
+      return 'Dispute resolved'
     case TradeState.settled_for_taker:
-      return 'The dispute was decided in favor of the taker'
+      return 'Dispute resolved'
   }
 }
 
