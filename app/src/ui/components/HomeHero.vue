@@ -179,7 +179,7 @@ section {
   img {
     position: absolute;
     width: 100%;
-    padding: 0 0 0 64px;
+    padding: 0 0 0 80px;
   }
 }
 

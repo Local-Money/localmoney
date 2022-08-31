@@ -118,9 +118,7 @@ async function showTrade(n: Notification) {
       align-items: center;
       justify-content: center;
       align-content: flex-start;
-
       position: absolute;
-      z-index: 51;
       right: 10px;
       background: $primary;
       border-radius: 56px;
