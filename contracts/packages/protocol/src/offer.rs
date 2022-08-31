@@ -86,7 +86,7 @@ pub enum ExecuteMsg {
     },
     NewArbitrator {
         arbitrator: Addr,
-        asset: FiatCurrency,
+        fiat: FiatCurrency,
     },
     DeleteArbitrator {
         arbitrator: Addr,
@@ -329,7 +329,7 @@ pub struct TradeAddr {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Arbitrator {
     pub arbitrator: Addr,
-    pub asset: FiatCurrency,
+    pub fiat: FiatCurrency,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

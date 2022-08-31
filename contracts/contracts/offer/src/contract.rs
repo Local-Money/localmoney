@@ -41,9 +41,10 @@ pub fn execute(
     match msg {
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::NewArbitrator { arbitrator, asset } => {
-            create_arbitrator(deps, env, info, arbitrator, asset)
-        }
+        ExecuteMsg::NewArbitrator {
+            arbitrator,
+            fiat: asset,
+        } => create_arbitrator(deps, info, arbitrator, asset),
         ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
             delete_arbitrator(deps, info, arbitrator, asset)
         }
@@ -179,15 +180,14 @@ pub fn update_last_traded(
 
 pub fn create_arbitrator(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     arbitrator: Addr,
-    asset: FiatCurrency,
+    fiat: FiatCurrency,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref());
-    assert_ownership(info.sender, admin)?;
+    // assert_ownership(info.sender, admin)?;
 
-    let index = arbitrator.clone().to_string() + &asset.to_string();
+    let index = arbitrator.clone().to_string() + &fiat.to_string();
 
     arbitrators()
         .save(
@@ -195,7 +195,7 @@ pub fn create_arbitrator(
             &index,
             &Arbitrator {
                 arbitrator: arbitrator.clone(),
-                asset: asset.clone(),
+                fiat: fiat.clone(),
             },
         )
         .unwrap();
@@ -203,12 +203,7 @@ pub fn create_arbitrator(
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
         .add_attribute("arbitrator", arbitrator.to_string())
-        .add_attribute("asset", asset.to_string())
-        .add_attribute("timestamp", env.block.time.seconds().to_string())
-        .add_attribute(
-            "numeric",
-            ((env.block.time.seconds() % 100) * (3 + 1) / (99 + 1)).to_string(),
-        );
+        .add_attribute("asset", fiat.to_string());
 
     Ok(res)
 }

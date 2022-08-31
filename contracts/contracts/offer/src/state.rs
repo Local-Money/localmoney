@@ -53,7 +53,7 @@ pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexe
             "arbitrators__arbitrator",
         ),
         asset: MultiIndex::new(
-            |d: &Arbitrator| d.asset.clone().to_string(),
+            |d: &Arbitrator| d.fiat.clone().to_string(),
             "arbitrators",
             "arbitrators__asset",
         ),
