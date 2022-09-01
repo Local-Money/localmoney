@@ -566,10 +566,9 @@ pub fn create_arbitrator(
     arbitrator: Addr,
     fiat: FiatCurrency,
 ) -> Result<Response, ContractError> {
-    // let admin = get_hub_admin(deps.as_ref());
-    // assert_ownership(info.sender, admin)?;
+    let admin = get_hub_admin(deps.as_ref()).addr;
+    assert_ownership(info.sender, admin)?;
 
-    /*
     let index = arbitrator.clone().to_string() + &fiat.to_string();
 
     arbitrators()
@@ -582,7 +581,6 @@ pub fn create_arbitrator(
             },
         )
         .unwrap();
-     */
 
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
@@ -599,7 +597,7 @@ pub fn delete_arbitrator(
     asset: FiatCurrency,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref());
-    assert_ownership(info.sender, admin)?;
+    assert_ownership(info.sender, admin.addr)?;
 
     let index = arbitrator.clone().to_string() + &asset.to_string();
 

@@ -347,3 +347,7 @@ pub fn load_offer(
         Some(load_offer_result.unwrap())
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct MigrateMsg {}

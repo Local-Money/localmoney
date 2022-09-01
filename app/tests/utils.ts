@@ -39,20 +39,36 @@ export async function setupProtocol() {
     await takerClient.updateHub(process.env.HUB)
   } else {
     // Instantiate all contracts
-    const admAddress = adminClient.getWalletAddress()
+    const admAddr = adminClient.getWalletAddress()
     const adminCwClient = adminClient.getCwClient() as SigningCosmWasmClient
 
-    const instantiateMsg = { admin_addr: admAddress }
+    const instantiateMsg = { admin_addr: admAddr }
     const { hub, offer, trade, trading_incentives } = codeIds
-    const hubInstantiateResult = await adminCwClient.instantiate(admAddress, hub, instantiateMsg, 'hub', 'auto')
-    const offerInstantiateResult = await adminCwClient.instantiate(admAddress, offer, instantiateMsg, 'offer', 'auto')
-    const tradeInstantiateResult = await adminCwClient.instantiate(admAddress, trade, instantiateMsg, 'trade', 'auto')
+    const opts = { admin: admAddr }
+    const hubInstantiateResult = await adminCwClient.instantiate(admAddr, hub, instantiateMsg, 'hub', 'auto', opts)
+    const offerInstantiateResult = await adminCwClient.instantiate(
+      admAddr,
+      offer,
+      instantiateMsg,
+      'offer',
+      'auto',
+      opts
+    )
+    const tradeInstantiateResult = await adminCwClient.instantiate(
+      admAddr,
+      trade,
+      instantiateMsg,
+      'trade',
+      'auto',
+      opts
+    )
     const tradingIncentivesResult = await adminCwClient.instantiate(
-      admAddress,
+      admAddr,
       trading_incentives,
       instantiateMsg,
       'trading_incentives',
-      'auto'
+      'auto',
+      opts
     )
 
     // Assert that all contracts were instantiated
@@ -67,7 +83,7 @@ export async function setupProtocol() {
       tradeInstantiateResult.contractAddress,
       tradingIncentivesResult.contractAddress
     )
-    await adminCwClient.execute(admAddress, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
+    await adminCwClient.execute(admAddr, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
     await adminClient.updateHub(hubInstantiateResult.contractAddress)
     await makerClient.updateHub(hubInstantiateResult.contractAddress)
     await takerClient.updateHub(hubInstantiateResult.contractAddress)

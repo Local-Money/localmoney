@@ -7,8 +7,8 @@ use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthori
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, ExecuteMsg, InstantiateMsg, Offer, OfferModel, OfferMsg, OfferState, OfferUpdateMsg,
-    OffersCount, QueryMsg,
+    offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferState,
+    OfferUpdateMsg, OffersCount, QueryMsg,
 };
 
 use crate::state::{offers_count_read, offers_count_storage};
@@ -219,4 +219,9 @@ pub fn load_offer_by_id(storage: &dyn Storage, id: String) -> StdResult<Offer> {
         .unwrap_or_default()
         .unwrap();
     Ok(offer)
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::default())
 }

@@ -43,3 +43,7 @@ pub struct Distribution {
 pub struct TraderRewards {
     pub amount: Uint128,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct MigrateMsg {}
