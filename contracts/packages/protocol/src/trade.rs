@@ -44,7 +44,7 @@ pub enum ExecuteMsg {
     },
     DeleteArbitrator {
         arbitrator: Addr,
-        asset: FiatCurrency,
+        fiat: FiatCurrency,
     },
     SettleDispute {
         trade_id: String,
@@ -72,8 +72,8 @@ pub enum QueryMsg {
         last_value: Option<String>,
         limit: u32,
     },
-    ArbitratorAsset {
-        asset: FiatCurrency,
+    ArbitratorsFiat {
+        fiat: FiatCurrency,
     },
 }
 
@@ -82,6 +82,7 @@ pub enum QueryMsg {
 pub enum TraderRole {
     Seller,
     Buyer,
+    Arbitrator,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -196,7 +197,7 @@ impl TradeModel<'_> {
         let result = trades()
             .idx
             .buyer
-            .prefix(buyer.to_string())
+            .prefix(buyer)
             .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
@@ -219,7 +220,30 @@ impl TradeModel<'_> {
         let result = trades()
             .idx
             .seller
-            .prefix(seller.to_string())
+            .prefix(seller)
+            .range(storage, range_from, None, Order::Descending)
+            .take(limit as usize)
+            .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn trades_by_arbitrator(
+        storage: &dyn Storage,
+        arbitrator: String,
+        last_value: Option<String>,
+        limit: u32,
+    ) -> StdResult<Vec<Trade>> {
+        let range_from = match last_value {
+            Some(thing) => Some(Bound::exclusive(thing)),
+            None => None,
+        };
+
+        let result = trades()
+            .idx
+            .arbitrator
+            .prefix(arbitrator)
             .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
@@ -233,11 +257,12 @@ pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
     pub buyer: MultiIndex<'a, String, Trade, String>,
     pub seller: MultiIndex<'a, String, Trade, String>,
+    pub arbitrator: MultiIndex<'a, String, Trade, String>,
 }
 
 impl<'a> IndexList<Trade> for TradeIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Trade>> + '_> {
-        let v: Vec<&dyn Index<Trade>> = vec![&self.buyer, &self.seller];
+        let v: Vec<&dyn Index<Trade>> = vec![&self.buyer, &self.seller, &self.arbitrator];
         Box::new(v.into_iter())
     }
 }
@@ -246,6 +271,16 @@ pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
     let indexes = TradeIndexes {
         buyer: MultiIndex::new(|t| t.buyer.to_string(), "trades", "trades__buyer"),
         seller: MultiIndex::new(|t| t.seller.to_string(), "trades", "trades__seller"),
+        arbitrator: MultiIndex::new(
+            |t| {
+                t.arbitrator
+                    .clone()
+                    .unwrap_or(Addr::unchecked(""))
+                    .to_string()
+            },
+            "trades",
+            "trades__arbitrator",
+        ),
     };
     IndexedMap::new("trades", indexes)
 }
@@ -257,7 +292,7 @@ pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexe
             "arbitrators",
             "arbitrators__arbitrator",
         ),
-        asset: MultiIndex::new(
+        fiat: MultiIndex::new(
             |d: &Arbitrator| d.fiat.clone().to_string(),
             "arbitrators",
             "arbitrators__asset",
@@ -269,12 +304,12 @@ pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexe
 pub struct ArbitratorIndexes<'a> {
     // pk goes to second tuple element
     pub arbitrator: MultiIndex<'a, Addr, Arbitrator, Vec<u8>>,
-    pub asset: MultiIndex<'a, String, Arbitrator, Vec<u8>>,
+    pub fiat: MultiIndex<'a, String, Arbitrator, Vec<u8>>,
 }
 
 impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Arbitrator>> + '_> {
-        let v: Vec<&dyn Index<Arbitrator>> = vec![&self.arbitrator, &self.asset];
+        let v: Vec<&dyn Index<Arbitrator>> = vec![&self.arbitrator, &self.fiat];
         Box::new(v.into_iter())
     }
 }

@@ -95,4 +95,46 @@ describe('arbitration tests', () => {
     trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.settled_for_maker)
   })
+
+  it('should query trades by arbitrator', async () => {
+    const tradesByArbitrator = await takerClient
+      .getCwClient()
+      .queryContractSmart(takerClient.getHubInfo().hubConfig.trade_addr, {
+        trades: {
+          user: adminClient.getWalletAddress(),
+          role: 'arbitrator',
+          limit: 10,
+        },
+      })
+    expect(tradesByArbitrator.length).toBeGreaterThan(0)
+  })
+
+  it('should remove arbitrator', async () => {
+    const adminCwClient = adminClient.getCwClient()
+    const adminAddr = adminClient.getWalletAddress()
+    const tradeAddr = adminClient.getHubInfo().hubConfig.trade_addr
+    let arbitrators = await adminCwClient.queryContractSmart(tradeAddr, {
+      arbitrators: {
+        limit: 10,
+      },
+    })
+    expect(arbitrators.length).toBe(1)
+    await adminCwClient.execute(
+      adminAddr,
+      tradeAddr,
+      {
+        delete_arbitrator: {
+          arbitrator: adminAddr,
+          fiat: offer.fiat_currency,
+        },
+      },
+      'auto'
+    )
+    arbitrators = await adminCwClient.queryContractSmart(tradeAddr, {
+      arbitrators: {
+        limit: 10,
+      },
+    })
+    expect(arbitrators.length).toBe(0)
+  })
 })

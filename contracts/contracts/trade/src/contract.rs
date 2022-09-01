@@ -3,8 +3,8 @@ use std::str::FromStr;
 
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
-    Uint128, WasmMsg, WasmQuery,
+    Env, MessageInfo, Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg,
 };
 use cw_storage_plus::Bound;
 
@@ -63,8 +63,8 @@ pub fn execute(
         ExecuteMsg::NewArbitrator { arbitrator, fiat } => {
             create_arbitrator(deps, info, arbitrator, fiat)
         }
-        ExecuteMsg::DeleteArbitrator { arbitrator, asset } => {
-            delete_arbitrator(deps, info, arbitrator, asset)
+        ExecuteMsg::DeleteArbitrator { arbitrator, fiat } => {
+            delete_arbitrator(deps, info, arbitrator, fiat)
         }
         ExecuteMsg::SettleDispute { trade_id, winner } => {
             settle_dispute(deps, info, trade_id, winner)
@@ -181,7 +181,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Arbitrators { last_value, limit } => {
             to_binary(&query_arbitrators(deps, last_value, limit)?)
         }
-        QueryMsg::ArbitratorAsset { asset } => to_binary(&query_arbitrator_asset(deps, asset)?),
+        QueryMsg::ArbitratorsFiat { fiat } => to_binary(&query_arbitrators_fiat(deps, fiat)?),
     }
 }
 
@@ -211,6 +211,10 @@ pub fn query_trades(
         }
         TraderRole::Buyer => {
             TradeModel::trades_by_buyer(deps.storage, user.to_string(), last_value, limit).unwrap()
+        }
+        TraderRole::Arbitrator => {
+            TradeModel::trades_by_arbitrator(deps.storage, user.to_string(), last_value, limit)
+                .unwrap()
         }
     };
 
@@ -657,19 +661,19 @@ pub fn delete_arbitrator(
     deps: DepsMut,
     info: MessageInfo,
     arbitrator: Addr,
-    asset: FiatCurrency,
+    fiat: FiatCurrency,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref());
     assert_ownership(info.sender, admin.addr)?;
 
-    let index = arbitrator.clone().to_string() + &asset.to_string();
+    let index = arbitrator.clone().to_string() + &fiat.to_string();
 
     arbitrators().remove(deps.storage, &index).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "delete_arbitrator")
         .add_attribute("arbitrator", arbitrator.to_string())
-        .add_attribute("asset", asset.to_string());
+        .add_attribute("asset", fiat.to_string());
 
     Ok(res)
 }
@@ -840,13 +844,13 @@ pub fn query_arbitrators(
     Ok(result)
 }
 
-pub fn query_arbitrator_asset(deps: Deps, asset: FiatCurrency) -> StdResult<Vec<Arbitrator>> {
+pub fn query_arbitrators_fiat(deps: Deps, fiat: FiatCurrency) -> StdResult<Vec<Arbitrator>> {
     let storage = deps.storage;
 
     let result: Vec<Arbitrator> = arbitrators()
         .idx
-        .asset
-        .prefix(asset.clone().to_string())
+        .fiat
+        .prefix(fiat.clone().to_string())
         .range(storage, None, None, Order::Descending)
         .take(10)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
@@ -860,7 +864,7 @@ pub fn get_arbitrator_random(deps: Deps, random_value: usize, fiat: FiatCurrency
     let storage = deps.storage;
     let result: Vec<Arbitrator> = arbitrators()
         .idx
-        .asset
+        .fiat
         .prefix(fiat.to_string())
         .range(storage, None, None, Order::Descending)
         .take(10)
