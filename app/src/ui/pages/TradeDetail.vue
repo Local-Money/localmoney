@@ -61,7 +61,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main v-if="tradeInfo" v-bind="(trade = tradeInfo.trade)">
+  <main v-if="tradeInfo" class="page" v-bind="(trade = tradeInfo.trade)">
     <h3>{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
     <section class="stepper card">
       <!-- Step 1 -->
@@ -156,9 +156,12 @@ onUnmounted(() => {
       </div>
     </section>
   </main>
-  <main v-else>
-    <div class="error-state card">
+  <main v-else class="page">
+    <div v-if="!client.userWallet.isConnected" class="error-state card">
       <p>You need to connect your wallet</p>
+    </div>
+    <div v-else class="loading-state">
+      <Loading />
     </div>
   </main>
 </template>
@@ -232,6 +235,12 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 32px;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  margin-top: 92px;
 }
 
 .wrap {

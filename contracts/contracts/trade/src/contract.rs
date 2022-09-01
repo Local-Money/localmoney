@@ -3,8 +3,8 @@ use std::str::FromStr;
 
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg,
+    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    Uint128, WasmMsg, WasmQuery,
 };
 use cw_storage_plus::Bound;
 
@@ -26,7 +26,7 @@ use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
 use localterra_protocol::offer::{load_offer, Arbitrator, Offer, OfferType, TradeInfo};
 use localterra_protocol::trade::{
     arbitrators, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
-    TradeModel, TradeState, TraderRole,
+    TradeModel, TradeState, TradeStateItem, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -55,10 +55,10 @@ pub fn execute(
         ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
         ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
         ExecuteMsg::FundEscrow { trade_id } => fund_escrow(deps, env, info, trade_id),
-        ExecuteMsg::ReleaseEscrow { trade_id } => release_escrow(deps, info, trade_id),
-        ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, info, trade_id),
-        ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, info, trade_id),
-        ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, trade_id),
+        ExecuteMsg::ReleaseEscrow { trade_id } => release_escrow(deps, env, info, trade_id),
+        ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
+        ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
+        ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
         ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
         ExecuteMsg::NewArbitrator { arbitrator, fiat } => {
             create_arbitrator(deps, info, arbitrator, fiat)
@@ -110,6 +110,13 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let trade_count = offer.trades_count + 1;
     let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
 
+    let new_trade_state = TradeStateItem {
+        actor: new_trade.taker.clone(),
+        state: TradeState::RequestCreated,
+        timestamp: env.block.time.seconds(),
+    };
+    let trade_state_history = vec![new_trade_state];
+
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
@@ -122,6 +129,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             offer_id,
             arbitrator: Some(Addr::unchecked("todo")),
             state: TradeState::RequestCreated,
+            state_history: trade_state_history,
             created_at: env.block.time.seconds(),
             denom: offer.denom.clone(),
             amount: new_trade.amount.clone(),
@@ -265,6 +273,12 @@ fn fund_escrow(
     // TODO: only accept exact funding amounts, return otherwise
     if balance.amount >= trade.amount {
         trade.state = TradeState::EscrowFunded;
+        let new_trade_state = TradeStateItem {
+            actor: info.sender.clone(),
+            state: trade.state.clone(),
+            timestamp: env.block.time.seconds(),
+        };
+        trade.state_history.push(new_trade_state);
     } else {
         return Err(FundEscrowError {
             required_amount: trade.amount.clone(),
@@ -285,13 +299,13 @@ fn fund_escrow(
 
 fn accept_request(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer can accept the request
-    assert_ownership(info.sender, trade.buyer.clone()).unwrap();
+    assert_ownership(info.sender.clone(), trade.buyer.clone()).unwrap();
 
     // Only change state if the current state is TradeState::RequestCreated
     assert_trade_state_change_is_valid(
@@ -302,6 +316,12 @@ fn accept_request(
     .unwrap();
 
     trade.state = TradeState::RequestAccepted;
+    let new_trade_state = TradeStateItem {
+        actor: info.sender,
+        state: trade.state.clone(),
+        timestamp: env.block.time.seconds(),
+    };
+    trade.state_history.push(new_trade_state);
 
     TradeModel::store(deps.storage, &trade).unwrap();
 
@@ -315,13 +335,14 @@ fn accept_request(
 
 fn fiat_deposited(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
-    assert_ownership(info.sender, trade.buyer.clone()).unwrap();
+    assert_ownership(info.sender.clone(), trade.buyer.clone()).unwrap();
     assert_trade_state_change_is_valid(
         trade.state.clone(),
         TradeState::EscrowFunded,
@@ -331,6 +352,12 @@ fn fiat_deposited(
 
     // Update trade State to TradeState::FiatDeposited
     trade.state = TradeState::FiatDeposited;
+    let new_trade_state = TradeStateItem {
+        actor: info.sender,
+        state: trade.state.clone(),
+        timestamp: env.block.time.seconds(),
+    };
+    trade.state_history.push(new_trade_state);
 
     TradeModel::store(deps.storage, &trade).unwrap();
 
@@ -344,13 +371,18 @@ fn fiat_deposited(
 
 fn cancel_request(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer or seller can cancel the trade.
-    assert_sender_is_buyer_or_seller(info.sender, trade.buyer.clone(), trade.seller.clone())
-        .unwrap();
+    assert_sender_is_buyer_or_seller(
+        info.sender.clone(),
+        trade.buyer.clone(),
+        trade.seller.clone(),
+    )
+    .unwrap();
 
     // You can only cancel the trade if the current TradeState is Created or Accepted
     if !((trade.state == TradeState::RequestCreated)
@@ -364,6 +396,13 @@ fn cancel_request(
 
     // Update trade State to TradeState::RequestCanceled
     trade.state = TradeState::RequestCanceled;
+    let new_trade_state = TradeStateItem {
+        actor: info.sender,
+        state: trade.state.clone(),
+        timestamp: env.block.time.seconds(),
+    };
+    trade.state_history.push(new_trade_state);
+
     TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new().add_attribute("action", "cancel_request");
     Ok(res)
@@ -371,6 +410,7 @@ fn cancel_request(
 
 fn release_escrow(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
@@ -400,6 +440,13 @@ fn release_escrow(
 
     //Update trade State to TradeState::EscrowReleased
     trade.state = TradeState::EscrowReleased;
+    let new_trade_state = TradeStateItem {
+        actor: info.sender,
+        state: trade.state.clone(),
+        timestamp: env.block.time.seconds(),
+    };
+    trade.state_history.push(new_trade_state);
+
     TradeModel::store(deps.storage, &trade).unwrap();
 
     //Calculate fees and final release amount
@@ -525,7 +572,12 @@ fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
     Ok(res)
 }
 
-fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, ContractError> {
+fn refund_escrow(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    trade_id: String,
+) -> Result<Response, ContractError> {
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
     let trade = TradeModel::from_store(deps.storage, &trade_id);
     assert_trade_state_change_is_valid(
@@ -547,9 +599,17 @@ fn refund_escrow(deps: DepsMut, env: Env, trade_id: String) -> Result<Response, 
         });
     }
 
-    //Update trade state to TradeState::EscrowRefunded
     let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
+
+    //Update trade state to TradeState::EscrowRefunded
     trade.state = TradeState::EscrowRefunded;
+    let new_trade_state = TradeStateItem {
+        actor: info.sender,
+        state: trade.state.clone(),
+        timestamp: env.block.time.seconds(),
+    };
+    trade.state_history.push(new_trade_state);
+
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let amount = trade.amount.clone();

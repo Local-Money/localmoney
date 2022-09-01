@@ -150,7 +150,6 @@ export class CosmosChain implements Chain {
   }
 
   async openTrade(trade: NewTrade) {
-    let response = ''
     const msg = { create: trade }
     console.log('Open Trade msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
@@ -162,15 +161,16 @@ export class CosmosChain implements Chain {
           'auto'
         )
         console.log('Open Trade result >> ', result)
-        // TODO should we try to get this info this way?
-        response = result.logs[0].events[2].attributes[1].value
+        const trade_id = result.logs[0].events
+          .find((e) => e.type === 'wasm')
+          ?.attributes.find((a) => a.key === 'trade_id')?.value
+        return trade_id ?? ''
       } catch (e) {
         throw new DefaultError()
       }
     } else {
       throw new WalletNotConnected()
     }
-    return response
   }
 
   // TODO maybe we can do a single trades_query

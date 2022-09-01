@@ -1,7 +1,13 @@
 @import "tokens.scss";
 @import "elements.scss";
-main {
+.page {
   max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+.page-wide {
+  max-width: 1250px;
   margin: 0 auto;
   padding: 0 24px 40px;
 }

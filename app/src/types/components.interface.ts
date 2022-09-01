@@ -101,7 +101,14 @@ export interface Trade {
   amount: string
   denom: Denom
   state: TradeState
+  state_history: TradeStateItem[]
   asset: FiatCurrency
+}
+
+export interface TradeStateItem {
+  actor: string
+  state: TradeState
+  timestamp: number
 }
 
 export enum TradeState {

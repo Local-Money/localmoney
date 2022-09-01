@@ -16,12 +16,16 @@ function toggleWidget() {
 }
 
 async function showTrade(n: Notification) {
-  await notification.readNotification(n)
+  notification.readNotification(n)
   await router.push({
     name: 'TradeDetail',
     params: { id: n.id },
   })
   toggleWidget()
+}
+
+async function readAll() {
+  await notification.readAllNotification()
 }
 </script>
 
@@ -53,7 +57,7 @@ async function showTrade(n: Notification) {
     <div v-if="widgetActive" class="widget">
       <div class="header">
         <p class="title">Notifications</p>
-        <p class="mark-read" @click="notification.readAllNotifications()">Mark all as read</p>
+        <p class="mark-read" @click="readAll()">Mark all as read</p>
       </div>
       <div class="content">
         <ul v-if="notification.notificationCount() > 0">
@@ -85,7 +89,7 @@ async function showTrade(n: Notification) {
               <p class="status">
                 {{ n.message }}
               </p>
-              <p class="addr">from {{ formatAddress(n.sender) }}</p>
+              <p class="addr">with {{ formatAddress(n.sender) }}</p>
             </div>
             <p class="timestamp">
               {{ timeSince(n.time) }}
@@ -118,9 +122,7 @@ async function showTrade(n: Notification) {
       align-items: center;
       justify-content: center;
       align-content: flex-start;
-
       position: absolute;
-      z-index: 51;
       right: 10px;
       background: $primary;
       border-radius: 56px;

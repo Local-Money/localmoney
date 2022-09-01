@@ -55,10 +55,10 @@ onUnmounted(async () => {})
 </script>
 
 <template>
-  <main>
+  <main class="page">
     <h3>Open Trades</h3>
     <!-- Open Trades section -->
-    <ListContentResult :result="tradeResult" emptyStateMsg="There is no trades here yet">
+    <ListContentResult :result="tradeResult" emptyStateMsg="There are no trades here yet">
       <section v-if="hasOpenTrades">
         <TradeOpenItem v-for="tradeInfo in openTrades" :key="tradeInfo.trade.addr" :tradeInfo="tradeInfo" />
       </section>
