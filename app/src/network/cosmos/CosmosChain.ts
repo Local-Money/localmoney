@@ -312,6 +312,27 @@ export class CosmosChain implements Chain {
     }
   }
 
+  async settleDispute(tradeId: string, winner: string) {
+    const msg = { settle_dispute: { trade_id: tradeId, winner } }
+    console.log('msg >> ', msg)
+    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
+      try {
+        const result = await this.cwClient.execute(
+          this.getWalletAddress(),
+          this.hubInfo.hubConfig.trade_addr,
+          msg,
+          'auto'
+        )
+        console.log('result >> ', result)
+      } catch (e) {
+        console.error(e)
+        throw new DefaultError()
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
+  }
+
   // TODO extract this method
   private static async suggestChain(config: CosmosConfig) {
     try {

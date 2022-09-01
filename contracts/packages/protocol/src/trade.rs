@@ -46,6 +46,10 @@ pub enum ExecuteMsg {
         arbitrator: Addr,
         asset: FiatCurrency,
     },
+    SettleDispute {
+        trade_id: String,
+        winner: Addr,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

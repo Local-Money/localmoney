@@ -110,6 +110,10 @@ class MockChain implements Chain {
   newArbitrator(_arbitrator: Arbitrator): Promise<void> {
     return Promise.resolve(undefined)
   }
+
+  settleDispute(_tradeId: string, _winner: string): Promise<void> {
+    return Promise.resolve(undefined)
+  }
 }
 
 function sleep(ms: number) {

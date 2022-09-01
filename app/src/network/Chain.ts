@@ -55,6 +55,8 @@ export interface Chain {
 
   openDispute(tradeId: string): Promise<void>
 
+  settleDispute(tradeId: string, winner: string): Promise<void>
+
   newArbitrator(arbitrator: Arbitrator): Promise<void>
 }
 
