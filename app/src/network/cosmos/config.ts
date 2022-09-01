@@ -79,10 +79,10 @@ export const TEST_CONFIG: CosmosConfig = {
 export const TEST_HUB_INFO: HubInfo = {
   hubAddress: process.env.HUB ? process.env.HUB : '',
   hubConfig: {
-    offer_addr: 'kujira1cryjuex5uxstsstr8j50qpm4g9828nlr0l5uunlwvj0e7umdv7yq2m4rrt',
-    trade_addr: 'kujira1kl8fyh4245lqj3ht5cl099eswuhgds4k9zdfv6hrhf3xu8xplzyqs8vklx',
-    trading_incentives_addr: 'kujira1t7tjl3fegh8m9yn37eks2m2qaelcz2kuvyyzpp28vcx42vame65sevwhhh',
-    local_market_addr: 'kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w',
+    offer_addr: 'kujira1q2eeete6dqj7v5lcakswn88s4ycg3njll689ln0vtkrqfpa2t9kq8k3unl',
+    trade_addr: 'kujira1uvej9y3ky77c4tqnwe40chhyc7w3gn0pf6r5lc8r4gkl7wh55p3scgw27t',
+    trading_incentives_addr: 'kujira195t7tes4ntelymynv289e28fhtrp6zz4e6mxnmga5erch8gtkqrqvj2rk6',
+    local_market_addr: 'kujira1mzj25l99ats4dhr7xpxlmcd4rd242t0zh0e84gn92wd39crdzqaskqg8ch',
     local_denom: {
       native: 'factory/kujira16g2rahf5846rxzp3fwlswy08fz8ccuwkgthh5j/local',
     },

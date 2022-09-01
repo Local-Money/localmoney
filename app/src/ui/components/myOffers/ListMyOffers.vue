@@ -63,7 +63,7 @@ onMounted(async () => {
 
 <template>
   <section>
-    <ListContentResult :result="myOffersResult" emptyStateMsg="There is no offers available yet">
+    <ListContentResult :result="myOffersResult" emptyStateMsg="There are no offers available yet">
       <!-- My Offers section -->
       <section v-if="hasOffers()" class="offers-list">
         <!-- Offers for -->

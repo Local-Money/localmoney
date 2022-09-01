@@ -4,8 +4,7 @@
   "description": "LocalMoney intergation tests.",
   "main": "index.js",
   "scripts": {
-    "bombay:all": "DEPLOY=all CONTRACTS=../contracts/artifacts ./node_modules/node/bin/node index.js",
-    "terrarium:all": "DEPLOY=all NETWORK=localterra CW20ID=1 CONTRACTS=../contracts/artifacts ./node_modules/node/bin/node index.js"
+    "deploy:all": "DEPLOY=all CONTRACTS=../contracts/artifacts ./node_modules/node/bin/node index.js"
   },
   "repository": "https://github.com/Local-Money/localmoney",
   "author": "Local Team",

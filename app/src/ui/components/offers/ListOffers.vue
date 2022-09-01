@@ -81,7 +81,7 @@ watch(offerType, async () => await fetchOffers())
       <h3 v-if="offerType === OfferType.sell">Buy from these sellers</h3>
       <h3 v-if="offerType === OfferType.buy">Sell to these buyers</h3>
       <!-- Offers for -->
-      <ListContentResult :result="offersResult" emptyStateMsg="There is no offers available yet">
+      <ListContentResult :result="offersResult" emptyStateMsg="There are no offers available yet">
         <ul>
           <li
             v-for="offer in page.offers"

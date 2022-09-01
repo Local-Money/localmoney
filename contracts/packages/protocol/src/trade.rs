@@ -99,7 +99,15 @@ pub struct Trade {
     pub denom: Denom,
     pub amount: Uint128,
     pub state: TradeState,
+    pub state_history: Vec<TradeStateItem>,
     pub asset: FiatCurrency,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct TradeStateItem {
+    pub actor: Addr,
+    pub state: TradeState,
+    pub timestamp: u64,
 }
 
 pub struct TradeModel<'a> {
