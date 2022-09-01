@@ -21,15 +21,13 @@ beforeAll(async () => {
   makerClient = result.makerClient
   takerClient = result.takerClient
   adminClient = result.adminClient
-
-  console.log('admin', adminClient.getWalletAddress())
-  console.log('maker', makerClient.getWalletAddress())
-  console.log('taker', takerClient.getWalletAddress())
 })
+
+let offer: GetOffer
 
 describe('arbitration tests', () => {
   // Call dispute_escrow on a trade in fiat_deposited state and expects it to be in escrow_disputed state
-  it('should dispute escrow of a trade', async () => {
+  it('should have available offers', async () => {
     // Create and fetch offer for trade creation
     offers[0].denom = { native: process.env.OFFER_DENOM! }
     if (process.env.CREATE_OFFERS) {
@@ -41,31 +39,60 @@ describe('arbitration tests', () => {
       fiatCurrency: createdOffer.fiat_currency,
       offerType: createdOffer.offer_type,
     })
+    offer = offersResult[0] as GetOffer
+    expect(offer.id.length).toBeGreaterThan(0)
+  })
 
+  it('should settle dispute for taker', async () => {
     // Register arbitrator
     await adminClient.newArbitrator({
       arbitrator: adminClient.getWalletAddress(),
-      fiat: createdOffer.fiat_currency,
+      fiat: offer.fiat_currency,
     })
 
     // Create a Trade and set it to `fiat_deposited` state.
-    const offer = offersResult[0] as GetOffer
-    await takerClient.openTrade({ amount: offer.min_amount, offer_id: offer.id, taker: takerClient.getWalletAddress() })
-    const tradeInfo = (await makerClient.fetchTrades())[0]
-    await makerClient.acceptTradeRequest(tradeInfo.trade.id)
-    await takerClient.fundEscrow(tradeInfo.trade.id, tradeInfo.trade.amount, tradeInfo.trade.denom)
-    await makerClient.setFiatDeposited(tradeInfo.trade.id)
-    let trade = await takerClient.fetchTradeDetail(tradeInfo.trade.id)
+    const tradeId = await takerClient.openTrade({
+      amount: offer.min_amount,
+      offer_id: offer.id,
+      taker: takerClient.getWalletAddress(),
+    })
+    await makerClient.acceptTradeRequest(tradeId)
+    let trade = await takerClient.fetchTradeDetail(tradeId)
+    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await makerClient.setFiatDeposited(trade.id)
+    trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.fiat_deposited)
 
     // Taker disputes the escrow
     await takerClient.openDispute(trade.id)
-    trade = await takerClient.fetchTradeDetail(tradeInfo.trade.id)
+    trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.escrow_disputed)
 
     // Arbitrator settles for Taker
     await adminClient.settleDispute(trade.id, takerClient.getWalletAddress())
     trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.settled_for_taker)
+  })
+
+  it('should settle dispute for maker', async () => {
+    const tradeId = await takerClient.openTrade({
+      amount: offer.min_amount,
+      offer_id: offer.id,
+      taker: takerClient.getWalletAddress(),
+    })
+    await makerClient.acceptTradeRequest(tradeId)
+    let trade = await takerClient.fetchTradeDetail(tradeId)
+    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await makerClient.setFiatDeposited(trade.id)
+
+    // Taker disputes the escrow
+    await takerClient.openDispute(trade.id)
+    trade = await takerClient.fetchTradeDetail(trade.id)
+    expect(trade.state).toBe(TradeState.escrow_disputed)
+
+    // Arbitrator settles for Maker
+    await adminClient.settleDispute(trade.id, makerClient.getWalletAddress())
+    trade = await takerClient.fetchTradeDetail(trade.id)
+    expect(trade.state).toBe(TradeState.settled_for_maker)
   })
 })
