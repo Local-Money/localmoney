@@ -22,7 +22,7 @@ const props = defineProps<{
 </template>
 
 <style scoped lang="scss">
-@import "../../style/pages.scss";
+@import '../../style/pages.scss';
 
 .empty-state {
   display: flex;

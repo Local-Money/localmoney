@@ -7,9 +7,9 @@ export function formatAddress(address) {
 }
 
 export function formatAmount(amount, ustAmount = true) {
-  if (ustAmount)
+  if (ustAmount) {
     amount = amount / 1000000
-
+  }
   return amount.toFixed(2)
 }
 
@@ -63,8 +63,9 @@ export function formatTradeState(state) {
 }
 
 export function calculateFiatPriceByRate(usdRate, offerRate) {
-  if (offerRate === 0)
+  if (offerRate === 0) {
     return usdRate
+  }
 
   return usdRate * (offerRate / 100)
 }
@@ -75,8 +76,7 @@ export function convertOfferRateToMarginRate(offerRate) {
       marginOffset: offerRate - 100,
       margin: 'above',
     }
-  }
-  else {
+  } else {
     return {
       marginOffset: 100 - offerRate,
       margin: 'bellow',
@@ -98,16 +98,16 @@ export function formatDate(date, showTime = true) {
       minute: '2-digit',
     }).format(date)
     return `${day} ${month} ${year} - ${time}`
-  }
-  else {
+  } else {
     return `${day} ${month} ${year}`
   }
 }
 
 /** UI Elements **/
 export function scrollToElement(el) {
-  if (el)
+  if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 }
 
 /** Trade State **/
@@ -123,9 +123,5 @@ export function tradeCanBeReleased(tradeInfo, walletAddr) {
 
 export function tradeCanBeRefunded(tradeInfo, walletAddr) {
   const { trade } = tradeInfo
-  return (
-    trade.state === 'escrow_funded'
-        && tradeInfo.expired
-        && trade.sender === walletAddr
-  )
+  return trade.state === 'escrow_funded' && tradeInfo.expired && trade.sender === walletAddr
 }

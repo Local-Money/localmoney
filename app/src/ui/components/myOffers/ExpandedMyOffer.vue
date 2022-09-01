@@ -7,10 +7,11 @@ import {
   formatAmount,
 } from '~/shared'
 import { usePriceStore } from '~/stores/price'
-import type {GetOffer, PatchOffer} from '~/types/components.interface'
+import type { GetOffer, PatchOffer } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ offer: GetOffer }>()
+const emit = defineEmits<{ (e: 'cancel'): void }>()
 const priceStore = usePriceStore()
 const client = useClientStore()
 const updatedOffer = ref<GetOffer>({
@@ -33,7 +34,7 @@ function calculateMarginRate() {
 
 function update() {
   const offer = updatedOffer.value
-  client.updateOffer(<PatchOffer>{
+  client.updateOffer({
     id: offer.id,
     state: offer.state,
     rate: `${rate.value}`,
@@ -55,23 +56,15 @@ watch(marginOffset, () => {
 <template>
   <div :key="`${offer.id}-expanded`" ref="expandedCard" class="offer expanded">
     <div class="offer-type">
-        <div class="wrap-status">
-          <select v-model="updatedOffer.state" class="bg-gray100">
-            <option value="active">
-              Active
-            </option>
-            <option value="paused">
-              Pause
-            </option>
-            <option value="archive">
-              Archive
-            </option>
-          </select>
-        </div>
+      <div class="wrap-status">
+        <select v-model="updatedOffer.state" class="bg-gray100">
+          <option value="active">Active</option>
+          <option value="paused">Pause</option>
+          <option value="archive">Archive</option>
+        </select>
+      </div>
       <div class="inner-wrap">
-        <p class="type">
-          {{ updatedOffer.offer_type }}ing
-        </p>
+        <p class="type">{{ updatedOffer.offer_type }}ing</p>
         <p class="value">
           {{ offerPrice }}
         </p>
@@ -85,12 +78,8 @@ watch(marginOffset, () => {
         <div class="input-wrap">
           <p class="label">Margin</p>
           <select v-model="margin" class="bg-gray100">
-            <option value="above">
-              Above
-            </option>
-            <option value="bellow">
-              Below
-            </option>
+            <option value="above">Above</option>
+            <option value="bellow">Below</option>
           </select>
         </div>
 
@@ -101,7 +90,7 @@ watch(marginOffset, () => {
             v-maska="['##%', '#%']"
             placeholder="0%"
             @maska="marginRate.marginOffset = $event.target.dataset.maskRawValue"
-          >
+          />
         </div>
       </div>
 
@@ -137,19 +126,15 @@ watch(marginOffset, () => {
         </div>
       </div>
       <div class="wrap-btns">
-        <button class="secondary" @click="$emit('cancel')">
-          cancel
-        </button>
-        <button class="primary" :disabled="!valid" @click="update()">
-          update
-        </button>
+        <button class="secondary" @click="emit('cancel')">cancel</button>
+        <button class="primary" :disabled="!valid" @click="update()">update</button>
       </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 .expanded {
   display: flex;
@@ -172,10 +157,12 @@ watch(marginOffset, () => {
       min-width: 150px;
 
       @media only screen and (max-width: $mobile) {
-          width: 100%;
+        width: 100%;
       }
 
-      select {color: $primary;}
+      select {
+        color: $primary;
+      }
     }
 
     .inner-wrap {
@@ -250,7 +237,6 @@ watch(marginOffset, () => {
         background-color: $background;
         text-align: right;
       }
-
     }
   }
 
@@ -260,6 +246,5 @@ watch(marginOffset, () => {
     gap: 24px;
     margin-top: 32px;
   }
-
 }
 </style>

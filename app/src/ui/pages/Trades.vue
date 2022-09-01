@@ -9,7 +9,7 @@ const client = useClientStore()
 const tradeResult = computed(() => client.trades)
 const trades = computed(() => {
   if (tradeResult.value.isSuccess()) {
-    return tradeResult.value.data.filter(trade => checkValidOffer(trade.offer))
+    return tradeResult.value.data.filter((trade) => checkValidOffer(trade.offer))
   } else {
     return []
   }
@@ -17,28 +17,30 @@ const trades = computed(() => {
 
 const openTrades = computed(() => {
   return trades.value.filter(
-    tradeInfo => !tradeInfo.expired
-      && [
+    (tradeInfo) =>
+      !tradeInfo.expired &&
+      [
         TradeState.request_created,
         TradeState.request_accepted,
         TradeState.escrow_funded,
         TradeState.fiat_deposited,
         TradeState.escrow_disputed,
-      ].includes(tradeInfo.trade.state),
+      ].includes(tradeInfo.trade.state)
   )
 })
 
 const closedTrades = computed(() => {
   return trades.value.filter(
-    tradeInfo => tradeInfo.expired
-      || [
+    (tradeInfo) =>
+      tradeInfo.expired ||
+      [
         TradeState.request_canceled,
         TradeState.request_expired,
         TradeState.escrow_refunded,
         TradeState.escrow_released,
         TradeState.settled_for_maker,
         TradeState.settled_for_taker,
-      ].includes(tradeInfo.trade.state),
+      ].includes(tradeInfo.trade.state)
   )
 })
 
@@ -49,32 +51,23 @@ onMounted(() => {
   nextTick(async () => await client.fetchMyTrades())
 })
 
-onUnmounted(async () => { })
+onUnmounted(async () => {})
 </script>
 
 <template>
-  <main>
+  <main class="page">
     <h3>Open Trades</h3>
     <!-- Open Trades section -->
-    <ListContentResult
-      :result="tradeResult"
-      empty-state-msg="There is no trades here yet"
-    >
+    <ListContentResult :result="tradeResult" emptyStateMsg="There are no trades here yet">
       <section v-if="hasOpenTrades">
-        <TradeOpenItem
-          v-for="tradeInfo in openTrades"
-          :key="tradeInfo.trade.addr"
-          :trade-info="tradeInfo"
-        />
+        <TradeOpenItem v-for="tradeInfo in openTrades" :key="tradeInfo.trade.addr" :tradeInfo="tradeInfo" />
       </section>
       <section v-else class="card">
         <p>Nothing here yet</p>
       </section>
       <!-- End Open Trades section -->
       <!-- Trades History section -->
-      <h3 v-if="hasClosedTrades">
-        Trade History
-      </h3>
+      <h3 v-if="hasClosedTrades">Trade History</h3>
       <section v-if="hasClosedTrades" class="trade-history-table card">
         <div class="table-header">
           <div class="col-1">
@@ -96,11 +89,7 @@ onUnmounted(async () => { })
             <p>Status</p>
           </div>
         </div>
-        <TradeHistoryItem
-          v-for="tradeInfo in closedTrades"
-          :key="tradeInfo.trade.addr"
-          :trade-info="tradeInfo"
-        />
+        <TradeHistoryItem v-for="tradeInfo in closedTrades" :key="tradeInfo.trade.addr" :tradeInfo="tradeInfo" />
       </section>
     </ListContentResult>
     <!-- End Trades History section -->
@@ -108,7 +97,7 @@ onUnmounted(async () => { })
 </template>
 
 <style lang="scss" scoped>
-@import "../style/pages.scss";
+@import '../style/pages.scss';
 
 main {
   margin-bottom: 48px;

@@ -26,7 +26,7 @@ function click() {
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/pages";
+@import '../../style/pages';
 
 .wrap {
   display: flex;

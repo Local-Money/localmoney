@@ -59,7 +59,7 @@ const counterparty = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 .wrap-table-item {
   display: flex;

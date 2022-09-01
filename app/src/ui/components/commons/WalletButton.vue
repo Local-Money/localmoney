@@ -25,15 +25,13 @@ onUnmounted(() => {
     <p v-if="userWallet.isConnected">
       {{ formatAddress(userWallet.address) }}
     </p>
-    <p v-else>
-      connect
-    </p>
-    <img src="../../assets/ic_wallet.svg" alt="Connect your wallet">
+    <p v-else>connect</p>
+    <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
   </button>
 </template>
 
 <style lang="scss" scoped>
-@import "../../style/tokens.scss";
+@import '../../style/tokens.scss';
 
 button {
   @media only screen and (max-width: $mobile) {

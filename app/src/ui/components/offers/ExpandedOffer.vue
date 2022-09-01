@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import CurrencyInput from '../CurrencyInput.vue'
 import {
   calculateFiatPriceByRate,
   convertOfferRateToMarginRate,
@@ -14,6 +13,7 @@ import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
+const emit = defineEmits<{ (e: 'cancel'): void }>()
 const priceStore = usePriceStore()
 const client = useClientStore()
 
@@ -29,13 +29,15 @@ const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 
-const fromLabel = computed(() => props.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy')
-const toLabel = computed(() => props.offer.offer_type === OfferType.buy ? 'I will receive' : 'I will pay')
+const fromLabel = computed(() => (props.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'))
+const toLabel = computed(() => (props.offer.offer_type === OfferType.buy ? 'I will receive' : 'I will pay'))
 const fiatPlaceholder = computed(() => `${props.offer.fiat_currency.toUpperCase()} 0`)
 const cryptoPlaceholder = computed(() => `${microDenomToDenom(props.offer.denom.native)} ${parseFloat('0').toFixed(2)}`)
-const fiatPriceByRate = computed(() => calculateFiatPriceByRate(priceStore.getPrice(props.offer.fiat_currency), props.offer.rate))
-const minAmountInCrypto = computed(() => (parseInt(props.offer.min_amount.toString()) / 1000000))
-const maxAmountInCrypto = computed(() => (parseInt(props.offer.max_amount.toString()) / 1000000))
+const fiatPriceByRate = computed(() =>
+  calculateFiatPriceByRate(priceStore.getPrice(props.offer.fiat_currency), props.offer.rate)
+)
+const minAmountInCrypto = computed(() => parseInt(props.offer.min_amount.toString()) / 1000000)
+const maxAmountInCrypto = computed(() => parseInt(props.offer.max_amount.toString()) / 1000000)
 const maxAmountInFiat = computed(() => fiatPriceByRate.value * (parseInt(props.offer.max_amount.toString()) / 1000000))
 const minAmountInFiat = computed(() => fiatPriceByRate.value * (parseInt(props.offer.min_amount.toString()) / 1000000))
 const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
@@ -64,6 +66,11 @@ function newTrade() {
 
 function focus() {
   scrollToElement(expandedCard.value)
+}
+
+function toggleCryptoFiat() {
+  watchingCrypto.value = !watchingCrypto.value
+  watchingFiat.value = !watchingFiat.value
 }
 
 function useMinCrypto() {
@@ -146,9 +153,7 @@ onUnmounted(() => {
       <p class="wallet">
         {{ formatAddress(offer.owner) }}
       </p>
-      <p class="n-trades">
-        0 trades
-      </p>
+      <p class="n-trades">0 trades</p>
     </div>
 
     <div class="divider-horizontal" />
@@ -174,7 +179,12 @@ onUnmounted(() => {
                 max: maxAmountInCrypto,
               },
             }"
-            @focus="watchingCrypto = true; watchingFiat = false;"
+            @focus="
+              (() => {
+                watchingCrypto = true
+                watchingFiat = false
+              })()
+            "
           />
           <div class="wrap-limit">
             <div class="limit-btn">
@@ -209,8 +219,10 @@ onUnmounted(() => {
               },
             }"
             @focus="
-              watchingCrypto = false;
-              watchingFiat = true;
+              (() => {
+                watchingCrypto = false
+                watchingFiat = true
+              })()
             "
           />
 
@@ -230,48 +242,30 @@ onUnmounted(() => {
 
       <div class="receipt">
         <div class="price">
-          <p class="label">
-            Price
-          </p>
+          <p class="label">Price</p>
           <div class="wrap">
-            <p class="ticker">
-              Will refresh in {{ secondsUntilRateRefresh }}s
-            </p>
-            <p class="margin">
-              {{ marginRate.marginOffset }}% {{ marginRate.margin }} market
-            </p>
-            <p class="value">
-              1 {{ microDenomToDenom(offer.denom.native) }} = {{ offerPrice }}
-            </p>
+            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
+            <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+            <p class="value">1 {{ microDenomToDenom(offer.denom.native) }} = {{ offerPrice }}</p>
           </div>
         </div>
 
         <div class="summary">
           <div class="wrap">
             <div class="item">
-              <p class="info">
-                Trading Fee
-              </p>
+              <p class="info">Trading Fee</p>
               <p>{{ microDenomToDenom(offer.denom.native) }} {{ tradingFee.toFixed(2) }}</p>
             </div>
             <div class="item">
-              <p class="info">
-                Total
-              </p>
-              <p class="total">
-                ??????
-              </p>
+              <p class="info">Total</p>
+              <p class="total">??????</p>
             </div>
           </div>
         </div>
 
         <div class="wrap-btns">
-          <button class="secondary" @click="$emit('cancel')">
-            cancel
-          </button>
-          <button class="primary" :disabled="!valid" @click="newTrade()">
-            open trade
-          </button>
+          <button class="secondary" @click="emit('cancel')">cancel</button>
+          <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
         </div>
       </div>
     </div>
@@ -282,7 +276,6 @@ onUnmounted(() => {
 @import '../../style/tokens.scss';
 
 .owner {
-
   .wallet {
     font-size: 18px;
     font-weight: 600;
@@ -295,9 +288,9 @@ onUnmounted(() => {
   }
 
   @media only screen and (max-width: $mobile) {
-    .owner {
-      display: inline-flex;
-    }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 
@@ -332,7 +325,7 @@ onUnmounted(() => {
       }
 
       .input {
-        margin-bottom: 24px;
+        margin-bottom: 8px;
       }
 
       input {
@@ -362,22 +355,21 @@ onUnmounted(() => {
             margin-top: 8px;
           }
           .btn {
-              text-decoration: underline;
-              cursor: pointer;
-            }
+            text-decoration: underline;
+            cursor: pointer;
+          }
         }
-
       }
     }
 
     .receipt {
       width: 100%;
 
-       @media only screen and (max-width: $mobile) {
-            border-top: 1px solid $border;
-            padding-top: 24px;
-            margin-top: 8px;
-          }
+      @media only screen and (max-width: $mobile) {
+        border-top: 1px solid $border;
+        padding-top: 24px;
+        margin-top: 24px;
+      }
 
       .price {
         margin-bottom: 24px;
@@ -400,6 +392,8 @@ onUnmounted(() => {
 
           @media only screen and (max-width: $mobile) {
             flex-direction: column;
+            gap: 4px;
+            padding: 16px 24px;
           }
 
           .ticker {
@@ -466,6 +460,5 @@ onUnmounted(() => {
       }
     }
   }
-
 }
 </style>

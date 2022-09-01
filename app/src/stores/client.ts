@@ -10,10 +10,7 @@ import type {
   TradeInfo,
   UserWallet,
 } from '~/types/components.interface'
-import {
-  LoadingState,
-  OfferState,
-} from '~/types/components.interface'
+import { LoadingState, OfferState } from '~/types/components.interface'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
 
@@ -117,10 +114,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening trade...')
       try {
         const trade_id = await this.client.openTrade(trade)
-        await this.router.push({
-          name: 'TradeDetail',
-          params: { id: trade_id },
-        })
+        const route = trade_id === '' ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
+        await this.router.push(route)
       } catch (e) {
         // TODO handle error
         alert((e as ChainError).message)
@@ -140,7 +135,7 @@ export const useClientStore = defineStore({
     },
     async fetchTradeDetail(tradeId: string) {
       await this.fetchMyTrades()
-      const currentTrade = this.trades.data.find(tradeInf => tradeInf.trade.id === tradeId)
+      const currentTrade = this.trades.data.find((tradeInf) => tradeInf.trade.id === tradeId)
       // TODO error case
       if (currentTrade !== undefined) {
         currentTrade.trade = await this.client.fetchTradeDetail(tradeId)
@@ -241,6 +236,6 @@ export const useClientStore = defineStore({
   },
 })
 
-if (import.meta.hot)
+if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useClientStore, import.meta.hot))
-
+}

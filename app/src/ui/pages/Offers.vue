@@ -1,8 +1,4 @@
 <script setup type="ts">
-import CreateOffer from '~/ui/components/offers/CreateOffer.vue'
-import ListMyOffers from '~/ui/components/myOffers/ListMyOffers.vue'
-import Modal from '~/ui/components/commons/Modal.vue'
-
 const modalActive = ref(false)
 function toggleModal() {
   modalActive.value = !modalActive.value
@@ -10,42 +6,32 @@ function toggleModal() {
 </script>
 
 <template>
-  <main>
+  <section class="page">
     <div class="wrap-title">
       <div class="inner-wrap">
         <h3>My Offers</h3>
         <div class="btn-add" @click="toggleModal">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 5V19"
-              stroke="inherit"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <path
-              d="M5 12L19 12"
-              stroke="inherit"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
+            <path d="M12 5V19" stroke="inherit" stroke-width="2" stroke-linecap="round" />
+            <path d="M5 12L19 12" stroke="inherit" stroke-width="2" stroke-linecap="round" />
           </svg>
         </div>
       </div>
 
       <!-- <button @click="toggleModal">Create a new offer</button> -->
 
-      <Modal :modal-active="modalActive" @close="toggleModal()">
+      <Modal :modalActive="modalActive" @close="toggleModal()">
         <div class="modal-content">
           <CreateOffer @cancel="toggleModal()" />
         </div>
       </Modal>
     </div>
     <ListMyOffers />
-  </main>
+  </section>
 </template>
 
 <style lang="scss" scoped>
-@import "../style/pages.scss";
+@import '../style/pages.scss';
 
 .wrap-title {
   display: flex;
