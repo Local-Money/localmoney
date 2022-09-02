@@ -218,7 +218,6 @@ export class CosmosChain implements Chain {
       const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, {
         trade: { id: tradeId },
       })) as Trade
-      console.log('response >>> ', response)
       return response
     } catch (e) {
       // TODO error state
