@@ -166,6 +166,7 @@ export class CosmosChain implements Chain {
           ?.attributes.find((a) => a.key === 'trade_id')?.value
         return trade_id ?? ''
       } catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     } else {
