@@ -10,7 +10,7 @@
       </ul>
     </div>
 
-    <h3>Archived Offers</h3>
+    <h3>Archived Disputes</h3>
     <div class="archived-disputes-table card">
       <div class="table-header">
         <div class="col-1">
