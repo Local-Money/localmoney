@@ -116,10 +116,11 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
-    <section class="wrap">
-      <section class="chat card">Chat will be here</section>
+    <section class="main-wrap">
+      <div class="chat card">Chat will be here</div>
       <div class="inner-wrap">
-        <section class="trade-summary card">
+        <!-- Trade Summary -->
+        <!-- <div class="trade-summary card">
           <div class="trader-info">
             <p><small>You're trading with</small></p>
             <p class="trader">
@@ -151,7 +152,53 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-        </section>
+        </div> -->
+        <!-- End Trade Summary -->
+
+        <!-- TO-DO Consolidate this view into the above -->
+        <!-- Trade Dispute Summary -->
+        <div class="dispute-summary card">
+          <div class="dispute-wrap">
+            <div class="peer-wrap">
+              <p class="peer">Maker</p>
+              <p class="address">kujira52...op32d</p>
+            </div>
+            <div class="separator">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M12 5L19 12L12 19"
+                  stroke="inherit"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="peer-wrap">
+              <p class="peer">Taker</p>
+              <p class="address">kujira52...op32d</p>
+            </div>
+          </div>
+          <div class="trade-info">
+            <p class="label">Transaction summary</p>
+            <div class="transaction">
+              <div class="list-item">
+                <p v-if="isBuyer" class="list-item-label">You will get</p>
+                <p v-else class="list-item-label">You will send</p>
+                <p class="value">{{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}</p>
+              </div>
+              <div class="list-item">
+                <p v-if="isBuyer" class="list-item-label">You will send</p>
+                <p v-else class="list-item-label">You will get</p>
+                <p class="value fiat">
+                  {{ fiatAmountStr }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End Trade Dispute Summary -->
         <TradeActions :tradeInfo="tradeInfo" :walletAddress="walletAddress" />
       </div>
     </section>
@@ -247,6 +294,10 @@ onUnmounted(() => {
   display: flex;
 }
 
+.main-wrap {
+  display: flex;
+}
+
 .chat {
   width: 30%;
   margin-right: 24px;
@@ -259,9 +310,39 @@ onUnmounted(() => {
   width: 70%;
 }
 
-.trade-summary {
+.dispute-summary {
+  flex-direction: column;
+
+  .dispute-wrap {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 40px;
+
+    .peer-wrap {
+      text-align: center;
+
+      .peer {
+        font-size: 20px;
+        font-weight: $semi-bold;
+        margin-bottom: 8px;
+      }
+      .address {
+        font-size: 14px;
+        background-color: $gray300;
+        border-radius: 8px;
+        padding: 4px 16px;
+      }
+    }
+    .separator svg {
+      stroke: $primary;
+    }
+  }
+}
+
+.trade-summary,
+.dispute-summary {
   display: flex;
-  justify-content: space-evenly;
 
   .label {
     margin-bottom: 8px;
@@ -298,11 +379,6 @@ onUnmounted(() => {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-
-      .ticker {
-        font-size: 12px;
-        color: $gray900;
-      }
 
       .mkt-rate {
         font-size: 14px;
