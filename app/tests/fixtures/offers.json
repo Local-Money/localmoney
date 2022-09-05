@@ -5,6 +5,7 @@
     "min_amount": "100000",
     "max_amount": "2500000",
     "rate": "1",
+    "owner_contact": "maker001",
     "denom": {
       "native": ""
     },

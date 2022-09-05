@@ -46,14 +46,17 @@ export class CosmosChain implements Chain {
       await CosmosChain.suggestChain(this.config)
       await window.keplr.enable(this.config.chainId)
       this.signer = await window.getOfflineSignerAuto(this.config.chainId)
-      // get first account
-      ;[this.account] = await this.signer.getAccounts()
       this.cwClient = await SigningCosmWasmClient.connectWithSigner(this.config.rpcUrl, this.signer, {
         gasPrice: {
           amount: Decimal.fromUserInput('0.0025', 100),
           denom: this.config.coinMinimalDenom,
         },
       })
+      // get first account
+      ;[this.account] = await this.signer.getAccounts()
+      const key = await window.keplr.getKey(this.config.chainId)
+      console.log('key: ', key)
+      console.log('account: ', this.account)
     }
   }
 
@@ -344,4 +347,16 @@ export class CosmosChain implements Chain {
       console.log(e)
     }
   }
+}
+
+const ALGORITHM = 'secp256k1'
+const ENCODING = 'hex'
+const IV_LENGTH = 20
+
+function encrypt(data: string, key: string): string {
+  return ''
+}
+
+function decrypt(data: string, key: string): string {
+  return ''
 }

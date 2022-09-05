@@ -19,6 +19,7 @@ const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
 const marginOffset = ref('')
+const ownerContact = ref()
 const marginOffsetUnmasked = ref(0)
 const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
@@ -53,13 +54,13 @@ function calculateMarginRate() {
 }
 function createOffer() {
   const postOffer: PostOffer = {
+    owner_contact: ownerContact.value,
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
     denom: { native: selectedCrypto.value },
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
-    maker_contact: 'NoContactProvided',
   }
   client.createOffer(postOffer)
   emit('cancel')
@@ -151,14 +152,14 @@ watch(margin, () => {
         </div>
       </div>
 
-      <!-- <div class="divider" />
+      <div class="divider" />
 
       <div class="chat">
         <div class="wrap">
           <label for="crypto">Telegram username (?)</label>
-          <input type="text" placeholder="t.me/your-user-name" />
+          <input v-model="ownerContact" type="text" placeholder="t.me/your-user-name" />
         </div>
-      </div> -->
+      </div>
       <div class="divider" />
     </div>
 
