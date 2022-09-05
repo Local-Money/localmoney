@@ -54,9 +54,6 @@ export class CosmosChain implements Chain {
       })
       // get first account
       ;[this.account] = await this.signer.getAccounts()
-      const key = await window.keplr.getKey(this.config.chainId)
-      console.log('key: ', key)
-      console.log('account: ', this.account)
     }
   }
 
@@ -347,16 +344,4 @@ export class CosmosChain implements Chain {
       console.log(e)
     }
   }
-}
-
-const ALGORITHM = 'secp256k1'
-const ENCODING = 'hex'
-const IV_LENGTH = 20
-
-function encrypt(data: string, key: string): string {
-  return ''
-}
-
-function decrypt(data: string, key: string): string {
-  return ''
 }
