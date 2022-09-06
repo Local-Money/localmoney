@@ -61,6 +61,7 @@ export class CosmosChain implements Chain {
     return this.account ? this.account.address : 'undefined'
   }
 
+  // TODO encrypt the postOffer.owner_contact field
   async createOffer(postOffer: PostOffer) {
     const msg = { create: { offer: postOffer } }
     console.log('Create offer msg >> ', msg)
@@ -81,6 +82,7 @@ export class CosmosChain implements Chain {
     }
   }
 
+  // TODO encrypt the postOffer.owner_contact field
   async updateOffer(updateOffer: PatchOffer) {
     const msg = { update_offer: { offer_update: updateOffer } }
     console.log('Update offer msg >> ', msg)
@@ -223,9 +225,10 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async acceptTradeRequest(tradeId: string) {
+  // TODO encrypt maker_contact field
+  async acceptTradeRequest(tradeId: string, makerContact: string) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
-      accept_request: { trade_id: tradeId },
+      accept_request: { trade_id: tradeId, maker_contact: makerContact },
     })
   }
 
@@ -235,7 +238,8 @@ export class CosmosChain implements Chain {
     })
   }
 
-  async fundEscrow(tradeId: string, amount: string, denom: Denom) {
+  // TODO encrypt maker_contact field
+  async fundEscrow(tradeId: string, amount: string, denom: Denom, makerContact?: string) {
     let fundAmount = Number(amount)
     const localFee = fundAmount * 0.01
     fundAmount += localFee
@@ -245,8 +249,11 @@ export class CosmosChain implements Chain {
         denom: denom.native,
       },
     ]
-    console.log(funds)
-    await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, { fund_escrow: { trade_id: tradeId } }, funds)
+    await this.changeTradeState(
+      this.hubInfo.hubConfig.trade_addr,
+      { fund_escrow: { trade_id: tradeId, maker_contact: makerContact } },
+      funds
+    )
   }
 
   async setFiatDeposited(tradeId: string) {

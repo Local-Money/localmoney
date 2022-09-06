@@ -142,10 +142,10 @@ export const useClientStore = defineStore({
       }
       return currentTrade
     },
-    async acceptTradeRequest(tradeId: string) {
+    async acceptTradeRequest(tradeId: string, makerContact: string) {
       this.loadingState = LoadingState.show('Accepting trade...')
       try {
-        await this.client.acceptTradeRequest(tradeId)
+        await this.client.acceptTradeRequest(tradeId, makerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
         // TODO handle error
@@ -168,10 +168,10 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fundEscrow(tradeId: string, amount: string, denom: Denom) {
+    async fundEscrow(tradeId: string, amount: string, denom: Denom, makerContact?: string) {
       this.loadingState = LoadingState.show('Funding trade...')
       try {
-        await this.client.fundEscrow(tradeId, amount, denom)
+        await this.client.fundEscrow(tradeId, amount, denom, makerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
         // TODO handle error

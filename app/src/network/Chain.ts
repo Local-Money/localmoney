@@ -8,7 +8,7 @@ import type {
   Trade,
   TradeInfo,
 } from '~/types/components.interface'
-import MockChain from '~/network/mock/MockChain'
+import { MockChain } from '~/network/mock/MockChain'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
 import {
   JUNO_CONFIG,
@@ -40,11 +40,11 @@ export interface Chain {
 
   fetchTradeDetail(tradeId: string): Promise<Trade>
 
-  acceptTradeRequest(tradeId: string): Promise<void>
+  acceptTradeRequest(tradeId: string, makerContact: string): Promise<void>
 
   cancelTradeRequest(tradeId: string): Promise<void>
 
-  fundEscrow(tradeId: string, amount: string, denom: Denom): Promise<void>
+  fundEscrow(tradeId: string, amount: string, denom: Denom, maker_contact?: string): Promise<void>
 
   setFiatDeposited(tradeId: string): Promise<void>
 

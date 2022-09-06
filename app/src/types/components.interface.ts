@@ -95,7 +95,7 @@ export interface Trade {
   factory_addr: string
   buyer: string
   seller: string
-  taker_contact: string
+  maker_contact?: string
   arbitrator?: string | null
   offer_contract: string
   offer_id: string
