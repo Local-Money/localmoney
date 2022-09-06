@@ -222,7 +222,8 @@ pub fn query_trades(
         let offer_contract = trade.offer_contract.to_string();
         let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
         let current_time = env.block.time.seconds();
-        let expired = current_time > trade.created_at + REQUEST_TIMEOUT;
+        let expired = trade.state.eq(&TradeState::EscrowFunded)
+            && current_time > trade.created_at + REQUEST_TIMEOUT;
         trades_infos.push(TradeInfo {
             trade: trade.clone(),
             offer,
