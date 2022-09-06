@@ -6473,6 +6473,11 @@ vary@^1, vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
+vite-plugin-environment@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/vite-plugin-environment/-/vite-plugin-environment-1.1.2.tgz#4048256370592e25f1b76345eafdbf23b35823fc"
+  integrity sha512-WFgM/ibceOEIuficZVaLcmJvcMZiyTkGzeS8+pzfByGYRdewqil7LSLDV1DwJfFQIx/YzcW9YRSWQG7cJ2XT1w==
+
 vite-plugin-inspect@^0.5.0:
   version "0.5.0"
   resolved "https://registry.npmjs.org/vite-plugin-inspect/-/vite-plugin-inspect-0.5.0.tgz"
