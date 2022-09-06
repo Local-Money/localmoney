@@ -8,6 +8,7 @@ import Components from 'unplugin-vue-components/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import VueI18n from '@intlify/vite-plugin-vue-i18n'
 import Inspect from 'vite-plugin-inspect'
+import EnvironmentPlugin from 'vite-plugin-environment'
 
 export default defineConfig({
   resolve: {
@@ -19,6 +20,7 @@ export default defineConfig({
     'process.env': { BROWSER: true },
   },
   plugins: [
+    EnvironmentPlugin('all', { prefix: '' }),
     Vue({
       include: [/\.vue$/],
       reactivityTransform: true,
