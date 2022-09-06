@@ -109,7 +109,7 @@ describe('arbitration tests', () => {
     expect(tradesByArbitrator.length).toBeGreaterThan(0)
   })
 
-  it('should remove arbitrator', async () => {
+  it.skip('should remove arbitrator', async () => {
     const adminCwClient = adminClient.getCwClient()
     const adminAddr = adminClient.getWalletAddress()
     const tradeAddr = adminClient.getHubInfo().hubConfig.trade_addr

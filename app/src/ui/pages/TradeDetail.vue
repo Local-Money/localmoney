@@ -120,7 +120,7 @@ onUnmounted(() => {
       <div class="chat card">Chat will be here</div>
       <div class="inner-wrap">
         <!-- Trade Summary -->
-        <!-- <div class="trade-summary card">
+        <div class="trade-summary card">
           <div class="trader-info">
             <p><small>You're trading with</small></p>
             <p class="trader">
@@ -152,12 +152,12 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
         <!-- End Trade Summary -->
 
         <!-- TO-DO Consolidate this view into the above -->
         <!-- Trade Dispute Summary -->
-        <div class="dispute-summary card">
+        <!-- <div class="dispute-summary card">
           <div class="dispute-wrap">
             <div class="peer-wrap">
               <p class="peer">Maker</p>
@@ -197,7 +197,7 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
         <!-- End Trade Dispute Summary -->
         <TradeActions :tradeInfo="tradeInfo" :walletAddress="walletAddress" />
       </div>

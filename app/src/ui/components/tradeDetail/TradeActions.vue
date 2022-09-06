@@ -156,12 +156,7 @@ async function openDispute(id: string) {
       refund escrow
     </button>
 
-    <button
-      v-if="tradeInfo.trade.state === 'fiat_deposited'"
-      class="tertiary"
-      disabled
-      @click="openDispute(tradeInfo.trade.id)"
-    >
+    <button v-if="tradeInfo.trade.state === 'fiat_deposited'" class="tertiary" @click="openDispute(tradeInfo.trade.id)">
       open dispute
     </button>
   </section>
