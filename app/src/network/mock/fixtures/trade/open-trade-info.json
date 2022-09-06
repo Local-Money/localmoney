@@ -3,7 +3,7 @@
   "factory_addr": "terra1mw5872ftguapw88rflvnjr5guwvptpeeq5stsn",
   "buyer": "terra1m74pkgamadgyau09ahlunehyx2wrq26dzhuwsp",
   "seller": "terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7",
-  "taker_contact": "@TODO",
+  "maker_contact": "@TODO",
   "arbitrator": null,
   "offer_contract": "terra1ry8l5r474h5tqy95stv2esg45s7vqq0j425q3z",
   "offer_id": "110_2",

@@ -15,7 +15,7 @@ import type {
 import type { Chain } from '~/network/Chain'
 import { TradeState } from '~/types/components.interface'
 
-class MockChain implements Chain {
+export class MockChain implements Chain {
   async init() {
     return await someDelay()
   }
@@ -69,7 +69,8 @@ class MockChain implements Chain {
     return trade as Trade
   }
 
-  async acceptTradeRequest(tradeId: string) {
+  async acceptTradeRequest(tradeId: string, makerContact?: string) {
+    console.log(makerContact)
     await this.changeTradeState(tradeId, TradeState.request_accepted)
   }
 
@@ -78,7 +79,8 @@ class MockChain implements Chain {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async fundEscrow(tradeId: string, amount: string, denom: Denom) {
+  async fundEscrow(tradeId: string, amount: string, denom: Denom, makerContact?: string) {
+    console.log(makerContact)
     await this.changeTradeState(tradeId, TradeState.escrow_funded)
   }
 
@@ -115,5 +117,3 @@ function sleep(ms: number) {
 async function someDelay(min = 800, max = 1800) {
   return await sleep(Math.floor(Math.random() * (max - min) + min))
 }
-
-export default MockChain
