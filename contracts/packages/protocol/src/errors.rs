@@ -8,6 +8,11 @@ pub enum ContractError {
     /// General Errors
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
+    #[error("Some parameter is missing")]
+    MissingParameter {
+        missing: String,
+        message: Option<String>,
+    },
     /// Hub Errors
     #[error("Hub already registered.")]
     HubAlreadyRegistered {},

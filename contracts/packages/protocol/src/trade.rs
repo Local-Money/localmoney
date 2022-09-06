@@ -15,13 +15,29 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Create(NewTrade),
-    AcceptRequest { trade_id: String },
-    FundEscrow { trade_id: String },
-    RefundEscrow { trade_id: String },
-    ReleaseEscrow { trade_id: String },
-    DisputeEscrow { trade_id: String },
-    FiatDeposited { trade_id: String },
-    CancelRequest { trade_id: String },
+    AcceptRequest {
+        trade_id: String,
+        maker_contact: String,
+    },
+    FundEscrow {
+        trade_id: String,
+        maker_contact: Option<String>,
+    },
+    RefundEscrow {
+        trade_id: String,
+    },
+    ReleaseEscrow {
+        trade_id: String,
+    },
+    DisputeEscrow {
+        trade_id: String,
+    },
+    FiatDeposited {
+        trade_id: String,
+    },
+    CancelRequest {
+        trade_id: String,
+    },
     RegisterHub {},
 }
 
@@ -92,6 +108,7 @@ pub struct Trade {
     pub addr: Addr,
     pub buyer: Addr,
     pub seller: Addr,
+    pub maker_contact: Option<String>,
     pub arbitrator: Option<Addr>,
     pub offer_contract: Addr,
     pub offer_id: String,

@@ -10,8 +10,8 @@ use localterra_protocol::constants::{FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{
-    FundEscrowError, HubAlreadyRegistered, InvalidTradeStateChange, OfferNotFound,
-    RefundErrorNotExpired, TradeExpired,
+    FundEscrowError, HubAlreadyRegistered, InvalidTradeStateChange, MissingParameter,
+    OfferNotFound, RefundErrorNotExpired, TradeExpired,
 };
 use localterra_protocol::guards::{
     assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
@@ -50,8 +50,14 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
-        ExecuteMsg::AcceptRequest { trade_id } => accept_request(deps, env, info, trade_id),
-        ExecuteMsg::FundEscrow { trade_id } => fund_escrow(deps, env, info, trade_id),
+        ExecuteMsg::AcceptRequest {
+            trade_id,
+            maker_contact,
+        } => accept_request(deps, env, info, trade_id, maker_contact),
+        ExecuteMsg::FundEscrow {
+            trade_id,
+            maker_contact,
+        } => fund_escrow(deps, env, info, trade_id, maker_contact),
         ExecuteMsg::ReleaseEscrow { trade_id } => release_escrow(deps, env, info, trade_id),
         ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
         ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
@@ -123,6 +129,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             denom: offer.denom.clone(),
             amount: new_trade.amount.clone(),
             asset: offer.fiat_currency,
+            maker_contact: None,
         },
     )
     .trade;
@@ -219,6 +226,7 @@ fn fund_escrow(
     env: Env,
     info: MessageInfo,
     trade_id: String,
+    maker_contact: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
@@ -243,6 +251,18 @@ fn fund_escrow(
 
     // Only the seller wallet is authorized to fund this trade.
     assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
+
+    // If maker_contact is not already defined it needs to be defined here
+    if trade.maker_contact.is_none() {
+        if maker_contact.is_some() {
+            trade.maker_contact = maker_contact
+        } else {
+            return Err(MissingParameter {
+                missing: "maker_contact".to_string(),
+                message: Some("At this point the maker_contact can not be undefined".to_string()),
+            });
+        }
+    }
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
     assert_trade_state_and_type(&trade, &offer.offer_type).unwrap();
@@ -356,6 +376,7 @@ fn accept_request(
     env: Env,
     info: MessageInfo,
     trade_id: String,
+    maker_contact: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer can accept the request
@@ -376,6 +397,8 @@ fn accept_request(
         timestamp: env.block.time.seconds(),
     };
     trade.state_history.push(new_trade_state);
+    // Set maker contact
+    trade.maker_contact = Some(maker_contact);
 
     TradeModel::store(deps.storage, &trade).unwrap();
 
