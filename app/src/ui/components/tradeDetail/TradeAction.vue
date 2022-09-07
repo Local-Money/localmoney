@@ -1,7 +1,12 @@
 <script setup lang="ts">
+interface TradeActionButton {
+  label: string
+  action: () => void
+}
+
 const props = defineProps<{
   message: string
-  buttonLabel?: string
+  buttons?: TradeActionButton[]
 }>()
 
 const emit = defineEmits<{
@@ -19,8 +24,8 @@ function click() {
       <RightArrow />
     </div>
     <p>{{ message }}</p>
-    <button v-if="buttonLabel" class="primary" @click="click()">
-      {{ buttonLabel }}
+    <button v-for="button in props.buttons" :key="button.label" class="primary" @click="button.action()">
+      {{ button.label }}
     </button>
   </div>
 </template>

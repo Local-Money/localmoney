@@ -233,6 +233,19 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
+    async settleDispute(tradeId: string, winner: string) {
+      this.loadingState = LoadingState.show('Settling dispute...')
+      try {
+        await this.client.settleDispute(tradeId, winner)
+        await this.fetchTradeDetail(tradeId)
+      } catch (e) {
+        // TODO handle error
+        alert((e as ChainError).message)
+        console.error(e)
+      } finally {
+        this.loadingState = LoadingState.dismiss()
+      }
+    },
   },
 })
 

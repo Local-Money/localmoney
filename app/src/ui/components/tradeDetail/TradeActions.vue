@@ -11,6 +11,15 @@ const client = useClientStore()
 const isBuyer = computed(() => props.tradeInfo.trade.buyer === props.walletAddress)
 const isSeller = computed(() => props.tradeInfo.trade.seller === props.walletAddress)
 
+function getMaker(): string {
+  return props.tradeInfo.offer.owner
+}
+
+function getTaker(): string {
+  const maker = getMaker()
+  return props.tradeInfo.trade.buyer === maker ? props.tradeInfo.trade.seller : props.tradeInfo.trade.buyer
+}
+
 async function acceptTradeRequest(id: string) {
   await client.acceptTradeRequest(id)
 }
@@ -38,6 +47,13 @@ async function refundEscrow(id: string) {
 async function openDispute(id: string) {
   await client.openDispute(id)
 }
+
+async function settleDispute(winner: string) {
+  console.log(client)
+  await client.settleDispute(props.tradeInfo.trade.id, winner)
+  console.log(props.tradeInfo.trade.id, winner)
+  // await client.settleDispute(props.tradeInfo.trade.id, winner)
+}
 </script>
 
 <template>
@@ -49,7 +65,7 @@ async function openDispute(id: string) {
       <TradeAction
         v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
         message="Review the request and accept the trade"
-        buttonLabel="accept trade"
+        :buttonLabel="['accept trade']"
         @actionClick="acceptTradeRequest(tradeInfo.trade.id)"
       />
       <!-- #2 step or #1 step -->
@@ -67,7 +83,7 @@ async function openDispute(id: string) {
       <TradeAction
         v-if="tradeInfo.trade.state === 'escrow_funded'"
         message="Only press the mark as paid after you made the payment"
-        buttonLabel="mark as paid"
+        :buttonLabel="['mark as paid']"
         @actionClick="setFiatDeposited(tradeInfo.trade.id)"
       />
       <!-- #4 step or #3 step -->
@@ -95,7 +111,7 @@ async function openDispute(id: string) {
           tradeInfo.trade.state === 'request_accepted'
         "
         message="Please fund the trade"
-        buttonLabel="fund trade"
+        buttonLabel="['fund trade']"
         @actionClick="fundEscrow(tradeInfo.trade.id)"
       />
       <!-- #3 step or #2 step -->
@@ -106,13 +122,14 @@ async function openDispute(id: string) {
       <TradeAction
         v-if="tradeInfo.trade.state === 'fiat_deposited'"
         message="Only release the funds after confirming the payment"
-        buttonLabel="release funds"
+        buttonLabel="['release funds']"
         @actionClick="releaseEscrow(tradeInfo.trade.id)"
       />
       <!-- #5 step or #4 step -->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
       <TradeAction v-if="tradeInfo.trade.state === 'escrow_released'" message="Trade finished successfully" />
     </div>
+
     <!-- Trade expired -->
     <!-- TODO the expired will change to a TradeState -->
     <TradeAction
@@ -132,6 +149,29 @@ async function openDispute(id: string) {
       v-if="tradeInfo.trade.state === 'request_canceled' && !tradeInfo.expired"
       message="This trade has been canceled"
     />
+
+    <!-- Trade Disputed -->
+    <template v-if="tradeInfo.trade.state === 'escrow_disputed'">
+      <TradeAction
+        v-if="tradeInfo.trade.arbitrator === client.userWallet.address"
+        message="Dispute in progress, after reviewing the information pick the dispute winner."
+        :buttons="[
+          {
+            label: 'maker',
+            action: () => {
+              settleDispute(getMaker())
+            },
+          },
+          {
+            label: 'taker',
+            action: () => {
+              settleDispute(getTaker())
+            },
+          },
+        ]"
+      />
+      <TradeAction v-else message="Dispute in progress, please wait while a decision is being made." />
+    </template>
   </section>
 
   <section class="wrap sub-actions">
