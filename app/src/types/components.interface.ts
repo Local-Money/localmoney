@@ -152,8 +152,3 @@ export interface Arbitrator {
   arbitrator: string
   fiat: FiatCurrency
 }
-
-export interface SettleDispute {
-  trade_id: string
-  winner: string
-}

@@ -8,7 +8,9 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::Bound;
 
-use localterra_protocol::constants::{FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT};
+use localterra_protocol::constants::{
+    ARBITRATION_FEE, FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT,
+};
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::errors::ContractError;
@@ -784,7 +786,7 @@ fn settle_dispute(
 
     // Pay arbitration fee
     let amount = trade.amount.clone();
-    let fee_rate: Uint128 = Uint128::new(10);
+    let fee_rate: Uint128 = Uint128::new(ARBITRATION_FEE);
     let fee_amount = amount.multiply_ratio(Uint128::new(1), fee_rate);
 
     let denom = denom_to_string(&trade.denom);
@@ -816,7 +818,6 @@ pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrato
         .arbitrator
         .prefix(arbitrator)
         .range(storage, None, None, Order::Descending)
-        .take(10)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
 
