@@ -45,7 +45,6 @@ export interface GetOffer extends PatchOffer {
 
 export interface PatchOffer {
   id: string
-  owner_contact: string
   state: OfferState
   rate: string
   min_amount: string

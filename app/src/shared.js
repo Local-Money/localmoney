@@ -137,5 +137,5 @@ export function removeTelegramURLPrefix(telegram) {
 }
 
 export function addTelegramURLPrefix(telegram) {
-  return `t.me/${telegram}`
+  return `https://t.me/${telegram}`
 }

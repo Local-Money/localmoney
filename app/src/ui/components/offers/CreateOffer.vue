@@ -8,11 +8,11 @@ import {
   removeTelegramURLPrefix,
 } from '~/shared'
 import { usePriceStore } from '~/stores/price'
-import type { GetOffer, PostOffer } from '~/types/components.interface'
+import type { PostOffer } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
-import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
+import { fiatsAvailable } from '~/utils/fiat'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -20,12 +20,12 @@ const emit = defineEmits<{
 const client = useClientStore()
 const priceStore = usePriceStore()
 
-const lastOffer = computed(() => {
+const lastOfferCreated = computed(() => {
   const length = client.myOffers.data.length
-  return length > 0 ? client.myOffers.data[length - 1] : undefined
+  return length > 0 ? client.myOffers.data[0] : undefined
 })
 const defaultOwnerContact = computed(() =>
-  lastOffer.value !== undefined ? addTelegramURLPrefix(lastOffer.value?.owner_contact) : ''
+  lastOfferCreated.value !== undefined ? addTelegramURLPrefix(lastOfferCreated.value?.owner_contact) : ''
 )
 const selectedCrypto = ref(defaultMicroDenomAvailable())
 const minAmount = ref(0)

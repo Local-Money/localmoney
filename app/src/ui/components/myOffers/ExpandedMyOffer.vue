@@ -7,7 +7,7 @@ import {
   formatAmount,
 } from '~/shared'
 import { usePriceStore } from '~/stores/price'
-import type { GetOffer, PatchOffer } from '~/types/components.interface'
+import type { GetOffer } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ offer: GetOffer }>()
