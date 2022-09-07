@@ -6,7 +6,6 @@ use cosmwasm_std::{
     Env, MessageInfo, Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
     WasmMsg,
 };
-use cw_storage_plus::Bound;
 
 use localterra_protocol::constants::{
     ARBITRATION_FEE, FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT,
@@ -180,9 +179,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             env, deps, user, state, index, last_value, limit,
         )?),
         QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
-        QueryMsg::Arbitrators { last_value, limit } => {
-            to_binary(&query_arbitrators(deps, last_value, limit)?)
-        }
+        QueryMsg::Arbitrators {} => to_binary(&query_arbitrators(deps)?),
         QueryMsg::ArbitratorsFiat { fiat } => to_binary(&query_arbitrators_fiat(deps, fiat)?),
     }
 }
@@ -824,21 +821,10 @@ pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrato
     Ok(result)
 }
 
-pub fn query_arbitrators(
-    deps: Deps,
-    last_value: Option<String>,
-    limit: u32,
-) -> StdResult<Vec<Arbitrator>> {
+pub fn query_arbitrators(deps: Deps) -> StdResult<Vec<Arbitrator>> {
     let storage = deps.storage;
-
-    let range_from = match last_value {
-        Some(addr) => Some(Bound::ExclusiveRaw(addr.into())),
-        None => None,
-    };
-
     let result = arbitrators()
-        .range(storage, range_from, None, Order::Descending)
-        .take(limit as usize)
+        .range(storage, None, None, Order::Descending)
         .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
         .collect();
 

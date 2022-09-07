@@ -68,10 +68,7 @@ pub enum QueryMsg {
     Arbitrator {
         arbitrator: Addr,
     },
-    Arbitrators {
-        last_value: Option<String>,
-        limit: u32,
-    },
+    Arbitrators {},
     ArbitratorsFiat {
         fiat: FiatCurrency,
     },
