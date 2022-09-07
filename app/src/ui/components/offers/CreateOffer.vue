@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import CurrencyInput from '../CurrencyInput.vue'
-import { calculateFiatPriceByRate, convertMarginRateToOfferRate, formatAmount } from '~/shared'
+import {
+  addTelegramURLPrefix,
+  calculateFiatPriceByRate,
+  convertMarginRateToOfferRate,
+  formatAmount,
+  removeTelegramURLPrefix,
+} from '~/shared'
 import { usePriceStore } from '~/stores/price'
-import type { PostOffer } from '~/types/components.interface'
+import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
@@ -14,12 +20,19 @@ const emit = defineEmits<{
 const client = useClientStore()
 const priceStore = usePriceStore()
 
+const lastOffer = computed(() => {
+  const length = client.myOffers.data.length
+  return length > 0 ? client.myOffers.data[length - 1] : undefined
+})
+const defaultOwnerContact = computed(() =>
+  lastOffer.value !== undefined ? addTelegramURLPrefix(lastOffer.value?.owner_contact) : ''
+)
 const selectedCrypto = ref(defaultMicroDenomAvailable())
 const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
 const marginOffset = ref('')
-const ownerContact = ref()
+const ownerContact = ref(defaultOwnerContact.value)
 const marginOffsetUnmasked = ref(0)
 const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
@@ -54,7 +67,7 @@ function calculateMarginRate() {
 }
 function createOffer() {
   const postOffer: PostOffer = {
-    owner_contact: ownerContact.value,
+    owner_contact: removeTelegramURLPrefix(ownerContact.value),
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
