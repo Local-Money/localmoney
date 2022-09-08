@@ -127,13 +127,9 @@ export function tradeCanBeRefunded(tradeInfo, walletAddr) {
 }
 
 export function removeTelegramURLPrefix(telegram) {
-  if (telegram.startsWith('https://t.me/')) {
-    return telegram.replace('https://t.me/', '')
-  }
-  if (telegram.startsWith('t.me/')) {
-    return telegram.replace('t.me/', '')
-  }
-  return telegram
+  const search = 't.me/'
+  const start = telegram.indexOf(search) + search.length
+  return telegram.includes(search) ? telegram.substring(start) : telegram
 }
 
 export function addTelegramURLPrefix(telegram) {
