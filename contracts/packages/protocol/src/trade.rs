@@ -7,6 +7,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::currencies::FiatCurrency;
+use crate::offer::Arbitrator;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {}
@@ -15,14 +16,40 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Create(NewTrade),
-    AcceptRequest { trade_id: String },
-    FundEscrow { trade_id: String },
-    RefundEscrow { trade_id: String },
-    ReleaseEscrow { trade_id: String },
-    DisputeEscrow { trade_id: String },
-    FiatDeposited { trade_id: String },
-    CancelRequest { trade_id: String },
+    AcceptRequest {
+        trade_id: String,
+    },
+    FundEscrow {
+        trade_id: String,
+    },
+    RefundEscrow {
+        trade_id: String,
+    },
+    ReleaseEscrow {
+        trade_id: String,
+    },
+    DisputeEscrow {
+        trade_id: String,
+    },
+    FiatDeposited {
+        trade_id: String,
+    },
+    CancelRequest {
+        trade_id: String,
+    },
     RegisterHub {},
+    NewArbitrator {
+        arbitrator: Addr,
+        fiat: FiatCurrency,
+    },
+    DeleteArbitrator {
+        arbitrator: Addr,
+        fiat: FiatCurrency,
+    },
+    SettleDispute {
+        trade_id: String,
+        winner: Addr,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -38,6 +65,13 @@ pub enum QueryMsg {
         last_value: Option<String>,
         limit: u32,
     },
+    Arbitrator {
+        arbitrator: Addr,
+    },
+    Arbitrators {},
+    ArbitratorsFiat {
+        fiat: FiatCurrency,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -45,6 +79,7 @@ pub enum QueryMsg {
 pub enum TraderRole {
     Seller,
     Buyer,
+    Arbitrator,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -99,8 +134,8 @@ pub struct Trade {
     pub denom: Denom,
     pub amount: Uint128,
     pub state: TradeState,
+    pub fiat: FiatCurrency,
     pub state_history: Vec<TradeStateItem>,
-    pub asset: FiatCurrency,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -159,7 +194,7 @@ impl TradeModel<'_> {
         let result = trades()
             .idx
             .buyer
-            .prefix(buyer.to_string())
+            .prefix(buyer)
             .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
@@ -182,7 +217,30 @@ impl TradeModel<'_> {
         let result = trades()
             .idx
             .seller
-            .prefix(seller.to_string())
+            .prefix(seller)
+            .range(storage, range_from, None, Order::Descending)
+            .take(limit as usize)
+            .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn trades_by_arbitrator(
+        storage: &dyn Storage,
+        arbitrator: String,
+        last_value: Option<String>,
+        limit: u32,
+    ) -> StdResult<Vec<Trade>> {
+        let range_from = match last_value {
+            Some(thing) => Some(Bound::exclusive(thing)),
+            None => None,
+        };
+
+        let result = trades()
+            .idx
+            .arbitrator
+            .prefix(arbitrator)
             .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
@@ -196,11 +254,12 @@ pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
     pub buyer: MultiIndex<'a, String, Trade, String>,
     pub seller: MultiIndex<'a, String, Trade, String>,
+    pub arbitrator: MultiIndex<'a, String, Trade, String>,
 }
 
 impl<'a> IndexList<Trade> for TradeIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Trade>> + '_> {
-        let v: Vec<&dyn Index<Trade>> = vec![&self.buyer, &self.seller];
+        let v: Vec<&dyn Index<Trade>> = vec![&self.buyer, &self.seller, &self.arbitrator];
         Box::new(v.into_iter())
     }
 }
@@ -209,8 +268,47 @@ pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
     let indexes = TradeIndexes {
         buyer: MultiIndex::new(|t| t.buyer.to_string(), "trades", "trades__buyer"),
         seller: MultiIndex::new(|t| t.seller.to_string(), "trades", "trades__seller"),
+        arbitrator: MultiIndex::new(
+            |t| {
+                t.arbitrator
+                    .clone()
+                    .unwrap_or(Addr::unchecked(""))
+                    .to_string()
+            },
+            "trades",
+            "trades__arbitrator",
+        ),
     };
     IndexedMap::new("trades", indexes)
+}
+
+pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexes<'a>> {
+    let indexes = ArbitratorIndexes {
+        arbitrator: MultiIndex::new(
+            |d: &Arbitrator| d.arbitrator.clone(),
+            "arbitrators",
+            "arbitrators__arbitrator",
+        ),
+        fiat: MultiIndex::new(
+            |d: &Arbitrator| d.fiat.clone().to_string(),
+            "arbitrators",
+            "arbitrators__asset",
+        ),
+    };
+    IndexedMap::new("arbitrators", indexes)
+}
+
+pub struct ArbitratorIndexes<'a> {
+    // pk goes to second tuple element
+    pub arbitrator: MultiIndex<'a, Addr, Arbitrator, Vec<u8>>,
+    pub fiat: MultiIndex<'a, String, Arbitrator, Vec<u8>>,
+}
+
+impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Arbitrator>> + '_> {
+        let v: Vec<&dyn Index<Arbitrator>> = vec![&self.arbitrator, &self.fiat];
+        Box::new(v.into_iter())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

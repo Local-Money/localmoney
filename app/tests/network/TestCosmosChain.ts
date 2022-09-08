@@ -1,4 +1,3 @@
-import type { CosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { Decimal } from '@cosmjs/math'
@@ -27,11 +26,11 @@ export class TestCosmosChain extends CosmosChain {
     })
   }
 
-  getCwClient(): CosmWasmClient | SigningCosmWasmClient {
+  getCwClient(): SigningCosmWasmClient {
     if (this.cwClient === undefined) {
       throw new Error('Error, cwClient is undefined. Please call connectWallet() first.')
     }
-    return this.cwClient!
+    return <SigningCosmWasmClient>this.cwClient
   }
 
   async updateHub(hubAddress: string) {
