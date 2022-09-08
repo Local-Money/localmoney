@@ -54,10 +54,11 @@ describe('trade lifecycle happy path', () => {
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
+    const offer = offers[0] as PostOffer
     let trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.id).toBe(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
-    await makerClient.acceptTradeRequest(trade.id)
+    await makerClient.acceptTradeRequest(trade.id, offer.owner_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
   })
@@ -119,7 +120,8 @@ describe('trade invalid state changes', () => {
     await expect(takerClient.refundEscrow(tradeId)).rejects.toThrow()
   })
   it('should fail to mark as paid a trade in request_accepted state', async () => {
-    await makerClient.acceptTradeRequest(tradeId)
+    const offer = offers[0] as PostOffer
+    await makerClient.acceptTradeRequest(tradeId, offer.owner_contact)
     const trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
     await expect(takerClient.setFiatDeposited(tradeId)).rejects.toThrow()

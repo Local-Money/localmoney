@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import CurrencyInput from '../CurrencyInput.vue'
-import { calculateFiatPriceByRate, convertMarginRateToOfferRate, formatAmount } from '~/shared'
+import {
+  addTelegramURLPrefix,
+  calculateFiatPriceByRate,
+  convertMarginRateToOfferRate,
+  formatAmount,
+  removeTelegramURLPrefix,
+} from '~/shared'
 import { usePriceStore } from '~/stores/price'
 import type { PostOffer } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
-import { fiatsAvailable, getFiatInfo } from '~/utils/fiat'
+import { fiatsAvailable } from '~/utils/fiat'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -14,11 +20,19 @@ const emit = defineEmits<{
 const client = useClientStore()
 const priceStore = usePriceStore()
 
+const lastOfferCreated = computed(() => {
+  const length = client.myOffers.data.length
+  return length > 0 ? client.myOffers.data[0] : undefined
+})
+const defaultOwnerContact = computed(() =>
+  lastOfferCreated.value !== undefined ? addTelegramURLPrefix(lastOfferCreated.value?.owner_contact) : ''
+)
 const selectedCrypto = ref(defaultMicroDenomAvailable())
 const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
 const marginOffset = ref('')
+const ownerContact = ref(defaultOwnerContact.value)
 const marginOffsetUnmasked = ref(0)
 const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
@@ -53,13 +67,13 @@ function calculateMarginRate() {
 }
 function createOffer() {
   const postOffer: PostOffer = {
+    owner_contact: removeTelegramURLPrefix(ownerContact.value),
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
     denom: { native: selectedCrypto.value },
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
-    maker_contact: 'NoContactProvided',
   }
   client.createOffer(postOffer)
   emit('cancel')
@@ -151,14 +165,14 @@ watch(margin, () => {
         </div>
       </div>
 
-      <!-- <div class="divider" />
+      <div class="divider" />
 
       <div class="chat">
         <div class="wrap">
           <label for="crypto">Telegram username (?)</label>
-          <input type="text" placeholder="t.me/your-user-name" />
+          <input v-model="ownerContact" type="text" placeholder="t.me/your-user-name" />
         </div>
-      </div> -->
+      </div>
       <div class="divider" />
     </div>
 

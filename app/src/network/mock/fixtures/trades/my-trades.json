@@ -6,20 +6,20 @@
       "factory_addr": "terra1mw5872ftguapw88rflvnjr5guwvptpeeq5stsn",
       "buyer": "terra1m74pkgamadgyau09ahlunehyx2wrq26dzhuwsp",
       "seller": "terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7",
-      "taker_contact": "@TODO",
+      "maker_contact": "@TODO",
       "arbitrator": null,
       "offer_contract": "terra1ry8l5r474h5tqy95stv2esg45s7vqq0j425q3z",
       "offer_id": "105_3",
       "created_at": 1652905879,
       "denom": { "native": "umock" },
-      "amout": "100000000",
+      "amount": "100000000",
       "state": "escrow_released",
-      "asset": "COP"
+      "fiat": "COP"
     },
     "offer": {
       "id": "105_3",
       "owner": "terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7",
-      "maker_contact": "TODO",
+      "owner_contact": "TODO",
       "offer_type": "sell",
       "fiat_currency": "COP",
       "rate": "105",
@@ -48,7 +48,7 @@
       "denom": { "native": "umock" },
       "amount": "1000000",
       "state": "escrow_released",
-      "asset": "BRL"
+      "fiat": "BRL"
     },
     "offer": {
       "id": "110_2",
@@ -74,7 +74,7 @@
       "factory_addr": "terra1mw5872ftguapw88rflvnjr5guwvptpeeq5stsn",
       "buyer": "terra1m74pkgamadgyau09ahlunehyx2wrq26dzhuwsp",
       "seller": "terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7",
-      "taker_contact": "@TODO",
+      "maker_contact": "@TODO",
       "arbitrator": null,
       "offer_contract": "terra1ry8l5r474h5tqy95stv2esg45s7vqq0j425q3z",
       "offer_id": "110_2",
@@ -82,12 +82,12 @@
       "denom": { "native": "umock" },
       "amount": "100000000",
       "state": "request_created",
-      "asset": "BRL"
+      "fiat": "BRL"
     },
     "offer": {
       "id": "110_2",
       "owner": "terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7",
-      "maker_contact": "TODO",
+      "owner_contact": "TODO",
       "offer_type": "sell",
       "fiat_currency": "BRL",
       "rate": "110",

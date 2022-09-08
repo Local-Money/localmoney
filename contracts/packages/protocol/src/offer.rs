@@ -56,6 +56,7 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferMsg {
     pub offer_type: OfferType,
+    pub owner_contact: String,
     pub fiat_currency: FiatCurrency,
     pub rate: Uint128,
     pub denom: Denom,
@@ -66,6 +67,7 @@ pub struct OfferMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferUpdateMsg {
     pub id: String,
+    pub owner_contact: Option<String>,
     pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
@@ -125,6 +127,7 @@ pub struct OffersCount {
 pub struct Offer {
     pub id: String,
     pub owner: Addr,
+    pub owner_contact: String,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub rate: Uint128,
@@ -173,6 +176,9 @@ impl OfferModel<'_> {
     }
 
     pub fn update(&mut self, msg: OfferUpdateMsg) -> &Offer {
+        if msg.owner_contact.is_some() {
+            self.offer.owner_contact = msg.owner_contact.unwrap();
+        }
         self.offer.rate = msg.rate;
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
