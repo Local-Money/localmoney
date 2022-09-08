@@ -56,7 +56,7 @@ describe('arbitration tests', () => {
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
     })
-    await makerClient.acceptTradeRequest(tradeId)
+    await makerClient.acceptTradeRequest(tradeId, offer.owner_contact)
     let trade = await takerClient.fetchTradeDetail(tradeId)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
@@ -80,7 +80,7 @@ describe('arbitration tests', () => {
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
     })
-    await makerClient.acceptTradeRequest(tradeId)
+    await makerClient.acceptTradeRequest(tradeId, offer.owner_contact)
     let trade = await takerClient.fetchTradeDetail(tradeId)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
