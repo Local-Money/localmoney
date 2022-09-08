@@ -11,5 +11,5 @@
   "amount": "100000000",
   "denom": { "native": "umock" },
   "state": "request_created",
-  "asset": "BRL"
+  "fiat": "BRL"
 }

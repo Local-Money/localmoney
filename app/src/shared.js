@@ -79,7 +79,7 @@ export function convertOfferRateToMarginRate(offerRate) {
   } else {
     return {
       marginOffset: 100 - offerRate,
-      margin: 'bellow',
+      margin: 'below',
     }
   }
 }

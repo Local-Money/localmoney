@@ -1,9 +1,11 @@
+/* eslint-disable no-console */
 import type { AccountData, OfflineSigner } from '@cosmjs/launchpad'
 import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
 import { Decimal } from '@cosmjs/math'
 import { CosmWasmClient, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import type { Coin } from '@cosmjs/stargate'
 import type {
+  Arbitrator,
   Denom,
   FetchOffersArgs,
   GetOffer,
@@ -166,6 +168,7 @@ export class CosmosChain implements Chain {
           ?.attributes.find((a) => a.key === 'trade_id')?.value
         return trade_id ?? ''
       } catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     } else {
@@ -217,7 +220,6 @@ export class CosmosChain implements Chain {
       const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, {
         trade: { id: tradeId },
       })) as Trade
-      console.log('response >>> ', response)
       return response
     } catch (e) {
       // TODO error state
@@ -289,6 +291,48 @@ export class CosmosChain implements Chain {
       } catch (e) {
         console.error(e)
         // TODO manage error
+        throw new DefaultError()
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
+  }
+
+  async newArbitrator(arbitrator: Arbitrator) {
+    const msg = { new_arbitrator: arbitrator }
+    console.log('New Arbitrator msg >> ', msg)
+    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
+      try {
+        const result = await this.cwClient.execute(
+          this.getWalletAddress(),
+          this.hubInfo.hubConfig.trade_addr,
+          msg,
+          'auto'
+        )
+        console.log('New arbitrator result >> ', result)
+      } catch (e) {
+        console.error(e)
+        throw new DefaultError()
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
+  }
+
+  async settleDispute(tradeId: string, winner: string) {
+    const msg = { settle_dispute: { trade_id: tradeId, winner } }
+    console.log('msg >> ', msg)
+    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
+      try {
+        const result = await this.cwClient.execute(
+          this.getWalletAddress(),
+          this.hubInfo.hubConfig.trade_addr,
+          msg,
+          'auto'
+        )
+        console.log('result >> ', result)
+      } catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     } else {

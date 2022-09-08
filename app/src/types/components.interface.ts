@@ -103,7 +103,7 @@ export interface Trade {
   denom: Denom
   state: TradeState
   state_history: TradeStateItem[]
-  asset: FiatCurrency
+  fiat: FiatCurrency
 }
 
 export interface TradeStateItem {
@@ -147,4 +147,9 @@ export interface Denom {
 export interface UserWallet {
   isConnected: boolean
   address: string
+}
+
+export interface Arbitrator {
+  arbitrator: string
+  fiat: FiatCurrency
 }

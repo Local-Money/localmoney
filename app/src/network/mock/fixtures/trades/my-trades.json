@@ -12,9 +12,9 @@
       "offer_id": "105_3",
       "created_at": 1652905879,
       "denom": { "native": "umock" },
-      "amout": "100000000",
+      "amount": "100000000",
       "state": "escrow_released",
-      "asset": "COP"
+      "fiat": "COP"
     },
     "offer": {
       "id": "105_3",
@@ -48,7 +48,7 @@
       "denom": { "native": "umock" },
       "amount": "1000000",
       "state": "escrow_released",
-      "asset": "BRL"
+      "fiat": "BRL"
     },
     "offer": {
       "id": "110_2",
@@ -82,7 +82,7 @@
       "denom": { "native": "umock" },
       "amount": "100000000",
       "state": "request_created",
-      "asset": "BRL"
+      "fiat": "BRL"
     },
     "offer": {
       "id": "110_2",

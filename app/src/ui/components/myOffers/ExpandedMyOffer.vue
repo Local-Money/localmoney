@@ -79,7 +79,7 @@ watch(marginOffset, () => {
           <p class="label">Margin</p>
           <select v-model="margin" class="bg-gray100">
             <option value="above">Above</option>
-            <option value="bellow">Below</option>
+            <option value="below">Below</option>
           </select>
         </div>
 

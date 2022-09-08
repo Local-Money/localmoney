@@ -41,3 +41,7 @@ pub struct HubConfig {
     pub chain_fee_pct: u128,
     pub warchest_fee_pct: u128,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct MigrateMsg {}

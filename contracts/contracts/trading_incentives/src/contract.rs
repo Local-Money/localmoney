@@ -1,10 +1,13 @@
-use crate::state::{DISTRIBUTION, TOTAL_VOLUME, TRADER_VOLUME};
+use std::cmp;
+use std::ops::{Add, Mul};
+
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, QueryRequest,
     StdResult, Storage, SubMsg, WasmQuery,
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
+
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{
     DistributionClaimInvalidPeriod, DistributionNotStarted, HubAlreadyRegistered,
@@ -14,10 +17,10 @@ use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::load_offer;
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, Trade, TradeState};
 use localterra_protocol::trading_incentives::{
-    Distribution, ExecuteMsg, InstantiateMsg, QueryMsg, TraderRewards,
+    Distribution, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, TraderRewards,
 };
-use std::cmp;
-use std::ops::{Add, Mul};
+
+use crate::state::{DISTRIBUTION, TOTAL_VOLUME, TRADER_VOLUME};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -265,4 +268,9 @@ fn get_rewards_denom(deps: Deps) -> String {
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::default())
 }

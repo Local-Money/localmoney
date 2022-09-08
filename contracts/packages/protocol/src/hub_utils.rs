@@ -1,4 +1,4 @@
-use crate::hub::{HubConfig, QueryMsg};
+use crate::hub::{Admin, HubConfig, QueryMsg};
 use cosmwasm_std::{to_binary, Addr, Deps, QueryRequest, Response, Storage, WasmQuery};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
@@ -14,7 +14,7 @@ pub fn get_hub_config(deps: Deps) -> HubConfig {
         .unwrap()
 }
 
-pub fn get_hub_admin(deps: Deps) -> Addr {
+pub fn get_hub_admin(deps: Deps) -> Admin {
     let hub_addr = HUB_ADDR.load(deps.storage).unwrap();
     deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
