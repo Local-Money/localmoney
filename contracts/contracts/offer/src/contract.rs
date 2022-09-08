@@ -96,6 +96,7 @@ pub fn create_offer(
         Offer {
             id: offer_id,
             owner: info.sender.clone(),
+            owner_contact: msg.owner_contact,
             offer_type: msg.offer_type,
             fiat_currency: msg.fiat_currency.clone(),
             rate: msg.rate,

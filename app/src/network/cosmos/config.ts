@@ -77,14 +77,14 @@ export const TEST_CONFIG: CosmosConfig = {
 }
 
 export const TEST_HUB_INFO: HubInfo = {
-  hubAddress: process.env.HUB ? process.env.HUB : 'kujira122l9zsmswu5hl9kmalgyuxvyskt2ldrn62mlpenxae07pjwta3yqdr9nga',
+  hubAddress: process.env.HUB ?? '',
   hubConfig: {
-    offer_addr: '',
-    trade_addr: '',
+    offer_addr: process.env.OFFER ?? '',
+    trade_addr: process.env.TRADE ?? '',
     trading_incentives_addr: '',
-    local_market_addr: '',
+    local_market_addr: process.env.LOCAL_MARKET ?? '',
     local_denom: {
-      native: '',
+      native: process.env.LOCAL_DENOM ?? '',
     },
   },
 }

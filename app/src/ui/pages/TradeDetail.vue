@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { calculateFiatPriceByRate, convertOfferRateToMarginRate, formatAddress, formatAmount } from '~/shared'
+import {
+  addTelegramURLPrefix,
+  calculateFiatPriceByRate,
+  convertOfferRateToMarginRate,
+  formatAddress,
+  formatAmount,
+} from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
@@ -39,6 +45,11 @@ const fiatAmountStr = computed(() => {
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.rate))
+const isMakerContactAvailable = computed(() => tradeInfo.value.trade.maker_contact)
+const makerContact = computed(() => {
+  const telegram = tradeInfo.value.trade.maker_contact
+  return isMakerContactAvailable.value ? telegram : 'pending'
+})
 
 function fetchTrade(id: string) {
   nextTick(async () => {
@@ -116,8 +127,25 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
-    <section class="main-wrap">
-      <div class="chat card">Chat will be here</div>
+
+    <section class="wrap">
+      <section class="chat card">
+        <p>Chat will be here</p>
+        <div class="content">
+          <p class="label">
+            Telegram:
+            <a
+              v-if="isMakerContactAvailable"
+              :href="addTelegramURLPrefix(makerContact)"
+              class="telegram"
+              target="_blank"
+            >
+              {{ makerContact }}
+            </a>
+            <span v-else class="label">pending</span>
+          </p>
+        </div>
+      </section>
       <div class="inner-wrap">
         <!-- Trade Summary -->
         <div class="trade-summary card">
@@ -302,6 +330,22 @@ onUnmounted(() => {
   width: 30%;
   margin-right: 24px;
   margin-bottom: 64px;
+
+  .content {
+    margin-top: 20px;
+
+    .label {
+      color: $gray900;
+    }
+
+    .telegram {
+      color: $primary;
+
+      &:hover {
+        color: $secondary;
+      }
+    }
+  }
 }
 
 .inner-wrap {

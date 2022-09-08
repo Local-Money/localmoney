@@ -2,7 +2,7 @@
   {
     "id": "95_4",
     "owner": "terra1m74pkgamadgyau09ahlunehyx2wrq26dzhuwsx",
-    "maker_contact": "TODO",
+    "owner_contact": "TODO",
     "offer_type": "sell",
     "fiat_currency": "ARS",
     "rate": "95",
@@ -10,6 +10,7 @@
     "min_amount": "10000000",
     "max_amount": "1000000000",
     "state": "active",
+    "state_history": [],
     "timestamp": 1652984153,
     "last_traded_at": 0,
     "trades_count": 1
@@ -17,7 +18,7 @@
   {
     "id": "95_4",
     "owner": "terra1m74pkgamadgyau09ahlunehyx2wrq26dzhuwsp",
-    "maker_contact": "TODO",
+    "owner_contact": "TODO",
     "offer_type": "sell",
     "fiat_currency": "BRL",
     "rate": "95",
@@ -25,6 +26,7 @@
     "min_amount": "10000000",
     "max_amount": "1000000000",
     "state": "active",
+    "state_history": [],
     "timestamp": 1652984153,
     "last_traded_at": 0,
     "trades_count": 1
@@ -32,7 +34,7 @@
   {
     "id": "110_2",
     "owner": "terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7",
-    "maker_contact": "TODO",
+    "owner_contact": "TODO",
     "offer_type": "sell",
     "fiat_currency": "BRL",
     "rate": "110",
@@ -40,6 +42,7 @@
     "min_amount": "1000000",
     "max_amount": "100000000",
     "state": "active",
+    "state_history": [],
     "timestamp": 1652897391,
     "last_traded_at": 1652897702,
     "trades_count": 1

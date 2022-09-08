@@ -29,14 +29,15 @@ export interface OfferTypeLabel {
 
 export interface GetOffer extends PatchOffer {
   id: string
-  owner: string
+  owner_contact: string
+  state: OfferState
   rate: string
-  denom: Denom
   min_amount: string
   max_amount: string
+  owner: string
   offer_type: OfferType
+  denom: Denom
   fiat_currency: FiatCurrency
-  state: OfferState
   timestamp: number
   last_traded_at: number
   trades_count: number
@@ -51,13 +52,13 @@ export interface PatchOffer {
 }
 
 export interface PostOffer {
-  offer_type: OfferType
-  fiat_currency: FiatCurrency
+  owner_contact: string
   rate: string
+  offer_type: OfferType
   denom: Denom
+  fiat_currency: FiatCurrency
   min_amount: string
   max_amount: string
-  maker_contact: string
 }
 
 export enum FiatCurrency {
@@ -93,7 +94,7 @@ export interface Trade {
   factory_addr: string
   buyer: string
   seller: string
-  taker_contact: string
+  maker_contact?: string
   arbitrator?: string | null
   offer_contract: string
   offer_id: string
@@ -102,7 +103,7 @@ export interface Trade {
   denom: Denom
   state: TradeState
   state_history: TradeStateItem[]
-  asset: FiatCurrency
+  fiat: FiatCurrency
 }
 
 export interface TradeStateItem {

@@ -125,3 +125,13 @@ export function tradeCanBeRefunded(tradeInfo, walletAddr) {
   const { trade } = tradeInfo
   return trade.state === 'escrow_funded' && tradeInfo.expired && trade.sender === walletAddr
 }
+
+export function removeTelegramURLPrefix(telegram) {
+  const search = 't.me/'
+  const start = telegram.indexOf(search) + search.length
+  return telegram.includes(search) ? telegram.substring(start) : telegram
+}
+
+export function addTelegramURLPrefix(telegram) {
+  return `https://t.me/${telegram}`
+}

@@ -21,7 +21,7 @@ function getTaker(): string {
 }
 
 async function acceptTradeRequest(id: string) {
-  await client.acceptTradeRequest(id)
+  await client.acceptTradeRequest(id, props.tradeInfo.offer.owner_contact)
 }
 
 async function cancelTradeRequest(id: string) {
@@ -29,7 +29,9 @@ async function cancelTradeRequest(id: string) {
 }
 
 async function fundEscrow(id: string) {
-  await client.fundEscrow(id, props.tradeInfo.trade.amount, props.tradeInfo.trade.denom)
+  const ownerContact =
+    props.tradeInfo.offer.owner === client.userWallet.address ? props.tradeInfo.offer.owner_contact : undefined
+  await client.fundEscrow(id, props.tradeInfo.trade.amount, props.tradeInfo.trade.denom, ownerContact)
 }
 
 async function setFiatDeposited(id: string) {
