@@ -41,6 +41,8 @@ export interface Chain {
 
   fetchTradeDetail(tradeId: string): Promise<Trade>
 
+  fetchArbitrators(): Promise<Arbitrator[]>
+
   acceptTradeRequest(tradeId: string, makerContact: string): Promise<void>
 
   cancelTradeRequest(tradeId: string): Promise<void>

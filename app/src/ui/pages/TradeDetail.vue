@@ -14,7 +14,7 @@ import { microDenomToDenom } from '~/utils/denom'
 const client = useClientStore()
 const priceStore = usePriceStore()
 const tradeInfo = ref()
-
+const trade = ref()
 let refreshInterval: NodeJS.Timer
 
 const route = useRoute()

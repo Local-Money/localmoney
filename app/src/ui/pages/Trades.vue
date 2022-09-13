@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import TradeOpenItem from '../components/trades/TradeOpenItem.vue'
 import TradeHistoryItem from '../components/trades/TradeHistoryItem.vue'
 import { useClientStore } from '~/stores/client'
@@ -6,6 +7,7 @@ import { TradeState } from '~/types/components.interface'
 import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
+const { userWallet } = storeToRefs(client)
 const tradeResult = computed(() => client.trades)
 const trades = computed(() => {
   if (tradeResult.value.isSuccess()) {
@@ -52,6 +54,10 @@ onMounted(() => {
 })
 
 onUnmounted(async () => {})
+
+watch(userWallet, () => {
+  nextTick(async () => await client.fetchMyTrades())
+})
 </script>
 
 <template>

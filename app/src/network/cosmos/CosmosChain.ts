@@ -1,9 +1,12 @@
 /* eslint-disable no-console */
-import type { AccountData, OfflineSigner } from '@cosmjs/launchpad'
-import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
-import { Decimal } from '@cosmjs/math'
 import { CosmWasmClient, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
+import type { AccountData, OfflineSigner } from '@cosmjs/launchpad'
+import { Decimal } from '@cosmjs/math'
+import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
 import type { Coin } from '@cosmjs/stargate'
+import type { Chain } from '~/network/Chain'
+import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/chain-error'
+import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 import type {
   Arbitrator,
   Denom,
@@ -14,11 +17,8 @@ import type {
   PatchOffer,
   PostOffer,
   Trade,
-  TradeInfo,
+  TradeInfo
 } from '~/types/components.interface'
-import type { Chain } from '~/network/Chain'
-import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
-import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/chain-error'
 
 export class CosmosChain implements Chain {
   protected config: CosmosConfig
@@ -223,6 +223,28 @@ export class CosmosChain implements Chain {
       return response
     } catch (e) {
       // TODO error state
+      throw new DefaultError()
+    }
+  }
+
+  async fetchArbitrators() {
+    // TODO: fix init
+    if (!this.cwClient) {
+      await this.init()
+    }
+    try {
+      const queryMsg = {
+        arbitrators: {
+          limit: 100,
+        },
+      }
+      const response = (await this.cwClient!.queryContractSmart(
+        this.hubInfo.hubConfig.trade_addr,
+        queryMsg
+      )) as Arbitrator[]
+      console.log('response >>> ', response)
+      return response
+    } catch (e) {
       throw new DefaultError()
     }
   }

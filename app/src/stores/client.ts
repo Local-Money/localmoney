@@ -1,6 +1,9 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ListResult } from './ListResult'
+import { ChainClient, chainFactory } from '~/network/Chain'
+import type { ChainError } from '~/network/chain-error'
 import type {
+  Arbitrator,
   Denom,
   FetchOffersArgs,
   GetOffer,
@@ -11,8 +14,6 @@ import type {
   UserWallet,
 } from '~/types/components.interface'
 import { LoadingState, OfferState } from '~/types/components.interface'
-import { ChainClient, chainFactory } from '~/network/Chain'
-import type { ChainError } from '~/network/chain-error'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -24,6 +25,7 @@ export const useClientStore = defineStore({
       offers: <ListResult<GetOffer>>ListResult.loading(),
       myOffers: <ListResult<GetOffer>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
+      arbitrators: <ListResult<Arbitrator>>ListResult.loading(),
       loadingState: <LoadingState>LoadingState.dismiss(),
     }
   },
@@ -44,9 +46,7 @@ export const useClientStore = defineStore({
         await this.client.connectWallet()
         const address = this.client.getWalletAddress()
         this.userWallet = { isConnected: true, address }
-        await this.router.push({
-          name: 'Home',
-        })
+        await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
         alert((e as ChainError).message)
@@ -141,6 +141,15 @@ export const useClientStore = defineStore({
         currentTrade.trade = await this.client.fetchTradeDetail(tradeId)
       }
       return currentTrade
+    },
+    async fetchArbitrators() {
+      this.arbitrators = ListResult.loading()
+      try {
+        const arbitratorsList = await this.client.fetchArbitrators()
+        this.arbitrators = ListResult.success(arbitratorsList)
+      } catch (e) {
+        this.arbitrators = ListResult.error(e as ChainError)
+      }
     },
     async acceptTradeRequest(tradeId: string, makerContact: string) {
       this.loadingState = LoadingState.show('Accepting trade...')
