@@ -26,6 +26,8 @@ export const useClientStore = defineStore({
       myOffers: <ListResult<GetOffer>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
       arbitrators: <ListResult<Arbitrator>>ListResult.loading(),
+      openDisputes: <ListResult<TradeInfo>>ListResult.loading(),
+      closedDisputes: <ListResult<TradeInfo>>ListResult.loading(),
       loadingState: <LoadingState>LoadingState.dismiss(),
     }
   },
@@ -133,14 +135,14 @@ export const useClientStore = defineStore({
         this.trades = ListResult.error(e as ChainError)
       }
     },
-    async fetchTradeDetail(tradeId: string) {
-      await this.fetchMyTrades()
-      const currentTrade = this.trades.data.find((tradeInf) => tradeInf.trade.id === tradeId)
-      // TODO error case
-      if (currentTrade !== undefined) {
-        currentTrade.trade = await this.client.fetchTradeDetail(tradeId)
-      }
-      return currentTrade
+    async fetchTradeDetail(tradeId: string): Promise<TradeInfo> {
+      const trade = await this.client.fetchTradeDetail(tradeId)
+      const offer = await this.client.fetchOffer(trade.offer_id)
+      return {
+        trade,
+        offer,
+        expired: false,
+      } as TradeInfo
     },
     async fetchArbitrators() {
       this.arbitrators = ListResult.loading()
@@ -149,6 +151,17 @@ export const useClientStore = defineStore({
         this.arbitrators = ListResult.success(arbitratorsList)
       } catch (e) {
         this.arbitrators = ListResult.error(e as ChainError)
+      }
+    },
+    async fetchDisputedTrades() {
+      this.openDisputes = ListResult.loading()
+      this.closedDisputes = ListResult.loading()
+      try {
+        const disputedTrades = await this.client.fetchDisputedTrades()
+        this.openDisputes = ListResult.success(disputedTrades.openDisputes)
+        this.closedDisputes = ListResult.success(disputedTrades.closedDisputes)
+      } catch (e) {
+        console.error(e)
       }
     },
     async acceptTradeRequest(tradeId: string, makerContact: string) {

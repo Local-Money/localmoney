@@ -1,11 +1,35 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { storeToRefs } from 'pinia'
+import { useClientStore } from '~/stores/client'
+
+const client = useClientStore()
+const { userWallet } = storeToRefs(client)
+const openDisputeResult = computed(() => client.openDisputes)
+const openDisputes = computed(() => {
+  return openDisputeResult.value.isSuccess() ? openDisputeResult.value.data : []
+})
+const closedDisputesResult = computed(() => client.closedDisputes)
+const closedDisputes = computed(() => {
+  return closedDisputesResult.value.isSuccess() ? closedDisputesResult.value.data : []
+})
+
+onMounted(async () => {
+  nextTick(async () => {
+    await client.fetchDisputedTrades()
+  })
+})
+
+watch(userWallet, async () => {
+  await client.fetchDisputedTrades()
+})
+</script>
 
 <template>
   <section>
     <div class="dispute-list">
       <ul>
-        <li class="card">
-          <OpenDisputeItem />
+        <li v-for="dispute in openDisputes" :key="dispute.trade.id" class="card">
+          <OpenDisputeItem :dispute="dispute" />
         </li>
       </ul>
     </div>
@@ -14,7 +38,7 @@
     <div class="archived-disputes-table card">
       <div class="table-header">
         <div class="col-1">
-          <p>Order Type</p>
+          <p>Offer Type</p>
         </div>
         <div class="col-2">
           <p>Settle Date</p>
@@ -29,6 +53,24 @@
           <p>Status</p>
         </div>
         <div class="col-6" />
+      </div>
+      <div v-for="dispute in closedDisputes" :key="dispute.trade.id" class="wrap-table-item">
+        <div class="col-1">
+          <p>{{ dispute.offer.offer_type }}</p>
+        </div>
+        <div class="col-2">
+          <p>{{}}</p>
+        </div>
+        <div class="col-3">
+          <p>{{ dispute.offer.denom.native }}</p>
+        </div>
+        <div class="col-4">
+          <p>{{}}</p>
+        </div>
+        <div class="col-5">
+          <p>{{ dispute.trade.state }}</p>
+        </div>
+        <div class="col-6"></div>
       </div>
     </div>
   </section>

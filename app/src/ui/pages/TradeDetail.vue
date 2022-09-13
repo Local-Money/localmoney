@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import {
   addTelegramURLPrefix,
@@ -12,6 +13,7 @@ import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
 
 const client = useClientStore()
+const { userWallet } = storeToRefs(client)
 const priceStore = usePriceStore()
 const tradeInfo = ref()
 const trade = ref()
@@ -50,6 +52,7 @@ const makerContact = computed(() => {
 function fetchTrade(id: string) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
+    console.log('tradeInfo.value', tradeInfo.value)
     refreshInterval = setInterval(async () => {
       tradeInfo.value = await client.fetchTradeDetail(id)
     }, 10 * 1000)
@@ -64,6 +67,10 @@ onMounted(() => {})
 
 onUnmounted(() => {
   clearInterval(refreshInterval)
+})
+
+watch(userWallet, async () => {
+  return fetchTrade(route.params.id as string)
 })
 </script>
 

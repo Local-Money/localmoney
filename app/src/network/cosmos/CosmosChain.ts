@@ -17,7 +17,7 @@ import type {
   PatchOffer,
   PostOffer,
   Trade,
-  TradeInfo
+  TradeInfo,
 } from '~/types/components.interface'
 
 export class CosmosChain implements Chain {
@@ -123,6 +123,24 @@ export class CosmosChain implements Chain {
     }
   }
 
+  async fetchOffer(offerId: string): Promise<GetOffer> {
+    // TODO: fix init
+    if (!this.cwClient) {
+      await this.init()
+    }
+    try {
+      const queryMsg = { offer: { id: offerId } }
+      const response = (await this.cwClient!.queryContractSmart(
+        this.hubInfo.hubConfig.offer_addr,
+        queryMsg
+      )) as GetOffer
+      console.log('response >>> ', response)
+      return response
+    } catch (e) {
+      throw new DefaultError()
+    }
+  }
+
   async fetchOffers(args: FetchOffersArgs) {
     // TODO: fix init
     if (!this.cwClient) {
@@ -211,6 +229,33 @@ export class CosmosChain implements Chain {
     }
   }
 
+  async fetchDisputedTrades(): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }> {
+    if (this.cwClient instanceof SigningCosmWasmClient) {
+      const userAddr = this.getWalletAddress()
+      // TODO fix init
+      if (!this.cwClient) {
+        await this.init()
+      }
+      try {
+        // Query of trades as buyer
+        const queryMsg = { trades: { user: userAddr, role: 'arbitrator', limit: 100 } }
+        const disputedTrades = (await this.cwClient!.queryContractSmart(
+          this.hubInfo.hubConfig.trade_addr,
+          queryMsg
+        )) as TradeInfo[]
+        const openDisputes = disputedTrades.filter((t) => t.trade.state === 'escrow_disputed')
+        const closedDisputes = disputedTrades.filter((t) => t.trade.state !== 'escrow_disputed')
+        const response: { openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] } = { openDisputes, closedDisputes }
+        console.log('response >>> ', response)
+        return response
+      } catch (e) {
+        throw new DefaultError()
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
+  }
+
   async fetchTradeDetail(tradeId: string) {
     // TODO fix init
     if (!this.cwClient) {
@@ -245,6 +290,31 @@ export class CosmosChain implements Chain {
       console.log('response >>> ', response)
       return response
     } catch (e) {
+      throw new DefaultError()
+    }
+  }
+
+  async fetchOpenDisputes() {
+    // TODO: fix init
+    if (!this.cwClient) {
+      await this.init()
+    }
+    try {
+      const queryMsg = {
+        trades: {
+          user: this.getWalletAddress(),
+          role: 'arbitrator',
+          limit: 100,
+        },
+      }
+      const response = (await this.cwClient!.queryContractSmart(
+        this.hubInfo.hubConfig.trade_addr,
+        queryMsg
+      )) as TradeInfo[]
+      console.log('response >>> ', response)
+      return response
+    } catch (e) {
+      console.error(e)
       throw new DefaultError()
     }
   }

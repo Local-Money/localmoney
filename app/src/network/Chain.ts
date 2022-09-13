@@ -27,6 +27,8 @@ export interface Chain {
 
   getWalletAddress(): string
 
+  fetchOffer(offerId: string): Promise<GetOffer>
+
   fetchOffers(args: FetchOffersArgs): Promise<GetOffer[]>
 
   fetchMyOffers(): Promise<GetOffer[]>
@@ -38,6 +40,8 @@ export interface Chain {
   openTrade(trade: NewTrade): Promise<string>
 
   fetchTrades(): Promise<TradeInfo[]>
+
+  fetchDisputedTrades(): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }>
 
   fetchTradeDetail(tradeId: string): Promise<Trade>
 

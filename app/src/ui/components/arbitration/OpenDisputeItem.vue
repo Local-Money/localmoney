@@ -1,11 +1,15 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import type { TradeInfo } from '~/types/components.interface'
+
+const props = defineProps<{ dispute: TradeInfo }>()
+</script>
 
 <template>
   <div class="dispute-wrap">
     <div class="time"><p>45m ago</p></div>
     <div class="info">
       <div class="wrap">
-        <p class="offer-type">Buy Order</p>
+        <p class="offer-type">{{ props.dispute.offer.offer_type }}</p>
       </div>
 
       <div class="divider" />
@@ -40,7 +44,9 @@
     </div>
 
     <div class="btn">
-      <button class="primary bg-gray300" type="button">view</button>
+      <router-link :to="`/trade/${dispute.trade.id}`">
+        <button class="primary bg-gray300" type="button">view</button>
+      </router-link>
     </div>
   </div>
 </template>
