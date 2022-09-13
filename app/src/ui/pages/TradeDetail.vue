@@ -20,14 +20,10 @@ let refreshInterval: NodeJS.Timer
 const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
 const stepOneChecked = computed(() => {
-  return (
-    tradeInfo.value.trade.state === 'escrow_funded' ||
-    tradeInfo.value.trade.state === 'fiat_deposited' ||
-    tradeInfo.value.trade.state === 'escrow_released'
-  )
+  return ['escrow_funded', 'fiat_deposited', 'escrow_disputed', 'escrow_released'].includes(tradeInfo.value.trade.state)
 })
 const stepTwoChecked = computed(() => {
-  return tradeInfo.value.trade.state === 'fiat_deposited' || tradeInfo.value.trade.state === 'escrow_released'
+  return ['fiat_deposited', 'escrow_disputed', 'escrow_released'].includes(tradeInfo.value.trade.state)
 })
 const stepThreeChecked = computed(() => tradeInfo.value.trade.state === 'escrow_released')
 const isBuyer = computed(() => tradeInfo.value.trade.buyer === walletAddress.value)
@@ -105,7 +101,8 @@ onUnmounted(() => {
             <p>3</p>
           </div>
         </div>
-        <p :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
+        <p v-if="tradeInfo.trade.state === 'escrow_disputed'" :class="stepThreeChecked">in dispute</p>
+        <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
       </div>
 
       <div class="step-status">
