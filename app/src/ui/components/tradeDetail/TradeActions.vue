@@ -67,8 +67,14 @@ async function settleDispute(winner: string) {
       <TradeAction
         v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
         message="Review the request and accept the trade"
-        :buttonLabel="['accept trade']"
-        @actionClick="acceptTradeRequest(tradeInfo.trade.id)"
+        :buttons="[
+          {
+            label: 'accept trade',
+            action: () => {
+              acceptTradeRequest(tradeInfo.trade.id)
+            },
+          },
+        ]"
       />
       <!-- #2 step or #1 step -->
       <!-- if #2 step: The Buyer accepted the request and needs to wait for the Seller to deposit crypto on escrow -->
@@ -85,8 +91,14 @@ async function settleDispute(winner: string) {
       <TradeAction
         v-if="tradeInfo.trade.state === 'escrow_funded'"
         message="Only press the mark as paid after you made the payment"
-        :buttonLabel="['mark as paid']"
-        @actionClick="setFiatDeposited(tradeInfo.trade.id)"
+        :buttons="[
+          {
+            label: 'mark as paid',
+            action: () => {
+              setFiatDeposited(tradeInfo.trade.id)
+            },
+          },
+        ]"
       />
       <!-- #4 step or #3 step -->
       <!-- After the off-chain payment, the Buyer needs to wait for the Seller to release the funds on escrow -->
@@ -113,8 +125,14 @@ async function settleDispute(winner: string) {
           tradeInfo.trade.state === 'request_accepted'
         "
         message="Please fund the trade"
-        buttonLabel="['fund trade']"
-        @actionClick="fundEscrow(tradeInfo.trade.id)"
+        :buttons="[
+          {
+            label: 'fund trade',
+            action: () => {
+              fundEscrow(tradeInfo.trade.id)
+            },
+          },
+        ]"
       />
       <!-- #3 step or #2 step -->
       <!-- The crypto is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
@@ -124,8 +142,14 @@ async function settleDispute(winner: string) {
       <TradeAction
         v-if="tradeInfo.trade.state === 'fiat_deposited'"
         message="Only release the funds after confirming the payment"
-        buttonLabel="['release funds']"
-        @actionClick="releaseEscrow(tradeInfo.trade.id)"
+        :buttons="[
+          {
+            label: 'release funds',
+            action: () => {
+              releaseEscrow(tradeInfo.trade.id)
+            },
+          },
+        ]"
       />
       <!-- #5 step or #4 step -->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->

@@ -8,14 +8,6 @@ const props = defineProps<{
   message: string
   buttons?: TradeActionButton[]
 }>()
-
-const emit = defineEmits<{
-  (e: 'actionClick'): void
-}>()
-
-function click() {
-  emit('actionClick')
-}
 </script>
 
 <template>
