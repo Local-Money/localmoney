@@ -25,6 +25,7 @@ use localterra_protocol::guards::{
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
 use localterra_protocol::offer::{load_offer, Arbitrator, Offer, OfferType, TradeInfo};
+use localterra_protocol::profile::ExecuteMsg::IncreaseTradeCount;
 use localterra_protocol::trade::{
     arbitrators, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
     TradeModel, TradeState, TradeStateItem, TraderRole,
@@ -146,22 +147,9 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     )
     .trade;
 
-    //SubMsg to Offer to contract increment trades count.
-    let increment_submsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: hub_cfg.offer_addr.to_string(),
-        msg: to_binary(
-            &localterra_protocol::offer::ExecuteMsg::IncrementTradesCount {
-                offer_id: offer.id.clone(),
-            },
-        )
-        .unwrap(),
-        funds: vec![],
-    }));
-
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
         .add_attribute("action", "create_trade")
-        .add_submessage(increment_submsg)
         .add_attribute("trade_id", trade_id)
         .add_attribute("offer_id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string())
@@ -503,6 +491,17 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
+
+    // Update profile trade_count
+    send_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: hub_cfg.profile_addr.to_string(),
+        msg: to_binary(&IncreaseTradeCount {
+            profile_address: offer.owner.clone(),
+            final_trade_state: trade.state.clone(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })));
 
     // Send tokens to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {

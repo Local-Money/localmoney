@@ -81,9 +81,7 @@ pub enum ExecuteMsg {
     Create { offer: OfferMsg },
     RegisterHub {},
     UpdateOffer { offer_update: OfferUpdateMsg },
-
     UpdateLastTraded { offer_id: String },
-    IncrementTradesCount { offer_id: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

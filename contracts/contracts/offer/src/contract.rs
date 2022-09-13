@@ -40,9 +40,6 @@ pub fn execute(
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
         ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
-        ExecuteMsg::IncrementTradesCount { offer_id } => {
-            increment_trades_count(deps, info, offer_id)
-        }
     }
 }
 
@@ -180,33 +177,6 @@ pub fn update_offer(
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
-}
-
-fn increment_trades_count(
-    deps: DepsMut,
-    info: MessageInfo,
-    offer_id: String,
-) -> Result<Response, ContractError> {
-    let hub_cfg = get_hub_config(deps.as_ref());
-
-    //Check if caller is Trade Contract
-    if info.sender.ne(&hub_cfg.trade_addr) {
-        return Err(Unauthorized {
-            owner: hub_cfg.trade_addr.clone(),
-            caller: info.sender.clone(),
-        });
-    }
-
-    //Increment trades_count
-    let mut offer = load_offer_by_id(deps.storage, offer_id).unwrap();
-    offer.trades_count += 1;
-    OfferModel::store(deps.storage, &offer).unwrap();
-
-    let res = Response::new()
-        .add_attribute("action", "increment_trades_count")
-        .add_attribute("offer_id", offer.id)
-        .add_attribute("trades_count", offer.trades_count.to_string());
-    Ok(res)
 }
 
 fn query_state(deps: Deps) -> StdResult<OffersCount> {
