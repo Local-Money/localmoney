@@ -1,41 +1,41 @@
 <script setup lang="ts">
-// import { storeToRefs } from 'pinia'
-// import { useClientStore } from '~/stores/client'
+import { storeToRefs } from 'pinia'
+import { useClientStore } from '~/stores/client'
+import { microDenomToDenom } from '~/utils/denom'
 
-// const client = useClientStore()
-// const { userWallet } = storeToRefs(client)
-// const openDisputeResult = computed(() => client.openDisputes)
-// const openDisputes = computed(() => {
-//   return openDisputeResult.value.isSuccess() ? openDisputeResult.value.data : []
-// })
-// const closedDisputesResult = computed(() => client.closedDisputes)
-// const closedDisputes = computed(() => {
-//   return closedDisputesResult.value.isSuccess() ? closedDisputesResult.value.data : []
-// })
+const client = useClientStore()
+const { userWallet } = storeToRefs(client)
+const openDisputeResult = computed(() => client.openDisputes)
+const openDisputes = computed(() => {
+  return openDisputeResult.value.isSuccess() ? openDisputeResult.value.data : []
+})
+const closedDisputesResult = computed(() => client.closedDisputes)
+const closedDisputes = computed(() => {
+  return closedDisputesResult.value.isSuccess() ? closedDisputesResult.value.data : []
+})
 
-// onMounted(async () => {
-//   nextTick(async () => {
-//     await client.fetchDisputedTrades()
-//   })
-// })
+onMounted(async () => {
+  nextTick(async () => {
+    await client.fetchDisputedTrades()
+  })
+})
 
-// watch(userWallet, async () => {
-//   await client.fetchDisputedTrades()
-// })
+watch(userWallet, async () => {
+  await client.fetchDisputedTrades()
+})
 </script>
 
 <template>
   <section>
     <div class="dispute-list">
       <ul>
-        <li class="card"><OpenDisputeItem /></li>
-        <!-- <li v-for="dispute in openDisputes" :key="dispute.trade.id" class="card">
+        <li v-for="dispute in openDisputes" :key="dispute.trade.id" class="card">
           <OpenDisputeItem :dispute="dispute" />
-        </li> -->
+        </li>
       </ul>
     </div>
 
-    <!-- <h3>Archived Disputes</h3>
+    <h3>Archived Disputes</h3>
     <div class="archived-disputes-table card">
       <div class="table-header">
         <div class="col-1">
@@ -63,7 +63,7 @@
           <p>{{}}</p>
         </div>
         <div class="col-3">
-          <p>{{ dispute.offer.denom.native }}</p>
+          <p>{{ microDenomToDenom(dispute.offer.denom.native) }}</p>
         </div>
         <div class="col-4">
           <p>{{}}</p>
@@ -73,7 +73,7 @@
         </div>
         <div class="col-6"></div>
       </div>
-    </div> -->
+    </div>
   </section>
 </template>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// import type { TradeInfo } from '~/types/components.interface'
+import type { TradeInfo } from '~/types/components.interface'
 
-// const props = defineProps<{ dispute: TradeInfo }>()
+const props = defineProps<{ dispute: TradeInfo }>()
 </script>
 
 <template>
@@ -19,7 +19,7 @@
           <path d="M12 6V12L16 14" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </div>
-      <p>45m ago</p>
+      <p>??m ago</p>
     </div>
 
     <div class="divider"></div>
@@ -43,10 +43,7 @@
               />
             </svg>
           </div>
-          <p class="offer-type">
-            Selling to
-            <!-- {{ props.dispute.offer.offer_type }} -->
-          </p>
+          <p class="offer-type">Selling to {{ props.dispute.offer.offer_type }}</p>
         </div>
         <div class="wrap-peer">
           <p class="peer">Taker</p>
@@ -61,11 +58,11 @@
       <div class="reward">
         <p class="label">Estimated rewards</p>
         <!-- TO-DO Get Trade Rate -->
-        <p class="rate">$12.826 LOCAL</p>
+        <p class="rate">$??? LOCAL</p>
       </div>
-      <!-- <router-link :to="`/trade/${dispute.trade.id}`"> -->
-      <button class="primary bg-gray300" type="button">view</button>
-      <!-- </router-link> -->
+      <router-link :to="`/trade/${dispute.trade.id}`">
+        <button class="primary bg-gray300" type="button">view</button>
+      </router-link>
     </div>
   </div>
 </template>

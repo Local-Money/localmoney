@@ -49,6 +49,10 @@ const makerContact = computed(() => {
   return isMakerContactAvailable.value ? telegram : 'pending'
 })
 
+const isArbitrator = computed(() => {
+  return client.arbitrators.data.filter((a) => client.userWallet.address === a.arbitrator).length > 0
+})
+
 function fetchTrade(id: string) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
@@ -152,7 +156,7 @@ watch(userWallet, async () => {
       </section>
       <div class="inner-wrap">
         <!-- Trade Summary -->
-        <div class="trade-summary card">
+        <div v-if="!isArbitrator" class="trade-summary card">
           <div class="trader-info">
             <p><small>You're trading with</small></p>
             <p class="trader">
@@ -187,9 +191,8 @@ watch(userWallet, async () => {
         </div>
         <!-- End Trade Summary -->
 
-        <!-- TO-DO Consolidate this view into the above -->
         <!-- Trade Dispute Summary -->
-        <!-- <div class="dispute-summary card">
+        <div v-else class="dispute-summary card">
           <div class="dispute-wrap">
             <div class="peer-wrap">
               <p class="peer">Maker</p>
@@ -216,20 +219,20 @@ watch(userWallet, async () => {
             <p class="label">Transaction summary</p>
             <div class="transaction">
               <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will get</p>
-                <p v-else class="list-item-label">You will send</p>
+                <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Maker is selling</p>
+                <p v-else class="list-item-label">Maker is buying</p>
                 <p class="value">{{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}</p>
               </div>
               <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will send</p>
-                <p v-else class="list-item-label">You will get</p>
+                <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Taker should pay</p>
+                <p v-else class="list-item-label">Taker should receive</p>
                 <p class="value fiat">
                   {{ fiatAmountStr }}
                 </p>
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
         <!-- End Trade Dispute Summary -->
         <TradeActions :tradeInfo="tradeInfo" :walletAddress="walletAddress" />
       </div>
