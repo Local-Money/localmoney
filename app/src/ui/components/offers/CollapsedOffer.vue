@@ -26,7 +26,7 @@ const offerPrice = computed(() => {
       <p class="wallet-addr">
         {{ formatAddress(offer.owner) }}
       </p>
-      <p class="n-trades">0 trades</p>
+      <p class="n-trades">{{ offer.trades_count }} trades</p>
     </div>
 
     <div class="info">

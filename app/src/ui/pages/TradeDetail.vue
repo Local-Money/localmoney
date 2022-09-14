@@ -152,7 +152,7 @@ onUnmounted(() => {
             <p class="trader">
               {{ formatAddress(counterparty) }}
             </p>
-            <p class="rating">0 trades</p>
+            <p class="rating">{{ tradeInfo.offer.trades_count }} trades</p>
           </div>
           <div class="trade-info">
             <p class="label">Price</p>
