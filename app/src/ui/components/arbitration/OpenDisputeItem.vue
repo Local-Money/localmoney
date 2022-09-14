@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { TradeInfo } from '~/types/components.interface'
+// import type { TradeInfo } from '~/types/components.interface'
 
-const props = defineProps<{ dispute: TradeInfo }>()
+// const props = defineProps<{ dispute: TradeInfo }>()
 </script>
 
 <template>
@@ -9,7 +9,9 @@ const props = defineProps<{ dispute: TradeInfo }>()
     <div class="time"><p>45m ago</p></div>
     <div class="info">
       <div class="wrap">
-        <p class="offer-type">{{ props.dispute.offer.offer_type }}</p>
+        <p class="offer-type">
+          <!-- {{ props.dispute.offer.offer_type }} -->
+        </p>
       </div>
 
       <div class="divider" />
@@ -44,9 +46,9 @@ const props = defineProps<{ dispute: TradeInfo }>()
     </div>
 
     <div class="btn">
-      <router-link :to="`/trade/${dispute.trade.id}`">
-        <button class="primary bg-gray300" type="button">view</button>
-      </router-link>
+      <!-- <router-link :to="`/trade/${dispute.trade.id}`"> -->
+      <button class="primary bg-gray300" type="button">view</button>
+      <!-- </router-link> -->
     </div>
   </div>
 </template>
