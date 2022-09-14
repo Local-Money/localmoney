@@ -6,9 +6,24 @@
 
 <template>
   <div class="dispute-wrap">
-    <div class="time"><p>45m ago</p></div>
-    <div class="divider"></div>
+    <div class="time">
+      <div class="icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+            stroke="inherit"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path d="M12 6V12L16 14" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <p>45m ago</p>
+    </div>
+
     <div class="info">
+      <div class="divider"></div>
       <div class="dispute-status">
         <div class="wrap">
           <p class="peer">Maker</p>
@@ -66,13 +81,22 @@
     flex-direction: column;
     gap: 24px;
   }
-  .time p {
-    font-size: 16px;
-    font-weight: $semi-bold;
-    color: $primary;
-    background-color: $gray150;
-    border-radius: 8px;
-    padding: 8px 16px;
+  .time {
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+    .icon svg {
+      vertical-align: middle;
+      stroke: $gray700;
+    }
+    p {
+      font-size: 16px;
+      font-weight: $semi-bold;
+      color: $primary;
+      //background-color: $gray150;
+      //border-radius: 8px;
+      margin-left: 16px;
+    }
   }
 
   .info {
@@ -92,6 +116,9 @@
         flex-direction: row;
         align-items: center;
         gap: 16px;
+        background-color: $gray150;
+        border-radius: 8px;
+        padding: 8px 16px;
 
         .peer {
           font-size: 16px;
@@ -99,9 +126,6 @@
         .address {
           font-size: 12px;
           color: $gray600;
-          background-color: $gray150;
-          border-radius: 8px;
-          padding: 4px 8px;
         }
       }
 
