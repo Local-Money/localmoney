@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TradeInfo } from '~/types/components.interface'
+import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ dispute: TradeInfo }>()
 </script>
@@ -43,7 +44,12 @@ const props = defineProps<{ dispute: TradeInfo }>()
               />
             </svg>
           </div>
-          <p class="offer-type">Selling to {{ props.dispute.offer.offer_type }}</p>
+          <p v-if="props.dispute.offer.offer_type === 'buy'" class="offer-type">
+            is buying <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> from
+          </p>
+          <p v-else class="offer-type">
+            is selling <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> to
+          </p>
         </div>
         <div class="wrap-peer">
           <p class="peer">Taker</p>
@@ -58,7 +64,7 @@ const props = defineProps<{ dispute: TradeInfo }>()
       <div class="reward">
         <p class="label">Estimated rewards</p>
         <!-- TO-DO Get Trade Rate -->
-        <p class="rate">$??? LOCAL</p>
+        <p class="rate">$??? {{ microDenomToDenom(dispute.offer.denom.native) }}</p>
       </div>
       <router-link :to="`/trade/${dispute.trade.id}`">
         <button class="primary bg-gray300" type="button">view</button>
