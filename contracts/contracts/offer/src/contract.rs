@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 
 use localterra_protocol::errors::ContractError;
@@ -10,6 +10,7 @@ use localterra_protocol::offer::{
     offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferState,
     OfferUpdateMsg, OffersCount, QueryMsg,
 };
+use localterra_protocol::profile::load_profile;
 
 use crate::state::{offers_count_read, offers_count_storage};
 
@@ -47,7 +48,7 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
-        QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps.storage, id)?),
+        QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps, id)?),
         QueryMsg::Offers {
             owner,
             min,
@@ -64,7 +65,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             order,
         } => to_binary(&OfferModel::query_by(
-            deps.storage,
+            deps,
             offer_type,
             fiat_currency,
             denom,
@@ -184,11 +185,21 @@ fn query_state(deps: Deps) -> StdResult<OffersCount> {
     Ok(state)
 }
 
-pub fn load_offer_by_id(storage: &dyn Storage, id: String) -> StdResult<Offer> {
-    let offer = offers()
-        .may_load(storage, id.to_string())
+pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<Offer> {
+    let hub_config = get_hub_config(deps);
+    let mut offer = offers()
+        .may_load(deps.storage, id.to_string())
         .unwrap_or_default()
         .unwrap();
+
+    let profile = load_profile(
+        &deps.querier,
+        offer.clone().owner,
+        hub_config.profile_addr.to_string(),
+    );
+
+    offer.trades_count = profile.trade_count;
+
     Ok(offer)
 }
 

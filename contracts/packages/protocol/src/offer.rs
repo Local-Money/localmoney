@@ -1,6 +1,8 @@
 use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
+use crate::hub_utils::get_hub_config;
+use crate::profile::load_profile;
 use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{
     to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, Uint128,
@@ -201,6 +203,7 @@ impl OfferModel<'_> {
         limit: u32,
         order: QueryOrder,
     ) -> StdResult<Vec<Offer>> {
+        let hub_config = get_hub_config(deps);
         let storage = deps.storage;
 
         let std_order = match order {
@@ -234,14 +237,24 @@ impl OfferModel<'_> {
 
         let result = range
             .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .flat_map(|item| {
+                item.and_then(|(_, mut offer)| {
+                    let profile = load_profile(
+                        &deps.querier,
+                        offer.clone().owner,
+                        hub_config.profile_addr.to_string(),
+                    );
+                    offer.trades_count = profile.trade_count;
+                    Ok(offer)
+                })
+            })
             .collect();
 
         Ok(result)
     }
 
     pub fn query_by(
-        storage: &dyn Storage,
+        deps: Deps,
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
@@ -250,6 +263,8 @@ impl OfferModel<'_> {
         order: QueryOrder,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
+        let hub_config = get_hub_config(deps);
+        let storage = deps.storage;
         let std_order = match order {
             QueryOrder::Asc => Order::Ascending,
             QueryOrder::Desc => Order::Descending,
@@ -276,7 +291,17 @@ impl OfferModel<'_> {
             )
             .range(storage, range_min, range_max, std_order)
             .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .flat_map(|item| {
+                item.and_then(|(_, mut offer)| {
+                    let profile = load_profile(
+                        &deps.querier,
+                        offer.clone().owner,
+                        hub_config.profile_addr.to_string(),
+                    );
+                    offer.trades_count = profile.trade_count;
+                    Ok(offer)
+                })
+            })
             .collect();
 
         Ok(result)

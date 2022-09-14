@@ -45,7 +45,7 @@ pub fn increase_trade_count(
     deps: DepsMut,
     info: MessageInfo,
     profile_address: Addr,
-    _final_trade_state: TradeState,
+    final_trade_state: TradeState,
 ) -> Result<Response, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
 
@@ -65,6 +65,7 @@ pub fn increase_trade_count(
 
     let res = Response::new()
         .add_attribute("action", "increase_trade_count")
+        .add_attribute("final_trade_state", final_trade_state.to_string())
         .add_attribute("trade_count", profile.trade_count.to_string());
     Ok(res)
 }
@@ -77,7 +78,6 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Profile { address } => to_binary(&query_profile(deps, address)?),
-        QueryMsg::Profiles {} => to_binary(&query_profiles(deps)?),
     }
 }
 
@@ -89,11 +89,6 @@ fn query_profile(deps: Deps, profile_address: Addr) -> StdResult<Profile> {
     let profile = profile.unwrap_or(Profile::new(profile_address));
 
     Ok(profile)
-}
-
-fn query_profiles(_deps: Deps) -> StdResult<Response> {
-    // TODO list all profiles
-    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
