@@ -85,6 +85,10 @@
   li {
     list-style: none;
     margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 56px;
+    }
   }
 }
 

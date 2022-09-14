@@ -22,10 +22,11 @@
       <p>45m ago</p>
     </div>
 
+    <div class="divider"></div>
+
     <div class="info">
-      <div class="divider"></div>
       <div class="dispute-status">
-        <div class="wrap">
+        <div class="wrap-peer">
           <p class="peer">Maker</p>
           <p class="address">kujira7...o8lkv</p>
         </div>
@@ -47,20 +48,21 @@
             <!-- {{ props.dispute.offer.offer_type }} -->
           </p>
         </div>
-        <div class="wrap">
+        <div class="wrap-peer">
           <p class="peer">Taker</p>
           <p class="address">kujira7...o8lkv</p>
         </div>
       </div>
-      <div class="divider"></div>
-      <div class="wrap reward">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="wrap-cta">
+      <div class="reward">
         <p class="label">Estimated rewards</p>
         <!-- TO-DO Get Trade Rate -->
         <p class="rate">$12.826 LOCAL</p>
       </div>
-    </div>
-
-    <div class="btn">
       <!-- <router-link :to="`/trade/${dispute.trade.id}`"> -->
       <button class="primary bg-gray300" type="button">view</button>
       <!-- </router-link> -->
@@ -79,12 +81,19 @@
 
   @media only screen and (max-width: $mobile) {
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
   }
   .time {
     display: flex;
     align-items: center;
     margin-left: 8px;
+
+    @media only screen and (max-width: $mobile) {
+      background-color: $gray150;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
     .icon svg {
       vertical-align: middle;
       stroke: $gray700;
@@ -93,8 +102,6 @@
       font-size: 16px;
       font-weight: $semi-bold;
       color: $primary;
-      //background-color: $gray150;
-      //border-radius: 8px;
       margin-left: 16px;
     }
   }
@@ -103,15 +110,27 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-grow: 2;
     gap: 24px;
+
+    @media only screen and (max-width: $mobile) {
+      width: 100%;
+      flex-direction: column;
+      gap: 8px;
+    }
 
     .dispute-status {
       display: flex;
       align-items: center;
       gap: 40px;
 
-      .wrap {
+      @media only screen and (max-width: $mobile) {
+        width: 100%;
+        justify-content: space-between;
+        flex-direction: row;
+        gap: 16px;
+      }
+
+      .wrap-peer {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -119,6 +138,12 @@
         background-color: $gray150;
         border-radius: 8px;
         padding: 8px 16px;
+
+        @media only screen and (max-width: $mobile) {
+          flex-direction: column;
+          gap: 4px;
+          padding: 8px 8px;
+        }
 
         .peer {
           font-size: 16px;
@@ -134,6 +159,10 @@
         gap: 8px;
         align-items: center;
         flex-direction: row-reverse;
+
+        @media only screen and (max-width: $mobile) {
+          flex-direction: column-reverse;
+        }
         .offer-type {
           font-size: 14px;
           font-weight: $semi-bold;
@@ -145,52 +174,47 @@
         }
       }
     }
-
-    .wrap {
-      display: flex;
-      flex-direction: column;
-      .label {
-        margin-bottom: 4px;
-        font-size: 12px;
-        color: $gray600;
-      }
-
-      .limit,
-      .rate,
-      .content {
-        font-size: 15px;
-        color: $gray700;
-      }
-    }
-
-    .reward {
-      text-align: right;
-    }
-
-    @media only screen and (max-width: $mobile) {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-      background-color: $gray150;
-      padding: 8px 16px;
-      border-radius: 8px;
-
-      .divider {
-        display: none;
-      }
-      .wrap {
-        width: 100%;
-        flex-direction: row;
-        align-items: flex-end;
-        gap: 24px;
-        justify-content: space-between;
-      }
-    }
   }
   .divider {
     height: 40px;
     width: 1px;
     background-color: $border;
+
+    @media only screen and (max-width: $mobile) {
+      display: none;
+    }
+  }
+
+  .wrap-cta {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+
+    @media only screen and (max-width: $mobile) {
+      width: 100%;
+      justify-content: space-between;
+      border-top: 1px solid $border;
+      padding-top: 24px;
+    }
+
+    .reward {
+      display: flex;
+      flex-direction: column;
+      text-align: right;
+
+      @media only screen and (max-width: $mobile) {
+        text-align: left;
+      }
+      .label {
+        margin-bottom: 4px;
+        font-size: 12px;
+        color: $gray600;
+      }
+      .rate {
+        font-size: 15px;
+        color: $gray700;
+      }
+    }
   }
 }
 </style>
