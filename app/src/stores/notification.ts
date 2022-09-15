@@ -15,12 +15,19 @@ export const useNotificationStore = defineStore({
   },
   actions: {
     async fetchNotifications() {
-      const trades = await this.client.client.fetchTrades()
+      let trades = await this.client.client.fetchTrades()
+      const disputes = await this.client.client.fetchDisputedTrades()
+      const openDisputes = disputes.openDisputes.length > 0 ? disputes.openDisputes : []
+      trades = trades.concat(openDisputes)
       const wallet = this.client.userWallet.address
       const lastSeen = this.lastSeen.get(wallet) ?? 0
       let notifications = this.notifications()
       trades.forEach((tradeInfo) => {
         if (!tradeInfo.expired) {
+          if (tradeInfo.trade.arbitrator === wallet) {
+            const dispute = tradeInfo.trade.state_history.find((state) => state.state === TradeState.escrow_disputed)
+            tradeInfo.trade.state_history = dispute ? [dispute] : []
+          }
           tradeInfo.trade.state_history.forEach((state) => {
             const time = state.timestamp * 1000
             if (time > lastSeen && state.actor !== wallet) {
@@ -108,7 +115,7 @@ function getMessageByState(state: TradeState): string {
     case TradeState.escrow_released:
       return 'Trade finished successfully'
     case TradeState.escrow_disputed:
-      return 'Trade in dispute'
+      return 'Dispute has been requested'
     case TradeState.settled_for_maker:
       return 'Dispute resolved'
     case TradeState.settled_for_taker:
