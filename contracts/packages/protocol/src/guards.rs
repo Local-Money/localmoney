@@ -85,13 +85,13 @@ pub fn assert_trade_state_and_type(
     trade: &Trade,
     offer_type: &OfferType,
 ) -> Result<(), ContractError> {
-    if offer_type == &OfferType::Sell && trade.state == TradeState::RequestCreated {
+    if offer_type == &OfferType::Sell && trade.get_state() == TradeState::RequestCreated {
         Ok(())
-    } else if offer_type == &OfferType::Buy && trade.state == TradeState::RequestAccepted {
+    } else if offer_type == &OfferType::Buy && trade.get_state() == TradeState::RequestAccepted {
         Ok(())
     } else {
         Err(ContractError::InvalidTradeState {
-            current: trade.state.clone(),
+            current: trade.get_state(),
             expected: match offer_type {
                 OfferType::Buy => TradeState::RequestAccepted,
                 OfferType::Sell => TradeState::RequestCreated,
