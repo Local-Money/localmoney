@@ -136,12 +136,45 @@ pub struct Trade {
     pub created_at: u64,
     pub denom: Denom,
     pub amount: Uint128,
-    pub state: TradeState,
     pub fiat: FiatCurrency,
     pub state_history: Vec<TradeStateItem>,
+    state: TradeState,
 }
 
 impl Trade {
+    pub fn new(
+        id: String,
+        addr: Addr,
+        buyer: Addr,
+        seller: Addr,
+        maker_contact: Option<String>,
+        arbitrator: Option<Addr>,
+        offer_contract: Addr,
+        offer_id: String,
+        created_at: u64,
+        denom: Denom,
+        amount: Uint128,
+        fiat: FiatCurrency,
+        state_history: Vec<TradeStateItem>,
+    ) -> Trade {
+        return Trade {
+            id,
+            addr,
+            buyer,
+            seller,
+            maker_contact,
+            arbitrator,
+            offer_contract,
+            offer_id,
+            created_at,
+            denom,
+            amount,
+            fiat,
+            state_history,
+            state: TradeState::RequestCreated,
+        };
+    }
+
     pub fn get_state(&self) -> TradeState {
         return self.state.clone();
     }

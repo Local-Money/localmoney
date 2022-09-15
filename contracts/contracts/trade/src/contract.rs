@@ -127,22 +127,21 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
-        Trade {
-            id: trade_id.clone(),
-            addr: env.contract.address.clone(),
-            buyer,  // buyer
-            seller, // seller
-            offer_contract: hub_cfg.offer_addr.clone(),
+        Trade::new(
+            trade_id.clone(),
+            env.contract.address.clone(),
+            buyer,
+            seller,
+            None,
+            None,
+            hub_cfg.offer_addr.clone(),
             offer_id,
-            arbitrator: Some(Addr::unchecked("todo")),
-            state: TradeState::RequestCreated,
-            state_history: trade_state_history,
-            created_at: env.block.time.seconds(),
-            denom: offer.denom.clone(),
-            amount: new_trade.amount.clone(),
-            maker_contact: None,
-            fiat: offer.fiat_currency,
-        },
+            env.block.time.seconds(),
+            offer.denom.clone(),
+            new_trade.amount.clone(),
+            offer.fiat_currency,
+            trade_state_history,
+        ),
     )
     .trade;
 
