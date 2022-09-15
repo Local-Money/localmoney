@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { formatAddress } from '~/shared'
 import type { TradeInfo } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ dispute: TradeInfo }>()
+
+const taker = computed(() => {
+  const maker = props.dispute.offer.owner
+  const buyer = props.dispute.trade.buyer
+  const seller = props.dispute.trade.seller
+  return [buyer, seller].filter((it) => it !== maker)[0]
+})
 </script>
 
 <template>
@@ -29,7 +37,7 @@ const props = defineProps<{ dispute: TradeInfo }>()
       <div class="dispute-status">
         <div class="wrap-peer">
           <p class="peer">Maker</p>
-          <p class="address">kujira7...o8lkv</p>
+          <p class="address">{{ formatAddress(props.dispute.offer.owner) }}</p>
         </div>
         <div class="wrap-offer-type">
           <div class="icon">
@@ -53,7 +61,7 @@ const props = defineProps<{ dispute: TradeInfo }>()
         </div>
         <div class="wrap-peer">
           <p class="peer">Taker</p>
-          <p class="address">kujira7...o8lkv</p>
+          <p class="address">{{ formatAddress(taker) }}</p>
         </div>
       </div>
     </div>
