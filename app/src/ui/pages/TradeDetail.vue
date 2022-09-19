@@ -7,6 +7,7 @@ import {
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
+  formatTradesCountInfo,
 } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
@@ -162,7 +163,7 @@ watch(userWallet, async () => {
             <p class="trader">
               {{ formatAddress(counterparty) }}
             </p>
-            <p class="rating">0 trades</p>
+            <p class="rating">{{ formatTradesCountInfo(tradeInfo.offer.trades_count) }}</p>
           </div>
           <div class="trade-info">
             <p class="label">Price</p>

@@ -6,5 +6,6 @@ pub mod guards;
 pub mod hub;
 pub mod hub_utils;
 pub mod offer;
+pub mod profile;
 pub mod trade;
 pub mod trading_incentives;

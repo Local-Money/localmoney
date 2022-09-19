@@ -103,29 +103,6 @@ export function formatDate(date, showTime = true) {
   }
 }
 
-/** UI Elements **/
-export function scrollToElement(el) {
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
-}
-
-/** Trade State **/
-export function tradeCanBeFunded(tradeInfo, walletAddr) {
-  const { trade } = tradeInfo
-  return trade.state === 'created' && trade.seller === walletAddr
-}
-
-export function tradeCanBeReleased(tradeInfo, walletAddr) {
-  const { trade } = tradeInfo
-  return trade.state === 'escrow_funded' && trade.seller === walletAddr
-}
-
-export function tradeCanBeRefunded(tradeInfo, walletAddr) {
-  const { trade } = tradeInfo
-  return trade.state === 'escrow_funded' && tradeInfo.expired && trade.sender === walletAddr
-}
-
 export function removeTelegramURLPrefix(telegram) {
   const search = 't.me/'
   const start = telegram.indexOf(search) + search.length
@@ -134,4 +111,16 @@ export function removeTelegramURLPrefix(telegram) {
 
 export function addTelegramURLPrefix(telegram) {
   return `https://t.me/${telegram}`
+}
+
+export function formatTradesCountInfo(tradesCount) {
+  const tradesLabel = tradesCount === 1 ? 'trade' : 'trades'
+  return `${tradesCount} ${tradesLabel}`
+}
+
+/** UI Elements **/
+export function scrollToElement(el) {
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 }

@@ -3,12 +3,18 @@ import { TestCosmosChain } from './network/TestCosmosChain'
 import codeIds from './fixtures/codeIds.json'
 import { TEST_CONFIG, TEST_HUB_INFO } from '~/network/cosmos/config'
 
-export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, tradingIncentivesAddr: string) {
+export function createHubUpdateConfigMsg(
+  offerAddr: string,
+  tradeAddr: string,
+  tradingIncentivesAddr: string,
+  profileAddr: string
+) {
   return {
     update_config: {
       offer_addr: offerAddr,
       trade_addr: tradeAddr,
       trading_incentives_addr: tradingIncentivesAddr,
+      profile_addr: profileAddr,
       local_market_addr: process.env.LOCAL_MARKET,
       local_denom: { native: process.env.LOCAL_DENOM },
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
@@ -43,7 +49,7 @@ export async function setupProtocol() {
     const adminCwClient = adminClient.getCwClient() as SigningCosmWasmClient
 
     const instantiateMsg = { admin_addr: admAddr }
-    const { hub, offer, trade, trading_incentives } = codeIds
+    const { hub, offer, trade, trading_incentives, profile } = codeIds
     const opts = { admin: admAddr }
     const hubInstantiateResult = await adminCwClient.instantiate(admAddr, hub, instantiateMsg, 'hub', 'auto', opts)
     const offerInstantiateResult = await adminCwClient.instantiate(
@@ -70,9 +76,16 @@ export async function setupProtocol() {
       'auto',
       opts
     )
+    const profileResult = await adminCwClient.instantiate(admAddr, profile, instantiateMsg, 'profile', 'auto', opts)
 
     // Assert that all contracts were instantiated
-    const results = [hubInstantiateResult, offerInstantiateResult, tradeInstantiateResult, tradingIncentivesResult]
+    const results = [
+      hubInstantiateResult,
+      offerInstantiateResult,
+      tradeInstantiateResult,
+      tradingIncentivesResult,
+      profileResult,
+    ]
     results.forEach((result: InstantiateResult) => {
       expect(result).toHaveProperty('contractAddress')
     })
@@ -81,7 +94,8 @@ export async function setupProtocol() {
     const updatedConfigMsg = createHubUpdateConfigMsg(
       offerInstantiateResult.contractAddress,
       tradeInstantiateResult.contractAddress,
-      tradingIncentivesResult.contractAddress
+      tradingIncentivesResult.contractAddress,
+      profileResult.contractAddress
     )
     await adminCwClient.execute(admAddr, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
     await adminClient.updateHub(hubInstantiateResult.contractAddress)
