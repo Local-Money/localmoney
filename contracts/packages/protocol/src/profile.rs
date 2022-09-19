@@ -1,5 +1,5 @@
 use crate::trade::TradeState;
-use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, WasmQuery};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
