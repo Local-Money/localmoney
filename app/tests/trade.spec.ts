@@ -15,6 +15,7 @@ Object.assign(global, { TextEncoder, TextDecoder })
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
 let tradeId = '0'
+let offerTradeCount = 0
 
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
@@ -28,10 +29,12 @@ offers[0].denom = { native: process.env.OFFER_DENOM! }
 describe('trade lifecycle happy path', () => {
   // Create Offer
   it('should have an available offer', async () => {
-    const myOffers = await makerClient.fetchMyOffers()
+    let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
       await makerClient.createOffer(offers[0] as PostOffer)
     }
+    myOffers = await makerClient.fetchMyOffers()
+    offerTradeCount = myOffers[0].trades_count
   })
   // Create Trade
   it('taker should create a trade', async () => {
@@ -84,15 +87,21 @@ describe('trade lifecycle happy path', () => {
     const trade = await takerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.escrow_released)
   })
+  it('the trade count should increase after the release', async () => {
+    const myOffers = await makerClient.fetchMyOffers()
+    expect(myOffers[0].trades_count).toBe(offerTradeCount + 1)
+  })
 })
 
 describe('trade invalid state changes', () => {
   it('should have an available offer', async () => {
-    const myOffers = await makerClient.fetchMyOffers()
+    let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
       myOffers[0].denom = { native: process.env.OFFER_DENOM! }
       await makerClient.createOffer(offers[0] as PostOffer)
     }
+    myOffers = await makerClient.fetchMyOffers()
+    offerTradeCount = myOffers[0].trades_count
   })
   it('should fail to fund a trade in request_created state', async () => {
     const offer = (await makerClient.fetchMyOffers())[0]
@@ -144,5 +153,9 @@ describe('trade invalid state changes', () => {
     expect(trade.state).toBe(TradeState.fiat_deposited)
     await expect(makerClient.cancelTradeRequest(tradeId)).rejects.toThrow()
     expect(trade.state).toBe(TradeState.fiat_deposited)
+  })
+  it('the trade count should not increase when a trade is not completed', async () => {
+    const myOffers = await makerClient.fetchMyOffers()
+    expect(myOffers[0].trades_count).toBe(offerTradeCount)
   })
 })
