@@ -4,6 +4,7 @@ import {
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
+  formatTradesCountInfo,
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
@@ -153,7 +154,7 @@ onUnmounted(() => {
       <p class="wallet">
         {{ formatAddress(offer.owner) }}
       </p>
-      <p class="n-trades">{{ offer.trades_count }} trades</p>
+      <p class="n-trades">{{ formatTradesCountInfo(offer.trades_count) }}</p>
     </div>
 
     <div class="divider-horizontal" />

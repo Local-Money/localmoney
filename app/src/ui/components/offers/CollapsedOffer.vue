@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { calculateFiatPriceByRate, convertOfferRateToMarginRate, formatAddress, formatAmount } from '~/shared'
+import {
+  calculateFiatPriceByRate,
+  convertOfferRateToMarginRate,
+  formatAddress,
+  formatAmount,
+  formatTradesCountInfo,
+} from '~/shared'
 import { usePriceStore } from '~/stores/price'
 import { OfferType } from '~/types/components.interface'
 import type { GetOffer, OfferTypeLabel } from '~/types/components.interface'
@@ -26,7 +32,7 @@ const offerPrice = computed(() => {
       <p class="wallet-addr">
         {{ formatAddress(offer.owner) }}
       </p>
-      <p class="n-trades">{{ offer.trades_count }} trades</p>
+      <p class="n-trades">{{ formatTradesCountInfo(offer.trades_count) }}</p>
     </div>
 
     <div class="info">

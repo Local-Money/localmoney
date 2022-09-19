@@ -6,6 +6,7 @@ import {
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
+  formatTradesCountInfo,
 } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
@@ -152,7 +153,7 @@ onUnmounted(() => {
             <p class="trader">
               {{ formatAddress(counterparty) }}
             </p>
-            <p class="rating">{{ tradeInfo.offer.trades_count }} trades</p>
+            <p class="rating">{{ formatTradesCountInfo(tradeInfo.offer.trades_count) }}</p>
           </div>
           <div class="trade-info">
             <p class="label">Price</p>

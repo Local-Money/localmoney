@@ -33,16 +33,15 @@ pub fn load_profile(
     profile_address: Addr,
     profile_contract: String,
 ) -> Profile {
-    let load_profile_result: StdResult<Profile> =
-        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+    querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: profile_contract,
             msg: to_binary(&QueryMsg::Profile {
                 address: profile_address.clone(),
             })
             .unwrap(),
-        }));
-
-    load_profile_result.unwrap_or(Profile::new(profile_address))
+        }))
+        .unwrap_or(Profile::new(profile_address))
 }
 
 // Data
