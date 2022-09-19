@@ -467,7 +467,7 @@ fn release_escrow(
         contract_addr: hub_cfg.profile_addr.to_string(),
         msg: to_binary(&IncreaseTradeCount {
             profile_address: offer.owner.clone(),
-            final_trade_state: trade.state.clone(),
+            final_trade_state: trade.get_state(),
         })
         .unwrap(),
         funds: vec![],
