@@ -68,8 +68,8 @@ export const KUJIRA_HUB_INFO: HubInfo = {
 export const TEST_CONFIG: CosmosConfig = {
   chainId: 'harpoon-2',
   chainName: 'Kujira Localnet',
-  lcdUrl: 'http://0.0.0.0:1317',
-  rpcUrl: 'http://0.0.0.0:26657',
+  lcdUrl: process.env.LCD ?? '',
+  rpcUrl: process.env.RPC ?? '',
   addressPrefix: 'kujira',
   coinDenom: 'KUJI',
   coinMinimalDenom: 'ukuji',
