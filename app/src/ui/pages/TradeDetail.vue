@@ -30,7 +30,6 @@ const stepTwoChecked = computed(() => {
 })
 const stepThreeChecked = computed(() => tradeInfo.value.trade.state === 'escrow_released')
 const isBuyer = computed(() => tradeInfo.value.trade.buyer === walletAddress.value)
-const buyOrSell = computed(() => (isBuyer.value ? 'Buy' : 'Sell'))
 const counterparty = computed(() => {
   const trade = tradeInfo.value.trade
   return walletAddress.value === trade.seller ? trade.buyer : trade.seller
@@ -89,7 +88,13 @@ watch(userWallet, async () => {
 
 <template>
   <main v-if="tradeInfo" class="page" v-bind="(trade = tradeInfo.trade)">
-    <h3>{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
+    <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
+      <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
+    </h3>
+    <h3 v-else-if="tradeInfo.offer.offer_type === 'buy'">
+      Buying {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}
+    </h3>
+    <h3 v-else>Selling {{ microDenomToDenom(trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
@@ -204,23 +209,23 @@ watch(userWallet, async () => {
         <div v-else class="dispute-summary card">
           <div class="dispute-wrap">
             <div class="peer-wrap">
-                <p class="peer">Maker</p>
-                <p class="address">{{ formatAddress(maker) }}</p>
-              </div>
-              <div class="separator">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 12H19" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  <path
-                    d="M12 5L19 12L12 19"
-                    stroke="inherit"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </div>
-              <div class="peer-wrap">
-                <p class="peer">Taker</p>
+              <p class="peer">Maker</p>
+              <p class="address">{{ formatAddress(maker) }}</p>
+            </div>
+            <div class="separator">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M12 5L19 12L12 19"
+                  stroke="inherit"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="peer-wrap">
+              <p class="peer">Taker</p>
               <p class="address">{{ formatAddress(taker) }}</p>
             </div>
           </div>
