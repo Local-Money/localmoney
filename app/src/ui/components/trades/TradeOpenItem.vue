@@ -17,6 +17,7 @@ const stepLabels = {
       'Please make the payment',
       'Waiting for funds release',
       'Trade finished',
+      'In dispute',
     ],
     seller: [
       'Waiting for buyer',
@@ -24,11 +25,24 @@ const stepLabels = {
       'Waiting for payment',
       'Please release the funds',
       'Trade finished',
+      'In dispute',
     ],
   },
   sell: {
-    buyer: ['Waiting for funds', 'Please make the payment', 'Waiting for funds release', 'Trade finished'],
-    seller: ['Please fund the trade', 'Waiting for payment', 'Please release the funds', 'Trade finished'],
+    buyer: [
+      'Waiting for funds',
+      'Please make the payment',
+      'Waiting for funds release',
+      'Trade finished',
+      'In dispute',
+    ],
+    seller: [
+      'Please fund the trade',
+      'Waiting for payment',
+      'Please release the funds',
+      'Trade finished',
+      'In dispute',
+    ],
   },
 }
 
@@ -46,6 +60,8 @@ const step = computed(() => {
         return 4
       case 'escrow_released':
         return 5
+      case 'escrow_disputed':
+        return 6
       default:
         return 0
     }
@@ -59,6 +75,8 @@ const step = computed(() => {
         return 3
       case 'escrow_released':
         return 4
+      case 'escrow_disputed':
+        return 5
       default:
         return 0
     }
