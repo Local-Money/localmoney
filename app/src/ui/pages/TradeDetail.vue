@@ -23,12 +23,23 @@ let refreshInterval: NodeJS.Timer
 const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
 const stepOneChecked = computed(() => {
-  return ['escrow_funded', 'fiat_deposited', 'escrow_disputed', 'escrow_released'].includes(tradeInfo.value.trade.state)
+  return [
+    'escrow_funded',
+    'fiat_deposited',
+    'escrow_disputed',
+    'escrow_released',
+    'settled_for_taker',
+    'settled_for_maker',
+  ].includes(tradeInfo.value.trade.state)
 })
 const stepTwoChecked = computed(() => {
-  return ['fiat_deposited', 'escrow_disputed', 'escrow_released'].includes(tradeInfo.value.trade.state)
+  return ['fiat_deposited', 'escrow_disputed', 'escrow_released', 'settled_for_taker', 'settled_for_maker'].includes(
+    tradeInfo.value.trade.state
+  )
 })
-const stepThreeChecked = computed(() => tradeInfo.value.trade.state === 'escrow_released')
+const stepThreeChecked = computed(() => {
+  return ['escrow_released', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.value.trade.state)
+})
 const isBuyer = computed(() => tradeInfo.value.trade.buyer === walletAddress.value)
 const counterparty = computed(() => {
   const trade = tradeInfo.value.trade
@@ -90,11 +101,13 @@ watch(userWallet, async () => {
   <main v-if="tradeInfo" class="page" v-bind="(trade = tradeInfo.trade)">
     <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
       <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
+      <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
+      <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
     </h3>
-    <h3 v-else-if="tradeInfo.offer.offer_type === 'buy'">
-      Buying {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}
-    </h3>
-    <h3 v-else>Selling {{ microDenomToDenom(trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
+    <template v-else>
+      <h3 v-if="isBuyer">Buying {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
+      <h3 v-else>Selling {{ microDenomToDenom(trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
+    </template>
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
@@ -126,7 +139,12 @@ watch(userWallet, async () => {
             <p>3</p>
           </div>
         </div>
-        <p v-if="tradeInfo.trade.state === 'escrow_disputed'" :class="stepThreeChecked">in dispute</p>
+        <p
+          v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
+          :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
+        >
+          in dispute
+        </p>
         <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
       </div>
 

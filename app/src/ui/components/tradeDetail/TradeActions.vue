@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TradeInfo } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
+import { formatAddress } from '~/shared'
 
 const props = defineProps<{
   tradeInfo: TradeInfo
@@ -10,6 +11,16 @@ const client = useClientStore()
 
 const isBuyer = computed(() => props.tradeInfo.trade.buyer === props.walletAddress)
 const isSeller = computed(() => props.tradeInfo.trade.seller === props.walletAddress)
+
+const disputeWinnerMessage = computed(() => {
+  if (props.tradeInfo.trade.state === 'settled_for_taker') {
+    return `Dispute settled for taker: ${formatAddress(getTaker())}`
+  } else if (props.tradeInfo.trade.state === 'settled_for_maker') {
+    return `Dispute settled for maker: ${formatAddress(getMaker())}`
+  } else {
+    return ''
+  }
+})
 
 function getMaker(): string {
   return props.tradeInfo.offer.owner
@@ -197,6 +208,11 @@ async function settleDispute(winner: string) {
         ]"
       />
       <TradeAction v-else message="Dispute in progress, please wait while a decision is being made." />
+    </template>
+
+    <!-- Dispute Settled -->
+    <template v-if="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)">
+      <TradeAction :message="disputeWinnerMessage" />
     </template>
   </section>
 
