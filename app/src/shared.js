@@ -57,8 +57,8 @@ export function formatTradeState(state) {
     request_canceled: 'Canceled',
     escrow_refunded: 'Refunded',
     escrow_released: 'Completed',
-    settled_for_maker: 'settled_for_maker',
-    settled_for_taker: 'settled_for_taker',
+    settled_for_maker: 'Settled',
+    settled_for_taker: 'Settled',
   }[state]
 }
 
