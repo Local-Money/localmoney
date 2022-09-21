@@ -1,6 +1,9 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ListResult } from './ListResult'
+import { ChainClient, chainFactory } from '~/network/Chain'
+import type { ChainError } from '~/network/chain-error'
 import type {
+  Arbitrator,
   Denom,
   FetchOffersArgs,
   GetOffer,
@@ -11,8 +14,6 @@ import type {
   UserWallet,
 } from '~/types/components.interface'
 import { LoadingState, OfferState } from '~/types/components.interface'
-import { ChainClient, chainFactory } from '~/network/Chain'
-import type { ChainError } from '~/network/chain-error'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -24,6 +25,9 @@ export const useClientStore = defineStore({
       offers: <ListResult<GetOffer>>ListResult.loading(),
       myOffers: <ListResult<GetOffer>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
+      arbitrators: <ListResult<Arbitrator>>ListResult.loading(),
+      openDisputes: <ListResult<TradeInfo>>ListResult.loading(),
+      closedDisputes: <ListResult<TradeInfo>>ListResult.loading(),
       loadingState: <LoadingState>LoadingState.dismiss(),
     }
   },
@@ -44,9 +48,7 @@ export const useClientStore = defineStore({
         await this.client.connectWallet()
         const address = this.client.getWalletAddress()
         this.userWallet = { isConnected: true, address }
-        await this.router.push({
-          name: 'Home',
-        })
+        await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
         alert((e as ChainError).message)
@@ -133,14 +135,34 @@ export const useClientStore = defineStore({
         this.trades = ListResult.error(e as ChainError)
       }
     },
-    async fetchTradeDetail(tradeId: string) {
-      await this.fetchMyTrades()
-      const currentTrade = this.trades.data.find((tradeInf) => tradeInf.trade.id === tradeId)
-      // TODO error case
-      if (currentTrade !== undefined) {
-        currentTrade.trade = await this.client.fetchTradeDetail(tradeId)
+    async fetchTradeDetail(tradeId: string): Promise<TradeInfo> {
+      const trade = await this.client.fetchTradeDetail(tradeId)
+      const offer = await this.client.fetchOffer(trade.offer_id)
+      return {
+        trade,
+        offer,
+        expired: false,
+      } as TradeInfo
+    },
+    async fetchArbitrators() {
+      this.arbitrators = ListResult.loading()
+      try {
+        const arbitratorsList = await this.client.fetchArbitrators()
+        this.arbitrators = ListResult.success(arbitratorsList)
+      } catch (e) {
+        this.arbitrators = ListResult.error(e as ChainError)
       }
-      return currentTrade
+    },
+    async fetchDisputedTrades() {
+      this.openDisputes = ListResult.loading()
+      this.closedDisputes = ListResult.loading()
+      try {
+        const disputedTrades = await this.client.fetchDisputedTrades()
+        this.openDisputes = ListResult.success(disputedTrades.openDisputes)
+        this.closedDisputes = ListResult.success(disputedTrades.closedDisputes)
+      } catch (e) {
+        console.error(e)
+      }
     },
     async acceptTradeRequest(tradeId: string, makerContact: string) {
       this.loadingState = LoadingState.show('Accepting trade...')
@@ -224,6 +246,19 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
         await this.client.openDispute(tradeId)
+        await this.fetchTradeDetail(tradeId)
+      } catch (e) {
+        // TODO handle error
+        alert((e as ChainError).message)
+        console.error(e)
+      } finally {
+        this.loadingState = LoadingState.dismiss()
+      }
+    },
+    async settleDispute(tradeId: string, winner: string) {
+      this.loadingState = LoadingState.show('Settling dispute...')
+      try {
+        await this.client.settleDispute(tradeId, winner)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
         // TODO handle error

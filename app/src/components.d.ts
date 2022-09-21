@@ -5,6 +5,7 @@ import '@vue/runtime-core'
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    Arbitration: typeof import('./ui/pages/Arbitration.vue')['default']
     ArchivedOfferItem: typeof import('./ui/components/myOffers/ArchivedOfferItem.vue')['default']
     CollapsedMyOffer: typeof import('./ui/components/myOffers/CollapsedMyOffer.vue')['default']
     CollapsedOffer: typeof import('./ui/components/offers/CollapsedOffer.vue')['default']
@@ -18,6 +19,7 @@ declare module '@vue/runtime-core' {
     HomeHero: typeof import('./ui/components/HomeHero.vue')['default']
     IconDone: typeof import('./ui/components/commons/IconDone.vue')['default']
     ListContentResult: typeof import('./ui/components/commons/ListContentResult.vue')['default']
+    ListDisputes: typeof import('./ui/components/arbitration/ListDisputes.vue')['default']
     ListMyOffers: typeof import('./ui/components/myOffers/ListMyOffers.vue')['default']
     ListOffers: typeof import('./ui/components/offers/ListOffers.vue')['default']
     Loading: typeof import('./ui/components/commons/Loading.vue')['default']
@@ -28,6 +30,7 @@ declare module '@vue/runtime-core' {
     NotificationWidget: typeof import('./ui/components/commons/NotificationWidget.vue')['default']
     NotificationWidgetMobile: typeof import('./ui/components/commons/NotificationWidgetMobile.vue')['default']
     Offers: typeof import('./ui/pages/Offers.vue')['default']
+    OpenDisputeItem: typeof import('./ui/components/arbitration/OpenDisputeItem.vue')['default']
     RightArrow: typeof import('./ui/components/commons/RightArrow.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

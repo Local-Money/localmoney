@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import {
   addTelegramURLPrefix,
@@ -13,26 +14,32 @@ import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
 
 const client = useClientStore()
+const { userWallet } = storeToRefs(client)
 const priceStore = usePriceStore()
 const tradeInfo = ref()
-
 let refreshInterval: NodeJS.Timer
 
 const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
 const stepOneChecked = computed(() => {
-  return (
-    tradeInfo.value.trade.state === 'escrow_funded' ||
-    tradeInfo.value.trade.state === 'fiat_deposited' ||
-    tradeInfo.value.trade.state === 'escrow_released'
-  )
+  return [
+    'escrow_funded',
+    'fiat_deposited',
+    'escrow_disputed',
+    'escrow_released',
+    'settled_for_taker',
+    'settled_for_maker',
+  ].includes(tradeInfo.value.trade.state)
 })
 const stepTwoChecked = computed(() => {
-  return tradeInfo.value.trade.state === 'fiat_deposited' || tradeInfo.value.trade.state === 'escrow_released'
+  return ['fiat_deposited', 'escrow_disputed', 'escrow_released', 'settled_for_taker', 'settled_for_maker'].includes(
+    tradeInfo.value.trade.state
+  )
 })
-const stepThreeChecked = computed(() => tradeInfo.value.trade.state === 'escrow_released')
+const stepThreeChecked = computed(() => {
+  return ['escrow_released', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.value.trade.state)
+})
 const isBuyer = computed(() => tradeInfo.value.trade.buyer === walletAddress.value)
-const buyOrSell = computed(() => (isBuyer.value ? 'Buy' : 'Sell'))
 const counterparty = computed(() => {
   const trade = tradeInfo.value.trade
   return walletAddress.value === trade.seller ? trade.buyer : trade.seller
@@ -52,9 +59,22 @@ const makerContact = computed(() => {
   return isMakerContactAvailable.value ? telegram : 'pending'
 })
 
+const isArbitrator = computed(() => {
+  return client.arbitrators.data.filter((a) => client.userWallet.address === a.arbitrator).length > 0
+})
+
+const maker = computed(() => {
+  return tradeInfo.value.offer.owner
+})
+
+const taker = computed(() => {
+  return tradeInfo.value.trade.buyer === maker ? tradeInfo.value.trade.seller : tradeInfo.value.trade.buyer
+})
+
 function fetchTrade(id: string) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
+    console.log('tradeInfo.value', tradeInfo.value)
     refreshInterval = setInterval(async () => {
       tradeInfo.value = await client.fetchTradeDetail(id)
     }, 10 * 1000)
@@ -70,11 +90,25 @@ onMounted(() => {})
 onUnmounted(() => {
   clearInterval(refreshInterval)
 })
+
+watch(userWallet, async () => {
+  return fetchTrade(route.params.id as string)
+})
 </script>
 
 <template>
-  <main v-if="tradeInfo" class="page" v-bind="(trade = tradeInfo.trade)">
-    <h3>{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
+  <main v-if="tradeInfo" class="page">
+    <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
+      <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
+      <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
+      <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
+    </h3>
+    <template v-else>
+      <h3 v-if="isBuyer">
+        Buying {{ microDenomToDenom(tradeInfo.trade.denom.native) }} from {{ formatAddress(counterparty) }}
+      </h3>
+      <h3 v-else>Selling {{ microDenomToDenom(tradeInfo.trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
+    </template>
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
@@ -106,7 +140,13 @@ onUnmounted(() => {
             <p>3</p>
           </div>
         </div>
-        <p :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
+        <p
+          v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
+          :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
+        >
+          in dispute
+        </p>
+        <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
       </div>
 
       <div class="step-status">
@@ -128,6 +168,7 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
+
     <section class="wrap">
       <section class="chat card">
         <p>Chat will be here</p>
@@ -147,7 +188,8 @@ onUnmounted(() => {
         </div>
       </section>
       <div class="inner-wrap">
-        <section class="trade-summary card">
+        <!-- Trade Summary -->
+        <div v-if="!isArbitrator" class="trade-summary card">
           <div class="trader-info">
             <p><small>You're trading with</small></p>
             <p class="trader">
@@ -168,7 +210,9 @@ onUnmounted(() => {
               <div class="list-item">
                 <p v-if="isBuyer" class="list-item-label">You will get</p>
                 <p v-else class="list-item-label">You will send</p>
-                <p class="value">{{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}</p>
+                <p class="value">
+                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                </p>
               </div>
               <div class="list-item">
                 <p v-if="isBuyer" class="list-item-label">You will send</p>
@@ -179,7 +223,54 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-        </section>
+        </div>
+        <!-- End Trade Summary -->
+
+        <!-- Trade Dispute Summary -->
+        <div v-else class="dispute-summary card">
+          <div class="dispute-wrap">
+            <div class="peer-wrap">
+              <p class="peer">Maker</p>
+              <p class="address">{{ formatAddress(maker) }}</p>
+            </div>
+            <div class="separator">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M12 5L19 12L12 19"
+                  stroke="inherit"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="peer-wrap">
+              <p class="peer">Taker</p>
+              <p class="address">{{ formatAddress(taker) }}</p>
+            </div>
+          </div>
+          <div class="trade-info">
+            <p class="label">Transaction summary</p>
+            <div class="transaction">
+              <div class="list-item">
+                <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Maker is selling</p>
+                <p v-else class="list-item-label">Maker is buying</p>
+                <p class="value">
+                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                </p>
+              </div>
+              <div class="list-item">
+                <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Taker should pay</p>
+                <p v-else class="list-item-label">Taker should receive</p>
+                <p class="value fiat">
+                  {{ fiatAmountStr }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End Trade Dispute Summary -->
         <TradeActions :tradeInfo="tradeInfo" :walletAddress="walletAddress" />
       </div>
     </section>
@@ -275,6 +366,10 @@ onUnmounted(() => {
   display: flex;
 }
 
+.main-wrap {
+  display: flex;
+}
+
 .chat {
   width: 30%;
   margin-right: 24px;
@@ -303,9 +398,39 @@ onUnmounted(() => {
   width: 70%;
 }
 
-.trade-summary {
+.dispute-summary {
+  flex-direction: column;
+
+  .dispute-wrap {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 40px;
+
+    .peer-wrap {
+      text-align: center;
+
+      .peer {
+        font-size: 20px;
+        font-weight: $semi-bold;
+        margin-bottom: 8px;
+      }
+      .address {
+        font-size: 14px;
+        background-color: $gray300;
+        border-radius: 8px;
+        padding: 4px 16px;
+      }
+    }
+    .separator svg {
+      stroke: $primary;
+    }
+  }
+}
+
+.trade-summary,
+.dispute-summary {
   display: flex;
-  justify-content: space-evenly;
 
   .label {
     margin-bottom: 8px;
@@ -342,11 +467,6 @@ onUnmounted(() => {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-
-      .ticker {
-        font-size: 12px;
-        color: $gray900;
-      }
 
       .mkt-rate {
         font-size: 14px;

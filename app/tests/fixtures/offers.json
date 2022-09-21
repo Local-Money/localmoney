@@ -1,7 +1,7 @@
 [
   {
     "offer_type": "buy",
-    "fiat_currency": "BRL",
+    "fiat_currency": "ARS",
     "min_amount": "100000",
     "max_amount": "2500000",
     "rate": "1",

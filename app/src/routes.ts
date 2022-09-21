@@ -2,6 +2,7 @@ import Home from '~/ui/pages/Home.vue'
 import Offers from '~/ui/pages/Offers.vue'
 import Trades from '~/ui/pages/Trades.vue'
 import TradeDetail from '~/ui/pages/TradeDetail.vue'
+import Arbitration from '~/ui/pages/Arbitration.vue'
 
 const routes = [
   {
@@ -28,6 +29,11 @@ const routes = [
     path: '/staking',
     name: 'Staking',
     component: [],
+  },
+  {
+    path: '/arbitration',
+    name: 'Arbitration',
+    component: Arbitration,
   },
 ]
 
