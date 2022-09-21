@@ -17,7 +17,6 @@ const client = useClientStore()
 const { userWallet } = storeToRefs(client)
 const priceStore = usePriceStore()
 const tradeInfo = ref()
-const trade = ref()
 let refreshInterval: NodeJS.Timer
 
 const route = useRoute()
@@ -98,15 +97,17 @@ watch(userWallet, async () => {
 </script>
 
 <template>
-  <main v-if="tradeInfo" class="page" v-bind="(trade = tradeInfo.trade)">
+  <main v-if="tradeInfo" class="page">
     <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
       <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
       <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
       <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
     </h3>
     <template v-else>
-      <h3 v-if="isBuyer">Buying {{ microDenomToDenom(trade.denom.native) }} from {{ formatAddress(counterparty) }}</h3>
-      <h3 v-else>Selling {{ microDenomToDenom(trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
+      <h3 v-if="isBuyer">
+        Buying {{ microDenomToDenom(tradeInfo.trade.denom.native) }} from {{ formatAddress(counterparty) }}
+      </h3>
+      <h3 v-else>Selling {{ microDenomToDenom(tradeInfo.trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
     </template>
     <section class="stepper card">
       <!-- Step 1 -->
@@ -209,7 +210,9 @@ watch(userWallet, async () => {
               <div class="list-item">
                 <p v-if="isBuyer" class="list-item-label">You will get</p>
                 <p v-else class="list-item-label">You will send</p>
-                <p class="value">{{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}</p>
+                <p class="value">
+                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                </p>
               </div>
               <div class="list-item">
                 <p v-if="isBuyer" class="list-item-label">You will send</p>
@@ -253,7 +256,9 @@ watch(userWallet, async () => {
               <div class="list-item">
                 <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Maker is selling</p>
                 <p v-else class="list-item-label">Maker is buying</p>
-                <p class="value">{{ formatAmount(trade.amount) }} {{ microDenomToDenom(trade.denom.native) }}</p>
+                <p class="value">
+                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                </p>
               </div>
               <div class="list-item">
                 <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Taker should pay</p>

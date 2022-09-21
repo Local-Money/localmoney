@@ -116,6 +116,28 @@ export class MockChain implements Chain {
   settleDispute(_tradeId: string, _winner: string): Promise<void> {
     return Promise.resolve(undefined)
   }
+
+  fetchOffer(offerId: string): Promise<GetOffer> {
+    const offer = offers[0] as GetOffer
+    offer.id = offerId
+    return Promise.resolve(offer)
+  }
+
+  fetchDisputedTrades(): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }> {
+    const openDisputes = [myTrades[0] as TradeInfo]
+    const closedDisputes = [] as TradeInfo[]
+    return Promise.resolve({ openDisputes, closedDisputes })
+  }
+
+  fetchArbitrators(): Promise<Arbitrator[]> {
+    const offer = offers[0] as GetOffer
+    return Promise.resolve([
+      {
+        arbitrator: 'kujira1qeruy425sxl9lcu6ahjh58u89qh03y7xcplmn6',
+        fiat: offer.fiat_currency,
+      },
+    ])
+  }
 }
 
 function sleep(ms: number) {

@@ -26,7 +26,7 @@ beforeAll(async () => {
 
 offers[0].denom = { native: process.env.OFFER_DENOM! }
 
-describe.skip('trade lifecycle happy path', () => {
+describe('trade lifecycle happy path', () => {
   // Create Offer
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
@@ -93,7 +93,7 @@ describe.skip('trade lifecycle happy path', () => {
   })
 })
 
-describe.skip('trade invalid state changes', () => {
+describe('trade invalid state changes', () => {
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {

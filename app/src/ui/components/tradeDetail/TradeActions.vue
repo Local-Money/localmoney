@@ -13,13 +13,10 @@ const isBuyer = computed(() => props.tradeInfo.trade.buyer === props.walletAddre
 const isSeller = computed(() => props.tradeInfo.trade.seller === props.walletAddress)
 
 const disputeWinnerMessage = computed(() => {
-  if (props.tradeInfo.trade.state === 'settled_for_taker') {
-    return `Dispute settled for taker: ${formatAddress(getTaker())}`
-  } else if (props.tradeInfo.trade.state === 'settled_for_maker') {
-    return `Dispute settled for maker: ${formatAddress(getMaker())}`
-  } else {
-    return ''
-  }
+  const taker = `taker: ${formatAddress(getTaker())}`
+  const maker = `maker: ${formatAddress(getMaker())}`
+  const winner = props.tradeInfo.trade.state === 'settled_for_taker' ? taker : maker
+  return `Dispute settled for ${winner}`
 })
 
 function getMaker(): string {
@@ -62,10 +59,7 @@ async function openDispute(id: string) {
 }
 
 async function settleDispute(winner: string) {
-  console.log(client)
   await client.settleDispute(props.tradeInfo.trade.id, winner)
-  console.log(props.tradeInfo.trade.id, winner)
-  // await client.settleDispute(props.tradeInfo.trade.id, winner)
 }
 </script>
 
