@@ -1,3 +1,6 @@
+import { JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO } from './cosmos/config/juno'
+import { KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO } from './cosmos/config/kujira'
+import { DEV_CONFIG, DEV_HUB_INFO } from './cosmos/config/dev'
 import type {
   Arbitrator,
   Denom,
@@ -11,14 +14,6 @@ import type {
 } from '~/types/components.interface'
 import { MockChain } from '~/network/mock/MockChain'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
-import {
-  JUNO_CONFIG,
-  JUNO_HUB_INFO,
-  KUJIRA_CONFIG,
-  KUJIRA_HUB_INFO,
-  TEST_CONFIG,
-  TEST_HUB_INFO,
-} from '~/network/cosmos/config'
 
 export interface Chain {
   init(): void
@@ -79,10 +74,10 @@ export function chainFactory(client: ChainClient): Chain {
     case ChainClient.mock:
       return new MockChain()
     case ChainClient.kujira:
-      return new CosmosChain(KUJIRA_CONFIG, KUJIRA_HUB_INFO)
+      return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
     case ChainClient.juno:
-      return new CosmosChain(JUNO_CONFIG, JUNO_HUB_INFO)
+      return new CosmosChain(JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO)
     case ChainClient.dev:
-      return new CosmosChain(TEST_CONFIG, TEST_HUB_INFO)
+      return new CosmosChain(DEV_CONFIG, DEV_HUB_INFO)
   }
 }
