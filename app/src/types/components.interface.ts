@@ -53,6 +53,7 @@ export interface PatchOffer {
 
 export interface PostOffer {
   owner_contact: string
+  owner_pk: string
   rate: string
   offer_type: OfferType
   denom: Denom
@@ -82,9 +83,9 @@ export interface FetchOffersArgs {
 export interface NewTrade {
   offer_id: string
   amount: string
-  taker: string // TODO
-  // counterparty: string,
-  // taker_contact: string, //TODO
+  taker: string
+  taker_contact: string
+  taker_pk: string
   // arbitrator: TODO,
 }
 

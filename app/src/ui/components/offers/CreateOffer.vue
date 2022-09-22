@@ -68,6 +68,7 @@ function calculateMarginRate() {
 function createOffer() {
   const postOffer: PostOffer = {
     owner_contact: removeTelegramURLPrefix(ownerContact.value),
+    owner_pk: '',
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,

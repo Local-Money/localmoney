@@ -28,6 +28,7 @@ const watchingFiat = ref(false)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
+const telegram = ref<string>('')
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 
 const fromLabel = computed(() => (props.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'))
@@ -61,6 +62,8 @@ function newTrade() {
     offer_id: `${props.offer.id}`,
     amount: `${cryptoAmount.value * 1000000}`,
     taker: `${client.userWallet.address}`,
+    taker_contact: telegram.value,
+    taker_pk: '',
   }
   client.openTrade(newTrade)
 }
@@ -239,6 +242,11 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+        <div class="telegram">
+          <p class="label">Telegram</p>
+          <input v-model="telegram" type="text" placeholder="t.me/your-user-name" />
+        </div>
       </div>
 
       <div class="receipt">
@@ -327,12 +335,22 @@ onUnmounted(() => {
 
       .input {
         margin-bottom: 8px;
+
+        input {
+          color: $base-text;
+          background-color: $background;
+          text-align: right;
+        }
       }
 
-      input {
-        color: $base-text;
-        background-color: $background;
-        text-align: right;
+      .telegram {
+        margin-bottom: 8px;
+
+        input {
+          color: $base-text;
+          background-color: $background;
+          text-align: left;
+        }
       }
 
       .label {
