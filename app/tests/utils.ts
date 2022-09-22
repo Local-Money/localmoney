@@ -1,7 +1,7 @@
 import type { InstantiateResult, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { TestCosmosChain } from './network/TestCosmosChain'
 import codeIds from './fixtures/codeIds.json'
-import { TEST_CONFIG, TEST_HUB_INFO } from '~/network/cosmos/config'
+import { DEV_CONFIG, DEV_HUB_INFO } from '~/network/cosmos/config/dev'
 
 export function createHubUpdateConfigMsg(
   offerAddr: string,
@@ -27,15 +27,15 @@ export function createHubUpdateConfigMsg(
 }
 
 export async function setupProtocol() {
-  const adminClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
+  const adminClient = new TestCosmosChain(DEV_CONFIG, DEV_HUB_INFO)
   adminClient.seed = process.env.ADMIN_SEED!
   await adminClient.connectWallet()
 
-  const makerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
+  const makerClient = new TestCosmosChain(DEV_CONFIG, DEV_HUB_INFO)
   makerClient.seed = process.env.MAKER_SEED!
   await makerClient.connectWallet()
 
-  const takerClient = new TestCosmosChain(TEST_CONFIG, TEST_HUB_INFO)
+  const takerClient = new TestCosmosChain(DEV_CONFIG, DEV_HUB_INFO)
   takerClient.seed = process.env.TAKER_SEED!
   await takerClient.connectWallet()
 
