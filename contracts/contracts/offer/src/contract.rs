@@ -198,7 +198,7 @@ pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<Offer> {
         hub_config.profile_addr.to_string(),
     );
 
-    offer.trades_count = profile.trade_count;
+    offer.trades_count = profile.trades_count;
 
     Ok(offer)
 }

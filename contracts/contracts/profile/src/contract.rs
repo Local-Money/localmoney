@@ -6,7 +6,9 @@ use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::assert_ownership;
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::profile::{ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, QueryMsg};
+use localterra_protocol::profile::{
+    ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, ProfileModel, QueryMsg,
+};
 use localterra_protocol::trade::TradeState;
 
 // version info for migration info
@@ -57,7 +59,7 @@ pub fn increase_trade_count(
         .unwrap();
 
     let mut profile = profile.unwrap_or(Profile::new(profile_address.clone()));
-    profile.trade_count += 1;
+    profile.trades_count += 1;
 
     PROFILE
         .save(deps.storage, profile_address.to_string(), &profile)
@@ -66,7 +68,7 @@ pub fn increase_trade_count(
     let res = Response::new()
         .add_attribute("action", "increase_trade_count")
         .add_attribute("final_trade_state", final_trade_state.to_string())
-        .add_attribute("trade_count", profile.trade_count.to_string());
+        .add_attribute("trade_count", profile.trades_count.to_string());
     Ok(res)
 }
 
@@ -78,6 +80,7 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Profile { address } => to_binary(&query_profile(deps, address)?),
+        QueryMsg::Profiles { limit, skip } => to_binary(&query_profiles(deps, limit, skip)?),
     }
 }
 
@@ -89,6 +92,10 @@ fn query_profile(deps: Deps, profile_address: Addr) -> StdResult<Profile> {
     let profile = profile.unwrap_or(Profile::new(profile_address));
 
     Ok(profile)
+}
+
+fn query_profiles(deps: Deps, limit: u32, skip: Option<u32>) -> StdResult<Vec<Profile>> {
+    ProfileModel::query(deps, limit, skip)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

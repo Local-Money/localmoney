@@ -244,7 +244,7 @@ impl OfferModel<'_> {
                         offer.clone().owner,
                         hub_config.profile_addr.to_string(),
                     );
-                    offer.trades_count = profile.trade_count;
+                    offer.trades_count = profile.trades_count;
                     Ok(offer)
                 })
             })
@@ -298,7 +298,7 @@ impl OfferModel<'_> {
                         offer.clone().owner,
                         hub_config.profile_addr.to_string(),
                     );
-                    offer.trades_count = profile.trade_count;
+                    offer.trades_count = profile.trades_count;
                     Ok(offer)
                 })
             })
