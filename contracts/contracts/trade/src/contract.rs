@@ -24,11 +24,13 @@ use localterra_protocol::guards::{
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
-use localterra_protocol::offer::{load_offer, Arbitrator, Offer, OfferType, TradeInfo};
-use localterra_protocol::profile::ExecuteMsg::IncreaseTradeCount;
+use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
+use localterra_protocol::profile::{
+    increase_profile_trades_count_msg, load_profile, update_profile_msg,
+};
 use localterra_protocol::trade::{
     arbitrators, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
-    TradeModel, TradeState, TradeStateItem, TraderRole,
+    TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -115,7 +117,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         seller = offer.owner.clone(); // maker
     }
 
-    let trade_count = offer.trades_count + 1;
+    // let trade_count = offer.trades_count + 1;
+    let trade_count = 1;
     let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
@@ -125,6 +128,13 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     };
     let trade_state_history = vec![new_trade_state];
 
+    let update_profile_sub_msg = update_profile_msg(
+        hub_cfg.profile_addr.to_string(),
+        new_trade.taker.clone(),
+        new_trade.profile_taker_contact,
+        new_trade.taker_encrypt_pk,
+    );
+
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
@@ -133,6 +143,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             env.contract.address.clone(),
             buyer,
             seller,
+            new_trade.taker_contact.clone(),
             None,
             None,
             hub_cfg.offer_addr.clone(),
@@ -148,6 +159,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
+        .add_submessage(update_profile_sub_msg)
         .add_attribute("action", "create_trade")
         .add_attribute("trade_id", trade_id)
         .add_attribute("offer_id", offer.id.clone())
@@ -211,15 +223,38 @@ pub fn query_trades(
         }
     };
 
+    let hub_config = get_hub_config(deps);
+
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
-        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
+        let offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
+
+        let maker_addr = offer.owner.clone();
+        let taker_addr = if offer.owner.eq(&trade.seller) {
+            trade.seller.clone()
+        } else {
+            trade.buyer.clone()
+        };
+
+        // TODO change it to make only one query
+        let maker_profile = load_profile(
+            &deps.querier,
+            maker_addr.clone(),
+            hub_config.profile_addr.to_string(),
+        );
+        let taker_profile = load_profile(
+            &deps.querier,
+            taker_addr.clone(),
+            hub_config.profile_addr.to_string(),
+        );
+
         let current_time = env.block.time.seconds();
         let expired = trade.get_state().eq(&TradeState::EscrowFunded)
             && current_time > trade.created_at + REQUEST_TIMEOUT;
+
         trades_infos.push(TradeInfo {
-            trade: trade.clone(),
+            trade: TradeResponse::map(trade.clone(), maker_profile, taker_profile),
             offer,
             expired,
         })
@@ -463,15 +498,11 @@ fn release_escrow(
     send_msgs.push(update_last_traded_msg);
 
     // Update profile trade_count
-    send_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: hub_cfg.profile_addr.to_string(),
-        msg: to_binary(&IncreaseTradeCount {
-            profile_address: offer.owner.clone(),
-            final_trade_state: trade.get_state(),
-        })
-        .unwrap(),
-        funds: vec![],
-    })));
+    send_msgs.push(increase_profile_trades_count_msg(
+        hub_cfg.profile_addr.to_string(),
+        offer.owner.clone(),
+        trade.get_state(),
+    ));
 
     // Send tokens to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {

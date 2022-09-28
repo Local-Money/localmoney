@@ -1,5 +1,7 @@
 use crate::trade::TradeState;
-use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, Storage, WasmQuery};
+use cosmwasm_std::{
+    to_binary, Addr, CosmosMsg, QuerierWrapper, QueryRequest, Storage, SubMsg, WasmMsg, WasmQuery,
+};
 use cw_storage_plus::Map;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -38,6 +40,41 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct MigrateMsg {}
+
+// Execute Util
+pub fn update_profile_msg(
+    profile_contract_addr: String,
+    profile_address: Addr,
+    contact: String,
+    encrypt_pk: String,
+) -> SubMsg {
+    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: profile_contract_addr,
+        msg: to_binary(&ExecuteMsg::UpdateProfile {
+            profile_address,
+            contact,
+            encrypt_pk,
+        })
+        .unwrap(),
+        funds: vec![],
+    }))
+}
+
+pub fn increase_profile_trades_count_msg(
+    profile_contract_addr: String,
+    profile_address: Addr,
+    final_trade_state: TradeState,
+) -> SubMsg {
+    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: profile_contract_addr,
+        msg: to_binary(&ExecuteMsg::IncreaseTradeCount {
+            profile_address,
+            final_trade_state,
+        })
+        .unwrap(),
+        funds: vec![],
+    }))
+}
 
 // Query Util
 pub fn load_profile(

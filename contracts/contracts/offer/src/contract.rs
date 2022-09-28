@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
 
 use localterra_protocol::errors::ContractError;
@@ -7,10 +7,10 @@ use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthori
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferState,
-    OfferUpdateMsg, OffersCount, QueryMsg,
+    offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
+    OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
 };
-use localterra_protocol::profile::load_profile;
+use localterra_protocol::profile::{load_profile, update_profile_msg};
 
 use crate::state::{offers_count_read, offers_count_storage};
 
@@ -89,12 +89,20 @@ pub fn create_offer(
     offers_count.count += 1;
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
 
+    let hub_config = get_hub_config(deps.as_ref());
+
+    let update_profile_msg = update_profile_msg(
+        hub_config.profile_addr.to_string(),
+        info.sender.clone(),
+        msg.owner_contact.clone(),
+        msg.owner_contact_pk.clone(),
+    );
+
     let offer = OfferModel::create(
         deps.storage,
         Offer {
             id: offer_id,
             owner: info.sender.clone(),
-            owner_contact: msg.owner_contact,
             offer_type: msg.offer_type,
             fiat_currency: msg.fiat_currency.clone(),
             rate: msg.rate,
@@ -104,7 +112,6 @@ pub fn create_offer(
             state: OfferState::Active,
             timestamp: env.block.time.seconds(),
             last_traded_at: 0,
-            trades_count: 0,
         },
     )
     .offer;
@@ -114,6 +121,7 @@ pub fn create_offer(
         .unwrap();
 
     let res = Response::new()
+        .add_submessage(update_profile_msg)
         .add_attribute("action", "create_offer")
         .add_attribute("type", offer.offer_type.to_string())
         .add_attribute("id", offer.id.to_string())
@@ -162,13 +170,25 @@ pub fn update_offer(
 ) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
+    let hub_config = get_hub_config(deps.as_ref());
     let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
 
-    assert_ownership(info.sender, offer_model.offer.owner.clone())?;
+    assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
+
+    let mut send_msgs: Vec<SubMsg> = Vec::new();
+    if msg.owner_contact.is_some() && msg.owner_contact_pk.is_some() {
+        send_msgs.push(update_profile_msg(
+            hub_config.profile_addr.to_string(),
+            info.sender.clone(),
+            msg.owner_contact.clone().unwrap(),
+            msg.owner_contact_pk.clone().unwrap(),
+        ));
+    }
 
     let offer = offer_model.update(msg);
 
     let res = Response::new()
+        .add_submessages(send_msgs)
         .add_attribute("action", "update_offer")
         .add_attribute("id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string());
@@ -185,9 +205,9 @@ fn query_state(deps: Deps) -> StdResult<OffersCount> {
     Ok(state)
 }
 
-pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<Offer> {
+pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
     let hub_config = get_hub_config(deps);
-    let mut offer = offers()
+    let offer = offers()
         .may_load(deps.storage, id.to_string())
         .unwrap_or_default()
         .unwrap();
@@ -198,9 +218,7 @@ pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<Offer> {
         hub_config.profile_addr.to_string(),
     );
 
-    offer.trades_count = profile.trade_count;
-
-    Ok(offer)
+    Ok(OfferResponse::map(offer, profile))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
