@@ -14,6 +14,7 @@ import type {
   UserWallet,
 } from '~/types/components.interface'
 import { LoadingState, OfferState } from '~/types/components.interface'
+import { decryptData, encryptData, generateKeys } from '~/utils/crypto'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -45,6 +46,7 @@ export const useClientStore = defineStore({
     },
     async connectWallet() {
       try {
+        await this.verifySecrets()
         await this.client.connectWallet()
         const address = this.client.getWalletAddress()
         this.userWallet = { isConnected: true, address }
@@ -53,6 +55,15 @@ export const useClientStore = defineStore({
         this.userWallet = { isConnected: false, address: 'undefined' }
         alert((e as ChainError).message)
       }
+    },
+    async verifySecrets() {
+      const secrets = await generateKeys()
+      console.log('secrets: ', secrets)
+      const data = '@maker_0001'
+      const encryptedData = await encryptData(secrets.publicKey, data)
+      console.log('encrypted data: ', encryptedData)
+      const decryptedData = await decryptData(secrets.privateKey, encryptedData)
+      console.log('decrypted data: ', decryptedData)
     },
     async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
