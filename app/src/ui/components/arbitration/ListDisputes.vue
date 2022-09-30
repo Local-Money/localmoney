@@ -121,6 +121,7 @@ watch(userWallet, async () => {
   .col-1,
   .col-5 {
     flex: 1 1 10%;
+    text-transform: capitalize;
   }
 
   .col-2,
