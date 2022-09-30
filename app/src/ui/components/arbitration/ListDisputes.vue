@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
+import { formatTradeState } from '~/shared'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -55,21 +56,22 @@ watch(userWallet, async () => {
         </div>
         <div class="col-6" />
       </div>
+
       <div v-for="dispute in closedDisputes" :key="dispute.trade.id" class="wrap-table-item">
         <div class="col-1">
           <p>{{ dispute.offer.offer_type }}</p>
         </div>
         <div class="col-2">
-          <p>{{}}</p>
+          <p>?????</p>
         </div>
         <div class="col-3">
           <p>{{ microDenomToDenom(dispute.offer.denom.native) }}</p>
         </div>
         <div class="col-4">
-          <p>{{}}</p>
+          <p>?????</p>
         </div>
         <div class="col-5">
-          <p>{{ dispute.trade.state }}</p>
+          <p>{{ formatTradeState(dispute.trade.state) }}</p>
         </div>
         <div class="col-6"></div>
       </div>
@@ -105,6 +107,15 @@ watch(userWallet, async () => {
       font-size: 14px;
       font-weight: $semi-bold;
       color: $gray700;
+    }
+  }
+  .wrap-table-item {
+    display: flex;
+    padding: 16px;
+
+    p {
+      font-size: 14px;
+      font-weight: $regular;
     }
   }
 }
