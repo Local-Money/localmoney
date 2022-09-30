@@ -128,5 +128,9 @@ watch(userWallet, async () => {
   .col-4 {
     flex: 1 1 20%;
   }
+  @media only screen and (max-width: $mobile) {
+    min-width: 1000px;
+    padding: 8px 0 16px 0;
+  }
 }
 </style>
