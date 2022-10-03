@@ -1,4 +1,5 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
+import { useLocalStorage } from '@vueuse/core'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
@@ -14,7 +15,8 @@ import type {
   UserWallet,
 } from '~/types/components.interface'
 import { LoadingState, OfferState } from '~/types/components.interface'
-import { decryptData, encryptData, generateKeys } from '~/utils/crypto'
+import type { Secrets } from '~/utils/crypto'
+import { generateKeys } from '~/utils/crypto'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -23,6 +25,7 @@ export const useClientStore = defineStore({
       chainClient: <ChainClient>ChainClient.mock, // TODO call setClient in the App.vue setup function to properly init a chain adapter
       client: chainFactory(ChainClient.kujira),
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
+      secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
       offers: <ListResult<GetOffer>>ListResult.loading(),
       myOffers: <ListResult<GetOffer>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
@@ -46,9 +49,9 @@ export const useClientStore = defineStore({
     },
     async connectWallet() {
       try {
-        await this.verifySecrets()
         await this.client.connectWallet()
         const address = this.client.getWalletAddress()
+        await this.syncSecrets(address)
         this.userWallet = { isConnected: true, address }
         await this.fetchArbitrators()
       } catch (e) {
@@ -56,14 +59,16 @@ export const useClientStore = defineStore({
         alert((e as ChainError).message)
       }
     },
-    async verifySecrets() {
-      const secrets = await generateKeys()
-      console.log('secrets: ', secrets)
-      const data = '@maker_0001'
-      const encryptedData = await encryptData(secrets.publicKey, data)
-      console.log('encrypted data: ', encryptedData)
-      const decryptedData = await decryptData(secrets.privateKey, encryptedData)
-      console.log('decrypted data: ', decryptedData)
+    async syncSecrets(address: string) {
+      const secrets = this.secrets.get(address) ?? (await generateKeys())
+      if (!this.secrets.has(address)) {
+        this.secrets.set(address, secrets)
+      }
+      // const data = '@maker_0001'
+      // const encryptedData = await encryptData(secrets.publicKey, data)
+      // console.log('encrypted data: ', encryptedData)
+      // const decryptedData = await decryptData(secrets.privateKey, encryptedData)
+      // console.log('decrypted data: ', decryptedData)
     },
     async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
