@@ -38,21 +38,26 @@ const counterparty = computed(() => {
 <template>
   <div class="wrap-table-item">
     <div class="col-1">
-      <p>{{ currentDate }}</p>
+      <router-link :to="`/trade/${props.tradeInfo.trade.id}`">
+        <p>{{ props.tradeInfo.trade.id }}</p>
+      </router-link>
     </div>
     <div class="col-2">
-      <p>{{ tradeType }}</p>
+      <p>{{ currentDate }}</p>
     </div>
     <div class="col-3">
-      <p>{{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}</p>
+      <p>{{ tradeType }}</p>
     </div>
     <div class="col-4">
-      <p>{{ fiatAmountStr }}</p>
+      <p>{{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}</p>
     </div>
     <div class="col-5 trader">
-      <p>{{ formatAddress(counterparty) }}</p>
+      <p>{{ fiatAmountStr }}</p>
     </div>
     <div class="col-6">
+      <p>{{ formatAddress(counterparty) }}</p>
+    </div>
+    <div class="col-7">
       <p>{{ formatTradeState(tradeInfo.trade.state) }}</p>
     </div>
   </div>

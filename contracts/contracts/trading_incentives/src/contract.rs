@@ -144,15 +144,15 @@ fn register_trade(
 
     let offer = load_offer(
         &deps.querier,
-        trade.offer_id,
+        trade.offer_id.to_string(),
         hub_cfg.offer_addr.to_string(),
     )
     .unwrap();
     let maker = offer.owner.to_string();
 
-    if trade.state != TradeState::EscrowReleased {
+    if trade.get_state() != TradeState::EscrowReleased {
         return Err(InvalidTradeState {
-            current: trade.state.clone(),
+            current: trade.get_state(),
             expected: TradeState::EscrowReleased,
         });
     }

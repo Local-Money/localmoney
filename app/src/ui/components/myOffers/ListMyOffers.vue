@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import ExpandedMyOffer from '~/ui/components/myOffers/ExpandedMyOffer.vue'
-import CollapsedMyOffer from '~/ui/components/myOffers/CollapsedMyOffer.vue'
-import ArchivedOfferItem from '~/ui/components/myOffers/ArchivedOfferItem.vue'
+import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
-import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
+import type { ListResult } from '~/stores/ListResult'
 import type { GetOffer } from '~/types/components.interface'
 import { OfferState } from '~/types/components.interface'
-import type { ListResult } from '~/stores/ListResult'
+import ArchivedOfferItem from '~/ui/components/myOffers/ArchivedOfferItem.vue'
+import CollapsedMyOffer from '~/ui/components/myOffers/CollapsedMyOffer.vue'
+import ExpandedMyOffer from '~/ui/components/myOffers/ExpandedMyOffer.vue'
+import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
+const { userWallet } = storeToRefs(client)
 const myOffersResult = computed<ListResult<GetOffer>>(() => client.myOffers)
 const page = reactive({
   myOffers: [] as ExpandableItem<GetOffer>[],
@@ -57,6 +59,10 @@ async function loadMore() {
 }
 
 onMounted(async () => {
+  await client.fetchMyOffers()
+})
+
+watch(userWallet, async () => {
   await client.fetchMyOffers()
 })
 </script>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import TradeOpenItem from '../components/trades/TradeOpenItem.vue'
 import TradeHistoryItem from '../components/trades/TradeHistoryItem.vue'
 import { useClientStore } from '~/stores/client'
@@ -6,6 +7,7 @@ import { TradeState } from '~/types/components.interface'
 import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
+const { userWallet } = storeToRefs(client)
 const tradeResult = computed(() => client.trades)
 const trades = computed(() => {
   if (tradeResult.value.isSuccess()) {
@@ -52,6 +54,10 @@ onMounted(() => {
 })
 
 onUnmounted(async () => {})
+
+watch(userWallet, () => {
+  nextTick(async () => await client.fetchMyTrades())
+})
 </script>
 
 <template>
@@ -71,21 +77,24 @@ onUnmounted(async () => {})
       <section v-if="hasClosedTrades" class="trade-history-table card">
         <div class="table-header">
           <div class="col-1">
-            <p>Date</p>
+            <p>ID</p>
           </div>
           <div class="col-2">
-            <p>Type</p>
+            <p>Date</p>
           </div>
           <div class="col-3">
-            <p>Crypto</p>
+            <p>Type</p>
           </div>
           <div class="col-4">
-            <p>Amount</p>
+            <p>Crypto</p>
           </div>
           <div class="col-5">
-            <p>Trader</p>
+            <p>Amount</p>
           </div>
           <div class="col-6">
+            <p>Trader</p>
+          </div>
+          <div class="col-7">
             <p>Status</p>
           </div>
         </div>
@@ -133,22 +142,22 @@ h3 {
 
 .col-1,
 :deep(.col-1) {
-  width: 17.5%;
+  width: 10%;
 }
 
 .col-2,
 :deep(.col-2) {
-  width: 12.5%;
+  width: 20%;
 }
 
 .col-3,
 :deep(.col-3) {
-  width: 20%;
+  width: 10%;
 }
 
 .col-4,
 :deep(.col-4) {
-  width: 20%;
+  width: 10%;
 }
 
 .col-5,
@@ -158,6 +167,11 @@ h3 {
 
 .col-6,
 :deep(.col-6) {
+  width: 20%;
+}
+
+.col-7,
+:deep(.col-7) {
   width: 10%;
 }
 </style>

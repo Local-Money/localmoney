@@ -75,7 +75,7 @@ pub fn execute(
             delete_arbitrator(deps, info, arbitrator, fiat)
         }
         ExecuteMsg::SettleDispute { trade_id, winner } => {
-            settle_dispute(deps, info, trade_id, winner)
+            settle_dispute(deps, env, info, trade_id, winner)
         }
     }
 }
@@ -128,22 +128,21 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
-        Trade {
-            id: trade_id.clone(),
-            addr: env.contract.address.clone(),
-            buyer,  // buyer
-            seller, // seller
-            offer_contract: hub_cfg.offer_addr.clone(),
+        Trade::new(
+            trade_id.clone(),
+            env.contract.address.clone(),
+            buyer,
+            seller,
+            None,
+            None,
+            hub_cfg.offer_addr.clone(),
             offer_id,
-            arbitrator: Some(Addr::unchecked("todo")),
-            state: TradeState::RequestCreated,
-            state_history: trade_state_history,
-            created_at: env.block.time.seconds(),
-            denom: offer.denom.clone(),
-            amount: new_trade.amount.clone(),
-            maker_contact: None,
-            fiat: offer.fiat_currency,
-        },
+            env.block.time.seconds(),
+            offer.denom.clone(),
+            new_trade.amount.clone(),
+            offer.fiat_currency,
+            trade_state_history,
+        ),
     )
     .trade;
 
@@ -217,7 +216,8 @@ pub fn query_trades(
         let offer_contract = trade.offer_contract.to_string();
         let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
         let current_time = env.block.time.seconds();
-        let expired = current_time > trade.created_at + REQUEST_TIMEOUT;
+        let expired = trade.get_state().eq(&TradeState::EscrowFunded)
+            && current_time > trade.created_at + REQUEST_TIMEOUT;
         trades_infos.push(TradeInfo {
             trade: trade.clone(),
             offer,
@@ -244,9 +244,10 @@ fn fund_escrow(
     )
     .unwrap();
 
+    // TODO: will the store save it if we return an error ???
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
     if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
-        trade.state = TradeState::RequestExpired;
+        trade.set_state(TradeState::RequestExpired, &env, &info);
         TradeModel::store(deps.storage, &trade).unwrap();
 
         return Err(TradeExpired {
@@ -283,13 +284,7 @@ fn fund_escrow(
 
     // TODO: only accept exact funding amounts, return otherwise
     if balance.amount >= trade.amount {
-        trade.state = TradeState::EscrowFunded;
-        let new_trade_state = TradeStateItem {
-            actor: info.sender.clone(),
-            state: trade.state.clone(),
-            timestamp: env.block.time.seconds(),
-        };
-        trade.state_history.push(new_trade_state);
+        trade.set_state(TradeState::EscrowFunded, &env, &info);
     } else {
         return Err(FundEscrowError {
             required_amount: trade.amount.clone(),
@@ -304,7 +299,7 @@ fn fund_escrow(
         .add_attribute("trade.amount", trade.amount.clone().to_string())
         .add_attribute("sent_amount", balance.amount.to_string())
         .add_attribute("seller", info.sender)
-        .add_attribute("state", trade.state.to_string());
+        .add_attribute("state", trade.get_state().to_string());
     Ok(res)
 }
 
@@ -321,19 +316,15 @@ fn accept_request(
 
     // Only change state if the current state is TradeState::RequestCreated
     assert_trade_state_change_is_valid(
-        trade.state.clone(),
+        trade.get_state(),
         TradeState::RequestCreated,
         TradeState::RequestAccepted,
     )
     .unwrap();
 
-    trade.state = TradeState::RequestAccepted;
-    let new_trade_state = TradeStateItem {
-        actor: info.sender,
-        state: trade.state.clone(),
-        timestamp: env.block.time.seconds(),
-    };
-    trade.state_history.push(new_trade_state);
+    // Change trade state
+    trade.set_state(TradeState::RequestAccepted, &env, &info);
+
     // Set maker contact
     trade.maker_contact = Some(maker_contact);
 
@@ -342,7 +333,7 @@ fn accept_request(
     let res = Response::new()
         .add_attribute("action", "accept_request")
         .add_attribute("trade_id", trade_id)
-        .add_attribute("state", trade.state.to_string());
+        .add_attribute("state", trade.get_state().to_string());
 
     Ok(res)
 }
@@ -358,27 +349,20 @@ fn fiat_deposited(
     // Only the buyer can mark the fiat as deposited
     assert_ownership(info.sender.clone(), trade.buyer.clone()).unwrap();
     assert_trade_state_change_is_valid(
-        trade.state.clone(),
+        trade.get_state(),
         TradeState::EscrowFunded,
         TradeState::FiatDeposited,
     )
     .unwrap();
 
     // Update trade State to TradeState::FiatDeposited
-    trade.state = TradeState::FiatDeposited;
-    let new_trade_state = TradeStateItem {
-        actor: info.sender,
-        state: trade.state.clone(),
-        timestamp: env.block.time.seconds(),
-    };
-    trade.state_history.push(new_trade_state);
-
+    trade.set_state(TradeState::FiatDeposited, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "fiat_deposited")
         .add_attribute("trade_id", trade_id)
-        .add_attribute("state", trade.state.to_string());
+        .add_attribute("state", trade.get_state().to_string());
 
     Ok(res)
 }
@@ -399,24 +383,17 @@ fn cancel_request(
     .unwrap();
 
     // You can only cancel the trade if the current TradeState is Created or Accepted
-    if !((trade.state == TradeState::RequestCreated)
-        || (trade.state == TradeState::RequestAccepted))
+    if !((trade.get_state() == TradeState::RequestCreated)
+        || (trade.get_state() == TradeState::RequestAccepted))
     {
         return Err(InvalidTradeStateChange {
-            from: trade.state,
+            from: trade.get_state(),
             to: TradeState::RequestCanceled,
         });
     }
 
     // Update trade State to TradeState::RequestCanceled
-    trade.state = TradeState::RequestCanceled;
-    let new_trade_state = TradeStateItem {
-        actor: info.sender,
-        state: trade.state.clone(),
-        timestamp: env.block.time.seconds(),
-    };
-    trade.state_history.push(new_trade_state);
-
+    trade.set_state(TradeState::RequestCanceled, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new().add_attribute("action", "cancel_request");
     Ok(res)
@@ -432,7 +409,7 @@ fn release_escrow(
     let trade_denom = denom_to_string(&trade.denom);
     if trade.seller.eq(&info.sender) {
         assert_trade_state_change_is_valid(
-            trade.state.clone(),
+            trade.get_state(),
             TradeState::FiatDeposited,
             TradeState::EscrowReleased,
         )
@@ -453,14 +430,7 @@ fn release_escrow(
     .unwrap();
 
     //Update trade State to TradeState::EscrowReleased
-    trade.state = TradeState::EscrowReleased;
-    let new_trade_state = TradeStateItem {
-        actor: info.sender,
-        state: trade.state.clone(),
-        timestamp: env.block.time.seconds(),
-    };
-    trade.state_history.push(new_trade_state);
-
+    trade.set_state(TradeState::EscrowReleased, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     //Calculate fees and final release amount
@@ -497,7 +467,7 @@ fn release_escrow(
         contract_addr: hub_cfg.profile_addr.to_string(),
         msg: to_binary(&IncreaseTradeCount {
             profile_address: offer.owner.clone(),
-            final_trade_state: trade.state.clone(),
+            final_trade_state: trade.get_state(),
         })
         .unwrap(),
         funds: vec![],
@@ -505,7 +475,7 @@ fn release_escrow(
 
     // Send tokens to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: trade.buyer.into_string(),
+        to_address: trade.buyer.to_string(),
         amount: vec![Coin::new(release_amount.u128(), trade_denom.clone())],
     })));
 
@@ -545,8 +515,8 @@ fn release_escrow(
     let res = Response::new()
         .add_submessages(send_msgs)
         .add_attribute("action", "release_escrow")
-        .add_attribute("trade_id", trade_id)
-        .add_attribute("state", trade.state.to_string());
+        .add_attribute("trade_id", trade_id.clone())
+        .add_attribute("state", trade.get_state().clone().to_string());
     Ok(res)
 }
 
@@ -606,7 +576,7 @@ fn refund_escrow(
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
     let trade = TradeModel::from_store(deps.storage, &trade_id);
     assert_trade_state_change_is_valid(
-        trade.state.clone(),
+        trade.get_state(),
         TradeState::EscrowFunded,
         TradeState::EscrowRefunded,
     )
@@ -620,21 +590,14 @@ fn refund_escrow(
             message:
                 "Only expired trades that are not disputed can be refunded by non-arbitrators."
                     .to_string(),
-            trade: trade.state.to_string(),
+            trade: trade.get_state().to_string(),
         });
     }
 
     let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
 
     //Update trade state to TradeState::EscrowRefunded
-    trade.state = TradeState::EscrowRefunded;
-    let new_trade_state = TradeStateItem {
-        actor: info.sender,
-        state: trade.state.clone(),
-        timestamp: env.block.time.seconds(),
-    };
-    trade.state_history.push(new_trade_state);
-
+    trade.set_state(TradeState::EscrowRefunded, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let amount = trade.amount.clone();
@@ -717,14 +680,14 @@ fn dispute_escrow(
 
     // Users can only start a dispute once the buyer has clicked `mark paid` after the fiat has been deposited
     assert_trade_state_change_is_valid(
-        trade.state,
+        trade.get_state(),
         TradeState::FiatDeposited,
         TradeState::EscrowDisputed,
     )
     .unwrap();
 
     // Update trade State to TradeState::Disputed and sets arbitrator
-    trade.state = TradeState::EscrowDisputed;
+    trade.set_state(TradeState::EscrowDisputed, &env, &info);
     let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
     let arbitrator = get_arbitrator_random(deps.as_ref(), random_seed as usize, trade.fiat.clone());
     trade.arbitrator = Some(arbitrator.arbitrator);
@@ -733,7 +696,7 @@ fn dispute_escrow(
     let res = Response::new()
         .add_attribute("action", "dispute_escrow")
         .add_attribute("trade_id", trade.id.clone())
-        .add_attribute("state", trade.state.to_string())
+        .add_attribute("state", trade.get_state().to_string())
         .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string());
 
     Ok(res)
@@ -741,6 +704,7 @@ fn dispute_escrow(
 
 fn settle_dispute(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     trade_id: String,
     winner: Addr,
@@ -766,9 +730,9 @@ fn settle_dispute(
     }
 
     // Check if TradeState is EscrowDisputed
-    if TradeState::EscrowDisputed.ne(&trade.state) {
+    if TradeState::EscrowDisputed.ne(&trade.get_state()) {
         return Err(InvalidTradeState {
-            current: trade.state,
+            current: trade.get_state(),
             expected: TradeState::EscrowDisputed,
         });
     }
@@ -791,9 +755,9 @@ fn settle_dispute(
 
     // Check if winner is eligible, it must be either maker or taker
     if winner.eq(&maker) {
-        trade.state = TradeState::SettledForMaker;
+        trade.set_state(TradeState::SettledForMaker, &env, &info);
     } else if winner.eq(&taker) {
-        trade.state = TradeState::SettledForTaker;
+        trade.set_state(TradeState::SettledForTaker, &env, &info)
     } else {
         return Err(ContractError::InvalidSender {
             sender: winner,
