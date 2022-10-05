@@ -10,6 +10,7 @@ import type {
   NewTrade,
   PatchOffer,
   PostOffer,
+  Profile,
   Trade,
   TradeInfo,
 } from '~/types/components.interface'
@@ -27,6 +28,13 @@ export class MockChain implements Chain {
 
   getWalletAddress(): string {
     return 'terra13zelgwgwuj0lqw3xdgn32l996tfzjfayetqjs7'
+  }
+
+  fetchProfile(): Promise<Profile> {
+    return Promise.resolve({
+      address: this.getWalletAddress(),
+      trade_count: 1,
+    })
   }
 
   async fetchOffers({ fiatCurrency, offerType }: FetchOffersArgs) {

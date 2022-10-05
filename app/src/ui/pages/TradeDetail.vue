@@ -12,11 +12,13 @@ import {
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
+import { decryptData } from '~/utils/crypto'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
 const priceStore = usePriceStore()
 const tradeInfo = ref()
+const secrets = computed(() => client.getSecrets())
 let refreshInterval: NodeJS.Timer
 
 const route = useRoute()
@@ -53,10 +55,20 @@ const fiatAmountStr = computed(() => {
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.rate))
-const isMakerContactAvailable = computed(() => tradeInfo.value.trade.maker_contact)
-const makerContact = computed(() => {
-  const telegram = tradeInfo.value.trade.maker_contact
-  return isMakerContactAvailable.value ? telegram : 'pending'
+const buyerOrSeller = computed(() => (isBuyer.value ? 'Buyer' : 'Seller'))
+const counterpartyEncryptedContact = computed(() =>
+  isBuyer.value ? tradeInfo.value.trade.seller_contact : tradeInfo.value.trade.buyer_contact
+)
+const isCounterpartyContactAvailable = computed(() => counterpartyEncryptedContact.value !== null)
+const counterpartyContact = asyncComputed(async () => {
+  const encryptedContact = counterpartyEncryptedContact.value
+  const privateKey = secrets.value.privateKey
+  if (isCounterpartyContactAvailable.value) {
+    console.log('decrypt')
+    return await decryptData(privateKey, encryptedContact)
+  } else {
+    return 'pending ...'
+  }
 })
 
 const isArbitrator = computed(() => {
@@ -174,16 +186,16 @@ watch(userWallet, async () => {
         <p>Chat will be here</p>
         <div class="content">
           <p class="label">
-            Telegram:
+            {{ buyerOrSeller }}:
             <a
-              v-if="isMakerContactAvailable"
-              :href="addTelegramURLPrefix(makerContact)"
+              v-if="isCounterpartyContactAvailable"
+              :href="addTelegramURLPrefix(counterpartyContact)"
               class="telegram"
               target="_blank"
             >
-              {{ makerContact }}
+              {{ counterpartyContact }}
             </a>
-            <span v-else class="label">pending</span>
+            <span v-else class="label">Pending ...</span>
           </p>
         </div>
       </section>

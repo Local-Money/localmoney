@@ -13,26 +13,30 @@ import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
+import { decryptData, encryptData } from '~/utils/crypto'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 const client = useClientStore()
 const priceStore = usePriceStore()
+const secrets = computed(() => client.getSecrets())
 
-const lastOfferCreated = computed(() => {
-  const length = client.myOffers.data.length
-  return length > 0 ? client.myOffers.data[0] : undefined
-})
-const defaultOwnerContact = computed(() =>
-  lastOfferCreated.value !== undefined ? addTelegramURLPrefix(lastOfferCreated.value?.owner_contact) : ''
-)
-const selectedCrypto = ref(defaultMicroDenomAvailable())
+async function defaultOwnerContact() {
+  const contact = client.profile?.contact
+  if (contact !== undefined) {
+    const decryptedContact = await decryptData(secrets.value.privateKey, contact)
+    return addTelegramURLPrefix(decryptedContact)
+  } else {
+    return ''
+  }
+}
+const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
 const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
 const marginOffset = ref('')
-const ownerContact = ref(defaultOwnerContact.value)
+const ownerContact = ref('')
 const marginOffsetUnmasked = ref(0)
 const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
@@ -52,6 +56,9 @@ const listener = () => {
 }
 onMounted(() => {
   window.addEventListener('resize', listener)
+  nextTick(async () => {
+    ownerContact.value = await defaultOwnerContact()
+  })
 })
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
@@ -65,10 +72,16 @@ document.documentElement.style.setProperty('--vh', `${vh}px`)
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(margin.value, marginOffsetUnmasked.value)
 }
-function createOffer() {
+async function createOffer() {
+  const telegramHandle = removeTelegramURLPrefix(ownerContact.value)
+  console.log('owner_contact: ', telegramHandle)
+  // Encrypt contact to save on the profile when an offer is created
+  const owner_contact_pk = secrets.value.publicKey
+  const owner_contact = await encryptData(owner_contact_pk, telegramHandle)
+
   const postOffer: PostOffer = {
-    owner_contact: removeTelegramURLPrefix(ownerContact.value),
-    owner_pk: '',
+    owner_contact,
+    owner_encrypt_key: owner_contact_pk,
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
@@ -76,7 +89,7 @@ function createOffer() {
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
   }
-  client.createOffer(postOffer)
+  await client.createOffer(postOffer)
   emit('cancel')
 }
 watch(marginOffset, () => {

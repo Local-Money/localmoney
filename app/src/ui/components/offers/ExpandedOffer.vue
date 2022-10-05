@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import {
+  addTelegramURLPrefix,
   calculateFiatPriceByRate,
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
   formatTradesCountInfo,
+  removeTelegramURLPrefix,
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
@@ -12,13 +14,27 @@ import type { GetOffer, NewTrade } from '~/types/components.interface'
 import { usePriceStore } from '~/stores/price'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
+import { decryptData, encryptData } from '~/utils/crypto'
 
 const props = defineProps<{ offer: GetOffer }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
 const priceStore = usePriceStore()
 const client = useClientStore()
+const secrets = computed(() => client.getSecrets())
+
+async function defaultTakerContact() {
+  const contact = client.profile?.contact
+  console.log('contact: ', contact)
+  if (contact !== undefined) {
+    const decryptedContact = await decryptData(secrets.value.privateKey, contact)
+    return addTelegramURLPrefix(decryptedContact)
+  } else {
+    return ''
+  }
+}
 
 let refreshRateInterval: NodeJS.Timer | undefined
+const telegram = ref<string>('')
 const secondsUntilRateRefresh = ref(0)
 const cryptoAmount = ref(0)
 const fiatAmount = ref(0)
@@ -28,7 +44,6 @@ const watchingFiat = ref(false)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
-const telegram = ref<string>('')
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 
 const fromLabel = computed(() => (props.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'))
@@ -57,15 +72,21 @@ const minMaxCryptoStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 
-function newTrade() {
+async function newTrade() {
+  const telegramHandle = removeTelegramURLPrefix(telegram.value) as string
+  const profile_taker_encrypt_key = secrets.value.publicKey
+  const taker_contact = await encryptData(props.offer.owner_encrypt_pk, telegramHandle)
+  const profile_taker_contact = await encryptData(profile_taker_encrypt_key, telegramHandle)
+
   const newTrade: NewTrade = {
     offer_id: `${props.offer.id}`,
     amount: `${cryptoAmount.value * 1000000}`,
     taker: `${client.userWallet.address}`,
-    taker_contact: telegram.value,
-    taker_pk: '',
+    profile_taker_contact,
+    taker_contact,
+    profile_taker_encrypt_key,
   }
-  client.openTrade(newTrade)
+  await client.openTrade(newTrade)
 }
 
 function focus() {
@@ -141,7 +162,8 @@ function startExchangeRateRefreshTimer() {
 
 onMounted(() => {
   startExchangeRateRefreshTimer()
-  nextTick(() => {
+  nextTick(async () => {
+    telegram.value = await defaultTakerContact()
     focus()
   })
 })

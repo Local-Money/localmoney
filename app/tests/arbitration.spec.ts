@@ -57,19 +57,19 @@ describe('arbitration tests', () => {
 
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
     // Create a Trade and set it to `fiat_deposited` state.
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      taker_encrypt_pk,
+      profile_taker_encrypt_key: taker_encrypt_pk,
       taker_contact,
     })
 
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const makerContactEncrypted = await encryptDataMocked(trade.taker_encrypt_pk, makerContact)
+    const makerContactEncrypted = await encryptDataMocked(trade.seller_encrypt_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
@@ -90,19 +90,19 @@ describe('arbitration tests', () => {
   it('should settle dispute for maker', async () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
 
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      taker_encrypt_pk,
+      profile_taker_encrypt_key: taker_encrypt_pk,
       taker_contact,
     })
 
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const makerContactEncrypted = await encryptDataMocked(trade.taker_encrypt_pk, makerContact)
+    const makerContactEncrypted = await encryptDataMocked(trade.seller_encrypt_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)

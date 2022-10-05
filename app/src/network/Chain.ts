@@ -9,6 +9,7 @@ import type {
   NewTrade,
   PatchOffer,
   PostOffer,
+  Profile,
   Trade,
   TradeInfo,
 } from '~/types/components.interface'
@@ -21,6 +22,8 @@ export interface Chain {
   connectWallet(): Promise<void>
 
   getWalletAddress(): string
+
+  fetchProfile(): Promise<Profile>
 
   fetchOffer(offerId: string): Promise<GetOffer>
 

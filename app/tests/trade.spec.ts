@@ -40,7 +40,7 @@ describe('trade lifecycle happy path', () => {
       const owner_contact = await encryptDataMocked(makerSecrets.publicKey, offer.owner_contact)
       const owner_contact_pk = makerSecrets.publicKey
       offer.owner_contact = owner_contact
-      offer.owner_contact_pk = owner_contact_pk
+      offer.owner_encrypt_key = owner_contact_pk
       await makerClient.createOffer(offer)
     }
     myOffers = await makerClient.fetchMyOffers()
@@ -60,13 +60,13 @@ describe('trade lifecycle happy path', () => {
     expect(offer).toHaveProperty('id')
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
     tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      taker_encrypt_pk,
+      profile_taker_encrypt_key: taker_encrypt_pk,
       taker_contact,
     })
   })
@@ -74,11 +74,11 @@ describe('trade lifecycle happy path', () => {
   it('maker should accept the trade request', async () => {
     const offer = { ...(offers[0] as PostOffer) }
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const decryptedTakerContact = await decryptDataMocked(makerSecrets.privateKey, trade.taker_contact)
+    const decryptedTakerContact = await decryptDataMocked(makerSecrets.privateKey, trade.seller_contact)
     expect(decryptedTakerContact).toBe(takerContact)
     expect(trade.id).toBe(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
-    const maker_contact = await encryptDataMocked(trade.taker_encrypt_pk, offer.owner_contact)
+    const maker_contact = await encryptDataMocked(trade.seller_encrypt_key, offer.owner_contact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
@@ -87,7 +87,7 @@ describe('trade lifecycle happy path', () => {
   it('taker should fund the escrow', async () => {
     const tradeAddr = makerClient.getHubInfo().hubConfig.trade_addr
     let trade = await takerClient.fetchTradeDetail(tradeId)
-    const decryptedMakerContact = await decryptDataMocked(takerSecrets.privateKey, trade.maker_contact!)
+    const decryptedMakerContact = await decryptDataMocked(takerSecrets.privateKey, trade.buyer_contact!)
     expect(decryptedMakerContact).toBe(offers[0].owner_contact)
     const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
@@ -126,13 +126,13 @@ describe('trade invalid state changes', () => {
     const offer = (await makerClient.fetchMyOffers())[0]
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
     tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      taker_encrypt_pk,
+      profile_taker_encrypt_key: taker_encrypt_pk,
       taker_contact,
     })
     let trade = await takerClient.fetchTradeDetail(tradeId)
@@ -156,7 +156,7 @@ describe('trade invalid state changes', () => {
   it('should fail to mark as paid a trade in request_accepted state', async () => {
     const offer = offers[0] as PostOffer
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const maker_contact = await encryptDataMocked(trade.taker_encrypt_pk, offer.owner_contact)
+    const maker_contact = await encryptDataMocked(trade.seller_encrypt_key, offer.owner_contact)
     console.log('maker_contact: ', maker_contact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)

@@ -11,6 +11,7 @@ import type {
   NewTrade,
   PatchOffer,
   PostOffer,
+  Profile,
   TradeInfo,
   UserWallet,
 } from '~/types/components.interface'
@@ -26,6 +27,7 @@ export const useClientStore = defineStore({
       client: chainFactory(ChainClient.kujira),
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
+      profile: <Profile>{},
       offers: <ListResult<GetOffer>>ListResult.loading(),
       myOffers: <ListResult<GetOffer>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
@@ -60,15 +62,16 @@ export const useClientStore = defineStore({
       }
     },
     async syncSecrets(address: string) {
+      this.profile = await this.client.fetchProfile()
       const secrets = this.secrets.get(address) ?? (await generateKeys())
       if (!this.secrets.has(address)) {
         this.secrets.set(address, secrets)
       }
-      // const data = '@maker_0001'
-      // const encryptedData = await encryptData(secrets.publicKey, data)
-      // console.log('encrypted data: ', encryptedData)
-      // const decryptedData = await decryptData(secrets.privateKey, encryptedData)
-      // console.log('decrypted data: ', decryptedData)
+      console.log(secrets)
+    },
+    getSecrets() {
+      const address = this.client.getWalletAddress()
+      return this.secrets.get(address)!
     },
     async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
