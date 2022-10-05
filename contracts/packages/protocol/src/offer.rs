@@ -275,8 +275,8 @@ impl OfferModel<'_> {
                 item.and_then(|(_, offer)| {
                     let profile = load_profile(
                         &deps.querier,
-                        offer.clone().owner,
                         hub_config.profile_addr.to_string(),
+                        offer.clone().owner,
                     );
                     Ok(OfferResponse::map(offer, profile))
                 })
@@ -328,8 +328,8 @@ impl OfferModel<'_> {
                 item.and_then(|(_, offer)| {
                     let profile = load_profile(
                         &deps.querier,
-                        offer.clone().owner,
                         hub_config.profile_addr.to_string(),
+                        offer.clone().owner,
                     );
                     Ok(OfferResponse::map(offer, profile))
                 })

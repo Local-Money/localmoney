@@ -3,8 +3,11 @@ import { TextDecoder, TextEncoder } from 'util'
 import dotenv from 'dotenv'
 import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
+import makerSecrets from './fixtures/maker_secrets.json'
+import takerSecrets from './fixtures/taker_secrets.json'
 import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
+import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
@@ -14,6 +17,7 @@ Object.assign(global, { TextEncoder, TextDecoder })
 
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
+const takerContact = 'taker001'
 let tradeId = '0'
 let offerTradeCount = 0
 
@@ -30,8 +34,14 @@ describe('trade lifecycle happy path', () => {
   // Create Offer
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
+    console.log('my offers: ', myOffers)
     if (myOffers.length === 0) {
-      await makerClient.createOffer(offers[0] as PostOffer)
+      const offer = { ...(offers[0] as PostOffer) }
+      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, offer.owner_contact)
+      const owner_contact_pk = makerSecrets.publicKey
+      offer.owner_contact = owner_contact
+      offer.owner_contact_pk = owner_contact_pk
+      await makerClient.createOffer(offer)
     }
     myOffers = await makerClient.fetchMyOffers()
     offerTradeCount = myOffers[0].trades_count
@@ -48,20 +58,28 @@ describe('trade lifecycle happy path', () => {
     expect(offersResult.length).toBeGreaterThan(0)
     const offer = offersResult[0] as GetOffer
     expect(offer).toHaveProperty('id')
-
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const taker_encrypt_pk = takerSecrets.publicKey
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
     tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      taker_encrypt_pk,
+      taker_contact,
     })
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
-    const offer = offers[0] as PostOffer
+    const offer = { ...(offers[0] as PostOffer) }
     let trade = await makerClient.fetchTradeDetail(tradeId)
+    const decryptedTakerContact = await decryptDataMocked(makerSecrets.privateKey, trade.taker_contact)
+    expect(decryptedTakerContact).toBe(takerContact)
     expect(trade.id).toBe(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
-    await makerClient.acceptTradeRequest(trade.id, offer.owner_contact)
+    const maker_contact = await encryptDataMocked(trade.taker_encrypt_pk, offer.owner_contact)
+    await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
   })
@@ -69,7 +87,8 @@ describe('trade lifecycle happy path', () => {
   it('taker should fund the escrow', async () => {
     const tradeAddr = makerClient.getHubInfo().hubConfig.trade_addr
     let trade = await takerClient.fetchTradeDetail(tradeId)
-
+    const decryptedMakerContact = await decryptDataMocked(takerSecrets.privateKey, trade.maker_contact!)
+    expect(decryptedMakerContact).toBe(offers[0].owner_contact)
     const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
@@ -105,10 +124,16 @@ describe('trade invalid state changes', () => {
   })
   it('should fail to fund a trade in request_created state', async () => {
     const offer = (await makerClient.fetchMyOffers())[0]
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const taker_encrypt_pk = takerSecrets.publicKey
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
     tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      taker_encrypt_pk,
+      taker_contact,
     })
     let trade = await takerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
@@ -130,8 +155,11 @@ describe('trade invalid state changes', () => {
   })
   it('should fail to mark as paid a trade in request_accepted state', async () => {
     const offer = offers[0] as PostOffer
-    await makerClient.acceptTradeRequest(tradeId, offer.owner_contact)
-    const trade = await makerClient.fetchTradeDetail(tradeId)
+    let trade = await makerClient.fetchTradeDetail(tradeId)
+    const maker_contact = await encryptDataMocked(trade.taker_encrypt_pk, offer.owner_contact)
+    console.log('maker_contact: ', maker_contact)
+    await makerClient.acceptTradeRequest(trade.id, maker_contact)
+    trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
     await expect(takerClient.setFiatDeposited(tradeId)).rejects.toThrow()
   })

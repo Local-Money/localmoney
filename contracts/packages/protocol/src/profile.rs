@@ -79,8 +79,8 @@ pub fn increase_profile_trades_count_msg(
 // Query Util
 pub fn load_profile(
     querier: &QuerierWrapper,
-    profile_address: Addr,
     profile_contract: String,
+    profile_address: Addr,
 ) -> Profile {
     querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {

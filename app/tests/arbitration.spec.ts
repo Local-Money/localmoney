@@ -5,6 +5,8 @@ import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
 import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
+import { encryptDataMocked } from './helper'
+import takerSecrets from './fixtures/taker_secrets.json'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
@@ -14,6 +16,9 @@ Object.assign(global, { TextEncoder, TextDecoder })
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
 let adminClient: TestCosmosChain
+
+const takerContact = 'taker001'
+const makerContact = 'taker001'
 
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
@@ -50,14 +55,22 @@ describe('arbitration tests', () => {
       fiat: offer.fiat_currency,
     })
 
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const taker_encrypt_pk = takerSecrets.publicKey
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
     // Create a Trade and set it to `fiat_deposited` state.
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      taker_encrypt_pk,
+      taker_contact,
     })
-    await makerClient.acceptTradeRequest(tradeId, offer.owner_contact)
-    let trade = await takerClient.fetchTradeDetail(tradeId)
+
+    let trade = await makerClient.fetchTradeDetail(tradeId)
+    const makerContactEncrypted = await encryptDataMocked(trade.taker_encrypt_pk, makerContact)
+    await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
     trade = await takerClient.fetchTradeDetail(trade.id)
@@ -75,13 +88,22 @@ describe('arbitration tests', () => {
   })
 
   it('should settle dispute for maker', async () => {
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const taker_encrypt_pk = takerSecrets.publicKey
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_pk, takerContact)
+
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      taker_encrypt_pk,
+      taker_contact,
     })
-    await makerClient.acceptTradeRequest(tradeId, offer.owner_contact)
-    let trade = await takerClient.fetchTradeDetail(tradeId)
+
+    let trade = await makerClient.fetchTradeDetail(tradeId)
+    const makerContactEncrypted = await encryptDataMocked(trade.taker_encrypt_pk, makerContact)
+    await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
 

@@ -117,8 +117,12 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         seller = offer.owner.clone(); // maker
     }
 
-    // let trade_count = offer.trades_count + 1;
-    let trade_count = 1;
+    let maker_profile = load_profile(
+        &deps.querier,
+        hub_cfg.profile_addr.to_string(),
+        offer.owner.clone(),
+    );
+    let trade_count = maker_profile.trade_count + 1;
     let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
@@ -194,9 +198,35 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_trade(deps: Deps, id: String) -> StdResult<Trade> {
+fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
+    let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
-    Ok(state)
+
+    let offer = load_offer(
+        &deps.querier,
+        state.offer_id.clone(),
+        hub_config.offer_addr.to_string(),
+    )
+    .unwrap();
+
+    let maker_addr = offer.owner.clone();
+    let taker_addr = if offer.owner.eq(&state.seller) {
+        state.seller.clone()
+    } else {
+        state.buyer.clone()
+    };
+
+    let maker_profile = load_profile(
+        &deps.querier,
+        hub_config.profile_addr.to_string(),
+        maker_addr,
+    );
+    let taker_profile = load_profile(
+        &deps.querier,
+        hub_config.profile_addr.to_string(),
+        taker_addr,
+    );
+    Ok(TradeResponse::map(state, maker_profile, taker_profile))
 }
 
 pub fn query_trades(
@@ -240,13 +270,13 @@ pub fn query_trades(
         // TODO change it to make only one query
         let maker_profile = load_profile(
             &deps.querier,
-            maker_addr.clone(),
             hub_config.profile_addr.to_string(),
+            maker_addr.clone(),
         );
         let taker_profile = load_profile(
             &deps.querier,
-            taker_addr.clone(),
             hub_config.profile_addr.to_string(),
+            taker_addr.clone(),
         );
 
         let current_time = env.block.time.seconds();

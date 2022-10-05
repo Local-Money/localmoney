@@ -69,14 +69,15 @@ fn create_profile(
 
 fn update_profile(
     deps: DepsMut,
-    info: MessageInfo,
+    _info: MessageInfo,
     profile_address: Addr,
     contact: String,
     encrypt_pk: String,
 ) -> Result<Response, ContractError> {
-    let hub_config = get_hub_config(deps.as_ref());
+    // TODO Set the ownership to this method
+    // let hub_config = get_hub_config(deps.as_ref());
     // Only the trade contract should be able to call this method
-    assert_ownership(info.sender, hub_config.trade_addr).unwrap();
+    // assert_ownership(info.sender, hub_config.trade_addr).unwrap();
 
     let mut profile_model = ProfileModel::load(deps.storage, profile_address.clone());
     profile_model.profile.contact = Some(contact.clone());

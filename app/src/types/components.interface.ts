@@ -27,9 +27,9 @@ export interface OfferTypeLabel {
   [OfferType.sell]: string
 }
 
-export interface GetOffer extends PatchOffer {
+export interface GetOffer {
   id: string
-  owner_contact: string
+  owner_encrypt_pk: string
   state: OfferState
   rate: string
   min_amount: string
@@ -49,11 +49,13 @@ export interface PatchOffer {
   rate: string
   min_amount: string
   max_amount: string
+  owner_contact?: string
+  owner_encrypt_pk?: string
 }
 
 export interface PostOffer {
   owner_contact: string
-  owner_pk: string
+  owner_contact_pk: string
   rate: string
   offer_type: OfferType
   denom: Denom
@@ -84,8 +86,9 @@ export interface NewTrade {
   offer_id: string
   amount: string
   taker: string
+  profile_taker_contact: string
   taker_contact: string
-  taker_pk: string
+  taker_encrypt_pk: string
   // arbitrator: TODO,
 }
 
@@ -95,7 +98,6 @@ export interface Trade {
   factory_addr: string
   buyer: string
   seller: string
-  maker_contact?: string
   arbitrator?: string | null
   offer_contract: string
   offer_id: string
@@ -105,6 +107,10 @@ export interface Trade {
   state: TradeState
   state_history: TradeStateItem[]
   fiat: FiatCurrency
+  taker_contact: string
+  taker_encrypt_pk: string
+  maker_contact?: string
+  maker_encrypt_pk?: string
 }
 
 export interface TradeStateItem {

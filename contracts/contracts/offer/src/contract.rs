@@ -214,8 +214,8 @@ pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
 
     let profile = load_profile(
         &deps.querier,
-        offer.clone().owner,
         hub_config.profile_addr.to_string(),
+        offer.clone().owner,
     );
 
     Ok(OfferResponse::map(offer, profile))

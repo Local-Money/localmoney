@@ -4,6 +4,7 @@
     "fiat_currency": "ARS",
     "min_amount": "100000",
     "max_amount": "2500000",
+    "owner_contact_pk": "TBD",
     "rate": "1",
     "owner_contact": "maker001",
     "denom": {
