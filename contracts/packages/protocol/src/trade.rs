@@ -91,7 +91,7 @@ pub struct NewTrade {
     pub amount: Uint128,
     pub taker: Addr,
     pub profile_taker_contact: String,
-    pub taker_encrypt_pk: String,
+    pub profile_taker_encrypt_key: String,
     pub taker_contact: String,
 }
 
@@ -132,9 +132,9 @@ pub struct Trade {
     pub id: String,
     pub addr: Addr,
     pub buyer: Addr,
+    pub buyer_contact: Option<String>,
     pub seller: Addr,
-    pub taker_contact: String,
-    pub maker_contact: Option<String>,
+    pub seller_contact: Option<String>,
     pub arbitrator: Option<Addr>,
     pub offer_contract: Addr,
     pub offer_id: String,
@@ -152,8 +152,8 @@ impl Trade {
         addr: Addr,
         buyer: Addr,
         seller: Addr,
-        taker_contact: String,
-        maker_contact: Option<String>,
+        seller_contact: Option<String>,
+        buyer_contact: Option<String>,
         arbitrator: Option<Addr>,
         offer_contract: Addr,
         offer_id: String,
@@ -168,8 +168,8 @@ impl Trade {
             addr,
             buyer,
             seller,
-            taker_contact,
-            maker_contact,
+            seller_contact,
+            buyer_contact,
             arbitrator,
             offer_contract,
             offer_id,
@@ -203,7 +203,11 @@ pub struct TradeResponse {
     pub id: String,
     pub addr: Addr,
     pub buyer: Addr,
+    pub buyer_contact: Option<String>,
+    pub buyer_encrypt_key: Option<String>,
     pub seller: Addr,
+    pub seller_contact: Option<String>,
+    pub seller_encrypt_key: Option<String>,
     pub arbitrator: Option<Addr>,
     pub offer_contract: Addr,
     pub offer_id: String,
@@ -213,20 +217,20 @@ pub struct TradeResponse {
     pub fiat: FiatCurrency,
     pub state_history: Vec<TradeStateItem>,
     pub state: TradeState,
-    pub taker_contact: String,
-    pub taker_encrypt_pk: String,
-    pub maker_contact: Option<String>,
-    pub maker_encrypt_pk: Option<String>,
 }
 
 impl TradeResponse {
-    pub fn map(trade: Trade, maker_profile: Profile, taker_profile: Profile) -> TradeResponse {
+    pub fn map(trade: Trade, buyer_profile: Profile, seller_profile: Profile) -> TradeResponse {
         let state = trade.get_state();
         TradeResponse {
             id: trade.id,
             addr: trade.addr,
             buyer: trade.buyer,
+            buyer_contact: trade.buyer_contact,
+            buyer_encrypt_key: buyer_profile.encrypt_pk,
             seller: trade.seller,
+            seller_contact: trade.seller_contact,
+            seller_encrypt_key: seller_profile.encrypt_pk,
             arbitrator: trade.arbitrator,
             offer_contract: trade.offer_contract,
             offer_id: trade.offer_id,
@@ -236,10 +240,6 @@ impl TradeResponse {
             fiat: trade.fiat,
             state_history: trade.state_history,
             state,
-            taker_contact: trade.taker_contact,
-            taker_encrypt_pk: taker_profile.encrypt_pk.unwrap(),
-            maker_contact: trade.maker_contact,
-            maker_encrypt_pk: maker_profile.encrypt_pk,
         }
     }
 }

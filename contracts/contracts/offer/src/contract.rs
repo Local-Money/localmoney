@@ -95,7 +95,7 @@ pub fn create_offer(
         hub_config.profile_addr.to_string(),
         info.sender.clone(),
         msg.owner_contact.clone(),
-        msg.owner_contact_pk.clone(),
+        msg.owner_encrypt_key.clone(),
     );
 
     let offer = OfferModel::create(

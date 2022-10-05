@@ -59,7 +59,7 @@ pub struct InstantiateMsg {}
 pub struct OfferMsg {
     pub offer_type: OfferType,
     pub owner_contact: String,
-    pub owner_contact_pk: String,
+    pub owner_encrypt_key: String,
     pub fiat_currency: FiatCurrency,
     pub rate: Uint128,
     pub denom: Denom,

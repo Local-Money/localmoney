@@ -107,22 +107,28 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
+    let buyer_contact: Option<String>;
     let seller: Addr;
+    let seller_contact: Option<String>;
 
     if offer.offer_type == OfferType::Buy {
         buyer = offer.owner.clone(); // maker
+        buyer_contact = None; // maker
         seller = new_trade.taker.clone(); // taker
+        seller_contact = Some(new_trade.taker_contact); // taker
     } else {
         buyer = new_trade.taker.clone(); // taker
+        buyer_contact = Some(new_trade.taker_contact); // taker
         seller = offer.owner.clone(); // maker
+        seller_contact = None // maker
     }
 
-    let maker_profile = load_profile(
+    let owner_profile = load_profile(
         &deps.querier,
         hub_cfg.profile_addr.to_string(),
         offer.owner.clone(),
     );
-    let trade_count = maker_profile.trade_count + 1;
+    let trade_count = owner_profile.trade_count + 1;
     let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
@@ -136,7 +142,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         hub_cfg.profile_addr.to_string(),
         new_trade.taker.clone(),
         new_trade.profile_taker_contact,
-        new_trade.taker_encrypt_pk,
+        new_trade.profile_taker_encrypt_key,
     );
 
     //Instantiate Trade state
@@ -147,8 +153,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             env.contract.address.clone(),
             buyer,
             seller,
-            new_trade.taker_contact.clone(),
-            None,
+            seller_contact,
+            buyer_contact,
             None,
             hub_cfg.offer_addr.clone(),
             offer_id,
@@ -202,31 +208,17 @@ fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
     let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
 
-    let offer = load_offer(
-        &deps.querier,
-        state.offer_id.clone(),
-        hub_config.offer_addr.to_string(),
-    )
-    .unwrap();
-
-    let maker_addr = offer.owner.clone();
-    let taker_addr = if offer.owner.eq(&state.seller) {
-        state.seller.clone()
-    } else {
-        state.buyer.clone()
-    };
-
-    let maker_profile = load_profile(
+    let buyer_profile = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
-        maker_addr,
+        state.buyer.clone(),
     );
-    let taker_profile = load_profile(
+    let seller_profile = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
-        taker_addr,
+        state.seller.clone(),
     );
-    Ok(TradeResponse::map(state, maker_profile, taker_profile))
+    Ok(TradeResponse::map(state, buyer_profile, seller_profile))
 }
 
 pub fn query_trades(
@@ -260,23 +252,16 @@ pub fn query_trades(
         let offer_contract = trade.offer_contract.to_string();
         let offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
 
-        let maker_addr = offer.owner.clone();
-        let taker_addr = if offer.owner.eq(&trade.seller) {
-            trade.seller.clone()
-        } else {
-            trade.buyer.clone()
-        };
-
         // TODO change it to make only one query
-        let maker_profile = load_profile(
+        let buyer_profile = load_profile(
             &deps.querier,
             hub_config.profile_addr.to_string(),
-            maker_addr.clone(),
+            trade.buyer.clone(),
         );
-        let taker_profile = load_profile(
+        let seller_profile = load_profile(
             &deps.querier,
             hub_config.profile_addr.to_string(),
-            taker_addr.clone(),
+            trade.seller.clone(),
         );
 
         let current_time = env.block.time.seconds();
@@ -284,7 +269,7 @@ pub fn query_trades(
             && current_time > trade.created_at + REQUEST_TIMEOUT;
 
         trades_infos.push(TradeInfo {
-            trade: TradeResponse::map(trade.clone(), maker_profile, taker_profile),
+            trade: TradeResponse::map(trade.clone(), buyer_profile, seller_profile),
             offer,
             expired,
         })
@@ -325,10 +310,11 @@ fn fund_escrow(
     // Only the seller wallet is authorized to fund this trade.
     assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
 
-    // If maker_contact is not already defined it needs to be defined here
-    if trade.maker_contact.is_none() {
+    // If seller_contact is not already defined it needs to be defined here
+    if trade.seller_contact.is_none() {
         if maker_contact.is_some() {
-            trade.maker_contact = maker_contact
+            // Set maker_contact as seller_contact
+            trade.seller_contact = maker_contact
         } else {
             return Err(MissingParameter {
                 missing: "maker_contact".to_string(),
@@ -390,8 +376,8 @@ fn accept_request(
     // Change trade state
     trade.set_state(TradeState::RequestAccepted, &env, &info);
 
-    // Set maker contact
-    trade.maker_contact = Some(maker_contact);
+    // Set maker contact as buyer
+    trade.buyer_contact = Some(maker_contact);
 
     TradeModel::store(deps.storage, &trade).unwrap();
 
