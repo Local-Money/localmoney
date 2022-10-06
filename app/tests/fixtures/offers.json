@@ -6,7 +6,7 @@
     "max_amount": "2500000",
     "rate": "1",
     "owner_contact": "maker001",
-    "owner_encrypt_key": "TBD",
+    "owner_encrypt_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2vDhS/v72mP4xiONjaH+m7t6IZ5Eaw0hwkacKz42kSMOx7TDl1r+xAccIrRnjHMA87GZr1pRboZAvIgHO9/adjPMlXxwU8dVfnaBfpXUQoGfukvacWDuu5khcdbuCzH7NnI5F2gDy6i3fwQ1ls5kc94vHlomaZ0+HGFqPT48SBgWMSsBFxrCCAL3uvL7VIl5OQUiFQb6mPE3grPO4M/Q6gKeZYoT3xzUb00XhQZF+i6EvYThVPAqYM4mwyPApaSLIo2SMeaHgS0kBRiyBM2vTv5QYf6C5Pb5hsOuprffNBPyvCIwPuDuIe3rAH8yI67FKTxn5qK3UWEk8B7StI01DwIDAQAB",
     "denom": {
       "native": ""
     }
