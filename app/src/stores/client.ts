@@ -61,8 +61,10 @@ export const useClientStore = defineStore({
         alert((e as ChainError).message)
       }
     },
-    async syncSecrets(address: string) {
+    async fetchProfile() {
       this.profile = await this.client.fetchProfile()
+    },
+    async syncSecrets(address: string) {
       const secrets = this.secrets.get(address) ?? (await generateKeys())
       if (!this.secrets.has(address)) {
         this.secrets.set(address, secrets)
@@ -95,6 +97,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Creating Offer...')
       try {
         await this.client.createOffer(postOffer)
+        await this.fetchProfile()
         await this.fetchMyOffers()
       } catch (e) {
         // TODO handle error
@@ -135,6 +138,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening trade...')
       try {
         const trade_id = await this.client.openTrade(trade)
+        await this.fetchProfile()
         const route = trade_id === '' ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
       } catch (e) {
