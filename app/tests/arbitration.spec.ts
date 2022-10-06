@@ -7,6 +7,7 @@ import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import { encryptDataMocked } from './helper'
 import takerSecrets from './fixtures/taker_secrets.json'
+import makerSecrets from './fixtures/maker_secrets.json'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
@@ -34,11 +35,13 @@ describe('arbitration tests', () => {
   // Call dispute_escrow on a trade in fiat_deposited state and expects it to be in escrow_disputed state
   it('should have available offers', async () => {
     // Create and fetch offer for trade creation
-    offers[0].denom = { native: process.env.OFFER_DENOM! }
+    const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+    const owner_encrypt_key = makerSecrets.publicKey
+    const denom = { native: process.env.OFFER_DENOM! }
+    const createdOffer = { ...offers[0], owner_contact, owner_encrypt_key, denom } as PostOffer
     if (process.env.CREATE_OFFERS) {
-      await makerClient.createOffer(offers[0] as PostOffer)
+      await makerClient.createOffer(createdOffer)
     }
-    const createdOffer = offers[0] as PostOffer
     const offersResult = await makerClient.fetchOffers({
       denom: createdOffer.denom,
       fiatCurrency: createdOffer.fiat_currency,
@@ -54,7 +57,6 @@ describe('arbitration tests', () => {
       arbitrator: adminClient.getWalletAddress(),
       fiat: offer.fiat_currency,
     })
-
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
     const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)

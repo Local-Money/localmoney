@@ -9,7 +9,7 @@ import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
-import type { GetOffer, PostOffer } from '~/types/components.interface'
+import type { PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
 dotenv.config()
@@ -18,8 +18,8 @@ Object.assign(global, { TextEncoder, TextDecoder })
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
 const takerContact = 'taker001'
+const makerContact = 'maker001'
 let tradeId = '0'
-let offerTradeCount = 0
 
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
@@ -31,16 +31,14 @@ beforeAll(async () => {
 offers[0].denom = { native: process.env.OFFER_DENOM! }
 
 describe('trade lifecycle happy path', () => {
+  let offerTradeCount = 0
   // Create Offer
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
-    console.log('my offers: ', myOffers)
     if (myOffers.length === 0) {
-      const offer = { ...(offers[0] as PostOffer) }
-      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, offer.owner_contact)
-      const owner_contact_pk = makerSecrets.publicKey
-      offer.owner_contact = owner_contact
-      offer.owner_encrypt_key = owner_contact_pk
+      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+      const owner_encrypt_key = makerSecrets.publicKey
+      const offer = { ...offers[0], owner_contact, owner_encrypt_key } as PostOffer
       await makerClient.createOffer(offer)
     }
     myOffers = await makerClient.fetchMyOffers()
@@ -56,29 +54,28 @@ describe('trade lifecycle happy path', () => {
     })
 
     expect(offersResult.length).toBeGreaterThan(0)
-    const offer = offersResult[0] as GetOffer
+    const offer = offersResult[0]
+    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
     expect(offer).toHaveProperty('id')
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
-    const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
+    const profile_taker_encrypt_key = takerSecrets.publicKey
     tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      profile_taker_encrypt_key: taker_encrypt_pk,
+      profile_taker_encrypt_key,
       taker_contact,
     })
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
-    const offer = { ...(offers[0] as PostOffer) }
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const decryptedTakerContact = await decryptDataMocked(makerSecrets.privateKey, trade.seller_contact)
+    const decryptedTakerContact = await decryptDataMocked(makerSecrets.privateKey, trade.seller_contact!)
     expect(decryptedTakerContact).toBe(takerContact)
     expect(trade.id).toBe(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
-    const maker_contact = await encryptDataMocked(trade.seller_encrypt_key, offer.owner_contact)
+    const maker_contact = await encryptDataMocked(trade.seller_encrypt_key, makerContact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
@@ -113,11 +110,15 @@ describe('trade lifecycle happy path', () => {
 })
 
 describe('trade invalid state changes', () => {
+  let offerTradeCount = 0
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
-      myOffers[0].denom = { native: process.env.OFFER_DENOM! }
-      await makerClient.createOffer(offers[0] as PostOffer)
+      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+      const owner_encrypt_key = makerSecrets.publicKey
+      const denom = { native: process.env.OFFER_DENOM! }
+      const newOffer = { ...offers[0], owner_contact, owner_encrypt_key, denom } as PostOffer
+      await makerClient.createOffer(newOffer)
     }
     myOffers = await makerClient.fetchMyOffers()
     offerTradeCount = myOffers[0].trades_count

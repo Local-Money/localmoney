@@ -71,7 +71,7 @@ pub struct OfferMsg {
 pub struct OfferUpdateMsg {
     pub id: String,
     pub owner_contact: Option<String>,
-    pub owner_contact_pk: Option<String>,
+    pub owner_encrypt_key: Option<String>,
     pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
@@ -153,7 +153,7 @@ pub struct OfferResponse {
     pub state: OfferState,
     pub timestamp: u64,
     pub last_traded_at: u64,
-    pub owner_encrypt_pk: String,
+    pub owner_encrypt_key: String,
     pub trades_count: u64,
 }
 
@@ -171,7 +171,7 @@ impl OfferResponse {
             state: offer.state,
             timestamp: offer.timestamp,
             last_traded_at: offer.last_traded_at,
-            owner_encrypt_pk: profile.encrypt_pk.unwrap(),
+            owner_encrypt_key: profile.encrypt_pk.unwrap(),
             trades_count: profile.trade_count,
         }
     }
