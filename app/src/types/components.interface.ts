@@ -57,7 +57,7 @@ export interface PatchOffer {
   min_amount: string
   max_amount: string
   owner_contact?: string
-  owner_encrypt_pk?: string
+  owner_encrypt_key?: string
 }
 
 export interface PostOffer {

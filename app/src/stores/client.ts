@@ -65,6 +65,7 @@ export const useClientStore = defineStore({
       this.profile = await this.client.fetchProfile()
     },
     async syncSecrets(address: string) {
+      await this.fetchProfile()
       const secrets = this.secrets.get(address) ?? (await generateKeys())
       if (!this.secrets.has(address)) {
         this.secrets.set(address, secrets)
