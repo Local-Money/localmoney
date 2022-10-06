@@ -49,13 +49,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps, id)?),
-        QueryMsg::Offers {
-            owner,
-            min,
-            max,
-            limit,
-            order,
-        } => to_binary(&OfferModel::query(deps, owner, min, max, limit, order)?),
+        QueryMsg::Offers { start_at } => to_binary(&OfferModel::query(deps, start_at)?),
         QueryMsg::OffersBy {
             offer_type,
             fiat_currency,
@@ -63,7 +57,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             min,
             max,
             limit,
-            order,
         } => to_binary(&OfferModel::query_by(
             deps,
             offer_type,
@@ -71,9 +64,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             denom,
             min,
             max,
-            order,
             limit,
         )?),
+        QueryMsg::OffersByOwner { owner, limit } => {
+            to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
+        }
     }
 }
 

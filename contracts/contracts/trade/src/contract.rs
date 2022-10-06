@@ -25,7 +25,7 @@ use localterra_protocol::guards::{
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
 use localterra_protocol::offer::{load_offer, Arbitrator, Offer, OfferType, TradeInfo};
-use localterra_protocol::profile::ExecuteMsg::IncreaseTradeCount;
+use localterra_protocol::profile::ExecuteMsg as ProfileExecuteMsg;
 use localterra_protocol::trade::{
     arbitrators, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
     TradeModel, TradeState, TradeStateItem, TraderRole,
@@ -465,7 +465,7 @@ fn release_escrow(
     // Update profile trade_count
     send_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.profile_addr.to_string(),
-        msg: to_binary(&IncreaseTradeCount {
+        msg: to_binary(&ProfileExecuteMsg::IncreaseTradeCount {
             profile_address: offer.owner.clone(),
             final_trade_state: trade.get_state(),
         })

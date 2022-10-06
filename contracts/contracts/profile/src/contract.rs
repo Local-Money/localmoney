@@ -29,7 +29,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -37,7 +37,7 @@ pub fn execute(
         ExecuteMsg::IncreaseTradeCount {
             profile_address,
             final_trade_state,
-        } => increase_trade_count(deps, info, profile_address, final_trade_state),
+        } => increase_trade_count(deps, env, info, profile_address, final_trade_state),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
@@ -45,6 +45,7 @@ pub fn execute(
 //
 pub fn increase_trade_count(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     profile_address: Addr,
     final_trade_state: TradeState,
@@ -60,6 +61,7 @@ pub fn increase_trade_count(
 
     let mut profile = profile.unwrap_or(Profile::new(profile_address.clone()));
     profile.trades_count += 1;
+    profile.last_trade = env.block.time.seconds();
 
     PROFILE
         .save(deps.storage, profile_address.to_string(), &profile)
@@ -77,10 +79,12 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Profile { address } => to_binary(&query_profile(deps, address)?),
-        QueryMsg::Profiles { limit, skip } => to_binary(&query_profiles(deps, limit, skip)?),
+        QueryMsg::Profiles { limit, start_at } => {
+            to_binary(&query_profiles(deps, env, limit, start_at)?)
+        }
     }
 }
 
@@ -94,8 +98,13 @@ fn query_profile(deps: Deps, profile_address: Addr) -> StdResult<Profile> {
     Ok(profile)
 }
 
-fn query_profiles(deps: Deps, limit: u32, skip: Option<u32>) -> StdResult<Vec<Profile>> {
-    ProfileModel::query(deps, limit, skip)
+fn query_profiles(
+    deps: Deps,
+    env: Env,
+    limit: u32,
+    start_at: Option<u64>,
+) -> StdResult<Vec<Profile>> {
+    ProfileModel::query(deps, env, limit, start_at)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

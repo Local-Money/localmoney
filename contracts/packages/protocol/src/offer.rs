@@ -1,8 +1,12 @@
 use super::constants::OFFERS_KEY;
+use crate::constants::OFFERS_QUERY_OFFERS_BY_PROFILE;
+use crate::constants::OFFERS_QUERY_PROFILES_LIMIT;
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
 use crate::profile::load_profile;
+use crate::profile::Profile;
+use crate::profile::QueryMsg as ProfileQueryMsg;
 use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{
     to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, Uint128,
@@ -88,24 +92,13 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryOrder {
-    Asc,
-    Desc,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     State {},
     Offer {
         id: String,
     },
     Offers {
-        owner: Option<Addr>,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
-        order: QueryOrder,
+        start_at: Option<u64>,
     },
     OffersBy {
         offer_type: OfferType,
@@ -113,7 +106,10 @@ pub enum QueryMsg {
         denom: Denom,
         min: Option<String>,
         max: Option<String>,
-        order: QueryOrder,
+        limit: u32,
+    },
+    OffersByOwner {
+        owner: Addr,
         limit: u32,
     },
 }
@@ -195,59 +191,45 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query(
-        deps: Deps,
-        owner: Option<Addr>,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
-        order: QueryOrder,
-    ) -> StdResult<Vec<Offer>> {
+    pub fn query(deps: Deps, start_at: Option<u64>) -> StdResult<Vec<Offer>> {
         let hub_config = get_hub_config(deps);
-        let storage = deps.storage;
 
-        let std_order = match order {
-            QueryOrder::Asc => Order::Ascending,
-            QueryOrder::Desc => Order::Descending,
-        };
+        let profiles: Vec<Profile> = deps
+            .querier
+            .query_wasm_smart(
+                hub_config.profile_addr.to_string(),
+                &ProfileQueryMsg::Profiles {
+                    limit: OFFERS_QUERY_PROFILES_LIMIT,
+                    start_at,
+                },
+            )
+            .unwrap_or(vec![]);
 
-        let range_min = match min {
-            Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
-            None => None,
-        };
+        let mut result: Vec<Offer> = vec![];
+        let offers_by_profile_limit = OFFERS_QUERY_OFFERS_BY_PROFILE;
+        profiles.iter().for_each(|profile| {
+            let mut offers_by_owner: Vec<Offer> =
+                OfferModel::query_by_owner(deps, profile.address.clone(), offers_by_profile_limit)
+                    .unwrap_or(vec![]);
+            offers_by_owner
+                .iter_mut()
+                .for_each(|offer| offer.trades_count = profile.trades_count);
+            result.append(&mut offers_by_owner);
+        });
+        Ok(result)
+    }
 
-        let range_max = match max {
-            Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
-            None => None,
-        };
-
-        // Handle optional owner address query parameter
-        let range = match owner {
-            None => offers().range(storage, range_min, range_max, std_order),
-            Some(unchecked_addr) => {
-                let owner_addr = deps.api.addr_validate(unchecked_addr.as_str()).unwrap();
-
-                offers()
-                    .idx
-                    .owner
-                    .prefix(owner_addr.into_string())
-                    .range(storage, range_min, range_max, std_order)
-            }
-        };
+    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<Offer>> {
+        let range = offers().idx.owner.prefix(owner.into_string()).range(
+            deps.storage,
+            None,
+            None,
+            Order::Descending,
+        );
 
         let result = range
             .take(limit as usize)
-            .flat_map(|item| {
-                item.and_then(|(_, mut offer)| {
-                    let profile = load_profile(
-                        &deps.querier,
-                        offer.clone().owner,
-                        hub_config.profile_addr.to_string(),
-                    );
-                    offer.trades_count = profile.trades_count;
-                    Ok(offer)
-                })
-            })
+            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
             .collect();
 
         Ok(result)
@@ -260,16 +242,11 @@ impl OfferModel<'_> {
         denom: Denom,
         min: Option<String>,
         max: Option<String>,
-        order: QueryOrder,
         limit: u32,
     ) -> StdResult<Vec<Offer>> {
         let hub_config = get_hub_config(deps);
         let storage = deps.storage;
-        let std_order = match order {
-            QueryOrder::Asc => Order::Ascending,
-            QueryOrder::Desc => Order::Descending,
-        };
-
+        let std_order = Order::Descending;
         let range_min = match min {
             Some(thing) => Some(Bound::exclusive(thing)),
             None => None,

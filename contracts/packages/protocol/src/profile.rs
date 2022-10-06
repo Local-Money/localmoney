@@ -1,8 +1,8 @@
-use crate::{trade::TradeState};
-use cosmwasm_std::{
-    to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, WasmQuery,
-};
-use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
+use std::ops::Sub;
+
+use crate::{constants::PROFILE_QUERY_LAST_TRADE_THRESHOLD, trade::TradeState};
+use cosmwasm_std::{Addr, Deps, Env, Order, QuerierWrapper, StdResult, Storage};
+use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex, PrefixBound};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -24,7 +24,7 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Profile { address: Addr },
-    Profiles { limit: u32, skip: Option<u32> },
+    Profiles { limit: u32, start_at: Option<u64> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -34,18 +34,17 @@ pub struct MigrateMsg {}
 // Query Util
 pub fn load_profile(
     querier: &QuerierWrapper,
-    profile_address: Addr,
+    profile_addr: Addr,
     profile_contract: String,
 ) -> Profile {
     querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: profile_contract,
-            msg: to_binary(&QueryMsg::Profile {
-                address: profile_address.clone(),
-            })
-            .unwrap(),
-        }))
-        .unwrap_or(Profile::new(profile_address))
+        .query_wasm_smart(
+            profile_contract,
+            &QueryMsg::Profile {
+                address: profile_addr.clone(),
+            },
+        )
+        .unwrap_or(Profile::new(profile_addr))
 }
 
 // Data
@@ -53,6 +52,7 @@ pub fn load_profile(
 pub struct Profile {
     pub address: Addr,
     pub trades_count: u64,
+    pub last_trade: u64,
 }
 
 impl Profile {
@@ -60,6 +60,7 @@ impl Profile {
         Profile {
             address,
             trades_count: 0,
+            last_trade: 0,
         }
     }
 }
@@ -98,21 +99,29 @@ impl ProfileModel<'_> {
         }
     }
 
-    pub fn query(deps: Deps, limit: u32, skip: Option<u32>) -> StdResult<Vec<Profile>> {
-        let skip: usize = match skip {
-            Some(s) => s as usize,
-            None => 0,
+    pub fn query(
+        deps: Deps,
+        env: Env,
+        limit: u32,
+        start_at: Option<u64>,
+    ) -> StdResult<Vec<Profile>> {
+        let last_trade_threshold = match start_at {
+            Some(time) => time,
+            None => env
+                .block
+                .time
+                .seconds()
+                .sub(PROFILE_QUERY_LAST_TRADE_THRESHOLD),
         };
-        let range = profiles()
+
+        let min_range = Some(PrefixBound::exclusive(last_trade_threshold));
+        let result = profiles()
             .idx
-            .trades_count
-            .range(deps.storage, None, None, Order::Descending)
-            .skip(skip);
-        let result = range
+            .last_trade
+            .prefix_range(deps.storage, min_range, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, profile)| Ok(profile)))
             .collect();
-
         Ok(result)
     }
 }
@@ -120,11 +129,12 @@ impl ProfileModel<'_> {
 pub struct ProfileIndexes<'a> {
     pub address: MultiIndex<'a, String, Profile, String>,
     pub trades_count: MultiIndex<'a, u64, Profile, String>,
+    pub last_trade: MultiIndex<'a, u64, Profile, String>,
 }
 
 impl<'a> IndexList<Profile> for ProfileIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Profile>> + '_> {
-        let v: Vec<&dyn Index<Profile>> = vec![&self.address, &self.trades_count];
+        let v: Vec<&dyn Index<Profile>> = vec![&self.address, &self.trades_count, &self.last_trade];
         Box::new(v.into_iter())
     }
 }
@@ -140,6 +150,11 @@ pub fn profiles<'a>() -> IndexedMap<'a, String, Profile, ProfileIndexes<'a>> {
             |p: &Profile| p.trades_count,
             "profiles",
             "profiles__trades_count",
+        ),
+        last_trade: MultiIndex::new(
+            |p: &Profile| p.last_trade,
+            "profiles",
+            "profiles__last_trade",
         ),
     };
     IndexedMap::new("profiles", indexes)
