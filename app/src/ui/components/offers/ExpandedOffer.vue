@@ -266,7 +266,7 @@ onUnmounted(() => {
         </div>
 
         <div class="telegram">
-          <p class="label">Telegram</p>
+          <p class="label">Please insert your Telegram (?)</p>
           <input v-model="telegram" type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
@@ -275,13 +275,14 @@ onUnmounted(() => {
         <div class="price">
           <p class="label">Price</p>
           <div class="wrap">
-            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
             <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
             <p class="value">1 {{ microDenomToDenom(offer.denom.native) }} = {{ offerPrice }}</p>
+            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
           </div>
         </div>
 
         <div class="summary">
+          <p class="label">Transaction summary</p>
           <div class="wrap">
             <div class="item">
               <p class="info">Trading Fee</p>
@@ -293,12 +294,11 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
-        <div class="wrap-btns">
-          <button class="secondary" @click="emit('cancel')">cancel</button>
-          <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
-        </div>
       </div>
+    </div>
+    <div class="wrap-btns">
+      <button class="secondary" @click="emit('cancel')">cancel</button>
+      <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
     </div>
   </div>
 </template>
@@ -339,8 +339,9 @@ onUnmounted(() => {
 
   .offer-detail {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    gap: 80px;
+    gap: 32px;
 
     @media only screen and (max-width: $mobile) {
       flex-direction: column;
@@ -348,7 +349,9 @@ onUnmounted(() => {
     }
 
     .wrap-input {
-      min-width: 350px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
 
       @media only screen and (max-width: $mobile) {
         width: 100%;
@@ -356,6 +359,7 @@ onUnmounted(() => {
       }
 
       .input {
+        flex: 1;
         margin-bottom: 8px;
 
         input {
@@ -366,6 +370,7 @@ onUnmounted(() => {
       }
 
       .telegram {
+        flex: 1.7;
         margin-bottom: 8px;
 
         input {
@@ -384,6 +389,7 @@ onUnmounted(() => {
       .wrap-limit {
         display: flex;
         justify-content: flex-end;
+        margin-right: 16px;
 
         .limit-btn {
           display: flex;
@@ -404,6 +410,9 @@ onUnmounted(() => {
     }
 
     .receipt {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
       width: 100%;
 
       @media only screen and (max-width: $mobile) {
@@ -411,9 +420,8 @@ onUnmounted(() => {
         padding-top: 24px;
         margin-top: 24px;
       }
-
       .price {
-        margin-bottom: 24px;
+        flex: 1;
 
         .label {
           font-size: 14px;
@@ -424,10 +432,11 @@ onUnmounted(() => {
           width: 100%;
           display: flex;
           justify-content: space-between;
+          flex-wrap: wrap;
           background-color: $gray150;
-          border-radius: 8px;
-          padding: 10px 24px;
+          padding: 16px 24px;
           margin-top: 8px;
+          border-radius: 8px;
           align-items: center;
           gap: 16px;
 
@@ -438,6 +447,8 @@ onUnmounted(() => {
           }
 
           .ticker {
+            width: 100%;
+            text-align: center;
             font-size: 12px;
             color: $primary;
           }
@@ -455,6 +466,7 @@ onUnmounted(() => {
       }
 
       .summary {
+        flex: 2;
         margin-bottom: 24px;
 
         .label {
@@ -493,13 +505,12 @@ onUnmounted(() => {
           }
         }
       }
-
-      .wrap-btns {
-        display: flex;
-        justify-content: flex-end;
-        gap: 24px;
-      }
     }
+  }
+  .wrap-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
   }
 }
 </style>
