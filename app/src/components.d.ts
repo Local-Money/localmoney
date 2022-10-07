@@ -18,6 +18,8 @@ declare module '@vue/runtime-core' {
     Home: typeof import('./ui/pages/Home.vue')['default']
     HomeHero: typeof import('./ui/components/HomeHero.vue')['default']
     IconDone: typeof import('./ui/components/commons/IconDone.vue')['default']
+    'IconDone copy': typeof import('./ui/components/commons/IconDone copy.vue')['default']
+    IconTooltip: typeof import('./ui/components/commons/IconTooltip.vue')['default']
     ListContentResult: typeof import('./ui/components/commons/ListContentResult.vue')['default']
     ListDisputes: typeof import('./ui/components/arbitration/ListDisputes.vue')['default']
     ListMyOffers: typeof import('./ui/components/myOffers/ListMyOffers.vue')['default']
