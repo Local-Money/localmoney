@@ -181,12 +181,11 @@ impl OfferModel<'_> {
         self.offer.state = msg.state;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
-        // self.save()
-        //     ^^^^ move occurs because `*self` has type `OfferModel<'_>`, which does not implement the `Copy` trait
     }
 
     pub fn update_last_traded(&mut self, last_traded_at: u64) -> &Offer {
         self.offer.last_traded_at = last_traded_at;
+        self.offer.trades_count += 1;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
     }
@@ -209,7 +208,7 @@ impl OfferModel<'_> {
         let offers_by_profile_limit = OFFERS_QUERY_OFFERS_BY_PROFILE;
         profiles.iter().for_each(|profile| {
             let mut offers_by_owner: Vec<Offer> =
-                OfferModel::query_by_owner(deps, profile.address.clone(), offers_by_profile_limit)
+                OfferModel::query_by_owner(deps, profile.addr.clone(), offers_by_profile_limit)
                     .unwrap_or(vec![]);
             offers_by_owner
                 .iter_mut()

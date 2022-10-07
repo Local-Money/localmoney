@@ -5,6 +5,7 @@ use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Res
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::assert_ownership;
+use localterra_protocol::hub::HubConfig;
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::profile::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, ProfileModel, QueryMsg,
@@ -34,6 +35,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::Create { addr } => create_profile(deps, env, info, addr),
         ExecuteMsg::IncreaseTradeCount {
             profile_address,
             final_trade_state,
@@ -42,7 +44,25 @@ pub fn execute(
     }
 }
 
-//
+pub fn create_profile(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    addr: Addr,
+) -> Result<Response, ContractError> {
+    let hub_config: HubConfig = get_hub_config(deps.as_ref());
+    // Only the offer contract should be able to call create_profile
+    assert_ownership(info.sender, hub_config.offer_addr).unwrap();
+    ProfileModel::create(
+        deps.storage,
+        Profile::new(addr.clone(), env.block.time.seconds()),
+    );
+
+    let res =
+        Response::new().add_attributes(vec![("action", "create_profile"), ("addr", addr.as_str())]);
+    Ok(res)
+}
+
 pub fn increase_trade_count(
     deps: DepsMut,
     env: Env,
@@ -59,7 +79,10 @@ pub fn increase_trade_count(
         .may_load(deps.storage, profile_address.to_string())
         .unwrap();
 
-    let mut profile = profile.unwrap_or(Profile::new(profile_address.clone()));
+    let mut profile = profile.unwrap_or(Profile::new(
+        profile_address.clone(),
+        env.block.time.seconds(),
+    ));
     profile.trades_count += 1;
     profile.last_trade = env.block.time.seconds();
 
@@ -93,7 +116,7 @@ fn query_profile(deps: Deps, profile_address: Addr) -> StdResult<Profile> {
         .may_load(deps.storage, profile_address.to_string())
         .unwrap();
 
-    let profile = profile.unwrap_or(Profile::new(profile_address));
+    let profile = profile.unwrap_or(Profile::new(profile_address, 0));
 
     Ok(profile)
 }

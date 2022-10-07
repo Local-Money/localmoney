@@ -13,6 +13,9 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Create {
+        addr: Addr,
+    },
     IncreaseTradeCount {
         profile_address: Addr,
         final_trade_state: TradeState,
@@ -44,21 +47,23 @@ pub fn load_profile(
                 address: profile_addr.clone(),
             },
         )
-        .unwrap_or(Profile::new(profile_addr))
+        .unwrap_or(Profile::new(profile_addr, 0))
 }
 
 // Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Profile {
-    pub address: Addr,
+    pub addr: Addr,
+    pub created_at: u64,
     pub trades_count: u64,
     pub last_trade: u64,
 }
 
 impl Profile {
-    pub const fn new(address: Addr) -> Self {
+    pub const fn new(addr: Addr, created_at: u64) -> Self {
         Profile {
-            address,
+            addr,
+            created_at,
             trades_count: 0,
             last_trade: 0,
         }
@@ -72,7 +77,7 @@ pub struct ProfileModel<'a> {
 
 impl ProfileModel<'_> {
     pub fn store(storage: &mut dyn Storage, profile: &Profile) -> StdResult<()> {
-        profiles().save(storage, profile.address.to_string(), &profile)
+        profiles().save(storage, profile.addr.to_string(), &profile)
     }
 
     pub fn from_store(storage: &mut dyn Storage, address: &String) -> Profile {
@@ -105,16 +110,10 @@ impl ProfileModel<'_> {
         limit: u32,
         start_at: Option<u64>,
     ) -> StdResult<Vec<Profile>> {
-        let last_trade_threshold = match start_at {
-            Some(time) => time,
-            None => env
-                .block
-                .time
-                .seconds()
-                .sub(PROFILE_QUERY_LAST_TRADE_THRESHOLD),
+        let min_range = match start_at {
+            Some(time) => Some(PrefixBound::exclusive(time)),
+            None => None,
         };
-
-        let min_range = Some(PrefixBound::exclusive(last_trade_threshold));
         let result = profiles()
             .idx
             .last_trade
@@ -142,7 +141,7 @@ impl<'a> IndexList<Profile> for ProfileIndexes<'a> {
 pub fn profiles<'a>() -> IndexedMap<'a, String, Profile, ProfileIndexes<'a>> {
     let indexes = ProfileIndexes {
         address: MultiIndex::new(
-            |p: &Profile| p.address.to_string(),
+            |p: &Profile| p.addr.to_string(),
             "profiles",
             "profiles__address",
         ),

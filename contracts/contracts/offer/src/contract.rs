@@ -1,5 +1,6 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, SubMsg, WasmMsg,
 };
 
 use localterra_protocol::errors::ContractError;
@@ -11,6 +12,7 @@ use localterra_protocol::offer::{
     OfferUpdateMsg, OffersCount, QueryMsg,
 };
 use localterra_protocol::profile::load_profile;
+use localterra_protocol::profile::ExecuteMsg as ProfileExecuteMsg;
 
 use crate::state::{offers_count_read, offers_count_storage};
 
@@ -108,7 +110,7 @@ pub fn create_offer(
         .save(&offers_count)
         .unwrap();
 
-    let res = Response::new()
+    let mut res = Response::new()
         .add_attribute("action", "create_offer")
         .add_attribute("type", offer.offer_type.to_string())
         .add_attribute("id", offer.id.to_string())
@@ -116,6 +118,27 @@ pub fn create_offer(
         .add_attribute("min_amount", offer.min_amount.to_string())
         .add_attribute("max_amount", offer.max_amount.to_string())
         .add_attribute("owner", offer.owner);
+
+    // Check if profile exists or create one.
+    let hub_cfg = get_hub_config(deps.as_ref());
+    let profile = load_profile(
+        &deps.querier,
+        info.sender.clone(),
+        hub_cfg.profile_addr.to_string(),
+    );
+    if profile.created_at.eq(&0u64) {
+        res = res.add_attribute("create_new_profile", "true");
+        res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: hub_cfg.profile_addr.to_string(),
+            msg: to_binary(&ProfileExecuteMsg::Create {
+                addr: info.sender.clone(),
+            })
+            .unwrap(),
+            funds: vec![],
+        })))
+    } else {
+        res = res.add_attribute("profile_created_at", profile.created_at.to_string())
+    }
 
     Ok(res)
 }

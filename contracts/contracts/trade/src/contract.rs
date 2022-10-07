@@ -23,7 +23,7 @@ use localterra_protocol::guards::{
     trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
-use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
+use localterra_protocol::offer::ExecuteMsg as OfferExecuteMsg;
 use localterra_protocol::offer::{load_offer, Arbitrator, Offer, OfferType, TradeInfo};
 use localterra_protocol::profile::ExecuteMsg as ProfileExecuteMsg;
 use localterra_protocol::trade::{
@@ -429,11 +429,11 @@ fn release_escrow(
     )
     .unwrap();
 
-    //Update trade State to TradeState::EscrowReleased
+    // Update trade State to TradeState::EscrowReleased
     trade.set_state(TradeState::EscrowReleased, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
-    //Calculate fees and final release amount
+    // Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let mut release_amount = trade.amount.clone();
     let one = Uint128::new(1u128);
@@ -443,7 +443,7 @@ fn release_escrow(
     let chain_amount = fee.mul(Decimal::from_ratio(hub_cfg.chain_fee_pct, 100u128));
     let warchest_amount = fee.mul(Decimal::from_ratio(hub_cfg.warchest_fee_pct, 100u128));
 
-    //Create Trade Registration message to be sent to the Trading Incentives contract.
+    // Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
@@ -457,7 +457,7 @@ fn release_escrow(
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.offer_addr.to_string(),
-        msg: to_binary(&UpdateLastTraded { offer_id: offer.id }).unwrap(),
+        msg: to_binary(&OfferExecuteMsg::UpdateLastTraded { offer_id: offer.id }).unwrap(),
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);

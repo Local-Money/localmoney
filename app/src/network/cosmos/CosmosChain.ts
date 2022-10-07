@@ -110,10 +110,9 @@ export class CosmosChain implements Chain {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
         return (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
-          offers: {
+          offers_by_owner: {
             owner: this.getWalletAddress(),
             limit: 10,
-            order: 'asc',
           },
         })) as GetOffer[]
       } catch (e) {
