@@ -166,4 +166,5 @@ export interface UserWallet {
 export interface Arbitrator {
   arbitrator: string
   fiat: FiatCurrency
+  encrypt_key: string
 }

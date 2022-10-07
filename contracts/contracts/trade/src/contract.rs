@@ -70,9 +70,11 @@ pub fn execute(
         ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
         ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
         ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
-        ExecuteMsg::NewArbitrator { arbitrator, fiat } => {
-            create_arbitrator(deps, info, arbitrator, fiat)
-        }
+        ExecuteMsg::NewArbitrator {
+            arbitrator,
+            fiat,
+            encrypt_key,
+        } => create_arbitrator(deps, info, arbitrator, fiat, encrypt_key),
         ExecuteMsg::DeleteArbitrator { arbitrator, fiat } => {
             delete_arbitrator(deps, info, arbitrator, fiat)
         }
@@ -145,6 +147,12 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         new_trade.profile_taker_encrypt_key,
     );
 
+    let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
+    let arbitrator = get_arbitrator_random(
+        deps.as_ref(),
+        random_seed as usize,
+        offer.fiat_currency.clone(),
+    );
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
@@ -155,7 +163,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             seller,
             seller_contact,
             buyer_contact,
-            None,
+            arbitrator.arbitrator,
             hub_cfg.offer_addr.clone(),
             offer_id,
             env.block.time.seconds(),
@@ -663,6 +671,7 @@ pub fn create_arbitrator(
     info: MessageInfo,
     arbitrator: Addr,
     fiat: FiatCurrency,
+    encrypt_key: String,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
     assert_ownership(info.sender, admin)?;
@@ -676,6 +685,7 @@ pub fn create_arbitrator(
             &Arbitrator {
                 arbitrator: arbitrator.clone(),
                 fiat: fiat.clone(),
+                encrypt_key: encrypt_key.clone(),
             },
         )
         .unwrap();
@@ -683,7 +693,8 @@ pub fn create_arbitrator(
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
         .add_attribute("arbitrator", arbitrator.to_string())
-        .add_attribute("asset", fiat.to_string());
+        .add_attribute("asset", fiat.to_string())
+        .add_attribute("encrypt_key", encrypt_key);
 
     Ok(res)
 }
@@ -735,16 +746,13 @@ fn dispute_escrow(
 
     // Update trade State to TradeState::Disputed and sets arbitrator
     trade.set_state(TradeState::EscrowDisputed, &env, &info);
-    let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
-    let arbitrator = get_arbitrator_random(deps.as_ref(), random_seed as usize, trade.fiat.clone());
-    trade.arbitrator = Some(arbitrator.arbitrator);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "dispute_escrow")
         .add_attribute("trade_id", trade.id.clone())
         .add_attribute("state", trade.get_state().to_string())
-        .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string());
+        .add_attribute("arbitrator", trade.arbitrator.to_string());
 
     Ok(res)
 }
@@ -759,21 +767,11 @@ fn settle_dispute(
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     // Check if caller is the arbitrator of the given trade
-    match &trade.arbitrator {
-        None => {
-            return Err(ContractError::Unauthorized {
-                owner: Addr::unchecked(""),
-                caller: info.sender,
-            })
-        }
-        Some(arbitrator) => {
-            if arbitrator.ne(&info.sender) {
-                return Err(ContractError::Unauthorized {
-                    owner: arbitrator.clone(),
-                    caller: info.sender,
-                });
-            }
-        }
+    if trade.arbitrator.ne(&info.sender) {
+        return Err(ContractError::Unauthorized {
+            owner: trade.arbitrator.clone(),
+            caller: info.sender,
+        });
     }
 
     // Check if TradeState is EscrowDisputed
@@ -827,10 +825,10 @@ fn settle_dispute(
     )];
 
     let winner_msg = create_send_msg(winner.clone(), winner_amount);
-    let arbitrator_msg = create_send_msg(trade.arbitrator.clone().unwrap(), fee);
+    let arbitrator_msg = create_send_msg(trade.arbitrator.clone(), fee);
 
     let res = Response::new()
-        .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string())
+        .add_attribute("arbitrator", trade.arbitrator.to_string())
         .add_attribute("winner", winner.to_string())
         .add_attribute("maker", maker.to_string())
         .add_attribute("taker", taker.to_string())

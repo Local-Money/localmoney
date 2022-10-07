@@ -8,7 +8,7 @@ import type { TestCosmosChain } from './network/TestCosmosChain'
 import { encryptDataMocked } from './helper'
 import takerSecrets from './fixtures/taker_secrets.json'
 import makerSecrets from './fixtures/maker_secrets.json'
-import type { GetOffer, PostOffer } from '~/types/components.interface'
+import type { FiatCurrency, GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
 dotenv.config()
@@ -32,6 +32,19 @@ beforeAll(async () => {
 let offer: GetOffer
 
 describe('arbitration tests', () => {
+  it('should have an arbitrator available', async () => {
+    const fiat = offers[0].fiat_currency as FiatCurrency
+    let arbitrators = await adminClient.fetchArbitrators()
+    if (arbitrators.find((arbitrator) => arbitrator.fiat === fiat) === undefined) {
+      await adminClient.newArbitrator({
+        arbitrator: adminClient.getWalletAddress(),
+        fiat,
+        encrypt_key: 'arbitrator_encrypt_public_key',
+      })
+      arbitrators = await adminClient.fetchArbitrators()
+    }
+    expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
+  })
   // Call dispute_escrow on a trade in fiat_deposited state and expects it to be in escrow_disputed state
   it('should have available offers', async () => {
     // Create and fetch offer for trade creation
@@ -52,11 +65,6 @@ describe('arbitration tests', () => {
   })
 
   it('should settle dispute for taker', async () => {
-    // Register arbitrator
-    await adminClient.newArbitrator({
-      arbitrator: adminClient.getWalletAddress(),
-      fiat: offer.fiat_currency,
-    })
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
     const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)

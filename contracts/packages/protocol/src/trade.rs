@@ -44,6 +44,7 @@ pub enum ExecuteMsg {
     NewArbitrator {
         arbitrator: Addr,
         fiat: FiatCurrency,
+        encrypt_key: String,
     },
     DeleteArbitrator {
         arbitrator: Addr,
@@ -135,7 +136,7 @@ pub struct Trade {
     pub buyer_contact: Option<String>,
     pub seller: Addr,
     pub seller_contact: Option<String>,
-    pub arbitrator: Option<Addr>,
+    pub arbitrator: Addr,
     pub offer_contract: Addr,
     pub offer_id: String,
     pub created_at: u64,
@@ -154,7 +155,7 @@ impl Trade {
         seller: Addr,
         seller_contact: Option<String>,
         buyer_contact: Option<String>,
-        arbitrator: Option<Addr>,
+        arbitrator: Addr,
         offer_contract: Addr,
         offer_id: String,
         created_at: u64,
@@ -221,7 +222,17 @@ pub struct TradeResponse {
 
 impl TradeResponse {
     pub fn map(trade: Trade, buyer_profile: Profile, seller_profile: Profile) -> TradeResponse {
+        let trade_states = vec![
+            TradeState::EscrowDisputed,
+            TradeState::SettledForMaker,
+            TradeState::SettledForTaker,
+        ];
         let state = trade.get_state();
+        let mut arbitrator: Option<Addr> = None;
+        if trade_states.contains(&state) {
+            arbitrator = Some(trade.arbitrator)
+        }
+
         TradeResponse {
             id: trade.id,
             addr: trade.addr,
@@ -231,7 +242,7 @@ impl TradeResponse {
             seller: trade.seller,
             seller_contact: trade.seller_contact,
             seller_encrypt_key: seller_profile.encrypt_pk,
-            arbitrator: trade.arbitrator,
+            arbitrator,
             offer_contract: trade.offer_contract,
             offer_id: trade.offer_id,
             created_at: trade.created_at,
@@ -343,13 +354,28 @@ impl TradeModel<'_> {
             None => None,
         };
 
+        let trade_states = vec![
+            TradeState::EscrowDisputed,
+            TradeState::SettledForMaker,
+            TradeState::SettledForTaker,
+        ];
+
         let result = trades()
             .idx
             .arbitrator
             .prefix(arbitrator)
             .range(storage, range_from, None, Order::Descending)
             .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
+            .filter_map(|item| {
+                item.and_then(|(_, trade)| {
+                    if trade_states.contains(&trade.get_state()) {
+                        Ok(Some(trade))
+                    } else {
+                        Ok(None)
+                    }
+                })
+                .unwrap()
+            })
             .collect();
 
         Ok(result)
@@ -375,12 +401,7 @@ pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
         buyer: MultiIndex::new(|t| t.buyer.to_string(), "trades", "trades__buyer"),
         seller: MultiIndex::new(|t| t.seller.to_string(), "trades", "trades__seller"),
         arbitrator: MultiIndex::new(
-            |t| {
-                t.arbitrator
-                    .clone()
-                    .unwrap_or(Addr::unchecked(""))
-                    .to_string()
-            },
+            |t| t.arbitrator.clone().to_string(),
             "trades",
             "trades__arbitrator",
         ),
