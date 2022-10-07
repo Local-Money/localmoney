@@ -183,7 +183,12 @@ watch(margin, () => {
 
       <div class="chat">
         <div class="wrap">
-          <label for="crypto">Your Telegram username <IconTooltip /></label>
+          <div class="wrap-label">
+            <label for="crypto">Your Telegram username</label>
+            <IconTooltip
+              content="Share your contact to be able to communicate with the other trader. This information will be encrypted and only visible inside the trade."
+            />
+          </div>
           <input v-model="ownerContact" type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
@@ -254,9 +259,12 @@ watch(margin, () => {
       flex-direction: column;
       width: 100%;
 
-      label {
+      .wrap-label {
         display: flex;
         gap: 8px;
+      }
+
+      label {
         font-size: 14px;
         font-weight: 400;
         color: $gray900;
