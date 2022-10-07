@@ -183,7 +183,7 @@ watch(margin, () => {
 
       <div class="chat">
         <div class="wrap">
-          <label for="crypto">Telegram username (?)</label>
+          <label for="crypto">Your Telegram username <IconTooltip /></label>
           <input v-model="ownerContact" type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
@@ -255,6 +255,8 @@ watch(margin, () => {
       width: 100%;
 
       label {
+        display: flex;
+        gap: 8px;
         font-size: 14px;
         font-weight: 400;
         color: $gray900;

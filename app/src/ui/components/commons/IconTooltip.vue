@@ -1,4 +1,6 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+defineProps(['content'])
+</script>
 
 <template>
   <div class="tooltip">
@@ -20,8 +22,7 @@
       <path d="M12 17H12.01" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
     <p class="tooltip-content">
-      Share you contact to be able to communicate with the other trader. This information will be encrypted and only
-      visible inside the trade.
+      {{ content }}
     </p>
   </div>
 </template>
@@ -34,10 +35,16 @@
   height: 20px;
   cursor: pointer;
 
+  &:hover {
+    svg {
+      stroke: $primary;
+    }
+  }
+
   svg {
     width: 20px;
     height: 20px;
-    stroke: $gray600;
+    stroke: $gray700;
   }
 
   .tooltip-content {
@@ -56,7 +63,7 @@
     padding: 8px;
     border-radius: 8px;
     opacity: 0;
-    transition: opacity 0.5s;
+    transition: all 0.15s ease-in-out;
 
     &:after {
       content: ' ';

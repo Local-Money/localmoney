@@ -267,8 +267,11 @@ onUnmounted(() => {
 
         <div class="telegram">
           <div class="wrap-label">
-            <p class="label">Please insert your Telegram</p>
-            <IconTooltip />
+            <p class="label">Your Telegram username</p>
+            <IconTooltip
+              content="Share your contact to be able to communicate with the other trader. This information will be encrypted and only
+      visible inside the trade."
+            />
           </div>
           <input v-model="telegram" type="text" placeholder="t.me/your-user-name" />
         </div>
@@ -351,6 +354,11 @@ onUnmounted(() => {
       gap: 0px;
     }
 
+    .label {
+      font-size: 14px;
+      color: $gray900;
+    }
+
     .wrap-input {
       display: flex;
       justify-content: space-between;
@@ -389,12 +397,6 @@ onUnmounted(() => {
           text-align: left;
         }
       }
-
-      .label {
-        font-size: 14px;
-        color: $gray600;
-      }
-
       .wrap-limit {
         display: flex;
         justify-content: flex-end;
@@ -431,12 +433,6 @@ onUnmounted(() => {
       }
       .price {
         flex: 2;
-
-        .label {
-          font-size: 14px;
-          color: $gray600;
-        }
-
         .wrap {
           width: 100%;
           display: flex;
@@ -476,11 +472,6 @@ onUnmounted(() => {
 
       .summary {
         flex: 3;
-
-        .label {
-          font-size: 14px;
-          color: $gray600;
-        }
 
         .wrap {
           width: 100%;
