@@ -397,7 +397,7 @@ onUnmounted(() => {
       }
 
       .input {
-        flex: 1;
+        flex: 2;
         margin-bottom: 8px;
 
         input {
@@ -409,7 +409,7 @@ onUnmounted(() => {
       }
 
       .telegram {
-        flex: 1.7;
+        flex: 3;
         margin-bottom: 8px;
 
         .wrap-label {
@@ -511,7 +511,7 @@ onUnmounted(() => {
         margin-top: 24px;
       }
       .price {
-        flex: 1;
+        flex: 2;
 
         .label {
           font-size: 14px;
@@ -545,7 +545,7 @@ onUnmounted(() => {
 
           .margin {
             font-size: 14px;
-            color: $gray600;
+            color: $gray700;
           }
 
           .value {
@@ -556,8 +556,7 @@ onUnmounted(() => {
       }
 
       .summary {
-        flex: 2;
-        margin-bottom: 24px;
+        flex: 3;
 
         .label {
           font-size: 14px;
@@ -601,6 +600,7 @@ onUnmounted(() => {
     display: flex;
     justify-content: flex-end;
     gap: 24px;
+    margin-top: 8px;
   }
 }
 </style>
