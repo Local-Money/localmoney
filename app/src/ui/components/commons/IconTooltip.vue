@@ -54,7 +54,7 @@ defineProps(['content'])
     width: 250px;
     bottom: 180%;
     left: 50%;
-    margin-left: -125px;
+    transform: translateX(-50%);
     background-color: $gray100;
     font-size: 11px;
     font-weight: $regular;
