@@ -7,6 +7,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     Arbitration: typeof import('./ui/pages/Arbitration.vue')['default']
     ArchivedOfferItem: typeof import('./ui/components/myOffers/ArchivedOfferItem.vue')['default']
+    ChatboxStates: typeof import('./ui/components/tradeDetail/ChatboxStates.vue')['default']
     CollapsedMyOffer: typeof import('./ui/components/myOffers/CollapsedMyOffer.vue')['default']
     CollapsedOffer: typeof import('./ui/components/offers/CollapsedOffer.vue')['default']
     CreateOffer: typeof import('./ui/components/offers/CreateOffer.vue')['default']
@@ -18,7 +19,6 @@ declare module '@vue/runtime-core' {
     Home: typeof import('./ui/pages/Home.vue')['default']
     HomeHero: typeof import('./ui/components/HomeHero.vue')['default']
     IconDone: typeof import('./ui/components/commons/IconDone.vue')['default']
-    'IconDone copy': typeof import('./ui/components/commons/IconDone copy.vue')['default']
     IconTooltip: typeof import('./ui/components/commons/IconTooltip.vue')['default']
     ListContentResult: typeof import('./ui/components/commons/ListContentResult.vue')['default']
     ListDisputes: typeof import('./ui/components/arbitration/ListDisputes.vue')['default']
