@@ -1,12 +1,13 @@
 use std::fmt::{self};
 
-use cosmwasm_std::{Addr, BlockInfo, Env, MessageInfo, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, BlockInfo, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::currencies::FiatCurrency;
+use crate::guards::assert_range_0_to_99;
 use crate::offer::Arbitrator;
 use crate::profile::Profile;
 
@@ -33,6 +34,8 @@ pub enum ExecuteMsg {
     },
     DisputeEscrow {
         trade_id: String,
+        buyer_contact_for_arbitrator: String,
+        seller_contact_for_arbitrator: String,
     },
     FiatDeposited {
         trade_id: String,
@@ -77,6 +80,10 @@ pub enum QueryMsg {
         fiat: FiatCurrency,
     },
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -137,6 +144,8 @@ pub struct Trade {
     pub seller: Addr,
     pub seller_contact: Option<String>,
     pub arbitrator: Addr,
+    pub buyer_contact_for_arbitrator: Option<String>,
+    pub seller_contact_for_arbitrator: Option<String>,
     pub offer_contract: Addr,
     pub offer_id: String,
     pub created_at: u64,
@@ -170,6 +179,8 @@ impl Trade {
             buyer,
             seller,
             seller_contact,
+            buyer_contact_for_arbitrator: None,
+            seller_contact_for_arbitrator: None,
             buyer_contact,
             arbitrator,
             offer_contract,
@@ -210,6 +221,9 @@ pub struct TradeResponse {
     pub seller_contact: Option<String>,
     pub seller_encrypt_key: Option<String>,
     pub arbitrator: Option<Addr>,
+    pub arbitrator_encrypt_key: String,
+    pub seller_contact_for_arbitrator: Option<String>,
+    pub buyer_contact_for_arbitrator: Option<String>,
     pub offer_contract: Addr,
     pub offer_id: String,
     pub created_at: u64,
@@ -221,16 +235,22 @@ pub struct TradeResponse {
 }
 
 impl TradeResponse {
-    pub fn map(trade: Trade, buyer_profile: Profile, seller_profile: Profile) -> TradeResponse {
+    pub fn map(
+        trade: Trade,
+        buyer_profile: Profile,
+        seller_profile: Profile,
+        arbitrator: Arbitrator,
+    ) -> TradeResponse {
         let trade_states = vec![
             TradeState::EscrowDisputed,
             TradeState::SettledForMaker,
             TradeState::SettledForTaker,
         ];
         let state = trade.get_state();
-        let mut arbitrator: Option<Addr> = None;
+        let mut arbitrator_address: Option<Addr> = None;
+        let arbitrator_encrypt_key = arbitrator.encrypt_key.clone();
         if trade_states.contains(&state) {
-            arbitrator = Some(trade.arbitrator)
+            arbitrator_address = Some(trade.arbitrator);
         }
 
         TradeResponse {
@@ -242,7 +262,10 @@ impl TradeResponse {
             seller: trade.seller,
             seller_contact: trade.seller_contact,
             seller_encrypt_key: seller_profile.encrypt_pk,
-            arbitrator,
+            arbitrator: arbitrator_address,
+            arbitrator_encrypt_key,
+            seller_contact_for_arbitrator: None,
+            buyer_contact_for_arbitrator: None,
             offer_contract: trade.offer_contract,
             offer_id: trade.offer_id,
             created_at: trade.created_at,
@@ -409,6 +432,103 @@ pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
     IndexedMap::new("trades", indexes)
 }
 
+// Arbitrator
+pub struct ArbitratorModel {}
+
+impl ArbitratorModel {
+    pub fn create_arbitrator(storage: &mut dyn Storage, arbitrator: Arbitrator) {
+        let index = arbitrator.arbitrator.clone().to_string() + &arbitrator.fiat.to_string();
+        arbitrators().save(storage, &index, &arbitrator).unwrap();
+    }
+
+    pub fn query_arbitrator(storage: &dyn Storage, arbitrator: Addr) -> StdResult<Vec<Arbitrator>> {
+        let result = arbitrators()
+            .idx
+            .arbitrator
+            .prefix(arbitrator)
+            .range(storage, None, None, Order::Descending)
+            .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn query_arbitrator_fiat(
+        storage: &dyn Storage,
+        arbitrator: Addr,
+        fiat: FiatCurrency,
+    ) -> StdResult<Arbitrator> {
+        let result = arbitrators()
+            .idx
+            .arbitrator
+            .prefix(arbitrator)
+            .range(storage, None, None, Order::Descending)
+            .find_map(|item| {
+                item.and_then(|(_, arb)| {
+                    if arb.fiat.eq(&fiat) {
+                        Ok(Some(arb))
+                    } else {
+                        Ok(None)
+                    }
+                })
+                .unwrap()
+            })
+            .unwrap();
+
+        Ok(result)
+    }
+
+    pub fn query_arbitrators(storage: &dyn Storage) -> StdResult<Vec<Arbitrator>> {
+        let result = arbitrators()
+            .range(storage, None, None, Order::Descending)
+            .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn query_arbitrators_fiat(
+        storage: &dyn Storage,
+        fiat: FiatCurrency,
+    ) -> StdResult<Vec<Arbitrator>> {
+        let result: Vec<Arbitrator> = arbitrators()
+            .idx
+            .fiat
+            .prefix(fiat.clone().to_string())
+            .range(storage, None, None, Order::Descending)
+            .take(10)
+            .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+            .collect();
+
+        Ok(result)
+    }
+
+    pub fn get_arbitrator_random(
+        deps: Deps,
+        random_value: usize,
+        fiat: FiatCurrency,
+    ) -> Arbitrator {
+        assert_range_0_to_99(random_value).unwrap();
+        let storage = deps.storage;
+        let result: Vec<Arbitrator> = arbitrators()
+            .idx
+            .fiat
+            .prefix(fiat.to_string())
+            .range(storage, None, None, Order::Descending)
+            .take(10)
+            .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
+            .collect();
+        let arbitrator_count = result.len();
+
+        // Random range: 0..99
+        // Mapped range: 0..result.len()-1
+        // Formula is:
+        // RandomValue * (MaxMappedRange + 1) / (MaxRandomRange + 1)
+        let random_index = random_value * arbitrator_count / (99 + 1);
+        result[random_index].clone()
+    }
+}
+
 pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexes<'a>> {
     let indexes = ArbitratorIndexes {
         arbitrator: MultiIndex::new(
@@ -437,7 +557,3 @@ impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
         Box::new(v.into_iter())
     }
 }
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct MigrateMsg {}

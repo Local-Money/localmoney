@@ -3,8 +3,7 @@ use std::str::FromStr;
 
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg,
+    Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
 use localterra_protocol::constants::{
@@ -18,9 +17,8 @@ use localterra_protocol::errors::ContractError::{
     MissingParameter, OfferNotFound, RefundErrorNotExpired, TradeExpired,
 };
 use localterra_protocol::guards::{
-    assert_ownership, assert_range_0_to_99, assert_sender_is_buyer_or_seller,
-    assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
-    trade_request_is_expired,
+    assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
+    assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
@@ -29,8 +27,8 @@ use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
 };
 use localterra_protocol::trade::{
-    arbitrators, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
-    TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
+    arbitrators, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap,
+    SwapMsg, Trade, TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -69,7 +67,18 @@ pub fn execute(
         ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
         ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
         ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
-        ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
+        ExecuteMsg::DisputeEscrow {
+            trade_id,
+            buyer_contact_for_arbitrator,
+            seller_contact_for_arbitrator,
+        } => dispute_escrow(
+            deps,
+            env,
+            info,
+            trade_id,
+            buyer_contact_for_arbitrator,
+            seller_contact_for_arbitrator,
+        ),
         ExecuteMsg::NewArbitrator {
             arbitrator,
             fiat,
@@ -148,7 +157,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     );
 
     let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
-    let arbitrator = get_arbitrator_random(
+    let arbitrator = ArbitratorModel::get_arbitrator_random(
         deps.as_ref(),
         random_seed as usize,
         offer.fiat_currency.clone(),
@@ -202,9 +211,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_trades(
             env, deps, user, state, index, last_value, limit,
         )?),
-        QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
-        QueryMsg::Arbitrators {} => to_binary(&query_arbitrators(deps)?),
-        QueryMsg::ArbitratorsFiat { fiat } => to_binary(&query_arbitrators_fiat(deps, fiat)?),
+        QueryMsg::Arbitrator { arbitrator } => to_binary(&ArbitratorModel::query_arbitrator(
+            deps.storage,
+            arbitrator,
+        )?),
+        QueryMsg::Arbitrators {} => to_binary(&ArbitratorModel::query_arbitrators(deps.storage)?),
+        QueryMsg::ArbitratorsFiat { fiat } => to_binary(&ArbitratorModel::query_arbitrators_fiat(
+            deps.storage,
+            fiat,
+        )?),
     }
 }
 
@@ -226,7 +241,18 @@ fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
         hub_config.profile_addr.to_string(),
         state.seller.clone(),
     );
-    Ok(TradeResponse::map(state, buyer_profile, seller_profile))
+    let arbitrator = ArbitratorModel::query_arbitrator_fiat(
+        deps.storage,
+        state.arbitrator.clone(),
+        state.fiat.clone(),
+    )
+    .unwrap();
+    Ok(TradeResponse::map(
+        state,
+        buyer_profile,
+        seller_profile,
+        arbitrator,
+    ))
 }
 
 pub fn query_trades(
@@ -276,8 +302,15 @@ pub fn query_trades(
         let expired = trade.get_state().eq(&TradeState::EscrowFunded)
             && current_time > trade.created_at + REQUEST_TIMEOUT;
 
+        let arbitrator = ArbitratorModel::query_arbitrator_fiat(
+            deps.storage,
+            trade.arbitrator.clone(),
+            trade.fiat.clone(),
+        )
+        .unwrap();
+
         trades_infos.push(TradeInfo {
-            trade: TradeResponse::map(trade.clone(), buyer_profile, seller_profile),
+            trade: TradeResponse::map(trade.clone(), buyer_profile, seller_profile, arbitrator),
             offer,
             expired,
         })
@@ -669,30 +702,25 @@ fn refund_escrow(
 pub fn create_arbitrator(
     deps: DepsMut,
     info: MessageInfo,
-    arbitrator: Addr,
+    arbitrator_address: Addr,
     fiat: FiatCurrency,
     encrypt_key: String,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
     assert_ownership(info.sender, admin)?;
 
-    let index = arbitrator.clone().to_string() + &fiat.to_string();
-
-    arbitrators()
-        .save(
-            deps.storage,
-            &index,
-            &Arbitrator {
-                arbitrator: arbitrator.clone(),
-                fiat: fiat.clone(),
-                encrypt_key: encrypt_key.clone(),
-            },
-        )
-        .unwrap();
+    ArbitratorModel::create_arbitrator(
+        deps.storage,
+        Arbitrator {
+            arbitrator: arbitrator_address.clone(),
+            fiat: fiat.clone(),
+            encrypt_key: encrypt_key.clone(),
+        },
+    );
 
     let res = Response::new()
         .add_attribute("action", "create_arbitrator")
-        .add_attribute("arbitrator", arbitrator.to_string())
+        .add_attribute("arbitrator", arbitrator_address.to_string())
         .add_attribute("asset", fiat.to_string())
         .add_attribute("encrypt_key", encrypt_key);
 
@@ -725,6 +753,8 @@ fn dispute_escrow(
     env: Env,
     info: MessageInfo,
     trade_id: String,
+    buyer_contact_for_arbitrator: String,
+    seller_contact_for_arbitrator: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO: check escrow funding timer*
@@ -746,6 +776,8 @@ fn dispute_escrow(
 
     // Update trade State to TradeState::Disputed and sets arbitrator
     trade.set_state(TradeState::EscrowDisputed, &env, &info);
+    trade.buyer_contact_for_arbitrator = Some(buyer_contact_for_arbitrator);
+    trade.seller_contact_for_arbitrator = Some(seller_contact_for_arbitrator);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
@@ -836,70 +868,6 @@ fn settle_dispute(
         .add_submessage(SubMsg::new(arbitrator_msg));
     Ok(res)
 }
-
-//region arbitration queries
-pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let result = arbitrators()
-        .idx
-        .arbitrator
-        .prefix(arbitrator)
-        .range(storage, None, None, Order::Descending)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrators(deps: Deps) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-    let result = arbitrators()
-        .range(storage, None, None, Order::Descending)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrators_fiat(deps: Deps, fiat: FiatCurrency) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let result: Vec<Arbitrator> = arbitrators()
-        .idx
-        .fiat
-        .prefix(fiat.clone().to_string())
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn get_arbitrator_random(deps: Deps, random_value: usize, fiat: FiatCurrency) -> Arbitrator {
-    assert_range_0_to_99(random_value).unwrap();
-    let storage = deps.storage;
-    let result: Vec<Arbitrator> = arbitrators()
-        .idx
-        .fiat
-        .prefix(fiat.to_string())
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-    let arbitrator_count = result.len();
-
-    // Random range: 0..99
-    // Mapped range: 0..result.len()-1
-    // Formula is:
-    // RandomValue * (MaxMappedRange + 1) / (MaxRandomRange + 1)
-    let random_index = random_value * arbitrator_count / (99 + 1);
-    result[random_index].clone()
-}
-//endregion
-
-//endregion
 
 // region utils
 pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
