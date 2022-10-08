@@ -194,7 +194,7 @@ watch(userWallet, async () => {
         <div class="content">
           <!-- Contact available -->
           <div v-if="isCounterpartyContactAvailable" class="contact-available">
-            <p class="guide-content">Open a chat with the other party and exchange payment information.</p>
+            <p class="guide-content">Open a chat with the other party to exchange information about payment.</p>
             <div class="contact-info">
               <a :href="addTelegramURLPrefix(counterpartyContact)" class="btn-telegram" target="_blank">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -222,7 +222,7 @@ watch(userWallet, async () => {
       </div>
       <!-- End ChatboxStates -->
 
-      <div class="inner-wrap">
+      <div class="summary">
         <!-- Trade Summary -->
         <div v-if="!isArbitrator" class="trade-summary card">
           <div class="trade-info">
@@ -399,7 +399,7 @@ watch(userWallet, async () => {
 }
 
 .chat {
-  width: 30%;
+  flex: 1;
   margin-right: 24px;
   margin-bottom: 64px;
 
@@ -457,10 +457,10 @@ watch(userWallet, async () => {
   }
 }
 
-.inner-wrap {
+.summary {
   display: flex;
   flex-direction: column;
-  width: 70%;
+  flex: 2.5;
 }
 
 .dispute-summary {
