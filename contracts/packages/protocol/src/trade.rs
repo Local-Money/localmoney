@@ -221,7 +221,7 @@ pub struct TradeResponse {
     pub seller_contact: Option<String>,
     pub seller_encrypt_key: Option<String>,
     pub arbitrator: Option<Addr>,
-    pub arbitrator_encrypt_key: String,
+    pub arbitrator_encrypt_key: Option<String>,
     pub seller_contact_for_arbitrator: Option<String>,
     pub buyer_contact_for_arbitrator: Option<String>,
     pub offer_contract: Addr,
@@ -247,11 +247,18 @@ impl TradeResponse {
             TradeState::SettledForTaker,
         ];
         let state = trade.get_state();
-        let mut arbitrator_address: Option<Addr> = None;
-        let arbitrator_encrypt_key = arbitrator.encrypt_key.clone();
-        if trade_states.contains(&state) {
-            arbitrator_address = Some(trade.arbitrator);
-        }
+
+        let arbitrator_address: Option<Addr> = if trade_states.contains(&state) {
+            Some(trade.arbitrator)
+        } else {
+            None
+        };
+
+        let arbitrator_encrypt_key: Option<String> = if state.eq(&TradeState::FiatDeposited) {
+            Some(arbitrator.encrypt_key.clone())
+        } else {
+            None
+        };
 
         TradeResponse {
             id: trade.id,
@@ -264,8 +271,8 @@ impl TradeResponse {
             seller_encrypt_key: seller_profile.encrypt_pk,
             arbitrator: arbitrator_address,
             arbitrator_encrypt_key,
-            seller_contact_for_arbitrator: None,
-            buyer_contact_for_arbitrator: None,
+            seller_contact_for_arbitrator: trade.seller_contact_for_arbitrator,
+            buyer_contact_for_arbitrator: trade.buyer_contact_for_arbitrator,
             offer_contract: trade.offer_contract,
             offer_id: trade.offer_id,
             created_at: trade.created_at,

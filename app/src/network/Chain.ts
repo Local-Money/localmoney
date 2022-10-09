@@ -57,7 +57,7 @@ export interface Chain {
 
   refundEscrow(tradeId: string): Promise<void>
 
-  openDispute(tradeId: string): Promise<void>
+  openDispute(tradeId: string, buyerContact: string, sellerContact: string): Promise<void>
 
   settleDispute(tradeId: string, winner: string): Promise<void>
 

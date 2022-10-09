@@ -707,6 +707,7 @@ pub fn create_arbitrator(
     encrypt_key: String,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
+    let hub_config = get_hub_config(deps.as_ref());
     assert_ownership(info.sender, admin)?;
 
     ArbitratorModel::create_arbitrator(
@@ -718,7 +719,15 @@ pub fn create_arbitrator(
         },
     );
 
+    let create_profile_sub_msg = update_profile_msg(
+        hub_config.profile_addr.to_string(),
+        arbitrator_address.clone(),
+        "N/A".to_string(),
+        encrypt_key.clone(),
+    );
+
     let res = Response::new()
+        .add_submessage(create_profile_sub_msg)
         .add_attribute("action", "create_arbitrator")
         .add_attribute("arbitrator", arbitrator_address.to_string())
         .add_attribute("asset", fiat.to_string())

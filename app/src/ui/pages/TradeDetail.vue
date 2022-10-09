@@ -71,6 +71,15 @@ const counterpartyContact = asyncComputed(async () => {
   }
 })
 
+const contactsForArbitrator = asyncComputed(async () => {
+  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.buyer_contact_for_arbitrator)
+  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.seller_contact_for_arbitrator)
+  return {
+    buyer,
+    seller,
+  }
+})
+
 const isArbitrator = computed(() => {
   return client.arbitrators.data.filter((a) => client.userWallet.address === a.arbitrator).length > 0
 })
@@ -184,7 +193,7 @@ watch(userWallet, async () => {
     <section class="wrap">
       <section class="chat card">
         <p>Chat will be here</p>
-        <div class="content">
+        <div v-if="!isArbitrator" class="content">
           <p class="label">
             {{ buyerOrSeller }}:
             <a
@@ -196,6 +205,20 @@ watch(userWallet, async () => {
               {{ counterpartyContact }}
             </a>
             <span v-else class="label">Pending ...</span>
+          </p>
+        </div>
+        <div v-else>
+          <p class="label">
+            buyer:
+            <a :href="addTelegramURLPrefix(contactsForArbitrator.buyer)" class="telegram" target="_blank">
+              {{ contactsForArbitrator.buyer }}
+            </a>
+          </p>
+          <p class="label">
+            seller:
+            <a :href="addTelegramURLPrefix(contactsForArbitrator.seller)" class="telegram" target="_blank">
+              {{ contactsForArbitrator.seller }}
+            </a>
           </p>
         </div>
       </section>

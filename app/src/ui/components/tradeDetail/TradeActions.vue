@@ -62,7 +62,19 @@ async function refundEscrow(id: string) {
 }
 
 async function openDispute(id: string) {
-  await client.openDispute(id)
+  let buyerContact = ''
+  let sellerContact = ''
+  const userDecryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
+  if (isBuyer.value) {
+    const sellerDecryptedContact = await decryptData(secrets.value.privateKey, props.tradeInfo.trade.seller_contact!)
+    buyerContact = await encryptData(props.tradeInfo.trade.arbitrator_encrypt_key, userDecryptedContact)
+    sellerContact = await encryptData(props.tradeInfo.trade.arbitrator_encrypt_key, sellerDecryptedContact)
+  } else {
+    const buyerDecryptedContact = await decryptData(secrets.value.privateKey, props.tradeInfo.trade.buyer_contact!)
+    sellerContact = await encryptData(props.tradeInfo.trade.arbitrator_encrypt_key, userDecryptedContact)
+    buyerContact = await encryptData(props.tradeInfo.trade.arbitrator_encrypt_key, buyerDecryptedContact)
+  }
+  await client.openDispute(id, buyerContact, sellerContact)
 }
 
 async function settleDispute(winner: string) {

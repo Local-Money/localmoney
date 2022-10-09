@@ -266,10 +266,10 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async openDispute(tradeId: string) {
+    async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
-        await this.client.openDispute(tradeId)
+        await this.client.openDispute(tradeId, buyerContact, sellerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
         // TODO handle error

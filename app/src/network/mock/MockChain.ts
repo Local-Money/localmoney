@@ -97,7 +97,7 @@ export class MockChain implements Chain {
     await this.changeTradeState(tradeId, TradeState.fiat_deposited)
   }
 
-  async openDispute(tradeId: string) {
+  async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
     await this.changeTradeState(tradeId, TradeState.escrow_disputed)
   }
 

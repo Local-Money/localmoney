@@ -385,9 +385,13 @@ export class CosmosChain implements Chain {
     })
   }
 
-  async openDispute(tradeId: string) {
+  async openDispute(tradeId: string, buyer_contact: string, seller_contact: string) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
-      dispute_escrow: { trade_id: tradeId },
+      dispute_escrow: {
+        trade_id: tradeId,
+        buyer_contact_for_arbitrator: buyer_contact,
+        seller_contact_for_arbitrator: seller_contact,
+      },
     })
   }
 

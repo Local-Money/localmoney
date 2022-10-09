@@ -109,6 +109,7 @@ export interface Trade {
   seller_contact?: string
   seller_encrypt_key: string
   arbitrator?: string | null
+  arbitrator_encrypt_key: string
   offer_contract: string
   offer_id: string
   created_at: number

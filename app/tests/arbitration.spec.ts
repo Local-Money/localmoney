@@ -87,7 +87,7 @@ describe('arbitration tests', () => {
     expect(trade.state).toBe(TradeState.fiat_deposited)
 
     // Taker disputes the escrow
-    await takerClient.openDispute(trade.id)
+    await takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')
     trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.escrow_disputed)
 
@@ -118,7 +118,7 @@ describe('arbitration tests', () => {
     await makerClient.setFiatDeposited(trade.id)
 
     // Taker disputes the escrow
-    await takerClient.openDispute(trade.id)
+    await takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')
     trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.escrow_disputed)
 
