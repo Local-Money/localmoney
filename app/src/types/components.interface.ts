@@ -109,6 +109,7 @@ export interface Trade {
   seller_contact?: string
   seller_encrypt_key: string
   arbitrator?: string | null
+  arbitrator_encrypt_key: string
   offer_contract: string
   offer_id: string
   created_at: number
@@ -166,4 +167,5 @@ export interface UserWallet {
 export interface Arbitrator {
   arbitrator: string
   fiat: FiatCurrency
+  encrypt_key: string
 }

@@ -9,7 +9,7 @@ import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
-import type { PostOffer } from '~/types/components.interface'
+import type { FiatCurrency, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
 dotenv.config()
@@ -17,6 +17,7 @@ Object.assign(global, { TextEncoder, TextDecoder })
 
 let makerClient: TestCosmosChain
 let takerClient: TestCosmosChain
+let adminClient: TestCosmosChain
 const takerContact = 'taker001'
 const makerContact = 'maker001'
 let tradeId = '0'
@@ -26,12 +27,26 @@ beforeAll(async () => {
   const result = await setupProtocol()
   makerClient = result.makerClient
   takerClient = result.takerClient
+  adminClient = result.adminClient
 })
 
 offers[0].denom = { native: process.env.OFFER_DENOM! }
 
 describe('trade lifecycle happy path', () => {
   let offerTradeCount = 0
+  it('should have an arbitrator available', async () => {
+    const fiat = offers[0].fiat_currency as FiatCurrency
+    let arbitrators = await adminClient.fetchArbitrators()
+    if (arbitrators.find((arbitrator) => arbitrator.fiat === fiat) === undefined) {
+      await adminClient.newArbitrator({
+        arbitrator: adminClient.getWalletAddress(),
+        fiat,
+        encrypt_key: 'arbitrator_encrypt_public_key',
+      })
+      arbitrators = await adminClient.fetchArbitrators()
+    }
+    expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
+  })
   // Create Offer
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
@@ -111,6 +126,19 @@ describe('trade lifecycle happy path', () => {
 
 describe('trade invalid state changes', () => {
   let offerTradeCount = 0
+  it('should have an arbitrator available', async () => {
+    const fiat = offers[0].fiat_currency as FiatCurrency
+    let arbitrators = await adminClient.fetchArbitrators()
+    if (arbitrators.find((arbitrator) => arbitrator.fiat === fiat) === undefined) {
+      await adminClient.newArbitrator({
+        arbitrator: adminClient.getWalletAddress(),
+        fiat,
+        encrypt_key: 'arbitrator_encrypt_public_key',
+      })
+      arbitrators = await adminClient.fetchArbitrators()
+    }
+    expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
+  })
   it('should have an available offer', async () => {
     let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
