@@ -266,7 +266,12 @@ onUnmounted(() => {
         </div>
 
         <div class="telegram">
-          <p class="label">Please insert your Telegram (?)</p>
+          <div class="wrap-label">
+            <p class="label">Your Telegram username</p>
+            <IconTooltip
+              content="Share your contact to be able to communicate with the other trader. This information will be encrypted and only visible inside the trade."
+            />
+          </div>
           <input v-model="telegram" type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
@@ -348,6 +353,11 @@ onUnmounted(() => {
       gap: 0px;
     }
 
+    .label {
+      font-size: 14px;
+      color: $gray900;
+    }
+
     .wrap-input {
       display: flex;
       justify-content: space-between;
@@ -359,10 +369,11 @@ onUnmounted(() => {
       }
 
       .input {
-        flex: 1;
+        flex: 2;
         margin-bottom: 8px;
 
         input {
+          margin-top: 8px;
           color: $base-text;
           background-color: $background;
           text-align: right;
@@ -370,22 +381,21 @@ onUnmounted(() => {
       }
 
       .telegram {
-        flex: 1.7;
+        flex: 3;
         margin-bottom: 8px;
 
+        .wrap-label {
+          display: flex;
+          gap: 8px;
+        }
+
         input {
+          margin-top: 8px;
           color: $base-text;
           background-color: $background;
           text-align: left;
         }
       }
-
-      .label {
-        font-size: 14px;
-        color: $gray600;
-        margin-bottom: 8px;
-      }
-
       .wrap-limit {
         display: flex;
         justify-content: flex-end;
@@ -421,13 +431,7 @@ onUnmounted(() => {
         margin-top: 24px;
       }
       .price {
-        flex: 1;
-
-        .label {
-          font-size: 14px;
-          color: $gray600;
-        }
-
+        flex: 2;
         .wrap {
           width: 100%;
           display: flex;
@@ -455,7 +459,7 @@ onUnmounted(() => {
 
           .margin {
             font-size: 14px;
-            color: $gray600;
+            color: $gray700;
           }
 
           .value {
@@ -466,13 +470,7 @@ onUnmounted(() => {
       }
 
       .summary {
-        flex: 2;
-        margin-bottom: 24px;
-
-        .label {
-          font-size: 14px;
-          color: $gray600;
-        }
+        flex: 3;
 
         .wrap {
           width: 100%;
@@ -511,6 +509,7 @@ onUnmounted(() => {
     display: flex;
     justify-content: flex-end;
     gap: 24px;
+    margin-top: 8px;
   }
 }
 </style>
