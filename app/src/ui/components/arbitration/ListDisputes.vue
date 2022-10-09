@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
+import { formatTradeState } from '~/shared'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -53,25 +54,24 @@ watch(userWallet, async () => {
         <div class="col-5">
           <p>Status</p>
         </div>
-        <div class="col-6" />
       </div>
+
       <div v-for="dispute in closedDisputes" :key="dispute.trade.id" class="wrap-table-item">
         <div class="col-1">
           <p>{{ dispute.offer.offer_type }}</p>
         </div>
         <div class="col-2">
-          <p>{{}}</p>
+          <p>?????</p>
         </div>
         <div class="col-3">
           <p>{{ microDenomToDenom(dispute.offer.denom.native) }}</p>
         </div>
         <div class="col-4">
-          <p>{{}}</p>
+          <p>?????</p>
         </div>
         <div class="col-5">
-          <p>{{ dispute.trade.state }}</p>
+          <p>{{ formatTradeState(dispute.trade.state) }}</p>
         </div>
-        <div class="col-6"></div>
       </div>
     </div>
   </section>
@@ -95,10 +95,7 @@ watch(userWallet, async () => {
 /* ----------- ARCHIVED DISPUTES TABLE */
 .archived-disputes-table {
   .table-header {
-    display: flex;
-    flex-direction: row;
     border-bottom: 1px solid $border;
-    padding: 16px;
     margin-bottom: 16px;
 
     p {
@@ -107,35 +104,34 @@ watch(userWallet, async () => {
       color: $gray700;
     }
   }
-}
+  .wrap-table-item {
+    p {
+      font-size: 14px;
+      font-weight: $regular;
+    }
+  }
 
-.col-1,
-:deep(.col-1) {
-  width: 12.5%;
-}
+  .table-header,
+  .wrap-table-item {
+    display: flex;
+    padding: 16px;
+    flex-wrap: wrap;
+  }
 
-.col-2,
-:deep(.col-2) {
-  width: 12.5%;
-}
+  .col-1,
+  .col-5 {
+    flex: 1 1 10%;
+    text-transform: capitalize;
+  }
 
-.col-3,
-:deep(.col-3) {
-  width: 12.5%;
-}
-
-.col-4,
-:deep(.col-4) {
-  width: 33.5%;
-}
-
-.col-5,
-:deep(.col-5) {
-  width: 20%;
-}
-
-.col-6,
-:deep(.col-6) {
-  width: 10%;
+  .col-2,
+  .col-3,
+  .col-4 {
+    flex: 1 1 20%;
+  }
+  @media only screen and (max-width: $mobile) {
+    min-width: 1000px;
+    padding: 8px 0 16px 0;
+  }
 }
 </style>
