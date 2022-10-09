@@ -194,7 +194,9 @@ watch(userWallet, async () => {
         <div class="content">
           <!-- Contact available -->
           <div v-if="isCounterpartyContactAvailable" class="contact-available">
-            <p class="guide-content">Open a chat with the other party to exchange information about payment.</p>
+            <p class="guide-content">
+              Open a chat with the other trader so you can exchange information about payment.
+            </p>
             <div class="contact-info">
               <a :href="addTelegramURLPrefix(counterpartyContact)" class="btn-telegram" target="_blank">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -213,9 +215,7 @@ watch(userWallet, async () => {
 
           <!-- Contact waiting -->
           <div v-else class="contact-waiting">
-            <p class="guide-content">
-              Once the trade starts you will be able to contact the other party and exchange payment information.
-            </p>
+            <p class="guide-content">Once the trade starts you will be able to contact the other trader.</p>
           </div>
           <!-- End Contact waiting -->
         </div>
@@ -449,8 +449,11 @@ watch(userWallet, async () => {
       background-color: #229ed9;
       color: $base-text;
       font-size: 14px;
+      font-weight: $semi-bold;
 
       svg {
+        width: 16px;
+        height: 16px;
         fill: $base-text;
       }
     }
