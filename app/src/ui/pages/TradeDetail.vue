@@ -71,15 +71,6 @@ const counterpartyContact = asyncComputed(async () => {
   }
 })
 
-const contactsForArbitrator = asyncComputed(async () => {
-  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.buyer_contact_for_arbitrator)
-  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.seller_contact_for_arbitrator)
-  return {
-    buyer,
-    seller,
-  }
-})
-
 const isArbitrator = computed(() => {
   return client.arbitrators.data.filter((a) => client.userWallet.address === a.arbitrator).length > 0
 })
@@ -90,6 +81,17 @@ const maker = computed(() => {
 
 const taker = computed(() => {
   return tradeInfo.value.trade.buyer === maker ? tradeInfo.value.trade.seller : tradeInfo.value.trade.buyer
+})
+
+const contactsForArbitrator = asyncComputed(async () => {
+  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.buyer_contact_for_arbitrator)
+  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.seller_contact_for_arbitrator)
+  const makerContact = tradeInfo.value.trade.buyer === maker.value ? buyer : seller
+  const takerContact = tradeInfo.value.trade.seller === maker.value ? buyer : seller
+  return {
+    makerContact,
+    takerContact,
+  }
 })
 
 function fetchTrade(id: string) {
@@ -235,7 +237,7 @@ watch(userWallet, async () => {
             </div>
             <p class="guide-content">Please contact both parties to begin the dispute resolution process.</p>
 
-            <a :href="addTelegramURLPrefix(contactsForArbitrator.buyer)" class="btn-telegram" target="_blank">
+            <a :href="addTelegramURLPrefix(contactsForArbitrator.makerContact)" class="btn-telegram" target="_blank">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fill-rule="evenodd"
@@ -244,10 +246,10 @@ watch(userWallet, async () => {
                   fill="inherit"
                 />
               </svg>
-              <p>chat with buyer</p>
+              <p>chat with maker</p>
             </a>
 
-            <a :href="addTelegramURLPrefix(contactsForArbitrator.seller)" class="btn-telegram" target="_blank">
+            <a :href="addTelegramURLPrefix(contactsForArbitrator.takerContact)" class="btn-telegram" target="_blank">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fill-rule="evenodd"
@@ -256,7 +258,7 @@ watch(userWallet, async () => {
                   fill="inherit"
                 />
               </svg>
-              <p>chat with seller</p>
+              <p>chat with taker</p>
             </a>
           </div>
         </div>
