@@ -95,7 +95,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         new_trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     );
-    if offer.is_none() {
+    if offer.is_err() {
         return Err(OfferNotFound {
             offer_id: new_trade.offer_id.to_string(),
         });
@@ -405,6 +405,7 @@ fn release_escrow(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
+    // Load trade and validate that permission and state are valid.
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     let trade_denom = denom_to_string(&trade.denom);
     if trade.seller.eq(&info.sender) {
@@ -421,6 +422,7 @@ fn release_escrow(
         });
     }
 
+    // Load HubConfig
     let hub_cfg = get_hub_config(deps.as_ref());
     let offer = load_offer(
         &deps.querier,

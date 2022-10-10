@@ -8,10 +8,7 @@ use crate::profile::load_profile;
 use crate::profile::Profile;
 use crate::profile::QueryMsg as ProfileQueryMsg;
 use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{
-    to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, Uint128,
-    WasmQuery,
-};
+use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -136,6 +133,12 @@ pub struct Offer {
     pub last_traded_at: u64,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct OfferResponse {
+    pub offer: Offer,
+    pub profile: Profile,
+}
+
 pub struct OfferModel<'a> {
     pub offer: Offer,
     pub storage: &'a mut dyn Storage,
@@ -190,7 +193,7 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query(deps: Deps, start_at: Option<u64>) -> StdResult<Vec<Offer>> {
+    pub fn query(deps: Deps, start_at: Option<u64>) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
 
         let profiles: Vec<Profile> = deps
@@ -204,16 +207,20 @@ impl OfferModel<'_> {
             )
             .unwrap_or(vec![]);
 
-        let mut result: Vec<Offer> = vec![];
+        let mut result: Vec<OfferResponse> = vec![];
         let offers_by_profile_limit = OFFERS_QUERY_OFFERS_BY_PROFILE;
         profiles.iter().for_each(|profile| {
-            let mut offers_by_owner: Vec<Offer> =
+            let offers_by_owner: Vec<Offer> =
                 OfferModel::query_by_owner(deps, profile.addr.clone(), offers_by_profile_limit)
                     .unwrap_or(vec![]);
-            offers_by_owner
-                .iter_mut()
-                .for_each(|offer| offer.trades_count = profile.trades_count);
-            result.append(&mut offers_by_owner);
+
+            // TODO: will be removed and replaced by OfferResponse
+            offers_by_owner.iter().for_each(|offer| {
+                result.push(OfferResponse {
+                    offer: offer.clone(),
+                    profile: profile.clone(),
+                })
+            });
         });
         Ok(result)
     }
@@ -269,12 +276,12 @@ impl OfferModel<'_> {
             .take(limit as usize)
             .flat_map(|item| {
                 item.and_then(|(_, mut offer)| {
-                    let profile = load_profile(
+                    let profile_result = load_profile(
                         &deps.querier,
                         offer.clone().owner,
                         hub_config.profile_addr.to_string(),
                     );
-                    offer.trades_count = profile.trades_count;
+                    offer.trades_count = profile_result.unwrap().trades_count;
                     Ok(offer)
                 })
             })
@@ -339,18 +346,8 @@ pub fn load_offer(
     querier: &QuerierWrapper,
     offer_id: String,
     offer_contract: String,
-) -> Option<Offer> {
-    let load_offer_result: StdResult<Offer> =
-        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: offer_contract,
-            msg: to_binary(&QueryMsg::Offer { id: offer_id }).unwrap(),
-        }));
-
-    if load_offer_result.is_err() {
-        None
-    } else {
-        Some(load_offer_result.unwrap())
-    }
+) -> StdResult<Offer> {
+    querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

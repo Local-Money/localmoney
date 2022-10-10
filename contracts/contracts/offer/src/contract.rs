@@ -8,8 +8,8 @@ use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthori
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferState,
-    OfferUpdateMsg, OffersCount, QueryMsg,
+    offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
+    OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
 };
 use localterra_protocol::profile::load_profile;
 use localterra_protocol::profile::ExecuteMsg as ProfileExecuteMsg;
@@ -121,12 +121,12 @@ pub fn create_offer(
 
     // Check if profile exists or create one.
     let hub_cfg = get_hub_config(deps.as_ref());
-    let profile = load_profile(
+    let profile_result = load_profile(
         &deps.querier,
         info.sender.clone(),
         hub_cfg.profile_addr.to_string(),
     );
-    if profile.created_at.eq(&0u64) {
+    if profile_result.is_err() {
         res = res.add_attribute("create_new_profile", "true");
         res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: hub_cfg.profile_addr.to_string(),
@@ -137,7 +137,10 @@ pub fn create_offer(
             funds: vec![],
         })))
     } else {
-        res = res.add_attribute("profile_created_at", profile.created_at.to_string())
+        res = res.add_attribute(
+            "profile_created_at",
+            profile_result.unwrap().created_at.to_string(),
+        )
     }
 
     Ok(res)
@@ -203,22 +206,19 @@ fn query_state(deps: Deps) -> StdResult<OffersCount> {
     Ok(state)
 }
 
-pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<Offer> {
+pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
     let hub_config = get_hub_config(deps);
-    let mut offer = offers()
+    let offer = offers()
         .may_load(deps.storage, id.to_string())
         .unwrap_or_default()
         .unwrap();
-
     let profile = load_profile(
         &deps.querier,
         offer.clone().owner,
         hub_config.profile_addr.to_string(),
-    );
-
-    offer.trades_count = profile.trades_count;
-
-    Ok(offer)
+    )
+    .unwrap();
+    Ok(OfferResponse { offer, profile })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

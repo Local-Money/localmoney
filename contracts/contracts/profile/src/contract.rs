@@ -1,4 +1,3 @@
-use crate::state::PROFILE;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
@@ -53,13 +52,16 @@ pub fn create_profile(
     let hub_config: HubConfig = get_hub_config(deps.as_ref());
     // Only the offer contract should be able to call create_profile
     assert_ownership(info.sender, hub_config.offer_addr).unwrap();
-    ProfileModel::create(
+    let profile_model = ProfileModel::create(
         deps.storage,
         Profile::new(addr.clone(), env.block.time.seconds()),
     );
 
-    let res =
-        Response::new().add_attributes(vec![("action", "create_profile"), ("addr", addr.as_str())]);
+    let res = Response::new().add_attributes(vec![
+        ("action", "create_profile"),
+        ("addr", addr.as_str()),
+        ("created_at", &profile_model.profile.created_at.to_string()),
+    ]);
     Ok(res)
 }
 
@@ -75,20 +77,15 @@ pub fn increase_trade_count(
     // Only the trade contract should be able to call increase_trade_count
     assert_ownership(info.sender, hub_config.trade_addr).unwrap();
 
-    let profile = PROFILE
-        .may_load(deps.storage, profile_address.to_string())
-        .unwrap();
-
-    let mut profile = profile.unwrap_or(Profile::new(
+    let profile_result = ProfileModel::from_store(deps.storage, &profile_address.to_string());
+    let mut profile = profile_result.unwrap_or(Profile::new(
         profile_address.clone(),
         env.block.time.seconds(),
     ));
     profile.trades_count += 1;
     profile.last_trade = env.block.time.seconds();
 
-    PROFILE
-        .save(deps.storage, profile_address.to_string(), &profile)
-        .unwrap();
+    ProfileModel::store(deps.storage, &profile).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "increase_trade_count")
@@ -111,14 +108,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn query_profile(deps: Deps, profile_address: Addr) -> StdResult<Profile> {
-    let profile = PROFILE
-        .may_load(deps.storage, profile_address.to_string())
-        .unwrap();
-
-    let profile = profile.unwrap_or(Profile::new(profile_address, 0));
-
-    Ok(profile)
+fn query_profile(deps: Deps, addr: Addr) -> StdResult<Profile> {
+    ProfileModel::from_store(deps.storage, &addr.to_string())
 }
 
 fn query_profiles(

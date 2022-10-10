@@ -1,8 +1,6 @@
-use std::ops::Sub;
-
-use crate::{constants::PROFILE_QUERY_LAST_TRADE_THRESHOLD, trade::TradeState};
+use crate::trade::TradeState;
 use cosmwasm_std::{Addr, Deps, Env, Order, QuerierWrapper, StdResult, Storage};
-use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex, PrefixBound};
+use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -39,15 +37,13 @@ pub fn load_profile(
     querier: &QuerierWrapper,
     profile_addr: Addr,
     profile_contract: String,
-) -> Profile {
-    querier
-        .query_wasm_smart(
-            profile_contract,
-            &QueryMsg::Profile {
-                address: profile_addr.clone(),
-            },
-        )
-        .unwrap_or(Profile::new(profile_addr, 0))
+) -> StdResult<Profile> {
+    querier.query_wasm_smart(
+        profile_contract,
+        &QueryMsg::Profile {
+            address: profile_addr.clone(),
+        },
+    )
 }
 
 // Data
@@ -80,11 +76,8 @@ impl ProfileModel<'_> {
         profiles().save(storage, profile.addr.to_string(), &profile)
     }
 
-    pub fn from_store(storage: &mut dyn Storage, address: &String) -> Profile {
-        profiles()
-            .may_load(storage, address.clone())
-            .unwrap_or_default()
-            .unwrap()
+    pub fn from_store(storage: &dyn Storage, address: &String) -> StdResult<Profile> {
+        profiles().load(storage, address.clone())
     }
 
     pub fn create(storage: &mut dyn Storage, profile: Profile) -> ProfileModel {
@@ -97,27 +90,16 @@ impl ProfileModel<'_> {
         self.profile
     }
 
-    pub fn may_load<'a>(storage: &'a mut dyn Storage, address: &String) -> ProfileModel<'a> {
-        ProfileModel {
-            profile: ProfileModel::from_store(storage, address),
-            storage,
-        }
-    }
-
     pub fn query(
         deps: Deps,
-        env: Env,
+        _env: Env,
         limit: u32,
-        start_at: Option<u64>,
+        _start_at: Option<u64>,
     ) -> StdResult<Vec<Profile>> {
-        let min_range = match start_at {
-            Some(time) => Some(PrefixBound::exclusive(time)),
-            None => None,
-        };
         let result = profiles()
             .idx
-            .last_trade
-            .prefix_range(deps.storage, min_range, None, Order::Descending)
+            .trades_count
+            .range(deps.storage, None, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| item.and_then(|(_, profile)| Ok(profile)))
             .collect();
