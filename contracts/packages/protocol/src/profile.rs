@@ -17,15 +17,15 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Create {
-        profile_address: Addr,
+        profile_addr: Addr,
     },
     UpdateProfile {
-        profile_address: Addr,
+        profile_addr: Addr,
         contact: String,
-        encrypt_pk: String,
+        encryption_key: String,
     },
     IncreaseTradeCount {
-        profile_address: Addr,
+        profile_addr: Addr,
         final_trade_state: TradeState,
     },
     RegisterHub {},
@@ -34,7 +34,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Profile { address: Addr },
+    Profile { addr: Addr },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -43,17 +43,17 @@ pub struct MigrateMsg {}
 
 // Execute Util
 pub fn update_profile_msg(
-    profile_contract_addr: String,
-    profile_address: Addr,
+    profile_contract: String,
+    profile_addr: Addr,
     contact: String,
-    encrypt_pk: String,
+    encryption_key: String,
 ) -> SubMsg {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: profile_contract_addr,
+        contract_addr: profile_contract,
         msg: to_binary(&ExecuteMsg::UpdateProfile {
-            profile_address,
+            profile_addr,
             contact,
-            encrypt_pk,
+            encryption_key,
         })
         .unwrap(),
         funds: vec![],
@@ -61,14 +61,14 @@ pub fn update_profile_msg(
 }
 
 pub fn increase_profile_trades_count_msg(
-    profile_contract_addr: String,
-    profile_address: Addr,
+    profile_contract: String,
+    profile_addr: Addr,
     final_trade_state: TradeState,
 ) -> SubMsg {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: profile_contract_addr,
+        contract_addr: profile_contract,
         msg: to_binary(&ExecuteMsg::IncreaseTradeCount {
-            profile_address,
+            profile_addr,
             final_trade_state,
         })
         .unwrap(),
@@ -80,35 +80,35 @@ pub fn increase_profile_trades_count_msg(
 pub fn load_profile(
     querier: &QuerierWrapper,
     profile_contract: String,
-    profile_address: Addr,
+    profile_addr: Addr,
 ) -> Profile {
     querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: profile_contract,
             msg: to_binary(&QueryMsg::Profile {
-                address: profile_address.clone(),
+                addr: profile_addr.clone(),
             })
             .unwrap(),
         }))
-        .unwrap_or(Profile::new(profile_address))
+        .unwrap_or(Profile::new(profile_addr))
 }
 
 // Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Profile {
-    pub address: Addr,
+    pub addr: Addr,
     pub trade_count: u64,
     pub contact: Option<String>,
-    pub encrypt_pk: Option<String>,
+    pub encryption_key: Option<String>,
 }
 
 impl Profile {
-    pub const fn new(address: Addr) -> Self {
+    pub const fn new(addr: Addr) -> Self {
         Profile {
-            address,
+            addr,
             trade_count: 0,
             contact: None,
-            encrypt_pk: None,
+            encryption_key: None,
         }
     }
 }
@@ -138,7 +138,7 @@ impl ProfileModel<'_> {
 
     pub fn store<'a>(storage: &'a mut dyn Storage, profile: &Profile) -> ProfileModel<'a> {
         PROFILE
-            .save(storage, profile.address.to_string(), &profile)
+            .save(storage, profile.addr.to_string(), &profile)
             .unwrap();
 
         ProfileModel {

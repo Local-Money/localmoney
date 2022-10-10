@@ -41,7 +41,7 @@ describe('trade lifecycle happy path', () => {
       await adminClient.newArbitrator({
         arbitrator: adminClient.getWalletAddress(),
         fiat,
-        encrypt_key: 'arbitrator_encrypt_public_key',
+        encryption_key: 'arbitrator_encrypt_public_key',
       })
       arbitrators = await adminClient.fetchArbitrators()
     }
@@ -53,7 +53,7 @@ describe('trade lifecycle happy path', () => {
     if (myOffers.length === 0) {
       const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
       const owner_encrypt_key = makerSecrets.publicKey
-      const offer = { ...offers[0], owner_contact, owner_encrypt_key } as PostOffer
+      const offer = { ...offers[0], owner_contact, owner_encryption_key: owner_encrypt_key } as PostOffer
       await makerClient.createOffer(offer)
     }
     myOffers = await makerClient.fetchMyOffers()
@@ -70,7 +70,7 @@ describe('trade lifecycle happy path', () => {
 
     expect(offersResult.length).toBeGreaterThan(0)
     const offer = offersResult[0]
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
     expect(offer).toHaveProperty('id')
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
@@ -79,7 +79,7 @@ describe('trade lifecycle happy path', () => {
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      profile_taker_encrypt_key,
+      profile_taker_encryption_key: profile_taker_encrypt_key,
       taker_contact,
     })
   })
@@ -90,7 +90,7 @@ describe('trade lifecycle happy path', () => {
     expect(decryptedTakerContact).toBe(takerContact)
     expect(trade.id).toBe(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
-    const maker_contact = await encryptDataMocked(trade.seller_encrypt_key, makerContact)
+    const maker_contact = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)
@@ -133,7 +133,7 @@ describe('trade invalid state changes', () => {
       await adminClient.newArbitrator({
         arbitrator: adminClient.getWalletAddress(),
         fiat,
-        encrypt_key: 'arbitrator_encrypt_public_key',
+        encryption_key: 'arbitrator_encrypt_public_key',
       })
       arbitrators = await adminClient.fetchArbitrators()
     }
@@ -145,7 +145,7 @@ describe('trade invalid state changes', () => {
       const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
       const owner_encrypt_key = makerSecrets.publicKey
       const denom = { native: process.env.OFFER_DENOM! }
-      const newOffer = { ...offers[0], owner_contact, owner_encrypt_key, denom } as PostOffer
+      const newOffer = { ...offers[0], owner_contact, owner_encryption_key: owner_encrypt_key, denom } as PostOffer
       await makerClient.createOffer(newOffer)
     }
     myOffers = await makerClient.fetchMyOffers()
@@ -155,13 +155,13 @@ describe('trade invalid state changes', () => {
     const offer = (await makerClient.fetchMyOffers())[0]
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
     tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      profile_taker_encrypt_key: taker_encrypt_pk,
+      profile_taker_encryption_key: taker_encrypt_pk,
       taker_contact,
     })
     let trade = await takerClient.fetchTradeDetail(tradeId)
@@ -185,7 +185,7 @@ describe('trade invalid state changes', () => {
   it('should fail to mark as paid a trade in request_accepted state', async () => {
     const offer = offers[0] as PostOffer
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const maker_contact = await encryptDataMocked(trade.seller_encrypt_key, offer.owner_contact)
+    const maker_contact = await encryptDataMocked(trade.seller_encryption_key, offer.owner_contact)
     console.log('maker_contact: ', maker_contact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)

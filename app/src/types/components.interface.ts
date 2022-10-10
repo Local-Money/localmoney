@@ -18,10 +18,10 @@ export class LoadingState {
 }
 
 export interface Profile {
-  address: string
+  addr: string
   trade_count: number
   contact?: string
-  encrypt_pk?: string
+  encryption_key?: string
 }
 
 export enum OfferType {
@@ -36,7 +36,7 @@ export interface OfferTypeLabel {
 
 export interface GetOffer {
   id: string
-  owner_encrypt_key: string
+  owner_encryption_key: string
   state: OfferState
   rate: string
   min_amount: string
@@ -57,12 +57,12 @@ export interface PatchOffer {
   min_amount: string
   max_amount: string
   owner_contact?: string
-  owner_encrypt_key?: string
+  owner_encryption_key?: string
 }
 
 export interface PostOffer {
   owner_contact: string
-  owner_encrypt_key: string
+  owner_encryption_key: string
   rate: string
   offer_type: OfferType
   denom: Denom
@@ -94,7 +94,7 @@ export interface NewTrade {
   amount: string
   taker: string
   profile_taker_contact: string
-  profile_taker_encrypt_key: string
+  profile_taker_encryption_key: string
   taker_contact: string
 }
 
@@ -104,12 +104,12 @@ export interface Trade {
   factory_addr: string
   buyer: string
   buyer_contact?: string
-  buyer_encrypt_key?: string
+  buyer_encryption_key?: string
   seller: string
   seller_contact?: string
-  seller_encrypt_key: string
+  seller_encryption_key: string
   arbitrator?: string | null
-  arbitrator_encrypt_key: string
+  arbitrator_encryption_key: string
   offer_contract: string
   offer_id: string
   created_at: number
@@ -167,5 +167,5 @@ export interface UserWallet {
 export interface Arbitrator {
   arbitrator: string
   fiat: FiatCurrency
-  encrypt_key: string
+  encryption_key: string
 }

@@ -81,7 +81,7 @@ async function createOffer() {
 
   const postOffer: PostOffer = {
     owner_contact,
-    owner_encrypt_key: owner_contact_pk,
+    owner_encryption_key: owner_contact_pk,
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,

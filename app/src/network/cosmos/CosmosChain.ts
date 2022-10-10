@@ -68,7 +68,7 @@ export class CosmosChain implements Chain {
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
         const result = (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.profile_addr, {
-          profile: { address: this.getWalletAddress() },
+          profile: { addr: this.getWalletAddress() },
         })) as Profile
         console.log('Profile result >> ', result)
         return result

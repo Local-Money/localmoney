@@ -300,7 +300,7 @@ pub fn query_trades(
 
         let current_time = env.block.time.seconds();
         let expired = trade.get_state().eq(&TradeState::EscrowFunded)
-            && current_time > trade.created_at + REQUEST_TIMEOUT;
+            && current_time > trade.clone().created_at + REQUEST_TIMEOUT;
 
         let arbitrator = ArbitratorModel::query_arbitrator_fiat(
             deps.storage,
@@ -715,7 +715,7 @@ pub fn create_arbitrator(
         Arbitrator {
             arbitrator: arbitrator_address.clone(),
             fiat: fiat.clone(),
-            encrypt_key: encrypt_key.clone(),
+            encryption_key: encrypt_key.clone(),
         },
     );
 
@@ -785,8 +785,8 @@ fn dispute_escrow(
 
     // Update trade State to TradeState::Disputed and sets arbitrator
     trade.set_state(TradeState::EscrowDisputed, &env, &info);
-    trade.buyer_contact_for_arbitrator = Some(buyer_contact_for_arbitrator);
-    trade.seller_contact_for_arbitrator = Some(seller_contact_for_arbitrator);
+    trade.arbitrator_buyer_contact = Some(buyer_contact_for_arbitrator);
+    trade.arbitrator_seller_contact = Some(seller_contact_for_arbitrator);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()

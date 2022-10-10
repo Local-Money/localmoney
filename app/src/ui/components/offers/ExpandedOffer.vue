@@ -75,7 +75,7 @@ const minMaxCryptoStr = computed(() => {
 async function newTrade() {
   const telegramHandle = removeTelegramURLPrefix(telegram.value) as string
   const profile_taker_encrypt_key = secrets.value.publicKey
-  const taker_contact = await encryptData(props.offer.owner_encrypt_key, telegramHandle)
+  const taker_contact = await encryptData(props.offer.owner_encryption_key, telegramHandle)
   const profile_taker_contact = await encryptData(profile_taker_encrypt_key, telegramHandle)
 
   const newTrade: NewTrade = {
@@ -84,7 +84,7 @@ async function newTrade() {
     taker: `${client.userWallet.address}`,
     profile_taker_contact,
     taker_contact,
-    profile_taker_encrypt_key,
+    profile_taker_encryption_key: profile_taker_encrypt_key,
   }
   await client.openTrade(newTrade)
 }

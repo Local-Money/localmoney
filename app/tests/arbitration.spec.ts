@@ -39,7 +39,7 @@ describe('arbitration tests', () => {
       await adminClient.newArbitrator({
         arbitrator: adminClient.getWalletAddress(),
         fiat,
-        encrypt_key: 'arbitrator_encrypt_public_key',
+        encryption_key: 'arbitrator_encrypt_public_key',
       })
       arbitrators = await adminClient.fetchArbitrators()
     }
@@ -51,7 +51,7 @@ describe('arbitration tests', () => {
     const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
     const owner_encrypt_key = makerSecrets.publicKey
     const denom = { native: process.env.OFFER_DENOM! }
-    const createdOffer = { ...offers[0], owner_contact, owner_encrypt_key, denom } as PostOffer
+    const createdOffer = { ...offers[0], owner_contact, owner_encryption_key: owner_encrypt_key, denom } as PostOffer
     if (process.env.CREATE_OFFERS) {
       await makerClient.createOffer(createdOffer)
     }
@@ -67,19 +67,19 @@ describe('arbitration tests', () => {
   it('should settle dispute for taker', async () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
     // Create a Trade and set it to `fiat_deposited` state.
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      profile_taker_encrypt_key: taker_encrypt_pk,
+      profile_taker_encryption_key: taker_encrypt_pk,
       taker_contact,
     })
 
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const makerContactEncrypted = await encryptDataMocked(trade.seller_encrypt_key, makerContact)
+    const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
@@ -100,19 +100,19 @@ describe('arbitration tests', () => {
   it('should settle dispute for maker', async () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encrypt_key, takerContact)
+    const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
 
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      profile_taker_encrypt_key: taker_encrypt_pk,
+      profile_taker_encryption_key: taker_encrypt_pk,
       taker_contact,
     })
 
     let trade = await makerClient.fetchTradeDetail(tradeId)
-    const makerContactEncrypted = await encryptDataMocked(trade.seller_encrypt_key, makerContact)
+    const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)

@@ -32,7 +32,7 @@ export class MockChain implements Chain {
 
   fetchProfile(): Promise<Profile> {
     return Promise.resolve({
-      address: this.getWalletAddress(),
+      addr: this.getWalletAddress(),
       trade_count: 1,
     })
   }
