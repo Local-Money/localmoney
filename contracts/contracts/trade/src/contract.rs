@@ -69,16 +69,9 @@ pub fn execute(
         ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
         ExecuteMsg::DisputeEscrow {
             trade_id,
-            buyer_contact_for_arbitrator,
-            seller_contact_for_arbitrator,
-        } => dispute_escrow(
-            deps,
-            env,
-            info,
-            trade_id,
-            buyer_contact_for_arbitrator,
-            seller_contact_for_arbitrator,
-        ),
+            buyer_contact,
+            seller_contact,
+        } => dispute_escrow(deps, env, info, trade_id, buyer_contact, seller_contact),
         ExecuteMsg::NewArbitrator {
             arbitrator,
             fiat,
@@ -756,8 +749,8 @@ fn dispute_escrow(
     env: Env,
     info: MessageInfo,
     trade_id: String,
-    buyer_contact_for_arbitrator: String,
-    seller_contact_for_arbitrator: String,
+    buyer_contact: String,
+    seller_contact: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO: check escrow funding timer*
@@ -779,8 +772,8 @@ fn dispute_escrow(
 
     // Update trade State to TradeState::Disputed and sets arbitrator
     trade.set_state(TradeState::EscrowDisputed, &env, &info);
-    trade.arbitrator_buyer_contact = Some(buyer_contact_for_arbitrator);
-    trade.arbitrator_seller_contact = Some(seller_contact_for_arbitrator);
+    trade.arbitrator_buyer_contact = Some(buyer_contact);
+    trade.arbitrator_seller_contact = Some(seller_contact);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()

@@ -34,8 +34,8 @@ pub enum ExecuteMsg {
     },
     DisputeEscrow {
         trade_id: String,
-        buyer_contact_for_arbitrator: String,
-        seller_contact_for_arbitrator: String,
+        buyer_contact: String,
+        seller_contact: String,
     },
     FiatDeposited {
         trade_id: String,
