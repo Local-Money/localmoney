@@ -239,7 +239,7 @@ impl TradeResponse {
         trade: Trade,
         buyer_profile: Profile,
         seller_profile: Profile,
-        arbitrator: Arbitrator,
+        arbitrator_profile: Profile,
     ) -> TradeResponse {
         let trade_states = vec![
             TradeState::EscrowDisputed,
@@ -255,7 +255,7 @@ impl TradeResponse {
         };
 
         let arbitrator_encryption_key: Option<String> = if state.eq(&TradeState::FiatDeposited) {
-            Some(arbitrator.encryption_key.clone())
+            arbitrator_profile.encryption_key.clone()
         } else {
             None
         };

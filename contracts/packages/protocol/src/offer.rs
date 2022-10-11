@@ -361,7 +361,6 @@ pub struct TradeAddr {
 pub struct Arbitrator {
     pub arbitrator: Addr,
     pub fiat: FiatCurrency,
-    pub encryption_key: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

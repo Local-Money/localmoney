@@ -231,28 +231,25 @@ fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
     let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
 
-    let buyer_profile = load_profile(
+    let buyer = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
         state.buyer.clone(),
     );
-    let seller_profile = load_profile(
+
+    let seller = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
         state.seller.clone(),
     );
-    let arbitrator = ArbitratorModel::query_arbitrator_fiat(
-        deps.storage,
+
+    let arbitrator = load_profile(
+        &deps.querier,
+        hub_config.profile_addr.to_string(),
         state.arbitrator.clone(),
-        state.fiat.clone(),
-    )
-    .unwrap();
-    Ok(TradeResponse::map(
-        state,
-        buyer_profile,
-        seller_profile,
-        arbitrator,
-    ))
+    );
+
+    Ok(TradeResponse::map(state, buyer, seller, arbitrator))
 }
 
 pub fn query_trades(
@@ -265,6 +262,7 @@ pub fn query_trades(
     limit: u32,
 ) -> StdResult<Vec<TradeInfo>> {
     let mut trades_infos: Vec<TradeInfo> = vec![];
+    let hub_config = get_hub_config(deps);
 
     let trade_results = match index {
         TraderRole::Seller => {
@@ -279,38 +277,35 @@ pub fn query_trades(
         }
     };
 
-    let hub_config = get_hub_config(deps);
-
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
         let offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
+        let current_time = env.block.time.seconds();
+        let expired = trade.get_state().eq(&TradeState::EscrowFunded)
+            && current_time > trade.clone().created_at + REQUEST_TIMEOUT;
 
         // TODO change it to make only one query
-        let buyer_profile = load_profile(
+        let buyer = load_profile(
             &deps.querier,
             hub_config.profile_addr.to_string(),
             trade.buyer.clone(),
         );
-        let seller_profile = load_profile(
+
+        let seller = load_profile(
             &deps.querier,
             hub_config.profile_addr.to_string(),
             trade.seller.clone(),
         );
 
-        let current_time = env.block.time.seconds();
-        let expired = trade.get_state().eq(&TradeState::EscrowFunded)
-            && current_time > trade.clone().created_at + REQUEST_TIMEOUT;
-
-        let arbitrator = ArbitratorModel::query_arbitrator_fiat(
-            deps.storage,
+        let arbitrator = load_profile(
+            &deps.querier,
+            hub_config.profile_addr.to_string(),
             trade.arbitrator.clone(),
-            trade.fiat.clone(),
-        )
-        .unwrap();
+        );
 
         trades_infos.push(TradeInfo {
-            trade: TradeResponse::map(trade.clone(), buyer_profile, seller_profile, arbitrator),
+            trade: TradeResponse::map(trade.clone(), buyer, seller, arbitrator),
             offer,
             expired,
         })
@@ -715,7 +710,6 @@ pub fn create_arbitrator(
         Arbitrator {
             arbitrator: arbitrator_address.clone(),
             fiat: fiat.clone(),
-            encryption_key: encryption_key.clone(),
         },
     );
 
