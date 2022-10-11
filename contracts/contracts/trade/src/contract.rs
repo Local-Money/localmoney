@@ -82,8 +82,8 @@ pub fn execute(
         ExecuteMsg::NewArbitrator {
             arbitrator,
             fiat,
-            encrypt_key,
-        } => create_arbitrator(deps, info, arbitrator, fiat, encrypt_key),
+            encryption_key,
+        } => create_arbitrator(deps, info, arbitrator, fiat, encryption_key),
         ExecuteMsg::DeleteArbitrator { arbitrator, fiat } => {
             delete_arbitrator(deps, info, arbitrator, fiat)
         }
@@ -153,7 +153,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         hub_cfg.profile_addr.to_string(),
         new_trade.taker.clone(),
         new_trade.profile_taker_contact,
-        new_trade.profile_taker_encrypt_key,
+        new_trade.profile_taker_encryption_key,
     );
 
     let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
@@ -704,7 +704,7 @@ pub fn create_arbitrator(
     info: MessageInfo,
     arbitrator_address: Addr,
     fiat: FiatCurrency,
-    encrypt_key: String,
+    encryption_key: String,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
     let hub_config = get_hub_config(deps.as_ref());
@@ -715,7 +715,7 @@ pub fn create_arbitrator(
         Arbitrator {
             arbitrator: arbitrator_address.clone(),
             fiat: fiat.clone(),
-            encryption_key: encrypt_key.clone(),
+            encryption_key: encryption_key.clone(),
         },
     );
 
@@ -723,7 +723,7 @@ pub fn create_arbitrator(
         hub_config.profile_addr.to_string(),
         arbitrator_address.clone(),
         "N/A".to_string(),
-        encrypt_key.clone(),
+        encryption_key.clone(),
     );
 
     let res = Response::new()
@@ -731,7 +731,7 @@ pub fn create_arbitrator(
         .add_attribute("action", "create_arbitrator")
         .add_attribute("arbitrator", arbitrator_address.to_string())
         .add_attribute("asset", fiat.to_string())
-        .add_attribute("encrypt_key", encrypt_key);
+        .add_attribute("encryption_key", encryption_key);
 
     Ok(res)
 }

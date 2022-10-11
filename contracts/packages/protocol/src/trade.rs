@@ -47,7 +47,7 @@ pub enum ExecuteMsg {
     NewArbitrator {
         arbitrator: Addr,
         fiat: FiatCurrency,
-        encrypt_key: String,
+        encryption_key: String,
     },
     DeleteArbitrator {
         arbitrator: Addr,
@@ -99,7 +99,7 @@ pub struct NewTrade {
     pub amount: Uint128,
     pub taker: Addr,
     pub profile_taker_contact: String,
-    pub profile_taker_encrypt_key: String,
+    pub profile_taker_encryption_key: String,
     pub taker_contact: String,
 }
 
@@ -254,7 +254,7 @@ impl TradeResponse {
             None
         };
 
-        let arbitrator_encrypt_key: Option<String> = if state.eq(&TradeState::FiatDeposited) {
+        let arbitrator_encryption_key: Option<String> = if state.eq(&TradeState::FiatDeposited) {
             Some(arbitrator.encryption_key.clone())
         } else {
             None
@@ -270,7 +270,7 @@ impl TradeResponse {
             seller_contact: trade.seller_contact,
             seller_encryption_key: seller_profile.encryption_key,
             arbitrator: arbitrator_address,
-            arbitrator_encryption_key: arbitrator_encrypt_key,
+            arbitrator_encryption_key,
             arbitrator_seller_contact: trade.arbitrator_seller_contact,
             arbitrator_buyer_contact: trade.arbitrator_buyer_contact,
             offer_contract: trade.offer_contract,

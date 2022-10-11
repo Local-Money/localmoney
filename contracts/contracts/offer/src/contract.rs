@@ -175,9 +175,9 @@ pub fn update_offer(
 
     assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
 
-    let mut send_msgs: Vec<SubMsg> = Vec::new();
+    let mut sub_msgs: Vec<SubMsg> = Vec::new();
     if msg.owner_contact.is_some() && msg.owner_encryption_key.is_some() {
-        send_msgs.push(update_profile_msg(
+        sub_msgs.push(update_profile_msg(
             hub_config.profile_addr.to_string(),
             info.sender.clone(),
             msg.owner_contact.clone().unwrap(),
@@ -188,7 +188,7 @@ pub fn update_offer(
     let offer = offer_model.update(msg);
 
     let res = Response::new()
-        .add_submessages(send_msgs)
+        .add_submessages(sub_msgs)
         .add_attribute("action", "update_offer")
         .add_attribute("id", offer.id.clone())
         .add_attribute("owner", offer.owner.to_string());
