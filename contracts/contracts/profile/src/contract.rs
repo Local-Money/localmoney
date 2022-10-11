@@ -3,7 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
-use localterra_protocol::guards::assert_ownership;
+use localterra_protocol::guards::{assert_multiple_ownership, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::profile::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, ProfileModel, QueryMsg,
@@ -48,15 +48,19 @@ pub fn execute(
 
 fn update_profile(
     deps: DepsMut,
-    _info: MessageInfo,
+    info: MessageInfo,
     profile_addr: Addr,
     contact: String,
     encryption_key: String,
 ) -> Result<Response, ContractError> {
-    // TODO Set the ownership to this method
-    // let hub_config = get_hub_config(deps.as_ref());
-    // Only the trade contract should be able to call this method
-    // assert_ownership(info.sender, hub_config.trade_addr).unwrap();
+    let hub_config = get_hub_config(deps.as_ref());
+    let owners = vec![
+        profile_addr.clone(),
+        hub_config.trade_addr,
+        hub_config.offer_addr,
+    ];
+    // Only the trade/offer contract or the profile owner should be able to update profile
+    assert_multiple_ownership(info.sender, owners).unwrap();
 
     let mut profile_model = ProfileModel::load(deps.storage, profile_addr.clone());
     profile_model.profile.contact = Some(contact.clone());
