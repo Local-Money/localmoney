@@ -84,8 +84,8 @@ const taker = computed(() => {
 })
 
 const contactsForArbitrator = asyncComputed(async () => {
-  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.buyer_contact_for_arbitrator)
-  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.seller_contact_for_arbitrator)
+  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_buyer_contact)
+  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_seller_contact)
   const makerContact = tradeInfo.value.trade.buyer === maker.value ? buyer : seller
   const takerContact = tradeInfo.value.trade.seller === maker.value ? buyer : seller
   return {
