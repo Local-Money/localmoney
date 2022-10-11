@@ -33,7 +33,6 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Create { profile_addr } => create_profile(deps, info, profile_addr),
         ExecuteMsg::UpdateProfile {
             profile_addr,
             contact,
@@ -45,26 +44,6 @@ pub fn execute(
         } => increase_trade_count(deps, info, profile_addr, final_trade_state),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
-}
-
-fn create_profile(
-    deps: DepsMut,
-    info: MessageInfo,
-    profile_addr: Addr,
-) -> Result<Response, ContractError> {
-    let hub_config = get_hub_config(deps.as_ref());
-    // Only the trade contract should be able to call this method
-    assert_ownership(info.sender, hub_config.trade_addr).unwrap();
-
-    // Only creates a new profile if it's not already created
-    if !ProfileModel::has(deps.storage, profile_addr.to_string()) {
-        ProfileModel::store(deps.storage, &Profile::new(profile_addr.clone()));
-    }
-
-    let res = Response::new()
-        .add_attribute("action", "create_profile")
-        .add_attribute("profile_addr", profile_addr.to_string());
-    Ok(res)
 }
 
 fn update_profile(
