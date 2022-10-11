@@ -5,6 +5,7 @@ import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
 import makerSecrets from './fixtures/maker_secrets.json'
 import takerSecrets from './fixtures/taker_secrets.json'
+import adminSecrets from './fixtures/admin_secrets.json'
 import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import { decryptDataMocked, encryptDataMocked } from './helper'
@@ -41,7 +42,7 @@ describe('trade lifecycle happy path', () => {
       await adminClient.newArbitrator({
         arbitrator: adminClient.getWalletAddress(),
         fiat,
-        encryption_key: 'arbitrator_encrypt_public_key',
+        encryption_key: adminSecrets.publicKey,
       })
       arbitrators = await adminClient.fetchArbitrators()
     }
@@ -186,7 +187,6 @@ describe('trade invalid state changes', () => {
     const offer = offers[0] as PostOffer
     let trade = await makerClient.fetchTradeDetail(tradeId)
     const maker_contact = await encryptDataMocked(trade.seller_encryption_key, offer.owner_contact)
-    console.log('maker_contact: ', maker_contact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
     trade = await makerClient.fetchTradeDetail(tradeId)
     expect(trade.state).toBe(TradeState.request_accepted)

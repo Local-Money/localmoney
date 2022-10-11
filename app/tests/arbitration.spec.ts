@@ -1,5 +1,4 @@
 import { TextDecoder, TextEncoder } from 'util'
-
 import dotenv from 'dotenv'
 import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
@@ -8,6 +7,7 @@ import type { TestCosmosChain } from './network/TestCosmosChain'
 import { encryptDataMocked } from './helper'
 import takerSecrets from './fixtures/taker_secrets.json'
 import makerSecrets from './fixtures/maker_secrets.json'
+import adminSecrets from './fixtures/admin_secrets.json'
 import type { FiatCurrency, GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
@@ -19,7 +19,7 @@ let takerClient: TestCosmosChain
 let adminClient: TestCosmosChain
 
 const takerContact = 'taker001'
-const makerContact = 'taker001'
+const makerContact = 'maker001'
 
 jest.setTimeout(30 * 1000)
 beforeAll(async () => {
@@ -39,7 +39,7 @@ describe('arbitration tests', () => {
       await adminClient.newArbitrator({
         arbitrator: adminClient.getWalletAddress(),
         fiat,
-        encryption_key: 'arbitrator_encrypt_public_key',
+        encryption_key: adminSecrets.publicKey,
       })
       arbitrators = await adminClient.fetchArbitrators()
     }
@@ -87,7 +87,9 @@ describe('arbitration tests', () => {
     expect(trade.state).toBe(TradeState.fiat_deposited)
 
     // Taker disputes the escrow
-    await takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')
+    const buyer_contact = await encryptDataMocked(makerContact, trade.arbitrator_encryption_key)
+    const seller_contact = await encryptDataMocked(taker_contact, trade.arbitrator_encryption_key)
+    await takerClient.openDispute(trade.id, buyer_contact, seller_contact)
     trade = await takerClient.fetchTradeDetail(trade.id)
     expect(trade.state).toBe(TradeState.escrow_disputed)
 
