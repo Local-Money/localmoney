@@ -10,7 +10,7 @@ import {
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
-import type { GetOffer, NewTrade } from '~/types/components.interface'
+import type { NewTrade } from '~/types/components.interface'
 import { usePriceStore } from '~/stores/price'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'

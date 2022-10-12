@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
 import type { ListResult } from '~/stores/ListResult'
-import type { GetOffer } from '~/types/components.interface'
+import type { GetOffer, OfferResponse } from '~/types/components.interface'
 import { OfferState } from '~/types/components.interface'
 import ArchivedOfferItem from '~/ui/components/myOffers/ArchivedOfferItem.vue'
 import CollapsedMyOffer from '~/ui/components/myOffers/CollapsedMyOffer.vue'
@@ -12,19 +12,21 @@ import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
-const myOffersResult = computed<ListResult<GetOffer>>(() => client.myOffers)
+const myOffersResult = computed<ListResult<OfferResponse>>(() => client.myOffers)
 const page = reactive({
-  myOffers: [] as ExpandableItem<GetOffer>[],
-  archiveOffers: [] as GetOffer[],
+  myOffers: [] as ExpandableItem<OfferResponse>[],
+  archiveOffers: [] as OfferResponse[],
 })
 client.$subscribe((mutation, state) => {
   if (state.myOffers.isSuccess()) {
     page.myOffers = state.myOffers.data
-      .filter((offer) => checkValidOffer(offer) && offer.state !== OfferState.archived)
-      .flatMap((offer) => new ExpandableItem(offer))
+      .filter(
+        (offerResponse) => checkValidOffer(offerResponse.offer) && offerResponse.offer.state !== OfferState.archived
+      )
+      .flatMap((offerResponse) => new ExpandableItem(offerResponse.offer))
 
     page.archiveOffers = state.myOffers.data.filter(
-      (offer) => checkValidOffer(offer) && offer.state === OfferState.archived
+      (offerResponse) => checkValidOffer(offerResponse.offer) && offerResponse.offer.state === OfferState.archived
     )
   }
 })

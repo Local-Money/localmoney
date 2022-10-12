@@ -15,8 +15,8 @@ const page = reactive({ offers: [] as ExpandableItem<GetOffer>[] })
 client.$subscribe((mutation, state) => {
   if (state.offers.isSuccess()) {
     page.offers = state.offers.data
-      .filter((offer) => checkValidOffer(offer))
-      .flatMap((offer) => new ExpandableItem(offer))
+      .filter((offerResponse) => checkValidOffer(offerResponse.offer))
+      .flatMap((offerResponse) => new ExpandableItem(offerResponse.offer))
   }
 })
 
