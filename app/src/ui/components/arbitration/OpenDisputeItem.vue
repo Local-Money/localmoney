@@ -53,10 +53,10 @@ const taker = computed(() => {
             </svg>
           </div>
           <p v-if="props.dispute.offer.offer_type === 'buy'" class="offer-type">
-            is buying <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> from
+            buying <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> from
           </p>
           <p v-else class="offer-type">
-            is selling <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> to
+            selling <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> to
           </p>
         </div>
         <div class="wrap-peer">
@@ -88,7 +88,7 @@ const taker = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 40px;
+  gap: 32px;
 
   @media only screen and (max-width: $mobile) {
     flex-direction: column;

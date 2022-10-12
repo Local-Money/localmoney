@@ -17,6 +17,7 @@ import type {
   OfferResponse,
   PatchOffer,
   PostOffer,
+  Profile,
   Trade,
   TradeInfo,
 } from '~/types/components.interface'
@@ -62,6 +63,22 @@ export class CosmosChain implements Chain {
 
   getWalletAddress(): string {
     return this.account ? this.account.address : 'undefined'
+  }
+
+  async fetchProfile() {
+    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
+      try {
+        const result = (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.profile_addr, {
+          profile: { addr: this.getWalletAddress() },
+        })) as Profile
+        console.log('Profile result >> ', result)
+        return result
+      } catch (e) {
+        throw new DefaultError()
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
   }
 
   // TODO encrypt the postOffer.owner_contact field
@@ -115,7 +132,7 @@ export class CosmosChain implements Chain {
             owner: this.getWalletAddress(),
             limit: 10,
           },
-        })) as GetOffer[]
+        })) as OfferResponse[]
       } catch (e) {
         throw new DefaultError()
       }
@@ -369,9 +386,13 @@ export class CosmosChain implements Chain {
     })
   }
 
-  async openDispute(tradeId: string) {
+  async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
-      dispute_escrow: { trade_id: tradeId },
+      dispute_escrow: {
+        trade_id: tradeId,
+        buyer_contact: buyerContact,
+        seller_contact: sellerContact,
+      },
     })
   }
 

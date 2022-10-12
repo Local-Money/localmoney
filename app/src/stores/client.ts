@@ -1,4 +1,5 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
+import { useLocalStorage } from '@vueuse/core'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
@@ -10,10 +11,13 @@ import type {
   NewTrade,
   PatchOffer,
   PostOffer,
+  Profile,
   TradeInfo,
   UserWallet,
 } from '~/types/components.interface'
 import { LoadingState, OfferState } from '~/types/components.interface'
+import type { Secrets } from '~/utils/crypto'
+import { generateKeys } from '~/utils/crypto'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -22,6 +26,8 @@ export const useClientStore = defineStore({
       chainClient: <ChainClient>ChainClient.mock, // TODO call setClient in the App.vue setup function to properly init a chain adapter
       client: chainFactory(ChainClient.kujira),
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
+      secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
+      profile: <Profile>{},
       offers: <ListResult<GetOffer>>ListResult.loading(),
       myOffers: <ListResult<GetOffer>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
@@ -47,12 +53,28 @@ export const useClientStore = defineStore({
       try {
         await this.client.connectWallet()
         const address = this.client.getWalletAddress()
+        await this.syncSecrets(address)
         this.userWallet = { isConnected: true, address }
         await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
         alert((e as ChainError).message)
       }
+    },
+    async fetchProfile() {
+      this.profile = await this.client.fetchProfile()
+    },
+    async syncSecrets(address: string) {
+      await this.fetchProfile()
+      const secrets = this.secrets.get(address) ?? (await generateKeys())
+      if (!this.secrets.has(address)) {
+        this.secrets.set(address, secrets)
+      }
+      console.log(secrets)
+    },
+    getSecrets() {
+      const address = this.client.getWalletAddress()
+      return this.secrets.get(address)!
     },
     async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
@@ -76,6 +98,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Creating Offer...')
       try {
         await this.client.createOffer(postOffer)
+        await this.fetchProfile()
         await this.fetchMyOffers()
       } catch (e) {
         // TODO handle error
@@ -116,6 +139,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening trade...')
       try {
         const trade_id = await this.client.openTrade(trade)
+        await this.fetchProfile()
         const route = trade_id === '' ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
       } catch (e) {
@@ -242,10 +266,10 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async openDispute(tradeId: string) {
+    async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
-        await this.client.openDispute(tradeId)
+        await this.client.openDispute(tradeId, buyerContact, sellerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
         // TODO handle error

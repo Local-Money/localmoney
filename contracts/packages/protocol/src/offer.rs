@@ -1,14 +1,12 @@
 use super::constants::OFFERS_KEY;
-use crate::constants::OFFERS_QUERY_OFFERS_BY_PROFILE;
-use crate::constants::OFFERS_QUERY_PROFILES_LIMIT;
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
-use crate::profile::load_profile;
-use crate::profile::Profile;
-use crate::profile::QueryMsg as ProfileQueryMsg;
-use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
+use crate::profile::{load_profile, Profile};
+use crate::trade::{TradeResponse, TradeState};
+use cosmwasm_std::{
+    Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128,
+};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -61,6 +59,7 @@ pub struct InstantiateMsg {}
 pub struct OfferMsg {
     pub offer_type: OfferType,
     pub owner_contact: String,
+    pub owner_encryption_key: String,
     pub fiat_currency: FiatCurrency,
     pub rate: Uint128,
     pub denom: Denom,
@@ -72,6 +71,7 @@ pub struct OfferMsg {
 pub struct OfferUpdateMsg {
     pub id: String,
     pub owner_contact: Option<String>,
+    pub owner_encryption_key: Option<String>,
     pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
@@ -83,9 +83,9 @@ pub struct OfferUpdateMsg {
 pub enum ExecuteMsg {
     //TODO: Change to Create(OfferMsg)
     Create { offer: OfferMsg },
-    RegisterHub {},
     UpdateOffer { offer_update: OfferUpdateMsg },
-    UpdateLastTraded { offer_id: String },
+    IncrementTradesCount { offer_id: String },
+    RegisterHub {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -94,9 +94,6 @@ pub enum QueryMsg {
     State {},
     Offer {
         id: String,
-    },
-    Offers {
-        start_at: Option<u64>,
     },
     OffersBy {
         offer_type: OfferType,
@@ -121,7 +118,6 @@ pub struct OffersCount {
 pub struct Offer {
     pub id: String,
     pub owner: Addr,
-    pub owner_contact: String,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
     pub rate: Uint128,
@@ -131,7 +127,6 @@ pub struct Offer {
     pub state: OfferState,
     pub timestamp: u64,
     pub trades_count: u64,
-    pub last_traded_at: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -176,9 +171,6 @@ impl OfferModel<'_> {
     }
 
     pub fn update(&mut self, msg: OfferUpdateMsg) -> &Offer {
-        if msg.owner_contact.is_some() {
-            self.offer.owner_contact = msg.owner_contact.unwrap();
-        }
         self.offer.rate = msg.rate;
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
@@ -187,45 +179,14 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn update_last_traded(&mut self, last_traded_at: u64) -> &Offer {
-        self.offer.last_traded_at = last_traded_at;
+    pub fn increment_trades_count(&mut self) -> &Offer {
         self.offer.trades_count += 1;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
     }
 
-    pub fn query(deps: Deps, start_at: Option<u64>) -> StdResult<Vec<OfferResponse>> {
+    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
-
-        let profiles: Vec<Profile> = deps
-            .querier
-            .query_wasm_smart(
-                hub_config.profile_addr.to_string(),
-                &ProfileQueryMsg::Profiles {
-                    limit: OFFERS_QUERY_PROFILES_LIMIT,
-                    start_at,
-                },
-            )
-            .unwrap_or(vec![]);
-
-        let mut result: Vec<OfferResponse> = vec![];
-        let offers_by_profile_limit = OFFERS_QUERY_OFFERS_BY_PROFILE;
-        profiles.iter().for_each(|profile| {
-            let offers_by_owner: Vec<Offer> =
-                OfferModel::query_by_owner(deps, profile.addr.clone(), offers_by_profile_limit)
-                    .unwrap_or(vec![]);
-
-            offers_by_owner.iter().for_each(|offer| {
-                result.push(OfferResponse {
-                    offer: offer.clone(),
-                    profile: profile.clone(),
-                })
-            });
-        });
-        Ok(result)
-    }
-
-    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<Offer>> {
         let range = offers().idx.owner.prefix(owner.into_string()).range(
             deps.storage,
             None,
@@ -235,7 +196,17 @@ impl OfferModel<'_> {
 
         let result = range
             .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, offer)| Ok(offer)))
+            .flat_map(|item| {
+                item.and_then(|(_, offer)| {
+                    let profile = load_profile(
+                        &deps.querier,
+                        hub_config.profile_addr.to_string(),
+                        offer.clone().owner,
+                    )
+                    .unwrap();
+                    Ok(OfferResponse { offer, profile })
+                })
+            })
             .collect();
 
         Ok(result)
@@ -283,8 +254,8 @@ impl OfferModel<'_> {
                     } else {
                         let profile_result = load_profile(
                             &deps.querier,
-                            offer.clone().owner,
                             hub_config.profile_addr.to_string(),
+                            offer.clone().owner,
                         );
                         profile = profile_result.unwrap().clone();
                         profiles.insert(offer.owner.clone(), profile.clone());
@@ -300,8 +271,8 @@ impl OfferModel<'_> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeInfo {
-    pub trade: Trade,
-    pub offer: Offer,
+    pub trade: TradeResponse,
+    pub offer: OfferResponse,
     pub expired: bool,
 }
 

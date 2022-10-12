@@ -2,12 +2,15 @@
 import type { TradeInfo } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { formatAddress } from '~/shared'
+import { decryptData, encryptData } from '~/utils/crypto'
 
 const props = defineProps<{
   tradeInfo: TradeInfo
   walletAddress: String
 }>()
 const client = useClientStore()
+const secrets = computed(() => client.getSecrets())
+const profile = computed(() => client.profile)
 
 const isBuyer = computed(() => props.tradeInfo.trade.buyer === props.walletAddress)
 const isSeller = computed(() => props.tradeInfo.trade.seller === props.walletAddress)
@@ -29,7 +32,10 @@ function getTaker(): string {
 }
 
 async function acceptTradeRequest(id: string) {
-  await client.acceptTradeRequest(id, props.tradeInfo.offer.owner_contact)
+  const takerPubKey = props.tradeInfo.trade.seller_encryption_key
+  const decryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
+  const ownerContact = await encryptData(takerPubKey, decryptedContact)
+  await client.acceptTradeRequest(id, ownerContact)
 }
 
 async function cancelTradeRequest(id: string) {
@@ -37,8 +43,9 @@ async function cancelTradeRequest(id: string) {
 }
 
 async function fundEscrow(id: string) {
-  const ownerContact =
-    props.tradeInfo.offer.owner === client.userWallet.address ? props.tradeInfo.offer.owner_contact : undefined
+  const buyerPubKey = props.tradeInfo.trade.buyer_encryption_key!
+  const decryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
+  const ownerContact = await encryptData(buyerPubKey, decryptedContact)
   await client.fundEscrow(id, props.tradeInfo.trade.amount, props.tradeInfo.trade.denom, ownerContact)
 }
 
@@ -55,7 +62,19 @@ async function refundEscrow(id: string) {
 }
 
 async function openDispute(id: string) {
-  await client.openDispute(id)
+  let buyerContact = ''
+  let sellerContact = ''
+  const userDecryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
+  if (isBuyer.value) {
+    const sellerDecryptedContact = await decryptData(secrets.value.privateKey, props.tradeInfo.trade.seller_contact!)
+    buyerContact = await encryptData(props.tradeInfo.trade.arbitrator_encryption_key, userDecryptedContact)
+    sellerContact = await encryptData(props.tradeInfo.trade.arbitrator_encryption_key, sellerDecryptedContact)
+  } else {
+    const buyerDecryptedContact = await decryptData(secrets.value.privateKey, props.tradeInfo.trade.buyer_contact!)
+    sellerContact = await encryptData(props.tradeInfo.trade.arbitrator_encryption_key, userDecryptedContact)
+    buyerContact = await encryptData(props.tradeInfo.trade.arbitrator_encryption_key, buyerDecryptedContact)
+  }
+  await client.openDispute(id, buyerContact, sellerContact)
 }
 
 async function settleDispute(winner: string) {

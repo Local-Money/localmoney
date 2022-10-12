@@ -37,7 +37,7 @@ const counterparty = computed(() => {
 
 <template>
   <div class="wrap-table-item">
-    <div class="col-1">
+    <div class="col-1 trade-id">
       <router-link :to="`/trade/${props.tradeInfo.trade.id}`">
         <p>{{ props.tradeInfo.trade.id }}</p>
       </router-link>
@@ -51,10 +51,10 @@ const counterparty = computed(() => {
     <div class="col-4">
       <p>{{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}</p>
     </div>
-    <div class="col-5 trader">
+    <div class="col-5">
       <p>{{ fiatAmountStr }}</p>
     </div>
-    <div class="col-6">
+    <div class="col-6 trader">
       <p>{{ formatAddress(counterparty) }}</p>
     </div>
     <div class="col-7">
@@ -74,6 +74,10 @@ const counterparty = computed(() => {
   p {
     font-size: 14px;
     font-weight: $regular;
+  }
+
+  .trade-id a {
+    color: $primary;
   }
 
   .trader {

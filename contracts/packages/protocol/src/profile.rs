@@ -1,5 +1,8 @@
 use crate::trade::TradeState;
-use cosmwasm_std::{Addr, Deps, Env, Order, QuerierWrapper, StdResult, Storage};
+use cosmwasm_std::{
+    to_binary, Addr, CosmosMsg, Deps, Env, Order, QuerierWrapper, StdResult, Storage, SubMsg,
+    WasmMsg,
+};
 use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -11,11 +14,13 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    Create {
-        addr: Addr,
+    UpdateProfile {
+        profile_addr: Addr,
+        contact: String,
+        encryption_key: String,
     },
     IncreaseTradeCount {
-        profile_address: Addr,
+        profile_addr: Addr,
         final_trade_state: TradeState,
     },
     RegisterHub {},
@@ -24,7 +29,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Profile { address: Addr },
+    Profile { addr: Addr },
     Profiles { limit: u32, start_at: Option<u64> },
 }
 
@@ -32,16 +37,51 @@ pub enum QueryMsg {
 #[serde(rename_all = "snake_case")]
 pub struct MigrateMsg {}
 
+// Execute Util
+pub fn update_profile_msg(
+    profile_contract: String,
+    profile_addr: Addr,
+    contact: String,
+    encryption_key: String,
+) -> SubMsg {
+    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: profile_contract,
+        msg: to_binary(&ExecuteMsg::UpdateProfile {
+            profile_addr,
+            contact,
+            encryption_key,
+        })
+        .unwrap(),
+        funds: vec![],
+    }))
+}
+
+pub fn increase_profile_trades_count_msg(
+    profile_contract: String,
+    profile_addr: Addr,
+    final_trade_state: TradeState,
+) -> SubMsg {
+    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: profile_contract,
+        msg: to_binary(&ExecuteMsg::IncreaseTradeCount {
+            profile_addr,
+            final_trade_state,
+        })
+        .unwrap(),
+        funds: vec![],
+    }))
+}
+
 // Query Util
 pub fn load_profile(
     querier: &QuerierWrapper,
-    profile_addr: Addr,
     profile_contract: String,
+    profile_addr: Addr,
 ) -> StdResult<Profile> {
     querier.query_wasm_smart(
         profile_contract,
         &QueryMsg::Profile {
-            address: profile_addr.clone(),
+            addr: profile_addr.clone(),
         },
     )
 }
@@ -53,6 +93,8 @@ pub struct Profile {
     pub created_at: u64,
     pub trades_count: u64,
     pub last_trade: u64,
+    pub contact: Option<String>,
+    pub encryption_key: Option<String>,
 }
 
 impl Profile {
@@ -62,35 +104,48 @@ impl Profile {
             created_at,
             trades_count: 0,
             last_trade: 0,
+            contact: None,
+            encryption_key: None,
         }
     }
 }
 
+// Model
 pub struct ProfileModel<'a> {
     pub profile: Profile,
     pub storage: &'a mut dyn Storage,
 }
 
 impl ProfileModel<'_> {
-    pub fn store(storage: &mut dyn Storage, profile: &Profile) -> StdResult<()> {
-        profiles().save(storage, profile.addr.to_string(), &profile)
+    pub fn store<'a>(storage: &'a mut dyn Storage, profile: &Profile) -> ProfileModel<'a> {
+        profiles()
+            .save(storage, profile.addr.to_string(), &profile)
+            .unwrap();
+        ProfileModel {
+            profile: profile.clone(),
+            storage,
+        }
     }
 
-    pub fn from_store(storage: &dyn Storage, address: &String) -> StdResult<Profile> {
-        profiles().load(storage, address.clone())
+    pub fn from_store<'a>(
+        storage: &'a mut dyn Storage,
+        profile_addr: Addr,
+    ) -> StdResult<ProfileModel<'a>> {
+        match profiles().load(storage, profile_addr.to_string()) {
+            Ok(profile) => Ok(ProfileModel { profile, storage }),
+            Err(e) => Err(e),
+        }
     }
 
-    pub fn create(storage: &mut dyn Storage, profile: Profile) -> ProfileModel {
-        ProfileModel::store(storage, &profile).unwrap();
-        ProfileModel { profile, storage }
+    pub fn query_profile(storage: &dyn Storage, profile_addr: Addr) -> StdResult<Profile> {
+        profiles().load(storage, profile_addr.to_string())
     }
 
     pub fn save<'a>(self) -> Profile {
-        ProfileModel::store(self.storage, &self.profile).unwrap();
-        self.profile
+        ProfileModel::store(self.storage, &self.profile).profile
     }
 
-    pub fn query(
+    pub fn query_profiles(
         deps: Deps,
         _env: Env,
         limit: u32,

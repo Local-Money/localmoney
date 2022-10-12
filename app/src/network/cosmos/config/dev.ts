@@ -17,6 +17,7 @@ export const DEV_HUB_INFO: HubInfo = {
     offer_addr: process.env.OFFER ?? '',
     trade_addr: process.env.TRADE ?? '',
     trading_incentives_addr: '',
+    profile_addr: '',
     local_market_addr: process.env.LOCAL_MARKET ?? '',
     local_denom: {
       native: process.env.LOCAL_DENOM ?? '',

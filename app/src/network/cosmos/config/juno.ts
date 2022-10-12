@@ -16,6 +16,7 @@ export const JUNO_TESTNET_HUB_INFO: HubInfo = {
   hubConfig: {
     offer_addr: 'juno1qzjsgnpwtlz265t2cxheftf5mlgs7lqjacvz3lkp5vr4ga3rgassgvsegx',
     trade_addr: 'juno1htpc5ek2p80agv2x7tjgx6l03p52l930dd4dyk3qk9raanzyrngq4zx8da',
+    profile_addr: '',
     trading_incentives_addr: 'juno1a6qzj0ep50jjn97ufmsjlwdhnqmny2phhcug3e6404tkngfd906syquknw',
     local_market_addr: 'juno1gqhxtrsve4f2pcp65fr8l5t86pu7v0cxqvqgj6',
     local_denom: { native: 'ujunox' },

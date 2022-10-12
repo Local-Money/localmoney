@@ -152,17 +152,17 @@ h3 {
 
 .col-3,
 :deep(.col-3) {
-  width: 10%;
+  width: 7.5%;
 }
 
 .col-4,
 :deep(.col-4) {
-  width: 10%;
+  width: 17%;
 }
 
 .col-5,
 :deep(.col-5) {
-  width: 20%;
+  width: 17%;
 }
 
 .col-6,

@@ -12,11 +12,13 @@ import {
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
+import { decryptData } from '~/utils/crypto'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
 const priceStore = usePriceStore()
 const tradeInfo = ref()
+const secrets = computed(() => client.getSecrets())
 let refreshInterval: NodeJS.Timer
 
 const route = useRoute()
@@ -53,10 +55,20 @@ const fiatAmountStr = computed(() => {
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.rate))
-const isMakerContactAvailable = computed(() => tradeInfo.value.trade.maker_contact)
-const makerContact = computed(() => {
-  const telegram = tradeInfo.value.trade.maker_contact
-  return isMakerContactAvailable.value ? telegram : 'pending'
+const buyerOrSeller = computed(() => (isBuyer.value ? 'Buyer' : 'Seller'))
+const counterpartyEncryptedContact = computed(() =>
+  isBuyer.value ? tradeInfo.value.trade.seller_contact : tradeInfo.value.trade.buyer_contact
+)
+const isCounterpartyContactAvailable = computed(() => counterpartyEncryptedContact.value !== null)
+const counterpartyContact = asyncComputed(async () => {
+  const encryptedContact = counterpartyEncryptedContact.value
+  const privateKey = secrets.value.privateKey
+  if (isCounterpartyContactAvailable.value) {
+    console.log('decrypt')
+    return await decryptData(privateKey, encryptedContact)
+  } else {
+    return 'pending ...'
+  }
 })
 
 const isArbitrator = computed(() => {
@@ -69,6 +81,17 @@ const maker = computed(() => {
 
 const taker = computed(() => {
   return tradeInfo.value.trade.buyer === maker ? tradeInfo.value.trade.seller : tradeInfo.value.trade.buyer
+})
+
+const contactsForArbitrator = asyncComputed(async () => {
+  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_buyer_contact)
+  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_seller_contact)
+  const makerContact = tradeInfo.value.trade.buyer === maker.value ? buyer : seller
+  const takerContact = tradeInfo.value.trade.seller === maker.value ? buyer : seller
+  return {
+    makerContact,
+    takerContact,
+  }
 })
 
 function fetchTrade(id: string) {
@@ -170,33 +193,81 @@ watch(userWallet, async () => {
     </section>
 
     <section class="wrap">
-      <section class="chat card">
-        <p>Chat will be here</p>
+      <!-- ChatboxStates -->
+      <div class="chat card">
         <div class="content">
-          <p class="label">
-            Telegram:
-            <a
-              v-if="isMakerContactAvailable"
-              :href="addTelegramURLPrefix(makerContact)"
-              class="telegram"
-              target="_blank"
-            >
-              {{ makerContact }}
+          <div v-if="!isArbitrator">
+            <!-- Contact available -->
+            <div v-if="isCounterpartyContactAvailable" class="contact-available">
+              <div class="trader-info">
+                <p><small>You're trading with</small></p>
+                <p class="trader">
+                  {{ formatAddress(counterparty) }}
+                </p>
+                <p class="rating">{{ formatTradesCountInfo(tradeInfo.offer.trades_count) }}</p>
+              </div>
+              <p class="guide-content">
+                Open a chat with the other trader so you can exchange information about payment.
+              </p>
+              <div class="contact-info">
+                <a :href="addTelegramURLPrefix(counterpartyContact)" class="btn-telegram" target="_blank">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M3.30615 11.0109C8.40641 8.7126 11.8074 7.19743 13.5091 6.46537C18.3677 4.3752 19.3773 4.01212 20.0354 4.00013C20.1801 3.99749 20.5037 4.03459 20.7133 4.21051C20.8903 4.35905 20.939 4.55971 20.9623 4.70055C20.9856 4.84139 21.0146 5.16221 20.9916 5.4129C20.7283 8.27419 19.589 15.2178 19.0094 18.4225C18.7642 19.7785 18.2813 20.2331 17.8138 20.2776C16.7978 20.3743 16.0263 19.5832 15.0422 18.916C13.5024 17.872 12.6325 17.2222 11.1378 16.2034C9.4105 15.0261 10.5303 14.379 11.5147 13.3215C11.7723 13.0448 16.2488 8.83347 16.3354 8.45144C16.3463 8.40366 16.3563 8.22556 16.254 8.13152C16.1517 8.03748 16.0007 8.06964 15.8918 8.09521C15.7373 8.13147 13.2775 9.81311 8.51212 13.1401C7.81389 13.636 7.18145 13.8776 6.61481 13.865C5.99014 13.851 4.78851 13.4997 3.89523 13.1993C2.79958 12.831 1.92878 12.6362 2.0046 12.0106C2.0441 11.6848 2.47795 11.3515 3.30615 11.0109Z"
+                      fill="inherit"
+                    />
+                  </svg>
+                  <p>open chat</p>
+                </a>
+              </div>
+            </div>
+            <!-- End Contact available -->
+
+            <!-- Contact waiting -->
+            <div v-else class="contact-waiting">
+              <p class="guide-content">Once the trade starts you will be able to contact the other trader.</p>
+            </div>
+            <!-- End Contact waiting -->
+          </div>
+          <div v-else>
+            <div class="title">
+              <p>Contact information</p>
+            </div>
+            <p class="guide-content">Please contact both parties to begin the dispute resolution process.</p>
+
+            <a :href="addTelegramURLPrefix(contactsForArbitrator.makerContact)" class="btn-telegram" target="_blank">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M3.30615 11.0109C8.40641 8.7126 11.8074 7.19743 13.5091 6.46537C18.3677 4.3752 19.3773 4.01212 20.0354 4.00013C20.1801 3.99749 20.5037 4.03459 20.7133 4.21051C20.8903 4.35905 20.939 4.55971 20.9623 4.70055C20.9856 4.84139 21.0146 5.16221 20.9916 5.4129C20.7283 8.27419 19.589 15.2178 19.0094 18.4225C18.7642 19.7785 18.2813 20.2331 17.8138 20.2776C16.7978 20.3743 16.0263 19.5832 15.0422 18.916C13.5024 17.872 12.6325 17.2222 11.1378 16.2034C9.4105 15.0261 10.5303 14.379 11.5147 13.3215C11.7723 13.0448 16.2488 8.83347 16.3354 8.45144C16.3463 8.40366 16.3563 8.22556 16.254 8.13152C16.1517 8.03748 16.0007 8.06964 15.8918 8.09521C15.7373 8.13147 13.2775 9.81311 8.51212 13.1401C7.81389 13.636 7.18145 13.8776 6.61481 13.865C5.99014 13.851 4.78851 13.4997 3.89523 13.1993C2.79958 12.831 1.92878 12.6362 2.0046 12.0106C2.0441 11.6848 2.47795 11.3515 3.30615 11.0109Z"
+                  fill="inherit"
+                />
+              </svg>
+              <p>chat with maker</p>
             </a>
-            <span v-else class="label">pending</span>
-          </p>
+
+            <a :href="addTelegramURLPrefix(contactsForArbitrator.takerContact)" class="btn-telegram" target="_blank">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M3.30615 11.0109C8.40641 8.7126 11.8074 7.19743 13.5091 6.46537C18.3677 4.3752 19.3773 4.01212 20.0354 4.00013C20.1801 3.99749 20.5037 4.03459 20.7133 4.21051C20.8903 4.35905 20.939 4.55971 20.9623 4.70055C20.9856 4.84139 21.0146 5.16221 20.9916 5.4129C20.7283 8.27419 19.589 15.2178 19.0094 18.4225C18.7642 19.7785 18.2813 20.2331 17.8138 20.2776C16.7978 20.3743 16.0263 19.5832 15.0422 18.916C13.5024 17.872 12.6325 17.2222 11.1378 16.2034C9.4105 15.0261 10.5303 14.379 11.5147 13.3215C11.7723 13.0448 16.2488 8.83347 16.3354 8.45144C16.3463 8.40366 16.3563 8.22556 16.254 8.13152C16.1517 8.03748 16.0007 8.06964 15.8918 8.09521C15.7373 8.13147 13.2775 9.81311 8.51212 13.1401C7.81389 13.636 7.18145 13.8776 6.61481 13.865C5.99014 13.851 4.78851 13.4997 3.89523 13.1993C2.79958 12.831 1.92878 12.6362 2.0046 12.0106C2.0441 11.6848 2.47795 11.3515 3.30615 11.0109Z"
+                  fill="inherit"
+                />
+              </svg>
+              <p>chat with taker</p>
+            </a>
+          </div>
         </div>
-      </section>
-      <div class="inner-wrap">
+      </div>
+      <!-- End ChatboxStates -->
+
+      <div class="summary">
         <!-- Trade Summary -->
         <div v-if="!isArbitrator" class="trade-summary card">
-          <div class="trader-info">
-            <p><small>You're trading with</small></p>
-            <p class="trader">
-              {{ formatAddress(counterparty) }}
-            </p>
-            <p class="rating">{{ formatTradesCountInfo(tradeInfo.offer.trades_count) }}</p>
-          </div>
           <div class="trade-info">
             <p class="label">Price</p>
             <div class="current-price">
@@ -371,14 +442,35 @@ watch(userWallet, async () => {
 }
 
 .chat {
-  width: 30%;
+  flex: 1;
   margin-right: 24px;
   margin-bottom: 64px;
 
-  .content {
-    margin-top: 20px;
+  .trader-info,
+  .title {
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid $border;
+    .trader,
+    p {
+      font-size: 18px;
+      font-weight: $semi-bold;
+    }
 
-    .label {
+    .rating {
+      font-size: 14px;
+      color: $gray700;
+      margin-top: 8px;
+    }
+  }
+
+  .content {
+    .guide-content {
+      color: $gray700;
+      font-size: 14px;
+    }
+
+    .contact {
       color: $gray900;
     }
 
@@ -389,13 +481,32 @@ watch(userWallet, async () => {
         color: $secondary;
       }
     }
+    .btn-telegram {
+      display: inline-flex;
+      flex-grow: 1;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 16px;
+      border-radius: 100px;
+      margin-top: 24px;
+      background-color: #229ed9;
+      color: $base-text;
+      font-size: 14px;
+      font-weight: $semi-bold;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        fill: $base-text;
+      }
+    }
   }
 }
 
-.inner-wrap {
+.summary {
   display: flex;
   flex-direction: column;
-  width: 70%;
+  flex: 2.5;
 }
 
 .dispute-summary {
@@ -436,20 +547,6 @@ watch(userWallet, async () => {
     margin-bottom: 8px;
     font-size: 14px;
     color: $gray900;
-  }
-
-  .trader-info {
-    width: 40%;
-
-    .trader {
-      font-size: 18px;
-      font-weight: $semi-bold;
-    }
-
-    .rating {
-      font-size: 14px;
-      color: $gray900;
-    }
   }
 
   .trade-info {
