@@ -82,6 +82,7 @@ pub fn create_offer(
 ) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
+    // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
     let mut offers_count = offers_count_storage(deps.storage).load().unwrap();
     offers_count.count += 1;
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
