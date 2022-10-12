@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import {
+  addTelegramURLPrefix,
   calculateFiatPriceByRate,
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
   formatTradesCountInfo,
+  removeTelegramURLPrefix,
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
@@ -12,13 +14,27 @@ import type { GetOffer, NewTrade } from '~/types/components.interface'
 import { usePriceStore } from '~/stores/price'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
+import { decryptData, encryptData } from '~/utils/crypto'
 
 const props = defineProps<{ offer: GetOffer }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
 const priceStore = usePriceStore()
 const client = useClientStore()
+const secrets = computed(() => client.getSecrets())
+
+async function defaultTakerContact() {
+  const contact = client.profile?.contact
+  console.log('contact: ', contact)
+  if (contact !== undefined) {
+    const decryptedContact = await decryptData(secrets.value.privateKey, contact)
+    return addTelegramURLPrefix(decryptedContact)
+  } else {
+    return ''
+  }
+}
 
 let refreshRateInterval: NodeJS.Timer | undefined
+const telegram = ref<string>('')
 const secondsUntilRateRefresh = ref(0)
 const cryptoAmount = ref(0)
 const fiatAmount = ref(0)
@@ -56,13 +72,21 @@ const minMaxCryptoStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 
-function newTrade() {
+async function newTrade() {
+  const telegramHandle = removeTelegramURLPrefix(telegram.value) as string
+  const profile_taker_encryption_key = secrets.value.publicKey
+  const taker_contact = await encryptData(props.offer.owner_encryption_key, telegramHandle)
+  const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
+
   const newTrade: NewTrade = {
     offer_id: `${props.offer.id}`,
     amount: `${cryptoAmount.value * 1000000}`,
     taker: `${client.userWallet.address}`,
+    profile_taker_contact,
+    taker_contact,
+    profile_taker_encryption_key,
   }
-  client.openTrade(newTrade)
+  await client.openTrade(newTrade)
 }
 
 function focus() {
@@ -138,7 +162,8 @@ function startExchangeRateRefreshTimer() {
 
 onMounted(() => {
   startExchangeRateRefreshTimer()
-  nextTick(() => {
+  nextTick(async () => {
+    telegram.value = await defaultTakerContact()
     focus()
   })
 })
@@ -239,19 +264,30 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+        <div class="telegram">
+          <div class="wrap-label">
+            <p class="label">Your Telegram username</p>
+            <IconTooltip
+              content="Share your contact to be able to communicate with the other trader. This information will be encrypted and only visible inside the trade."
+            />
+          </div>
+          <input v-model="telegram" type="text" placeholder="t.me/your-user-name" />
+        </div>
       </div>
 
       <div class="receipt">
         <div class="price">
           <p class="label">Price</p>
           <div class="wrap">
-            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
             <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
             <p class="value">1 {{ microDenomToDenom(offer.denom.native) }} = {{ offerPrice }}</p>
+            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
           </div>
         </div>
 
         <div class="summary">
+          <p class="label">Transaction summary</p>
           <div class="wrap">
             <div class="item">
               <p class="info">Trading Fee</p>
@@ -263,12 +299,11 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
-        <div class="wrap-btns">
-          <button class="secondary" @click="emit('cancel')">cancel</button>
-          <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
-        </div>
       </div>
+    </div>
+    <div class="wrap-btns">
+      <button class="secondary" @click="emit('cancel')">cancel</button>
+      <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
     </div>
   </div>
 </template>
@@ -309,16 +344,24 @@ onUnmounted(() => {
 
   .offer-detail {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    gap: 80px;
+    gap: 32px;
 
     @media only screen and (max-width: $mobile) {
       flex-direction: column;
       gap: 0px;
     }
 
+    .label {
+      font-size: 14px;
+      color: $gray900;
+    }
+
     .wrap-input {
-      min-width: 350px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
 
       @media only screen and (max-width: $mobile) {
         width: 100%;
@@ -326,24 +369,37 @@ onUnmounted(() => {
       }
 
       .input {
+        flex: 2;
         margin-bottom: 8px;
+
+        input {
+          margin-top: 8px;
+          color: $base-text;
+          background-color: $background;
+          text-align: right;
+        }
       }
 
-      input {
-        color: $base-text;
-        background-color: $background;
-        text-align: right;
-      }
-
-      .label {
-        font-size: 14px;
-        color: $gray600;
+      .telegram {
+        flex: 3;
         margin-bottom: 8px;
-      }
 
+        .wrap-label {
+          display: flex;
+          gap: 8px;
+        }
+
+        input {
+          margin-top: 8px;
+          color: $base-text;
+          background-color: $background;
+          text-align: left;
+        }
+      }
       .wrap-limit {
         display: flex;
         justify-content: flex-end;
+        margin-right: 16px;
 
         .limit-btn {
           display: flex;
@@ -364,6 +420,9 @@ onUnmounted(() => {
     }
 
     .receipt {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
       width: 100%;
 
       @media only screen and (max-width: $mobile) {
@@ -371,23 +430,17 @@ onUnmounted(() => {
         padding-top: 24px;
         margin-top: 24px;
       }
-
       .price {
-        margin-bottom: 24px;
-
-        .label {
-          font-size: 14px;
-          color: $gray600;
-        }
-
+        flex: 2;
         .wrap {
           width: 100%;
           display: flex;
           justify-content: space-between;
+          flex-wrap: wrap;
           background-color: $gray150;
-          border-radius: 8px;
-          padding: 10px 24px;
+          padding: 16px 24px;
           margin-top: 8px;
+          border-radius: 8px;
           align-items: center;
           gap: 16px;
 
@@ -398,13 +451,15 @@ onUnmounted(() => {
           }
 
           .ticker {
+            width: 100%;
+            text-align: center;
             font-size: 12px;
             color: $primary;
           }
 
           .margin {
             font-size: 14px;
-            color: $gray600;
+            color: $gray700;
           }
 
           .value {
@@ -415,12 +470,7 @@ onUnmounted(() => {
       }
 
       .summary {
-        margin-bottom: 24px;
-
-        .label {
-          font-size: 14px;
-          color: $gray600;
-        }
+        flex: 3;
 
         .wrap {
           width: 100%;
@@ -453,13 +503,13 @@ onUnmounted(() => {
           }
         }
       }
-
-      .wrap-btns {
-        display: flex;
-        justify-content: flex-end;
-        gap: 24px;
-      }
     }
+  }
+  .wrap-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+    margin-top: 8px;
   }
 }
 </style>

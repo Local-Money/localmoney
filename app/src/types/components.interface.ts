@@ -17,6 +17,13 @@ export class LoadingState {
   }
 }
 
+export interface Profile {
+  addr: string
+  trade_count: number
+  contact?: string
+  encryption_key?: string
+}
+
 export enum OfferType {
   buy = 'buy',
   sell = 'sell',
@@ -27,9 +34,9 @@ export interface OfferTypeLabel {
   [OfferType.sell]: string
 }
 
-export interface GetOffer extends PatchOffer {
+export interface GetOffer {
   id: string
-  owner_contact: string
+  owner_encryption_key: string
   state: OfferState
   rate: string
   min_amount: string
@@ -49,10 +56,13 @@ export interface PatchOffer {
   rate: string
   min_amount: string
   max_amount: string
+  owner_contact?: string
+  owner_encryption_key?: string
 }
 
 export interface PostOffer {
   owner_contact: string
+  owner_encryption_key: string
   rate: string
   offer_type: OfferType
   denom: Denom
@@ -82,10 +92,10 @@ export interface FetchOffersArgs {
 export interface NewTrade {
   offer_id: string
   amount: string
-  taker: string // TODO
-  // counterparty: string,
-  // taker_contact: string, //TODO
-  // arbitrator: TODO,
+  taker: string
+  profile_taker_contact: string
+  profile_taker_encryption_key: string
+  taker_contact: string
 }
 
 export interface Trade {
@@ -93,9 +103,15 @@ export interface Trade {
   addr: string
   factory_addr: string
   buyer: string
+  buyer_contact?: string
+  buyer_encryption_key?: string
   seller: string
-  maker_contact?: string
+  seller_contact?: string
+  seller_encryption_key: string
   arbitrator?: string | null
+  arbitrator_encryption_key: string
+  arbitrator_buyer_contact?: string
+  arbitrator_seller_contact?: string
   offer_contract: string
   offer_id: string
   created_at: number
@@ -136,6 +152,7 @@ export interface HubConfig {
   local_denom: Denom
   offer_addr: string
   trade_addr: string
+  profile_addr: string
   trading_incentives_addr: string
   local_market_addr: string
 }
@@ -152,4 +169,5 @@ export interface UserWallet {
 export interface Arbitrator {
   arbitrator: string
   fiat: FiatCurrency
+  encryption_key: string
 }

@@ -3,6 +3,14 @@ use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{Addr, Uint128};
 
+pub fn assert_multiple_ownership(caller: Addr, owners: Vec<Addr>) -> Result<(), ContractError> {
+    if owners.contains(&caller) {
+        Ok(())
+    } else {
+        Err(ContractError::UnauthorizedMultipleOwnership { owners, caller })
+    }
+}
+
 pub fn assert_ownership(caller: Addr, owner: Addr) -> Result<(), ContractError> {
     if caller.eq(&owner) {
         Ok(())

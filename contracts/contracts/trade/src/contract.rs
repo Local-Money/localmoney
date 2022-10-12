@@ -3,8 +3,7 @@ use std::str::FromStr;
 
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg,
+    Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 
 use localterra_protocol::constants::{
@@ -18,17 +17,18 @@ use localterra_protocol::errors::ContractError::{
     MissingParameter, OfferNotFound, RefundErrorNotExpired, TradeExpired,
 };
 use localterra_protocol::guards::{
-    assert_ownership, assert_range_0_to_99, assert_sender_is_buyer_or_seller,
-    assert_trade_state_and_type, assert_trade_state_change_is_valid, assert_value_in_range,
-    trade_request_is_expired,
+    assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
+    assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
-use localterra_protocol::offer::{load_offer, Arbitrator, Offer, OfferType, TradeInfo};
-use localterra_protocol::profile::ExecuteMsg::IncreaseTradeCount;
+use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
+use localterra_protocol::profile::{
+    increase_profile_trades_count_msg, load_profile, update_profile_msg,
+};
 use localterra_protocol::trade::{
-    arbitrators, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
-    TradeModel, TradeState, TradeStateItem, TraderRole,
+    arbitrators, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap,
+    SwapMsg, Trade, TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 
@@ -67,10 +67,16 @@ pub fn execute(
         ExecuteMsg::FiatDeposited { trade_id } => fiat_deposited(deps, env, info, trade_id),
         ExecuteMsg::CancelRequest { trade_id } => cancel_request(deps, env, info, trade_id),
         ExecuteMsg::RefundEscrow { trade_id } => refund_escrow(deps, env, info, trade_id),
-        ExecuteMsg::DisputeEscrow { trade_id } => dispute_escrow(deps, env, info, trade_id),
-        ExecuteMsg::NewArbitrator { arbitrator, fiat } => {
-            create_arbitrator(deps, info, arbitrator, fiat)
-        }
+        ExecuteMsg::DisputeEscrow {
+            trade_id,
+            buyer_contact,
+            seller_contact,
+        } => dispute_escrow(deps, env, info, trade_id, buyer_contact, seller_contact),
+        ExecuteMsg::NewArbitrator {
+            arbitrator,
+            fiat,
+            encryption_key,
+        } => create_arbitrator(deps, info, arbitrator, fiat, encryption_key),
         ExecuteMsg::DeleteArbitrator { arbitrator, fiat } => {
             delete_arbitrator(deps, info, arbitrator, fiat)
         }
@@ -105,17 +111,28 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
+    let buyer_contact: Option<String>;
     let seller: Addr;
+    let seller_contact: Option<String>;
 
     if offer.offer_type == OfferType::Buy {
         buyer = offer.owner.clone(); // maker
+        buyer_contact = None; // maker
         seller = new_trade.taker.clone(); // taker
+        seller_contact = Some(new_trade.taker_contact); // taker
     } else {
         buyer = new_trade.taker.clone(); // taker
+        buyer_contact = Some(new_trade.taker_contact); // taker
         seller = offer.owner.clone(); // maker
+        seller_contact = None // maker
     }
 
-    let trade_count = offer.trades_count + 1;
+    let owner_profile = load_profile(
+        &deps.querier,
+        hub_cfg.profile_addr.to_string(),
+        offer.owner.clone(),
+    );
+    let trade_count = owner_profile.trade_count + 1;
     let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
@@ -125,6 +142,19 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     };
     let trade_state_history = vec![new_trade_state];
 
+    let update_profile_sub_msg = update_profile_msg(
+        hub_cfg.profile_addr.to_string(),
+        new_trade.taker.clone(),
+        new_trade.profile_taker_contact,
+        new_trade.profile_taker_encryption_key,
+    );
+
+    let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
+    let arbitrator = ArbitratorModel::get_arbitrator_random(
+        deps.as_ref(),
+        random_seed as usize,
+        offer.fiat_currency.clone(),
+    );
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
@@ -133,8 +163,9 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             env.contract.address.clone(),
             buyer,
             seller,
-            None,
-            None,
+            seller_contact,
+            buyer_contact,
+            arbitrator.arbitrator,
             hub_cfg.offer_addr.clone(),
             offer_id,
             env.block.time.seconds(),
@@ -148,6 +179,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
+        .add_submessage(update_profile_sub_msg)
         .add_attribute("action", "create_trade")
         .add_attribute("trade_id", trade_id)
         .add_attribute("offer_id", offer.id.clone())
@@ -172,9 +204,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_trades(
             env, deps, user, state, index, last_value, limit,
         )?),
-        QueryMsg::Arbitrator { arbitrator } => to_binary(&query_arbitrator(deps, arbitrator)?),
-        QueryMsg::Arbitrators {} => to_binary(&query_arbitrators(deps)?),
-        QueryMsg::ArbitratorsFiat { fiat } => to_binary(&query_arbitrators_fiat(deps, fiat)?),
+        QueryMsg::Arbitrator { arbitrator } => to_binary(&ArbitratorModel::query_arbitrator(
+            deps.storage,
+            arbitrator,
+        )?),
+        QueryMsg::Arbitrators {} => to_binary(&ArbitratorModel::query_arbitrators(deps.storage)?),
+        QueryMsg::ArbitratorsFiat { fiat } => to_binary(&ArbitratorModel::query_arbitrators_fiat(
+            deps.storage,
+            fiat,
+        )?),
     }
 }
 
@@ -182,9 +220,29 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_trade(deps: Deps, id: String) -> StdResult<Trade> {
+fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
+    let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
-    Ok(state)
+
+    let buyer = load_profile(
+        &deps.querier,
+        hub_config.profile_addr.to_string(),
+        state.buyer.clone(),
+    );
+
+    let seller = load_profile(
+        &deps.querier,
+        hub_config.profile_addr.to_string(),
+        state.seller.clone(),
+    );
+
+    let arbitrator = load_profile(
+        &deps.querier,
+        hub_config.profile_addr.to_string(),
+        state.arbitrator.clone(),
+    );
+
+    Ok(TradeResponse::map(state, buyer, seller, arbitrator))
 }
 
 pub fn query_trades(
@@ -197,6 +255,7 @@ pub fn query_trades(
     limit: u32,
 ) -> StdResult<Vec<TradeInfo>> {
     let mut trades_infos: Vec<TradeInfo> = vec![];
+    let hub_config = get_hub_config(deps);
 
     let trade_results = match index {
         TraderRole::Seller => {
@@ -214,12 +273,32 @@ pub fn query_trades(
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
-        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
+        let offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
         let current_time = env.block.time.seconds();
         let expired = trade.get_state().eq(&TradeState::EscrowFunded)
-            && current_time > trade.created_at + REQUEST_TIMEOUT;
+            && current_time > trade.clone().created_at + REQUEST_TIMEOUT;
+
+        // TODO change it to make only one query
+        let buyer = load_profile(
+            &deps.querier,
+            hub_config.profile_addr.to_string(),
+            trade.buyer.clone(),
+        );
+
+        let seller = load_profile(
+            &deps.querier,
+            hub_config.profile_addr.to_string(),
+            trade.seller.clone(),
+        );
+
+        let arbitrator = load_profile(
+            &deps.querier,
+            hub_config.profile_addr.to_string(),
+            trade.arbitrator.clone(),
+        );
+
         trades_infos.push(TradeInfo {
-            trade: trade.clone(),
+            trade: TradeResponse::map(trade.clone(), buyer, seller, arbitrator),
             offer,
             expired,
         })
@@ -260,10 +339,11 @@ fn fund_escrow(
     // Only the seller wallet is authorized to fund this trade.
     assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
 
-    // If maker_contact is not already defined it needs to be defined here
-    if trade.maker_contact.is_none() {
+    // If seller_contact is not already defined it needs to be defined here
+    if trade.seller_contact.is_none() {
         if maker_contact.is_some() {
-            trade.maker_contact = maker_contact
+            // Set maker_contact as seller_contact
+            trade.seller_contact = maker_contact
         } else {
             return Err(MissingParameter {
                 missing: "maker_contact".to_string(),
@@ -325,8 +405,8 @@ fn accept_request(
     // Change trade state
     trade.set_state(TradeState::RequestAccepted, &env, &info);
 
-    // Set maker contact
-    trade.maker_contact = Some(maker_contact);
+    // Set maker contact as buyer
+    trade.buyer_contact = Some(maker_contact);
 
     TradeModel::store(deps.storage, &trade).unwrap();
 
@@ -463,15 +543,11 @@ fn release_escrow(
     send_msgs.push(update_last_traded_msg);
 
     // Update profile trade_count
-    send_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: hub_cfg.profile_addr.to_string(),
-        msg: to_binary(&IncreaseTradeCount {
-            profile_address: offer.owner.clone(),
-            final_trade_state: trade.get_state(),
-        })
-        .unwrap(),
-        funds: vec![],
-    })));
+    send_msgs.push(increase_profile_trades_count_msg(
+        hub_cfg.profile_addr.to_string(),
+        offer.owner.clone(),
+        trade.get_state(),
+    ));
 
     // Send tokens to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
@@ -614,29 +690,35 @@ fn refund_escrow(
 pub fn create_arbitrator(
     deps: DepsMut,
     info: MessageInfo,
-    arbitrator: Addr,
+    arbitrator_address: Addr,
     fiat: FiatCurrency,
+    encryption_key: String,
 ) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
+    let hub_config = get_hub_config(deps.as_ref());
     assert_ownership(info.sender, admin)?;
 
-    let index = arbitrator.clone().to_string() + &fiat.to_string();
+    ArbitratorModel::create_arbitrator(
+        deps.storage,
+        Arbitrator {
+            arbitrator: arbitrator_address.clone(),
+            fiat: fiat.clone(),
+        },
+    );
 
-    arbitrators()
-        .save(
-            deps.storage,
-            &index,
-            &Arbitrator {
-                arbitrator: arbitrator.clone(),
-                fiat: fiat.clone(),
-            },
-        )
-        .unwrap();
+    let create_profile_sub_msg = update_profile_msg(
+        hub_config.profile_addr.to_string(),
+        arbitrator_address.clone(),
+        "N/A".to_string(),
+        encryption_key.clone(),
+    );
 
     let res = Response::new()
+        .add_submessage(create_profile_sub_msg)
         .add_attribute("action", "create_arbitrator")
-        .add_attribute("arbitrator", arbitrator.to_string())
-        .add_attribute("asset", fiat.to_string());
+        .add_attribute("arbitrator", arbitrator_address.to_string())
+        .add_attribute("asset", fiat.to_string())
+        .add_attribute("encryption_key", encryption_key);
 
     Ok(res)
 }
@@ -667,6 +749,8 @@ fn dispute_escrow(
     env: Env,
     info: MessageInfo,
     trade_id: String,
+    buyer_contact: String,
+    seller_contact: String,
 ) -> Result<Response, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO: check escrow funding timer*
@@ -688,16 +772,15 @@ fn dispute_escrow(
 
     // Update trade State to TradeState::Disputed and sets arbitrator
     trade.set_state(TradeState::EscrowDisputed, &env, &info);
-    let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
-    let arbitrator = get_arbitrator_random(deps.as_ref(), random_seed as usize, trade.fiat.clone());
-    trade.arbitrator = Some(arbitrator.arbitrator);
+    trade.arbitrator_buyer_contact = Some(buyer_contact);
+    trade.arbitrator_seller_contact = Some(seller_contact);
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
         .add_attribute("action", "dispute_escrow")
         .add_attribute("trade_id", trade.id.clone())
         .add_attribute("state", trade.get_state().to_string())
-        .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string());
+        .add_attribute("arbitrator", trade.arbitrator.to_string());
 
     Ok(res)
 }
@@ -712,21 +795,11 @@ fn settle_dispute(
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     // Check if caller is the arbitrator of the given trade
-    match &trade.arbitrator {
-        None => {
-            return Err(ContractError::Unauthorized {
-                owner: Addr::unchecked(""),
-                caller: info.sender,
-            })
-        }
-        Some(arbitrator) => {
-            if arbitrator.ne(&info.sender) {
-                return Err(ContractError::Unauthorized {
-                    owner: arbitrator.clone(),
-                    caller: info.sender,
-                });
-            }
-        }
+    if trade.arbitrator.ne(&info.sender) {
+        return Err(ContractError::Unauthorized {
+            owner: trade.arbitrator.clone(),
+            caller: info.sender,
+        });
     }
 
     // Check if TradeState is EscrowDisputed
@@ -780,10 +853,10 @@ fn settle_dispute(
     )];
 
     let winner_msg = create_send_msg(winner.clone(), winner_amount);
-    let arbitrator_msg = create_send_msg(trade.arbitrator.clone().unwrap(), fee);
+    let arbitrator_msg = create_send_msg(trade.arbitrator.clone(), fee);
 
     let res = Response::new()
-        .add_attribute("arbitrator", trade.arbitrator.unwrap().to_string())
+        .add_attribute("arbitrator", trade.arbitrator.to_string())
         .add_attribute("winner", winner.to_string())
         .add_attribute("maker", maker.to_string())
         .add_attribute("taker", taker.to_string())
@@ -791,70 +864,6 @@ fn settle_dispute(
         .add_submessage(SubMsg::new(arbitrator_msg));
     Ok(res)
 }
-
-//region arbitration queries
-pub fn query_arbitrator(deps: Deps, arbitrator: Addr) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let result = arbitrators()
-        .idx
-        .arbitrator
-        .prefix(arbitrator)
-        .range(storage, None, None, Order::Descending)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrators(deps: Deps) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-    let result = arbitrators()
-        .range(storage, None, None, Order::Descending)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn query_arbitrators_fiat(deps: Deps, fiat: FiatCurrency) -> StdResult<Vec<Arbitrator>> {
-    let storage = deps.storage;
-
-    let result: Vec<Arbitrator> = arbitrators()
-        .idx
-        .fiat
-        .prefix(fiat.clone().to_string())
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-
-    Ok(result)
-}
-
-pub fn get_arbitrator_random(deps: Deps, random_value: usize, fiat: FiatCurrency) -> Arbitrator {
-    assert_range_0_to_99(random_value).unwrap();
-    let storage = deps.storage;
-    let result: Vec<Arbitrator> = arbitrators()
-        .idx
-        .fiat
-        .prefix(fiat.to_string())
-        .range(storage, None, None, Order::Descending)
-        .take(10)
-        .flat_map(|item| item.and_then(|(_, arbitrator)| Ok(arbitrator)))
-        .collect();
-    let arbitrator_count = result.len();
-
-    // Random range: 0..99
-    // Mapped range: 0..result.len()-1
-    // Formula is:
-    // RandomValue * (MaxMappedRange + 1) / (MaxRandomRange + 1)
-    let random_index = random_value * arbitrator_count / (99 + 1);
-    result[random_index].clone()
-}
-//endregion
-
-//endregion
 
 // region utils
 pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {

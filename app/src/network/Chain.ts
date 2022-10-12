@@ -9,10 +9,10 @@ import type {
   NewTrade,
   PatchOffer,
   PostOffer,
+  Profile,
   Trade,
   TradeInfo,
 } from '~/types/components.interface'
-import { MockChain } from '~/network/mock/MockChain'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
 
 export interface Chain {
@@ -21,6 +21,8 @@ export interface Chain {
   connectWallet(): Promise<void>
 
   getWalletAddress(): string
+
+  fetchProfile(): Promise<Profile>
 
   fetchOffer(offerId: string): Promise<GetOffer>
 
@@ -54,7 +56,7 @@ export interface Chain {
 
   refundEscrow(tradeId: string): Promise<void>
 
-  openDispute(tradeId: string): Promise<void>
+  openDispute(tradeId: string, buyerContact: string, sellerContact: string): Promise<void>
 
   settleDispute(tradeId: string, winner: string): Promise<void>
 
@@ -62,7 +64,6 @@ export interface Chain {
 }
 
 export enum ChainClient {
-  mock = 'MOCK',
   kujira = 'KUJIRA',
   juno = 'JUNO',
   dev = 'DEV',
@@ -71,8 +72,6 @@ export enum ChainClient {
 // Centralized place to instantiate chain client and inject dependencies if needed
 export function chainFactory(client: ChainClient): Chain {
   switch (client) {
-    case ChainClient.mock:
-      return new MockChain()
     case ChainClient.kujira:
       return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
     case ChainClient.juno:

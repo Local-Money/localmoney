@@ -8,6 +8,8 @@ pub enum ContractError {
     /// General Errors
     #[error("Unauthorized.")]
     Unauthorized { owner: Addr, caller: Addr },
+    #[error("Unauthorized.")]
+    UnauthorizedMultipleOwnership { owners: Vec<Addr>, caller: Addr },
     #[error("Some parameter is missing")]
     MissingParameter {
         missing: String,

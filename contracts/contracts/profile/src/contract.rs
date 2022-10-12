@@ -1,12 +1,13 @@
-use crate::state::PROFILE;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
-use localterra_protocol::guards::assert_ownership;
+use localterra_protocol::guards::{assert_multiple_ownership, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::profile::{ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, QueryMsg};
+use localterra_protocol::profile::{
+    ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, ProfileModel, QueryMsg,
+};
 use localterra_protocol::trade::TradeState;
 
 // version info for migration info
@@ -32,19 +33,52 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateProfile {
+            profile_addr,
+            contact,
+            encryption_key,
+        } => update_profile(deps, info, profile_addr, contact, encryption_key),
         ExecuteMsg::IncreaseTradeCount {
-            profile_address,
+            profile_addr,
             final_trade_state,
-        } => increase_trade_count(deps, info, profile_address, final_trade_state),
+        } => increase_trade_count(deps, info, profile_addr, final_trade_state),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
 
-//
+fn update_profile(
+    deps: DepsMut,
+    info: MessageInfo,
+    profile_addr: Addr,
+    contact: String,
+    encryption_key: String,
+) -> Result<Response, ContractError> {
+    let hub_config = get_hub_config(deps.as_ref());
+    let owners = vec![
+        profile_addr.clone(),
+        hub_config.trade_addr,
+        hub_config.offer_addr,
+    ];
+    // Only the trade/offer contract or the profile owner should be able to update profile
+    assert_multiple_ownership(info.sender, owners).unwrap();
+
+    let mut profile_model = ProfileModel::load(deps.storage, profile_addr.clone());
+    profile_model.profile.contact = Some(contact.clone());
+    profile_model.profile.encryption_key = Some(encryption_key.clone());
+    profile_model.save();
+
+    let res = Response::new()
+        .add_attribute("action", "update_profile")
+        .add_attribute("profile_addr", profile_addr.to_string())
+        .add_attribute("contact", contact.to_string())
+        .add_attribute("encryption_pk", encryption_key.to_string());
+    Ok(res)
+}
+
 pub fn increase_trade_count(
     deps: DepsMut,
     info: MessageInfo,
-    profile_address: Addr,
+    profile_addr: Addr,
     final_trade_state: TradeState,
 ) -> Result<Response, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
@@ -52,21 +86,14 @@ pub fn increase_trade_count(
     // Only the trade contract should be able to call increase_trade_count
     assert_ownership(info.sender, hub_config.trade_addr).unwrap();
 
-    let profile = PROFILE
-        .may_load(deps.storage, profile_address.to_string())
-        .unwrap();
-
-    let mut profile = profile.unwrap_or(Profile::new(profile_address.clone()));
-    profile.trade_count += 1;
-
-    PROFILE
-        .save(deps.storage, profile_address.to_string(), &profile)
-        .unwrap();
+    let mut profile_model = ProfileModel::load(deps.storage, profile_addr.clone());
+    profile_model.profile.trade_count += 1;
+    let updated_profile = profile_model.save();
 
     let res = Response::new()
         .add_attribute("action", "increase_trade_count")
         .add_attribute("final_trade_state", final_trade_state.to_string())
-        .add_attribute("trade_count", profile.trade_count.to_string());
+        .add_attribute("trade_count", updated_profile.trade_count.to_string());
     Ok(res)
 }
 
@@ -77,17 +104,12 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Profile { address } => to_binary(&query_profile(deps, address)?),
+        QueryMsg::Profile { addr } => to_binary(&query_profile(deps, addr)?),
     }
 }
 
-fn query_profile(deps: Deps, profile_address: Addr) -> StdResult<Profile> {
-    let profile = PROFILE
-        .may_load(deps.storage, profile_address.to_string())
-        .unwrap();
-
-    let profile = profile.unwrap_or(Profile::new(profile_address));
-
+fn query_profile(deps: Deps, profile_addr: Addr) -> StdResult<Profile> {
+    let profile = ProfileModel::query(deps.storage, profile_addr);
     Ok(profile)
 }
 
