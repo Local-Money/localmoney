@@ -14,6 +14,7 @@ import type {
   GetOffer,
   HubConfig,
   NewTrade,
+  OfferResponse,
   PatchOffer,
   PostOffer,
   Trade,
@@ -123,7 +124,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchOffer(offerId: string): Promise<GetOffer> {
+  async fetchOffer(offerId: string): Promise<OfferResponse> {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()
@@ -133,7 +134,7 @@ export class CosmosChain implements Chain {
       const response = (await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
         queryMsg
-      )) as GetOffer
+      )) as OfferResponse
       console.log('response >>> ', response)
       return response
     } catch (e) {
@@ -161,7 +162,7 @@ export class CosmosChain implements Chain {
       const response = (await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
         queryMsg
-      )) as GetOffer[]
+      )) as OfferResponse[]
       console.log('response >>> ', response)
       return response
     } catch (e) {

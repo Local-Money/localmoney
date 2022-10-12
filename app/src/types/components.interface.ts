@@ -27,6 +27,18 @@ export interface OfferTypeLabel {
   [OfferType.sell]: string
 }
 
+export interface OfferResponse {
+  offer: GetOffer
+  profile: Profile
+}
+
+export interface Profile {
+  addr: string
+  created_at: Date
+  trades_count: number
+  last_trade: Date
+}
+
 export interface GetOffer extends PatchOffer {
   id: string
   owner_contact: string

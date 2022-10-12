@@ -86,21 +86,21 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 }
 
 fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, ContractError> {
-    //Load Offer
+    // Load Offer
     let hub_cfg = get_hub_config(deps.as_ref());
 
     let offer_id = new_trade.offer_id.clone();
-    let offer = load_offer(
+    let offer_result = load_offer(
         &deps.querier,
         new_trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     );
-    if offer.is_err() {
+    if offer_result.is_err() {
         return Err(OfferNotFound {
             offer_id: new_trade.offer_id.to_string(),
         });
     }
-    let offer = offer.unwrap();
+    let offer = offer_result.unwrap().offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
@@ -214,7 +214,9 @@ pub fn query_trades(
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
-        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
+        let offer: Offer = load_offer(&deps.querier, offer_id, offer_contract)
+            .unwrap()
+            .offer;
         let current_time = env.block.time.seconds();
         let expired = trade.get_state().eq(&TradeState::EscrowFunded)
             && current_time > trade.created_at + REQUEST_TIMEOUT;
@@ -242,7 +244,8 @@ fn fund_escrow(
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
 
     // TODO: will the store save it if we return an error ???
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
@@ -429,7 +432,8 @@ fn release_escrow(
         trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
 
     // Update trade State to TradeState::EscrowReleased
     trade.set_state(TradeState::EscrowReleased, &env, &info);
@@ -459,7 +463,10 @@ fn release_escrow(
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.offer_addr.to_string(),
-        msg: to_binary(&OfferExecuteMsg::UpdateLastTraded { offer_id: offer.id }).unwrap(),
+        msg: to_binary(&OfferExecuteMsg::UpdateLastTraded {
+            offer_id: offer.id,
+        })
+        .unwrap(),
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
@@ -745,7 +752,8 @@ fn settle_dispute(
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
 
     // Define maker and taker
     let maker = offer.owner.clone();

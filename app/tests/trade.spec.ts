@@ -1,10 +1,10 @@
 import { TextDecoder, TextEncoder } from 'util'
 
-import dotenv from 'dotenv'
 import { jest } from '@jest/globals'
+import dotenv from 'dotenv'
 import offers from './fixtures/offers.json'
-import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
+import { setupProtocol } from './utils'
 import { DefaultError } from '~/network/chain-error'
 import type { GetOffer, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
@@ -25,28 +25,23 @@ beforeAll(async () => {
 })
 
 offers[0].denom = { native: process.env.OFFER_DENOM! }
+let myOffers: GetOffer[] = []
 
 describe('trade lifecycle happy path', () => {
   // Create Offer
   it('should have an available offer', async () => {
-    let myOffers = await makerClient.fetchMyOffers()
+    myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
       await makerClient.createOffer(offers[0] as PostOffer)
     }
     myOffers = await makerClient.fetchMyOffers()
     offerTradeCount = myOffers[0].trades_count
+    expect(myOffers.length).toBeGreaterThan(0)
   })
   // Create Trade
   it('taker should create a trade', async () => {
-    const createdOffer = offers[0] as PostOffer
-    const offersResult = await makerClient.fetchOffers({
-      denom: createdOffer.denom,
-      fiatCurrency: createdOffer.fiat_currency,
-      offerType: createdOffer.offer_type,
-    })
-
-    expect(offersResult.length).toBeGreaterThan(0)
-    const offer = offersResult[0] as GetOffer
+    console.log('myOffers', myOffers)
+    const offer = myOffers[0] as GetOffer
     expect(offer).toHaveProperty('id')
 
     tradeId = await takerClient.openTrade({
@@ -54,6 +49,7 @@ describe('trade lifecycle happy path', () => {
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
     })
+    console.log('Trade Id:', tradeId)
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {

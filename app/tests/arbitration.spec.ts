@@ -25,7 +25,7 @@ beforeAll(async () => {
 
 let offer: GetOffer
 
-describe.skip('arbitration tests', () => {
+describe('arbitration tests', () => {
   // Call dispute_escrow on a trade in fiat_deposited state and expects it to be in escrow_disputed state
   it('should have available offers', async () => {
     // Create and fetch offer for trade creation
@@ -39,7 +39,7 @@ describe.skip('arbitration tests', () => {
       fiatCurrency: createdOffer.fiat_currency,
       offerType: createdOffer.offer_type,
     })
-    offer = offersResult[0] as GetOffer
+    offer = offersResult[0].offer as GetOffer
     expect(offer.id.length).toBeGreaterThan(0)
   })
 

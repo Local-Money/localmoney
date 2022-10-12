@@ -7,6 +7,7 @@ import type {
   FetchOffersArgs,
   GetOffer,
   NewTrade,
+  OfferResponse,
   PatchOffer,
   PostOffer,
   Trade,
@@ -22,9 +23,9 @@ export interface Chain {
 
   getWalletAddress(): string
 
-  fetchOffer(offerId: string): Promise<GetOffer>
+  fetchOffer(offerId: string): Promise<OfferResponse>
 
-  fetchOffers(args: FetchOffersArgs): Promise<GetOffer[]>
+  fetchOffers(args: FetchOffersArgs): Promise<OfferResponse[]>
 
   fetchMyOffers(): Promise<GetOffer[]>
 
