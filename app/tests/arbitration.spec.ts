@@ -49,9 +49,9 @@ describe('arbitration tests', () => {
   it('should have available offers', async () => {
     // Create and fetch offer for trade creation
     const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
-    const owner_encrypt_key = makerSecrets.publicKey
+    const owner_encryption_key = makerSecrets.publicKey
     const denom = { native: process.env.OFFER_DENOM! }
-    const createdOffer = { ...offers[0], owner_contact, owner_encryption_key: owner_encrypt_key, denom } as PostOffer
+    const createdOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
     if (process.env.CREATE_OFFERS) {
       await makerClient.createOffer(createdOffer)
     }
@@ -66,7 +66,7 @@ describe('arbitration tests', () => {
 
   it('should settle dispute for taker', async () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
-    const taker_encrypt_pk = takerSecrets.publicKey
+    const profile_taker_encryption_key = takerSecrets.publicKey
     const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
     // Create a Trade and set it to `fiat_deposited` state.
     const tradeId = await takerClient.openTrade({
@@ -74,7 +74,7 @@ describe('arbitration tests', () => {
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
-      profile_taker_encryption_key: taker_encrypt_pk,
+      profile_taker_encryption_key,
       taker_contact,
     })
 

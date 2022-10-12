@@ -76,12 +76,12 @@ async function createOffer() {
   const telegramHandle = removeTelegramURLPrefix(ownerContact.value)
   console.log('owner_contact: ', telegramHandle)
   // Encrypt contact to save on the profile when an offer is created
-  const owner_contact_pk = secrets.value.publicKey
-  const owner_contact = await encryptData(owner_contact_pk, telegramHandle)
+  const owner_encryption_key = secrets.value.publicKey
+  const owner_contact = await encryptData(owner_encryption_key, telegramHandle)
 
   const postOffer: PostOffer = {
     owner_contact,
-    owner_encryption_key: owner_contact_pk,
+    owner_encryption_key,
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,

@@ -53,8 +53,8 @@ describe('trade lifecycle happy path', () => {
     let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
       const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
-      const owner_encrypt_key = makerSecrets.publicKey
-      const offer = { ...offers[0], owner_contact, owner_encryption_key: owner_encrypt_key } as PostOffer
+      const owner_encryption_key = makerSecrets.publicKey
+      const offer = { ...offers[0], owner_contact, owner_encryption_key } as PostOffer
       await makerClient.createOffer(offer)
     }
     myOffers = await makerClient.fetchMyOffers()
@@ -144,9 +144,9 @@ describe('trade invalid state changes', () => {
     let myOffers = await makerClient.fetchMyOffers()
     if (myOffers.length === 0) {
       const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
-      const owner_encrypt_key = makerSecrets.publicKey
+      const owner_encryption_key = makerSecrets.publicKey
       const denom = { native: process.env.OFFER_DENOM! }
-      const newOffer = { ...offers[0], owner_contact, owner_encryption_key: owner_encrypt_key, denom } as PostOffer
+      const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
       await makerClient.createOffer(newOffer)
     }
     myOffers = await makerClient.fetchMyOffers()
