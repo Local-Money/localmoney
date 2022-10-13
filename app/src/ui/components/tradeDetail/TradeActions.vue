@@ -23,7 +23,7 @@ const disputeWinnerMessage = computed(() => {
 })
 
 function getMaker(): string {
-  return props.tradeInfo.offer.owner
+  return props.tradeInfo.offer.offer.owner
 }
 
 function getTaker(): string {

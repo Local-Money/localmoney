@@ -10,13 +10,13 @@ import {
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
-import type { NewTrade } from '~/types/components.interface'
+import type { NewTrade, OfferResponse } from '~/types/components.interface'
 import { usePriceStore } from '~/stores/price'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
 import { decryptData, encryptData } from '~/utils/crypto'
 
-const props = defineProps<{ offer: GetOffer }>()
+const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
 const priceStore = usePriceStore()
 const client = useClientStore()
@@ -44,42 +44,54 @@ const watchingFiat = ref(false)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
-const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
+const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 
-const fromLabel = computed(() => (props.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'))
-const toLabel = computed(() => (props.offer.offer_type === OfferType.buy ? 'I will receive' : 'I will pay'))
-const fiatPlaceholder = computed(() => `${props.offer.fiat_currency.toUpperCase()} 0`)
-const cryptoPlaceholder = computed(() => `${microDenomToDenom(props.offer.denom.native)} ${parseFloat('0').toFixed(2)}`)
-const fiatPriceByRate = computed(() =>
-  calculateFiatPriceByRate(priceStore.getPrice(props.offer.fiat_currency), props.offer.rate)
+const fromLabel = computed(() =>
+  props.offerResponse.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'
 )
-const minAmountInCrypto = computed(() => parseInt(props.offer.min_amount.toString()) / 1000000)
-const maxAmountInCrypto = computed(() => parseInt(props.offer.max_amount.toString()) / 1000000)
-const maxAmountInFiat = computed(() => fiatPriceByRate.value * (parseInt(props.offer.max_amount.toString()) / 1000000))
-const minAmountInFiat = computed(() => fiatPriceByRate.value * (parseInt(props.offer.min_amount.toString()) / 1000000))
-const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
+const toLabel = computed(() =>
+  props.offerResponse.offer.offer_type === OfferType.buy ? 'I will receive' : 'I will pay'
+)
+const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currency.toUpperCase()} 0`)
+const cryptoPlaceholder = computed(
+  () => `${microDenomToDenom(props.offerResponse.offer.denom.native)} ${parseFloat('0').toFixed(2)}`
+)
+const fiatPriceByRate = computed(() =>
+  calculateFiatPriceByRate(priceStore.getPrice(props.offerResponse.offer.fiat_currency), props.offerResponse.offer.rate)
+)
+const minAmountInCrypto = computed(() => parseInt(props.offerResponse.offer.min_amount.toString()) / 1000000)
+const maxAmountInCrypto = computed(() => parseInt(props.offerResponse.offer.max_amount.toString()) / 1000000)
+const maxAmountInFiat = computed(
+  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / 1000000)
+)
+const minAmountInFiat = computed(
+  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / 1000000)
+)
+const offerPrice = computed(
+  () => `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`
+)
 const valid = computed(() => true)
 const minMaxFiatStr = computed(() => {
-  const symbol = props.offer.fiat_currency.toUpperCase()
+  const symbol = props.offerResponse.offer.fiat_currency.toUpperCase()
   const min = minAmountInFiat.value.toFixed(2)
   const max = maxAmountInFiat.value.toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 const minMaxCryptoStr = computed(() => {
-  const symbol = microDenomToDenom(props.offer.denom.native)
-  const min = (parseInt(props.offer.min_amount.toString()) / 1000000).toFixed(2)
-  const max = (parseInt(props.offer.max_amount.toString()) / 1000000).toFixed(2)
+  const symbol = microDenomToDenom(props.offerResponse.offer.denom.native)
+  const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / 1000000).toFixed(2)
+  const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / 1000000).toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 
 async function newTrade() {
   const telegramHandle = removeTelegramURLPrefix(telegram.value) as string
   const profile_taker_encryption_key = secrets.value.publicKey
-  const taker_contact = await encryptData(props.offer.owner_encryption_key, telegramHandle)
+  const taker_contact = await encryptData(props.offerResponse.profile.encryption_key!, telegramHandle)
   const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
 
   const newTrade: NewTrade = {
-    offer_id: `${props.offer.id}`,
+    offer_id: `${props.offerResponse.offer.id}`,
     amount: `${cryptoAmount.value * 1000000}`,
     taker: `${client.userWallet.address}`,
     profile_taker_contact,
@@ -174,12 +186,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :key="`${offer.id}-expanded`" ref="expandedCard" class="offer expanded">
+  <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded">
     <div class="owner">
       <p class="wallet">
-        {{ formatAddress(offer.owner) }}
+        {{ formatAddress(offerResponse.offer.owner) }}
       </p>
-      <p class="n-trades">{{ formatTradesCountInfo(offer.trades_count) }}</p>
+      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.offer.trades_count) }}</p>
     </div>
 
     <div class="divider-horizontal" />
@@ -234,7 +246,7 @@ onUnmounted(() => {
             v-model="fiatAmount"
             :placeholder="fiatPlaceholder"
             :options="{
-              currency: offer.fiat_currency.toUpperCase(),
+              currency: offerResponse.offer.fiat_currency.toUpperCase(),
               currencyDisplay: 'code',
               hideCurrencySymbolOnFocus: false,
               hideGroupingSeparatorOnFocus: false,
@@ -281,7 +293,7 @@ onUnmounted(() => {
           <p class="label">Price</p>
           <div class="wrap">
             <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-            <p class="value">1 {{ microDenomToDenom(offer.denom.native) }} = {{ offerPrice }}</p>
+            <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
             <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
           </div>
         </div>
@@ -291,7 +303,7 @@ onUnmounted(() => {
           <div class="wrap">
             <div class="item">
               <p class="info">Trading Fee</p>
-              <p>{{ microDenomToDenom(offer.denom.native) }} {{ tradingFee.toFixed(2) }}</p>
+              <p>{{ microDenomToDenom(offerResponse.offer.denom.native) }} {{ tradingFee.toFixed(2) }}</p>
             </div>
             <div class="item">
               <p class="info">Total</p>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GetOffer } from '~/types/components.interface'
+import type { OfferResponse } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
@@ -11,30 +11,30 @@ import { checkValidOffer } from '~/utils/validations'
 const client = useClientStore()
 const priceStore = usePriceStore()
 const offersResult = computed(() => client.offers)
-const page = reactive({ offers: [] as ExpandableItem<GetOffer>[] })
+const page = reactive({ offers: [] as ExpandableItem<OfferResponse>[] })
 client.$subscribe((mutation, state) => {
   if (state.offers.isSuccess()) {
     page.offers = state.offers.data
       .filter((offerResponse) => checkValidOffer(offerResponse.offer))
-      .flatMap((offerResponse) => new ExpandableItem(offerResponse.offer))
+      .flatMap((offerResponse) => new ExpandableItem(offerResponse))
   }
 })
 
 const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const offerType = ref<OfferType>(OfferType.sell)
-const selectedOffer = ref<ExpandableItem<GetOffer> | null>(null)
+const selectedOfferItem = ref<ExpandableItem<OfferResponse> | null>(null)
 
-function selectOffer(offer: ExpandableItem<GetOffer>) {
-  if (selectedOffer.value !== null) {
-    selectedOffer.value.isExpanded = false
+function selectOffer(offerItem: ExpandableItem<OfferResponse>) {
+  if (selectedOfferItem.value !== null) {
+    selectedOfferItem.value.isExpanded = false
   }
-  offer.isExpanded = true
-  selectedOffer.value = offer
+  offerItem.isExpanded = true
+  selectedOfferItem.value = offerItem
 }
 
-function unselectOffer(offer: ExpandableItem<GetOffer>) {
-  offer.isExpanded = false
+function unselectOffer(offerItem: ExpandableItem<OfferResponse>) {
+  offerItem.isExpanded = false
 }
 
 async function fetchOffers() {
@@ -90,9 +90,9 @@ watch(offerType, async () => await fetchOffers())
             :class="offer.isExpanded ? 'card-active' : ''"
           >
             <!-- Collapsed Offer -->
-            <CollapsedOffer v-if="!offer.isExpanded" :offer="offer.data" @select="selectOffer(offer)" />
+            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
             <!-- Expanded Offer Desktop -->
-            <ExpandedOffer v-else :offer="offer.data" @cancel="unselectOffer(offer)" />
+            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
           </li>
         </ul>
       </ListContentResult>
