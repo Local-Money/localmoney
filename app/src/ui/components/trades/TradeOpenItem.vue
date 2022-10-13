@@ -48,7 +48,7 @@ const stepLabels = {
 
 const step = computed(() => {
   const trade = props.tradeInfo.trade
-  if (props.tradeInfo.offerResponse.offer_type === 'buy') {
+  if (props.tradeInfo.offer.offer.offer_type === 'buy') {
     switch (trade.state) {
       case 'request_created':
         return 1
@@ -102,7 +102,7 @@ const fromTo = computed(() => {
 
 const stepLabel = computed(() => {
   const labelIdx = step.value - 1
-  const type = props.tradeInfo.offerResponse.offer_type
+  const type = props.tradeInfo.offer.offer.offer_type
   if (isBuying.value) {
     return stepLabels[type].buyer[labelIdx]
   } else {

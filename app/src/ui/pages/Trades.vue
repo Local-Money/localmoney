@@ -11,7 +11,9 @@ const { userWallet } = storeToRefs(client)
 const tradeResult = computed(() => client.trades)
 const trades = computed(() => {
   if (tradeResult.value.isSuccess()) {
-    return tradeResult.value.data.filter((trade) => checkValidOffer(trade.offerResponse.offer))
+    return tradeResult.value.data.filter((trade) => {
+      return checkValidOffer(trade.offer.offer)
+    })
   } else {
     return []
   }
