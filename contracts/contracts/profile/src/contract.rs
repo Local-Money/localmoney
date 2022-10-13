@@ -6,7 +6,7 @@ use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_multiple_ownership, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::profile::{
-    ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, ProfileModel, QueryMsg,
+    ExecuteMsg, InstantiateMsg, MigrateMsg, ProfileModel, QueryMsg,
 };
 use localterra_protocol::trade::TradeState;
 
@@ -63,10 +63,12 @@ fn update_profile(
     // Only the trade/offer contract or the profile owner should be able to update profile
     assert_multiple_ownership(info.sender, owners).unwrap();
 
-    let created_at = env.block.time.seconds();
     let storage = deps.storage;
-    let mut profile = ProfileModel::query_profile(storage, profile_addr.clone())
-        .unwrap_or(Profile::new(profile_addr.clone(), created_at));
+    let mut profile = ProfileModel::query_profile(storage, profile_addr.clone());
+    if profile.created_at.eq(&0) {
+        let created_at = env.block.time.seconds();
+        profile.created_at = created_at
+    }
     profile.contact = Some(contact.clone());
     profile.encryption_key = Some(encryption_key.clone());
     ProfileModel::store(storage, &profile);
@@ -111,7 +113,9 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Profile { addr } => to_binary(&ProfileModel::query_profile(deps.storage, addr)?),
+        QueryMsg::Profile { addr } => {
+            to_binary(&ProfileModel::query_profile(deps.storage, addr.clone()))
+        }
         QueryMsg::Profiles { limit, start_at } => {
             to_binary(&ProfileModel::query_profiles(deps, env, limit, start_at)?)
         }

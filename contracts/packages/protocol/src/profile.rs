@@ -137,8 +137,10 @@ impl ProfileModel<'_> {
         }
     }
 
-    pub fn query_profile(storage: &dyn Storage, profile_addr: Addr) -> StdResult<Profile> {
-        profiles().load(storage, profile_addr.to_string())
+    pub fn query_profile(storage: &dyn Storage, profile_addr: Addr) -> Profile {
+        profiles()
+            .load(storage, profile_addr.to_string())
+            .unwrap_or(Profile::new(profile_addr, 0))
     }
 
     pub fn save<'a>(self) -> Profile {

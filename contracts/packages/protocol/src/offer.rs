@@ -4,9 +4,7 @@ use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, Profile};
 use crate::trade::{TradeResponse, TradeState};
-use cosmwasm_std::{
-    Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128,
-};
+use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;

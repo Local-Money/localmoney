@@ -8,7 +8,7 @@ import { encryptDataMocked } from './helper'
 import takerSecrets from './fixtures/taker_secrets.json'
 import makerSecrets from './fixtures/maker_secrets.json'
 import adminSecrets from './fixtures/admin_secrets.json'
-import type { FiatCurrency, GetOffer, PostOffer } from '~/types/components.interface'
+import type { FiatCurrency, GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
 dotenv.config()
@@ -30,6 +30,7 @@ beforeAll(async () => {
 })
 
 let offer: GetOffer
+let offerResponse: OfferResponse[]
 
 describe('arbitration tests', () => {
   it('should have an arbitrator available', async () => {
@@ -55,19 +56,19 @@ describe('arbitration tests', () => {
     if (process.env.CREATE_OFFERS) {
       await makerClient.createOffer(createdOffer)
     }
-    const offersResult = await makerClient.fetchOffers({
+    offerResponse = await makerClient.fetchOffers({
       denom: createdOffer.denom,
       fiatCurrency: createdOffer.fiat_currency,
       offerType: createdOffer.offer_type,
     })
-    offer = offersResult[0].offer as GetOffer
+    offer = offerResponse[0].offer as GetOffer
     expect(offer.id.length).toBeGreaterThan(0)
   })
 
   it('should settle dispute for taker', async () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encryption_key = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
+    const taker_contact = await encryptDataMocked(offerResponse[0].profile.encryption_key!, takerContact)
     // Create a Trade and set it to `fiat_deposited` state.
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
@@ -102,7 +103,7 @@ describe('arbitration tests', () => {
   it('should settle dispute for maker', async () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
-    const taker_contact = await encryptDataMocked(offer.owner_encryption_key, takerContact)
+    const taker_contact = await encryptDataMocked(offerResponse[0].profile.encryption_key!, takerContact)
 
     const tradeId = await takerClient.openTrade({
       amount: offer.min_amount,
