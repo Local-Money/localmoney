@@ -23,7 +23,7 @@ const disputeWinnerMessage = computed(() => {
 })
 
 function getMaker(): string {
-  return props.tradeInfo.offer.offer.owner
+  return props.tradeInfo.offerResponse.offer.owner
 }
 
 function getTaker(): string {
@@ -89,7 +89,7 @@ async function settleDispute(winner: string) {
       <!-- #1 step (Optional) -->
       <!-- # A Seller requested a trade with the Buyer and it should be accepted first. -->
       <TradeAction
-        v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
+        v-if="tradeInfo.offerResponse.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
         message="Review the request and accept the trade"
         :buttons="[
           {
@@ -105,7 +105,7 @@ async function settleDispute(winner: string) {
       <!-- if #1 step: The Buyer requested a trade and the Seller should accept the trade by depositing the crypto on escrow -->
       <TradeAction
         v-if="
-          (tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
+          (tradeInfo.offerResponse.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
           tradeInfo.trade.state === 'request_accepted'
         "
         message="Waiting for the trade to be funded"
@@ -137,7 +137,7 @@ async function settleDispute(winner: string) {
       <!-- #1 step (Optional) -->
       <!-- # The Seller opens the trade with the Buyer and it should be accepted first. So the Seller needs to wait. -->
       <TradeAction
-        v-if="tradeInfo.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
+        v-if="tradeInfo.offerResponse.offer.offer_type === 'buy' && tradeInfo.trade.state === 'request_created'"
         message="Waiting for the buyer to accept the trade"
       />
       <!-- #2 step or #1 step -->
@@ -145,7 +145,7 @@ async function settleDispute(winner: string) {
       <!-- if #1 step: The Buyer requested a trade and the Seller should accept the trade by depositing the crypto on escrow -->
       <TradeAction
         v-if="
-          (tradeInfo.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
+          (tradeInfo.offerResponse.offer.offer_type === 'sell' && tradeInfo.trade.state === 'request_created') ||
           tradeInfo.trade.state === 'request_accepted'
         "
         message="Please fund the trade"

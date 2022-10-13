@@ -6,7 +6,7 @@ import { microDenomToDenom } from '~/utils/denom'
 const props = defineProps<{ dispute: TradeInfo }>()
 
 const taker = computed(() => {
-  const maker = props.dispute.offer.owner
+  const maker = props.dispute.offerResponse.owner
   const buyer = props.dispute.trade.buyer
   const seller = props.dispute.trade.seller
   return [buyer, seller].filter((it) => it !== maker)[0]
@@ -37,7 +37,7 @@ const taker = computed(() => {
       <div class="dispute-status">
         <div class="wrap-peer">
           <p class="peer">Maker</p>
-          <p class="address">{{ formatAddress(props.dispute.offer.owner) }}</p>
+          <p class="address">{{ formatAddress(props.dispute.offerResponse.owner) }}</p>
         </div>
         <div class="wrap-offer-type">
           <div class="icon">
@@ -52,11 +52,11 @@ const taker = computed(() => {
               />
             </svg>
           </div>
-          <p v-if="props.dispute.offer.offer_type === 'buy'" class="offer-type">
-            buying <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> from
+          <p v-if="props.dispute.offerResponse.offer_type === 'buy'" class="offer-type">
+            buying <strong>{{ microDenomToDenom(dispute.offerResponse.denom.native) }}</strong> from
           </p>
           <p v-else class="offer-type">
-            selling <strong>{{ microDenomToDenom(dispute.offer.denom.native) }}</strong> to
+            selling <strong>{{ microDenomToDenom(dispute.offerResponse.denom.native) }}</strong> to
           </p>
         </div>
         <div class="wrap-peer">
@@ -72,7 +72,7 @@ const taker = computed(() => {
       <div class="reward">
         <p class="label">Estimated rewards</p>
         <!-- TO-DO Get Trade Rate -->
-        <p class="rate">$??? {{ microDenomToDenom(dispute.offer.denom.native) }}</p>
+        <p class="rate">$??? {{ microDenomToDenom(dispute.offerResponse.denom.native) }}</p>
       </div>
       <router-link :to="`/trade/${dispute.trade.id}`">
         <button class="primary bg-gray300" type="button">view</button>

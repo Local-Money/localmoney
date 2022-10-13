@@ -46,15 +46,17 @@ const counterparty = computed(() => {
   const trade = tradeInfo.value.trade
   return walletAddress.value === trade.seller ? trade.buyer : trade.seller
 })
-const fiatCurrency = computed(() => tradeInfo.value.offer.fiat_currency)
+const fiatCurrency = computed(() => tradeInfo.value.offerResponse.offer.fiat_currency)
 const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value))
-const fiatPriceByRate = computed(() => calculateFiatPriceByRate(usdRate.value, tradeInfo.value.offer.rate))
+const fiatPriceByRate = computed(() =>
+  calculateFiatPriceByRate(usdRate.value, tradeInfo.value.offerResponse.offer.rate)
+)
 const offerPrice = computed(() => `${fiatCurrency.value} ${formatAmount(fiatPriceByRate.value, false)}`)
 const fiatAmountStr = computed(() => {
   const fiatAmount = formatAmount((parseInt(tradeInfo.value.trade.amount) / 1000000) * fiatPriceByRate.value, false)
   return `${fiatCurrency.value} ${fiatAmount}`
 })
-const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.rate))
+const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offerResponse.offer.rate))
 const buyerOrSeller = computed(() => (isBuyer.value ? 'Buyer' : 'Seller'))
 const counterpartyEncryptedContact = computed(() =>
   isBuyer.value ? tradeInfo.value.trade.seller_contact : tradeInfo.value.trade.buyer_contact
@@ -76,7 +78,7 @@ const isArbitrator = computed(() => {
 })
 
 const maker = computed(() => {
-  return tradeInfo.value.offer.owner
+  return tradeInfo.value.offerResponse.offer.owner
 })
 
 const taker = computed(() => {
@@ -204,7 +206,7 @@ watch(userWallet, async () => {
                 <p class="trader">
                   {{ formatAddress(counterparty) }}
                 </p>
-                <p class="rating">{{ formatTradesCountInfo(tradeInfo.offer.trades_count) }}</p>
+                <p class="rating">{{ formatTradesCountInfo(tradeInfo.offerResponse.profile.trades_count) }}</p>
               </div>
               <p class="guide-content">
                 Open a chat with the other trader so you can exchange information about payment.

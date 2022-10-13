@@ -164,7 +164,7 @@ export const useClientStore = defineStore({
       const offer = await this.client.fetchOffer(trade.offer_id)
       return {
         trade,
-        offer,
+        offerResponse: offer,
         expired: false,
       } as TradeInfo
     },
