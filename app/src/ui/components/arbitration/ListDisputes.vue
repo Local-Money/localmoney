@@ -58,13 +58,13 @@ watch(userWallet, async () => {
 
       <div v-for="dispute in closedDisputes" :key="dispute.trade.id" class="wrap-table-item">
         <div class="col-1">
-          <p>{{ dispute.offer.offer_type }}</p>
+          <p>{{ dispute.offer.offer.offer_type }}</p>
         </div>
         <div class="col-2">
           <p>?????</p>
         </div>
         <div class="col-3">
-          <p>{{ microDenomToDenom(dispute.offer.denom.native) }}</p>
+          <p>{{ microDenomToDenom(dispute.offer.offer.denom.native) }}</p>
         </div>
         <div class="col-4">
           <p>?????</p>
