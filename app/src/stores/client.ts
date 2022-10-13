@@ -23,7 +23,7 @@ export const useClientStore = defineStore({
   id: 'client',
   state: () => {
     return {
-      chainClient: <ChainClient>ChainClient.mock, // TODO call setClient in the App.vue setup function to properly init a chain adapter
+      chainClient: <ChainClient>ChainClient.kujira, // TODO call setClient in the App.vue setup function to properly init a chain adapter
       client: chainFactory(ChainClient.kujira),
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),

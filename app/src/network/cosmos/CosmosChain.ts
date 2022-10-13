@@ -11,7 +11,6 @@ import type {
   Arbitrator,
   Denom,
   FetchOffersArgs,
-  GetOffer,
   HubConfig,
   NewTrade,
   OfferResponse,

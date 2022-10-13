@@ -149,7 +149,7 @@ export enum TradeState {
 
 export interface TradeInfo {
   trade: Trade
-  offer: GetOffer
+  offer: OfferResponse
   expired: boolean
 }
 
