@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
 import type { ListResult } from '~/stores/ListResult'
-import type { GetOffer, OfferResponse } from '~/types/components.interface'
+import type { OfferResponse } from '~/types/components.interface'
 import { OfferState } from '~/types/components.interface'
 import ArchivedOfferItem from '~/ui/components/myOffers/ArchivedOfferItem.vue'
 import CollapsedMyOffer from '~/ui/components/myOffers/CollapsedMyOffer.vue'
@@ -23,7 +23,7 @@ client.$subscribe((mutation, state) => {
       .filter(
         (offerResponse) => checkValidOffer(offerResponse.offer) && offerResponse.offer.state !== OfferState.archived
       )
-      .flatMap((offerResponse) => new ExpandableItem(offerResponse.offer))
+      .flatMap((offerResponse) => new ExpandableItem(offerResponse))
 
     page.archiveOffers = state.myOffers.data.filter(
       (offerResponse) => checkValidOffer(offerResponse.offer) && offerResponse.offer.state === OfferState.archived
@@ -40,19 +40,19 @@ function hasArchivedOffers() {
   return page.archiveOffers.length > 0
 }
 
-function expandOfferItem(offer: ExpandableItem<GetOffer>) {
-  if (expandedMyOffer.value !== offer) {
+function expandOfferItem(offerItem: ExpandableItem<OfferResponse>) {
+  if (expandedMyOffer.value !== offerItem) {
     if (expandedMyOffer.value != null) {
       expandedMyOffer.value.isExpanded = false
     }
 
-    offer.isExpanded = true
-    expandedMyOffer.value = offer
+    offerItem.isExpanded = true
+    expandedMyOffer.value = offerItem
   }
 }
 
-function collapseOfferItem(offer: ExpandableItem<GetOffer>) {
-  offer.isExpanded = false
+function collapseOfferItem(offerItem: ExpandableItem<OfferResponse>) {
+  offerItem.isExpanded = false
   expandedMyOffer.value = null
 }
 
@@ -77,23 +77,27 @@ watch(userWallet, async () => {
         <!-- Offers for -->
         <ul>
           <li
-            v-for="offer in page.myOffers"
-            :key="offer.data.id"
+            v-for="offerItem in page.myOffers"
+            :key="offerItem.data.id"
             class="card"
-            :class="offer.isExpanded ? 'card-active' : ''"
+            :class="offerItem.isExpanded ? 'card-active' : ''"
           >
             <!-- Collapsed Offer -->
-            <CollapsedMyOffer v-if="!offer.isExpanded" :offer="offer.data" @select="expandOfferItem(offer)" />
+            <CollapsedMyOffer
+              v-if="!offerItem.isExpanded"
+              :offer="offerItem.data.offer"
+              @select="expandOfferItem(offerItem)"
+            />
             <!-- Expanded Offer Desktop -->
-            <ExpandedMyOffer v-else :offer="offer.data" @cancel="collapseOfferItem(offer)" />
+            <ExpandedMyOffer v-else :offer="offerItem.data.offer" @cancel="collapseOfferItem(offerItem.data.offer)" />
           </li>
         </ul>
       </section>
       <section v-else-if="!hasOffers()" class="card">
         <p>Nothing here yet</p>
       </section>
-
       <!-- End My Offers section -->
+
       <!-- Archived offers table -->
       <h3 v-if="hasArchivedOffers()">Archived Offers</h3>
       <section v-if="hasArchivedOffers()" class="archived-offers-table card">
@@ -115,7 +119,11 @@ watch(userWallet, async () => {
           </div>
           <div class="col-6" />
         </div>
-        <ArchivedOfferItem v-for="offer in page.archiveOffers" :key="offer.id" :offer="offer" />
+        <ArchivedOfferItem
+          v-for="offerResult in page.archiveOffers"
+          :key="offerResult.offer.id"
+          :offer="offerResult.offer"
+        />
       </section>
       <!-- End Archived offers table -->
     </ListContentResult>
