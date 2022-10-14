@@ -56,6 +56,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             denom,
             min,
             max,
+            order,
             limit,
         } => to_binary(&OfferModel::query_by(
             deps,
@@ -65,6 +66,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             min,
             max,
             limit,
+            order,
         )?),
         QueryMsg::OffersByOwner { owner, limit } => {
             to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)

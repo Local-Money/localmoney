@@ -86,6 +86,15 @@ pub fn load_profile(
     )
 }
 
+pub fn load_profiles(
+    querier: &QuerierWrapper,
+    profile_contract: String,
+    limit: u32,
+    start_at: Option<u64>,
+) -> StdResult<Vec<Profile>> {
+    querier.query_wasm_smart(profile_contract, &QueryMsg::Profiles { limit, start_at })
+}
+
 // Data
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Profile {

@@ -2,14 +2,13 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
-use crate::profile::{load_profile, Profile};
+use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fmt::{self};
 use std::ops::Add;
 
@@ -99,6 +98,7 @@ pub enum QueryMsg {
         denom: Denom,
         min: Option<String>,
         max: Option<String>,
+        order: OfferOrder,
         limit: u32,
     },
     OffersByOwner {
@@ -218,6 +218,7 @@ impl OfferModel<'_> {
         min: Option<String>,
         max: Option<String>,
         limit: u32,
+        order: OfferOrder,
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let storage = deps.storage;
@@ -232,8 +233,15 @@ impl OfferModel<'_> {
             None => None,
         };
 
-        let mut profiles: HashMap<Addr, Profile> = HashMap::new();
-        let result = offers()
+        let mut profiles = load_profiles(
+            &deps.querier,
+            hub_config.profile_addr.to_string(),
+            limit,
+            None,
+        )
+        .unwrap();
+
+        let mut result: Vec<OfferResponse> = offers()
             .idx
             .filter
             .prefix(
@@ -246,22 +254,39 @@ impl OfferModel<'_> {
             .take(limit as usize)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
-                    let profile: Profile;
-                    if profiles.contains_key(&offer.owner) {
-                        profile = profiles.get(&offer.owner).unwrap().clone();
+                    let profile_found = profiles
+                        .clone()
+                        .into_iter()
+                        .find(|profile| profile.addr.eq(&offer.owner));
+
+                    let profile = if profile_found.is_some() {
+                        profile_found.unwrap()
                     } else {
-                        let profile_result = load_profile(
+                        let new_profile = load_profile(
                             &deps.querier,
                             hub_config.profile_addr.to_string(),
-                            offer.clone().owner,
-                        );
-                        profile = profile_result.unwrap().clone();
-                        profiles.insert(offer.owner.clone(), profile.clone());
-                    }
+                            offer.owner.clone(),
+                        )
+                        .unwrap();
+                        profiles.push(new_profile.clone());
+                        new_profile
+                    };
+
                     Ok(OfferResponse { offer, profile })
                 })
             })
             .collect();
+
+        match order {
+            OfferOrder::TradesCount => {
+                result.sort_by(|prev, next| {
+                    next.profile.trades_count.cmp(&prev.profile.trades_count)
+                });
+            }
+            OfferOrder::PriceRate => {
+                result.sort_by(|prev, next| prev.offer.rate.cmp(&next.offer.rate));
+            }
+        }
 
         Ok(result)
     }
@@ -295,6 +320,13 @@ pub struct Arbitrator {
 pub enum OfferType {
     Buy,
     Sell,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum OfferOrder {
+    TradesCount,
+    PriceRate,
 }
 
 impl fmt::Display for OfferType {
