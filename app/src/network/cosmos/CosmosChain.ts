@@ -172,7 +172,7 @@ export class CosmosChain implements Chain {
           // min: "",
           // max: "",
           limit: 10,
-          order: 'asc',
+          order: args.order,
         },
       }
       const response = (await this.cwClient!.queryContractSmart(

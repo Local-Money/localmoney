@@ -92,6 +92,11 @@ export interface FetchOffersArgs {
   fiatCurrency: FiatCurrency
   offerType: OfferType
   denom: Denom
+  order: OfferOrder
+}
+export enum OfferOrder {
+  trades_count = 'trades_count',
+  price_rate = 'price_rate',
 }
 
 export interface NewTrade {

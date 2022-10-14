@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { OfferResponse } from '~/types/components.interface'
-import { FiatCurrency, OfferType } from '~/types/components.interface'
+import { FiatCurrency, OfferOrder, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { usePriceStore } from '~/stores/price'
@@ -42,6 +42,7 @@ async function fetchOffers() {
     fiatCurrency: fiatCurrency.value,
     offerType: offerType.value,
     denom: { native: selectedCrypto.value },
+    order: OfferOrder.trades_count,
   })
 }
 
