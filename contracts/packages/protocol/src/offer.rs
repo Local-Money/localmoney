@@ -2,12 +2,9 @@ use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
-use crate::profile::{load_profile, Profile};
+use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
-use cosmwasm_std::{
-    to_binary, Addr, Deps, Order, QuerierWrapper, QueryRequest, StdResult, Storage, Uint128,
-    WasmQuery,
-};
+use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -84,15 +81,8 @@ pub enum ExecuteMsg {
     //TODO: Change to Create(OfferMsg)
     Create { offer: OfferMsg },
     UpdateOffer { offer_update: OfferUpdateMsg },
-    UpdateLastTraded { offer_id: String },
+    IncrementTradesCount { offer_id: String },
     RegisterHub {},
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum QueryOrder {
-    Asc,
-    Desc,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -102,20 +92,17 @@ pub enum QueryMsg {
     Offer {
         id: String,
     },
-    Offers {
-        owner: Option<Addr>,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
-        order: QueryOrder,
-    },
     OffersBy {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
         min: Option<String>,
         max: Option<String>,
-        order: QueryOrder,
+        order: OfferOrder,
+        limit: u32,
+    },
+    OffersByOwner {
+        owner: Addr,
         limit: u32,
     },
 }
@@ -137,44 +124,13 @@ pub struct Offer {
     pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
-    pub last_traded_at: u64,
+    pub trades_count: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferResponse {
-    pub id: String,
-    pub owner: Addr,
-    pub offer_type: OfferType,
-    pub fiat_currency: FiatCurrency,
-    pub rate: Uint128,
-    pub min_amount: Uint128,
-    pub max_amount: Uint128,
-    pub denom: Denom,
-    pub state: OfferState,
-    pub timestamp: u64,
-    pub last_traded_at: u64,
-    pub owner_encryption_key: String,
-    pub trades_count: u64,
-}
-
-impl OfferResponse {
-    pub fn map(offer: Offer, profile: Profile) -> OfferResponse {
-        OfferResponse {
-            id: offer.id,
-            owner: offer.owner,
-            offer_type: offer.offer_type,
-            fiat_currency: offer.fiat_currency,
-            rate: offer.rate,
-            min_amount: offer.min_amount,
-            max_amount: offer.max_amount,
-            denom: offer.denom,
-            state: offer.state,
-            timestamp: offer.timestamp,
-            last_traded_at: offer.last_traded_at,
-            owner_encryption_key: profile.encryption_key.unwrap(),
-            trades_count: profile.trade_count,
-        }
-    }
+    pub offer: Offer,
+    pub profile: Profile,
 }
 
 pub struct OfferModel<'a> {
@@ -219,55 +175,22 @@ impl OfferModel<'_> {
         self.offer.state = msg.state;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
-        // self.save()
-        //     ^^^^ move occurs because `*self` has type `OfferModel<'_>`, which does not implement the `Copy` trait
     }
 
-    pub fn update_last_traded(&mut self, last_traded_at: u64) -> &Offer {
-        self.offer.last_traded_at = last_traded_at;
+    pub fn increment_trades_count(&mut self) -> &Offer {
+        self.offer.trades_count += 1;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
     }
 
-    pub fn query(
-        deps: Deps,
-        owner: Option<Addr>,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
-        order: QueryOrder,
-    ) -> StdResult<Vec<OfferResponse>> {
+    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
-        let storage = deps.storage;
-
-        let std_order = match order {
-            QueryOrder::Asc => Order::Ascending,
-            QueryOrder::Desc => Order::Descending,
-        };
-
-        let range_min = match min {
-            Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
-            None => None,
-        };
-
-        let range_max = match max {
-            Some(thing) => Some(Bound::ExclusiveRaw(thing.into())),
-            None => None,
-        };
-
-        // Handle optional owner address query parameter
-        let range = match owner {
-            None => offers().range(storage, range_min, range_max, std_order),
-            Some(unchecked_addr) => {
-                let owner_addr = deps.api.addr_validate(unchecked_addr.as_str()).unwrap();
-
-                offers()
-                    .idx
-                    .owner
-                    .prefix(owner_addr.into_string())
-                    .range(storage, range_min, range_max, std_order)
-            }
-        };
+        let range = offers().idx.owner.prefix(owner.into_string()).range(
+            deps.storage,
+            None,
+            None,
+            Order::Descending,
+        );
 
         let result = range
             .take(limit as usize)
@@ -277,8 +200,9 @@ impl OfferModel<'_> {
                         &deps.querier,
                         hub_config.profile_addr.to_string(),
                         offer.clone().owner,
-                    );
-                    Ok(OfferResponse::map(offer, profile))
+                    )
+                    .unwrap();
+                    Ok(OfferResponse { offer, profile })
                 })
             })
             .collect();
@@ -293,16 +217,12 @@ impl OfferModel<'_> {
         denom: Denom,
         min: Option<String>,
         max: Option<String>,
-        order: QueryOrder,
         limit: u32,
+        order: OfferOrder,
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let storage = deps.storage;
-        let std_order = match order {
-            QueryOrder::Asc => Order::Ascending,
-            QueryOrder::Desc => Order::Descending,
-        };
-
+        let std_order = Order::Descending;
         let range_min = match min {
             Some(thing) => Some(Bound::exclusive(thing)),
             None => None,
@@ -313,7 +233,15 @@ impl OfferModel<'_> {
             None => None,
         };
 
-        let result = offers()
+        let mut profiles = load_profiles(
+            &deps.querier,
+            hub_config.profile_addr.to_string(),
+            limit,
+            None,
+        )
+        .unwrap();
+
+        let mut result: Vec<OfferResponse> = offers()
             .idx
             .filter
             .prefix(
@@ -326,15 +254,39 @@ impl OfferModel<'_> {
             .take(limit as usize)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
-                    let profile = load_profile(
-                        &deps.querier,
-                        hub_config.profile_addr.to_string(),
-                        offer.clone().owner,
-                    );
-                    Ok(OfferResponse::map(offer, profile))
+                    let profile_found = profiles
+                        .clone()
+                        .into_iter()
+                        .find(|profile| profile.addr.eq(&offer.owner));
+
+                    let profile = if profile_found.is_some() {
+                        profile_found.unwrap()
+                    } else {
+                        let new_profile = load_profile(
+                            &deps.querier,
+                            hub_config.profile_addr.to_string(),
+                            offer.owner.clone(),
+                        )
+                        .unwrap();
+                        profiles.push(new_profile.clone());
+                        new_profile
+                    };
+
+                    Ok(OfferResponse { offer, profile })
                 })
             })
             .collect();
+
+        match order {
+            OfferOrder::TradesCount => {
+                result.sort_by(|prev, next| {
+                    next.profile.trades_count.cmp(&prev.profile.trades_count)
+                });
+            }
+            OfferOrder::PriceRate => {
+                result.sort_by(|prev, next| prev.offer.rate.cmp(&next.offer.rate));
+            }
+        }
 
         Ok(result)
     }
@@ -370,6 +322,13 @@ pub enum OfferType {
     Sell,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum OfferOrder {
+    TradesCount,
+    PriceRate,
+}
+
 impl fmt::Display for OfferType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -390,23 +349,13 @@ pub enum OfferState {
     Archive,
 }
 
-//Queries
+// Queries
 pub fn load_offer(
     querier: &QuerierWrapper,
     offer_id: String,
     offer_contract: String,
-) -> Option<OfferResponse> {
-    let load_offer_result: StdResult<OfferResponse> =
-        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: offer_contract,
-            msg: to_binary(&QueryMsg::Offer { id: offer_id }).unwrap(),
-        }));
-
-    if load_offer_result.is_err() {
-        None
-    } else {
-        Some(load_offer_result.unwrap())
-    }
+) -> StdResult<OfferResponse> {
+    querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

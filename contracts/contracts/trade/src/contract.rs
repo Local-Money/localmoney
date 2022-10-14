@@ -21,7 +21,7 @@ use localterra_protocol::guards::{
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
-use localterra_protocol::offer::ExecuteMsg::UpdateLastTraded;
+use localterra_protocol::offer::ExecuteMsg as OfferExecuteMsg;
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
 use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
@@ -92,21 +92,21 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
 }
 
 fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, ContractError> {
-    //Load Offer
+    // Load Offer
     let hub_cfg = get_hub_config(deps.as_ref());
 
     let offer_id = new_trade.offer_id.clone();
-    let offer = load_offer(
+    let offer_result = load_offer(
         &deps.querier,
         new_trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     );
-    if offer.is_none() {
+    if offer_result.is_err() {
         return Err(OfferNotFound {
             offer_id: new_trade.offer_id.to_string(),
         });
     }
-    let offer = offer.unwrap();
+    let offer = offer_result.unwrap().offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
@@ -127,13 +127,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         seller_contact = None // maker
     }
 
-    let owner_profile = load_profile(
-        &deps.querier,
-        hub_cfg.profile_addr.to_string(),
-        offer.owner.clone(),
-    );
-    let trade_count = owner_profile.trade_count + 1;
-    let trade_id = [offer.id.clone(), trade_count.to_string()].join("_");
+    let trades_count = offer.trades_count + 1;
+    let trade_id = [offer.id.clone(), trades_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
         actor: new_trade.taker.clone(),
@@ -228,19 +223,22 @@ fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
         &deps.querier,
         hub_config.profile_addr.to_string(),
         state.buyer.clone(),
-    );
+    )
+    .unwrap();
 
     let seller = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
         state.seller.clone(),
-    );
+    )
+    .unwrap();
 
     let arbitrator = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
         state.arbitrator.clone(),
-    );
+    )
+    .unwrap();
 
     Ok(TradeResponse::map(state, buyer, seller, arbitrator))
 }
@@ -273,7 +271,7 @@ pub fn query_trades(
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
-        let offer = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
+        let offer_response = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
         let current_time = env.block.time.seconds();
         let expired = trade.get_state().eq(&TradeState::EscrowFunded)
             && current_time > trade.clone().created_at + REQUEST_TIMEOUT;
@@ -283,23 +281,26 @@ pub fn query_trades(
             &deps.querier,
             hub_config.profile_addr.to_string(),
             trade.buyer.clone(),
-        );
+        )
+        .unwrap();
 
         let seller = load_profile(
             &deps.querier,
             hub_config.profile_addr.to_string(),
             trade.seller.clone(),
-        );
+        )
+        .unwrap();
 
         let arbitrator = load_profile(
             &deps.querier,
             hub_config.profile_addr.to_string(),
             trade.arbitrator.clone(),
-        );
+        )
+        .unwrap();
 
         trades_infos.push(TradeInfo {
             trade: TradeResponse::map(trade.clone(), buyer, seller, arbitrator),
-            offer,
+            offer: offer_response,
             expired,
         })
     });
@@ -321,7 +322,8 @@ fn fund_escrow(
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
 
     // TODO: will the store save it if we return an error ???
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
@@ -485,6 +487,7 @@ fn release_escrow(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
+    // Load trade and validate that permission and state are valid.
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     let trade_denom = denom_to_string(&trade.denom);
     if trade.seller.eq(&info.sender) {
@@ -501,19 +504,21 @@ fn release_escrow(
         });
     }
 
+    // Load HubConfig
     let hub_cfg = get_hub_config(deps.as_ref());
     let offer = load_offer(
         &deps.querier,
         trade.offer_id.clone(),
         hub_cfg.offer_addr.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
 
-    //Update trade State to TradeState::EscrowReleased
+    // Update trade State to TradeState::EscrowReleased
     trade.set_state(TradeState::EscrowReleased, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
-    //Calculate fees and final release amount
+    // Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let mut release_amount = trade.amount.clone();
     let one = Uint128::new(1u128);
@@ -523,7 +528,7 @@ fn release_escrow(
     let chain_amount = fee.mul(Decimal::from_ratio(hub_cfg.chain_fee_pct, 100u128));
     let warchest_amount = fee.mul(Decimal::from_ratio(hub_cfg.warchest_fee_pct, 100u128));
 
-    //Create Trade Registration message to be sent to the Trading Incentives contract.
+    // Create Trade Registration message to be sent to the Trading Incentives contract.
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
@@ -537,7 +542,7 @@ fn release_escrow(
     // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
     let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.offer_addr.to_string(),
-        msg: to_binary(&UpdateLastTraded { offer_id: offer.id }).unwrap(),
+        msg: to_binary(&OfferExecuteMsg::IncrementTradesCount { offer_id: offer.id }).unwrap(),
         funds: vec![],
     }));
     send_msgs.push(update_last_traded_msg);
@@ -816,7 +821,8 @@ fn settle_dispute(
         trade.offer_id.clone(),
         trade.offer_contract.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
 
     // Define maker and taker
     let maker = offer.owner.clone();

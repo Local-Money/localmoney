@@ -2,6 +2,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
 
+use crate::state::{offers_count_read, offers_count_storage};
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
@@ -11,8 +12,6 @@ use localterra_protocol::offer::{
     OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
 };
 use localterra_protocol::profile::{load_profile, update_profile_msg};
-
-use crate::state::{offers_count_read, offers_count_storage};
 
 #[entry_point]
 pub fn instantiate(
@@ -40,7 +39,9 @@ pub fn execute(
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::UpdateLastTraded { offer_id } => update_last_traded(deps, env, info, offer_id),
+        ExecuteMsg::IncrementTradesCount { offer_id } => {
+            increment_trades_count(deps, info, offer_id)
+        }
     }
 }
 
@@ -49,21 +50,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps, id)?),
-        QueryMsg::Offers {
-            owner,
-            min,
-            max,
-            limit,
-            order,
-        } => to_binary(&OfferModel::query(deps, owner, min, max, limit, order)?),
         QueryMsg::OffersBy {
             offer_type,
             fiat_currency,
             denom,
             min,
             max,
-            limit,
             order,
+            limit,
         } => to_binary(&OfferModel::query_by(
             deps,
             offer_type,
@@ -71,9 +65,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             denom,
             min,
             max,
-            order,
             limit,
+            order,
         )?),
+        QueryMsg::OffersByOwner { owner, limit } => {
+            to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
+        }
     }
 }
 
@@ -85,6 +82,7 @@ pub fn create_offer(
 ) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
+    // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
     let mut offers_count = offers_count_storage(deps.storage).load().unwrap();
     offers_count.count += 1;
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
@@ -111,7 +109,7 @@ pub fn create_offer(
             max_amount: msg.max_amount,
             state: OfferState::Active,
             timestamp: env.block.time.seconds(),
-            last_traded_at: 0,
+            trades_count: 0,
         },
     )
     .offer;
@@ -129,13 +127,11 @@ pub fn create_offer(
         .add_attribute("min_amount", offer.min_amount.to_string())
         .add_attribute("max_amount", offer.max_amount.to_string())
         .add_attribute("owner", offer.owner);
-
     Ok(res)
 }
 
-pub fn update_last_traded(
+pub fn increment_trades_count(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     offer_id: String,
 ) -> Result<Response, ContractError> {
@@ -151,13 +147,12 @@ pub fn update_last_traded(
 
     let mut offer_model = OfferModel::may_load(deps.storage, &offer_id);
 
-    let offer = offer_model.update_last_traded(env.block.time.seconds());
+    let offer = offer_model.increment_trades_count();
 
     let res = Response::new()
         .add_attribute("action", "update_last_traded")
         .add_attribute("tradeAddr", info.sender)
-        .add_attribute("offer_id", &offer.id)
-        .add_attribute("last_traded_at", &offer.last_traded_at.to_string());
+        .add_attribute("offer_id", &offer.id);
 
     Ok(res)
 }
@@ -211,14 +206,13 @@ pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
         .may_load(deps.storage, id.to_string())
         .unwrap_or_default()
         .unwrap();
-
     let profile = load_profile(
         &deps.querier,
         hub_config.profile_addr.to_string(),
-        offer.clone().owner,
-    );
-
-    Ok(OfferResponse::map(offer, profile))
+        offer.owner.clone(),
+    )
+    .unwrap();
+    Ok(OfferResponse { offer, profile })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

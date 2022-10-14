@@ -11,9 +11,9 @@ import type {
   Arbitrator,
   Denom,
   FetchOffersArgs,
-  GetOffer,
   HubConfig,
   NewTrade,
+  OfferResponse,
   PatchOffer,
   PostOffer,
   Profile,
@@ -94,6 +94,7 @@ export class CosmosChain implements Chain {
         )
         console.log('Create offer result >> ', result)
       } catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     } else {
@@ -126,12 +127,11 @@ export class CosmosChain implements Chain {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
         return (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
-          offers: {
+          offers_by_owner: {
             owner: this.getWalletAddress(),
             limit: 10,
-            order: 'asc',
           },
-        })) as GetOffer[]
+        })) as OfferResponse[]
       } catch (e) {
         throw new DefaultError()
       }
@@ -140,7 +140,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchOffer(offerId: string): Promise<GetOffer> {
+  async fetchOffer(offerId: string): Promise<OfferResponse> {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()
@@ -150,7 +150,7 @@ export class CosmosChain implements Chain {
       const response = (await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
         queryMsg
-      )) as GetOffer
+      )) as OfferResponse
       console.log('response >>> ', response)
       return response
     } catch (e) {
@@ -172,13 +172,13 @@ export class CosmosChain implements Chain {
           // min: "",
           // max: "",
           limit: 10,
-          order: 'asc',
+          order: args.order,
         },
       }
       const response = (await this.cwClient!.queryContractSmart(
         this.hubInfo.hubConfig.offer_addr,
         queryMsg
-      )) as GetOffer[]
+      )) as OfferResponse[]
       console.log('response >>> ', response)
       return response
     } catch (e) {

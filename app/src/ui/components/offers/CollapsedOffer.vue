@@ -9,39 +9,39 @@ import {
 } from '~/shared'
 import { usePriceStore } from '~/stores/price'
 import { OfferType } from '~/types/components.interface'
-import type { GetOffer, OfferTypeLabel } from '~/types/components.interface'
+import type { GetOffer, OfferResponse, OfferTypeLabel } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 
-const props = defineProps<{ offer: GetOffer }>()
+const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'select'): void }>()
 const { t } = useI18n()
 const priceStore = usePriceStore()
 
 const offerTypeLabels: OfferTypeLabel = { [OfferType.buy]: t('label.sell'), [OfferType.sell]: t('label.buy') }
-const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
+const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 const offerPrice = computed(() => {
-  const usdRate = priceStore.getPrice(props.offer.fiat_currency)
-  const fiatPrice = calculateFiatPriceByRate(usdRate, props.offer.rate)
-  return `${props.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
+  const usdRate = priceStore.getPrice(props.offerResponse.offer.fiat_currency)
+  const fiatPrice = calculateFiatPriceByRate(usdRate, props.offerResponse.offer.rate)
+  return `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
 })
 </script>
 
 <template>
-  <div :key="`${offer.id}-collapsed`" class="offer collapsed">
+  <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed">
     <div class="owner">
       <p class="wallet-addr">
-        {{ formatAddress(offer.owner) }}
+        {{ formatAddress(offerResponse.offer.owner) }}
       </p>
-      <p class="n-trades">{{ formatTradesCountInfo(offer.trades_count) }}</p>
+      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.trades_count) }}</p>
     </div>
 
     <div class="info">
       <div class="wrap">
         <p class="label">Limits</p>
         <p class="limit">
-          {{ formatAmount(offer.min_amount) }} -
-          {{ formatAmount(offer.max_amount) }}
-          {{ microDenomToDenom(offer.denom.native) }}
+          {{ formatAmount(offerResponse.offer.min_amount) }} -
+          {{ formatAmount(offerResponse.offer.max_amount) }}
+          {{ microDenomToDenom(offerResponse.offer.denom.native) }}
         </p>
       </div>
 
@@ -57,7 +57,7 @@ const offerPrice = computed(() => {
         {{ offerPrice }}
       </p>
       <button class="primary bg-gray300" type="button" @click="emit('select')">
-        {{ offerTypeLabels[offer.offer_type] }}
+        {{ offerTypeLabels[offerResponse.offer.offer_type] }}
       </button>
     </div>
   </div>

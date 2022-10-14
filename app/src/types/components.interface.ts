@@ -17,13 +17,6 @@ export class LoadingState {
   }
 }
 
-export interface Profile {
-  addr: string
-  trade_count: number
-  contact?: string
-  encryption_key?: string
-}
-
 export enum OfferType {
   buy = 'buy',
   sell = 'sell',
@@ -34,9 +27,22 @@ export interface OfferTypeLabel {
   [OfferType.sell]: string
 }
 
+export interface OfferResponse {
+  offer: GetOffer
+  profile: Profile
+}
+
+export interface Profile {
+  addr: string
+  created_at: Date
+  trades_count: number
+  last_trade: Date
+  contact?: string
+  encryption_key?: string
+}
+
 export interface GetOffer {
   id: string
-  owner_encryption_key: string
   state: OfferState
   rate: string
   min_amount: string
@@ -46,7 +52,6 @@ export interface GetOffer {
   denom: Denom
   fiat_currency: FiatCurrency
   timestamp: number
-  last_traded_at: number
   trades_count: number
 }
 
@@ -87,6 +92,11 @@ export interface FetchOffersArgs {
   fiatCurrency: FiatCurrency
   offerType: OfferType
   denom: Denom
+  order: OfferOrder
+}
+export enum OfferOrder {
+  trades_count = 'trades_count',
+  price_rate = 'price_rate',
 }
 
 export interface NewTrade {
@@ -144,7 +154,7 @@ export enum TradeState {
 
 export interface TradeInfo {
   trade: Trade
-  offer: GetOffer
+  offer: OfferResponse
   expired: boolean
 }
 

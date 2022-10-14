@@ -5,8 +5,8 @@ import type {
   Arbitrator,
   Denom,
   FetchOffersArgs,
-  GetOffer,
   NewTrade,
+  OfferResponse,
   PatchOffer,
   PostOffer,
   Profile,
@@ -24,11 +24,11 @@ export interface Chain {
 
   fetchProfile(): Promise<Profile>
 
-  fetchOffer(offerId: string): Promise<GetOffer>
+  fetchOffer(offerId: string): Promise<OfferResponse>
 
-  fetchOffers(args: FetchOffersArgs): Promise<GetOffer[]>
+  fetchOffers(args: FetchOffersArgs): Promise<OfferResponse[]>
 
-  fetchMyOffers(): Promise<GetOffer[]>
+  fetchMyOffers(): Promise<OfferResponse[]>
 
   createOffer(postOffer: PostOffer): Promise<void>
 

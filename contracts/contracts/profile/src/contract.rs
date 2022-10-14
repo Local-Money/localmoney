@@ -6,7 +6,7 @@ use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_multiple_ownership, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::profile::{
-    ExecuteMsg, InstantiateMsg, MigrateMsg, Profile, ProfileModel, QueryMsg,
+    ExecuteMsg, InstantiateMsg, MigrateMsg, ProfileModel, QueryMsg,
 };
 use localterra_protocol::trade::TradeState;
 
@@ -28,7 +28,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -37,17 +37,18 @@ pub fn execute(
             profile_addr,
             contact,
             encryption_key,
-        } => update_profile(deps, info, profile_addr, contact, encryption_key),
+        } => update_profile(deps, env, info, profile_addr, contact, encryption_key),
         ExecuteMsg::IncreaseTradeCount {
             profile_addr,
             final_trade_state,
-        } => increase_trade_count(deps, info, profile_addr, final_trade_state),
+        } => increase_trades_count(deps, env, info, profile_addr, final_trade_state),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
 
 fn update_profile(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     profile_addr: Addr,
     contact: String,
@@ -62,10 +63,15 @@ fn update_profile(
     // Only the trade/offer contract or the profile owner should be able to update profile
     assert_multiple_ownership(info.sender, owners).unwrap();
 
-    let mut profile_model = ProfileModel::load(deps.storage, profile_addr.clone());
-    profile_model.profile.contact = Some(contact.clone());
-    profile_model.profile.encryption_key = Some(encryption_key.clone());
-    profile_model.save();
+    let storage = deps.storage;
+    let mut profile = ProfileModel::query_profile(storage, profile_addr.clone());
+    if profile.created_at.eq(&0) {
+        let created_at = env.block.time.seconds();
+        profile.created_at = created_at
+    }
+    profile.contact = Some(contact.clone());
+    profile.encryption_key = Some(encryption_key.clone());
+    ProfileModel::store(storage, &profile);
 
     let res = Response::new()
         .add_attribute("action", "update_profile")
@@ -75,25 +81,28 @@ fn update_profile(
     Ok(res)
 }
 
-pub fn increase_trade_count(
+pub fn increase_trades_count(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     profile_addr: Addr,
     final_trade_state: TradeState,
 ) -> Result<Response, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
 
-    // Only the trade contract should be able to call increase_trade_count
+    // Only the trade contract should be able to call increase_trades_count
     assert_ownership(info.sender, hub_config.trade_addr).unwrap();
 
-    let mut profile_model = ProfileModel::load(deps.storage, profile_addr.clone());
-    profile_model.profile.trade_count += 1;
-    let updated_profile = profile_model.save();
+    let profile_result = ProfileModel::from_store(deps.storage, profile_addr.clone());
+    let mut profile_model = profile_result.unwrap();
+    profile_model.profile.trades_count += 1;
+    profile_model.profile.last_trade = env.block.time.seconds();
+    let profile = profile_model.save();
 
     let res = Response::new()
-        .add_attribute("action", "increase_trade_count")
+        .add_attribute("action", "increase_trades_count")
         .add_attribute("final_trade_state", final_trade_state.to_string())
-        .add_attribute("trade_count", updated_profile.trade_count.to_string());
+        .add_attribute("trades_count", profile.trades_count.to_string());
     Ok(res)
 }
 
@@ -102,15 +111,15 @@ fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Profile { addr } => to_binary(&query_profile(deps, addr)?),
+        QueryMsg::Profile { addr } => {
+            to_binary(&ProfileModel::query_profile(deps.storage, addr.clone()))
+        }
+        QueryMsg::Profiles { limit, start_at } => {
+            to_binary(&ProfileModel::query_profiles(deps, env, limit, start_at)?)
+        }
     }
-}
-
-fn query_profile(deps: Deps, profile_addr: Addr) -> StdResult<Profile> {
-    let profile = ProfileModel::query(deps.storage, profile_addr);
-    Ok(profile)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

@@ -16,9 +16,9 @@ const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
 const priceClient = usePriceStore()
 const currentDate = computed(() => formatDate(new Date(props.tradeInfo.trade.created_at * 1000)))
-const fiatCurrency = computed(() => props.tradeInfo.offer.fiat_currency)
+const fiatCurrency = computed(() => props.tradeInfo.offer.offer.fiat_currency)
 const fiatPriceByRate = computed(() => {
-  return calculateFiatPriceByRate(priceClient.getPrice(fiatCurrency.value), props.tradeInfo.offer.rate)
+  return calculateFiatPriceByRate(priceClient.getPrice(fiatCurrency.value), props.tradeInfo.offer.offer.rate)
 })
 const fiatAmountStr = computed(() => {
   const fiatAmount = formatFiatAmount((parseInt(props.tradeInfo.trade.amount) / 1000000) * fiatPriceByRate.value)
@@ -26,7 +26,7 @@ const fiatAmountStr = computed(() => {
 })
 
 const tradeType = computed(() => {
-  return props.tradeInfo.offer.offer_type === 'buy' ? 'Buy' : 'Sell'
+  return props.tradeInfo.offer.offer.offer_type === 'buy' ? 'Buy' : 'Sell'
 })
 
 const counterparty = computed(() => {

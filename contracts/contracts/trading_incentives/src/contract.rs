@@ -147,7 +147,8 @@ fn register_trade(
         trade.offer_id.to_string(),
         hub_cfg.offer_addr.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .offer;
     let maker = offer.owner.to_string();
 
     if trade.state != TradeState::EscrowReleased {

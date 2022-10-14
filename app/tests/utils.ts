@@ -105,6 +105,9 @@ export async function setupProtocol() {
     expect(makerClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
     expect(takerClient.getHubInfo().hubConfig.trade_addr).toBe(tradeInstantiateResult.contractAddress)
     // eslint-disable-next-line no-console
+    console.log('Admin Wallet: ', adminClient.getWalletAddress())
+    console.log('Maker Wallet: ', makerClient.getWalletAddress())
+    console.log('Taker Wallet: ', takerClient.getWalletAddress())
     console.log('Hub Address:', hubInstantiateResult.contractAddress)
   }
   return { adminClient, makerClient, takerClient }

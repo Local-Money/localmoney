@@ -7,8 +7,8 @@ import type {
   Arbitrator,
   Denom,
   FetchOffersArgs,
-  GetOffer,
   NewTrade,
+  OfferResponse,
   PatchOffer,
   PostOffer,
   Profile,
@@ -23,13 +23,13 @@ export const useClientStore = defineStore({
   id: 'client',
   state: () => {
     return {
-      chainClient: <ChainClient>ChainClient.mock, // TODO call setClient in the App.vue setup function to properly init a chain adapter
+      chainClient: <ChainClient>ChainClient.kujira, // TODO call setClient in the App.vue setup function to properly init a chain adapter
       client: chainFactory(ChainClient.kujira),
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
       profile: <Profile>{},
-      offers: <ListResult<GetOffer>>ListResult.loading(),
-      myOffers: <ListResult<GetOffer>>ListResult.loading(),
+      offers: <ListResult<OfferResponse>>ListResult.loading(),
+      myOffers: <ListResult<OfferResponse>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
       arbitrators: <ListResult<Arbitrator>>ListResult.loading(),
       openDisputes: <ListResult<TradeInfo>>ListResult.loading(),
