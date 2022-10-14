@@ -6,6 +6,7 @@ import {
   formatAddress,
   formatAmount,
   formatTradesCountInfo,
+  isTelegramHandleValid,
   removeTelegramURLPrefix,
   scrollToElement,
 } from '~/shared'
@@ -58,7 +59,12 @@ const maxAmountInCrypto = computed(() => parseInt(props.offer.max_amount.toStrin
 const maxAmountInFiat = computed(() => fiatPriceByRate.value * (parseInt(props.offer.max_amount.toString()) / 1000000))
 const minAmountInFiat = computed(() => fiatPriceByRate.value * (parseInt(props.offer.min_amount.toString()) / 1000000))
 const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
-const valid = computed(() => true)
+const valid = computed(
+  () =>
+    cryptoAmount.value >= minAmountInCrypto.value &&
+    cryptoAmount.value <= maxAmountInCrypto.value &&
+    isTelegramHandleValid(telegram.value)
+)
 const minMaxFiatStr = computed(() => {
   const symbol = props.offer.fiat_currency.toUpperCase()
   const min = minAmountInFiat.value.toFixed(2)
