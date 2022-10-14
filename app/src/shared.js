@@ -103,6 +103,17 @@ export function formatDate(date, showTime = true) {
   }
 }
 
+/**
+ * The Telegram handle needs to have at least 5 characters
+ *
+ * @param telegram
+ * @returns {boolean}
+ */
+export function isTelegramHandleValid(telegram) {
+  const handle = removeTelegramURLPrefix(telegram)
+  return handle.length >= 5
+}
+
 export function removeTelegramURLPrefix(telegram) {
   const search = 't.me/'
   const start = telegram.indexOf(search) + search.length

@@ -5,6 +5,7 @@ import {
   calculateFiatPriceByRate,
   convertMarginRateToOfferRate,
   formatAmount,
+  isTelegramHandleValid,
   removeTelegramURLPrefix,
 } from '~/shared'
 import { usePriceStore } from '~/stores/price'
@@ -41,7 +42,7 @@ const marginOffsetUnmasked = ref(0)
 const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
-const valid = computed(() => maxAmount.value > minAmount.value)
+const valid = computed(() => maxAmount.value > minAmount.value && isTelegramHandleValid(ownerContact.value))
 const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value))
 const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value)
