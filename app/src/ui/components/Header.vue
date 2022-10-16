@@ -50,6 +50,7 @@ header {
 
   @media only screen and (max-width: $mobile) {
     position: relative;
+    min-width: 0;
     height: auto;
   }
 
