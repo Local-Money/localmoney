@@ -45,6 +45,7 @@ header {
   top: 0;
   background-color: $background;
   width: 100%;
+  min-width: 1000px;
   z-index: 100;
 
   @media only screen and (max-width: $mobile) {
