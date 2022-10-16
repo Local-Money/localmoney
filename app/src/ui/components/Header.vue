@@ -40,6 +40,9 @@ const isMobile = computed(() => width.value <= 550)
 @import '../style/tokens.scss';
 
 header {
+  position: fixed;
+  height: 100px;
+  top: 0;
   background-color: $background;
   width: 100%;
 

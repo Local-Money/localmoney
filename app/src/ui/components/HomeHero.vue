@@ -149,6 +149,7 @@ section {
   display: flex;
   flex-direction: column;
   padding: 24px 24px 24px;
+  margin-top: 100px;
 }
 
 .separator {
