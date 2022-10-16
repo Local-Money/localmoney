@@ -152,7 +152,7 @@ section {
   margin-top: 100px;
 
   @media only screen and (max-width: $mobile) {
-    margin-top: 56px;
+    margin-top: 0;
   }
 }
 

@@ -48,7 +48,8 @@ header {
   z-index: 100;
 
   @media only screen and (max-width: $mobile) {
-    height: 72px;
+    position: relative;
+    height: auto;
   }
 
   .wrap {
