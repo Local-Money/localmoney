@@ -427,16 +427,17 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
 }
 
 pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
+    let pk_namespace = "trades_v0_3_0";
     let indexes = TradeIndexes {
-        buyer: MultiIndex::new(|t| t.buyer.to_string(), "trades", "trades__buyer"),
-        seller: MultiIndex::new(|t| t.seller.to_string(), "trades", "trades__seller"),
+        buyer: MultiIndex::new(|t| t.buyer.to_string(), pk_namespace, "trades__buyer"),
+        seller: MultiIndex::new(|t| t.seller.to_string(), pk_namespace, "trades__seller"),
         arbitrator: MultiIndex::new(
             |t| t.arbitrator.clone().to_string(),
-            "trades",
+            pk_namespace,
             "trades__arbitrator",
         ),
     };
-    IndexedMap::new("trades", indexes)
+    IndexedMap::new(pk_namespace, indexes)
 }
 
 // Arbitrator
@@ -537,19 +538,20 @@ impl ArbitratorModel {
 }
 
 pub fn arbitrators<'a>() -> IndexedMap<'a, &'a str, Arbitrator, ArbitratorIndexes<'a>> {
+    let arbitrators_pk_namespace = "arbitrators_v0_3_0";
     let indexes = ArbitratorIndexes {
         arbitrator: MultiIndex::new(
             |d: &Arbitrator| d.arbitrator.clone(),
-            "arbitrators",
+            arbitrators_pk_namespace,
             "arbitrators__arbitrator",
         ),
         fiat: MultiIndex::new(
             |d: &Arbitrator| d.fiat.clone().to_string(),
-            "arbitrators",
+            arbitrators_pk_namespace,
             "arbitrators__asset",
         ),
     };
-    IndexedMap::new("arbitrators", indexes)
+    IndexedMap::new(&arbitrators_pk_namespace, indexes)
 }
 
 pub struct ArbitratorIndexes<'a> {
