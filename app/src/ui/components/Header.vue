@@ -46,6 +46,10 @@ header {
   background-color: $background;
   width: 100%;
 
+  @media only screen and (max-width: $mobile) {
+    height: 72px;
+  }
+
   .wrap {
     display: flex;
     justify-content: space-between;
