@@ -18,8 +18,6 @@ function toggleModal() {
         </div>
       </div>
 
-      <!-- <button @click="toggleModal">Create a new offer</button> -->
-
       <Modal :modalActive="modalActive" @close="toggleModal()">
         <div class="modal-content">
           <CreateOffer @cancel="toggleModal()" />
@@ -72,6 +70,7 @@ button {
   left: 0;
   top: 0;
   bottom: 0;
+  z-index: 150;
   backdrop-filter: blur(10px);
 
   overflow-y: auto;
