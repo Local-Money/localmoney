@@ -1,4 +1,3 @@
-use super::constants::OFFERS_KEY;
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
@@ -28,8 +27,13 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
 }
 
 pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
+    let offers_pk_namespace = "offers_v0_3_0";
     let indexes = OfferIndexes {
-        owner: MultiIndex::new(|d| d.owner.clone().to_string(), "offers", "offers__owner"),
+        owner: MultiIndex::new(
+            |d| d.owner.clone().to_string(),
+            offers_pk_namespace,
+            "offers__owner",
+        ),
         filter: MultiIndex::new(
             |offer: &Offer| {
                 offer
@@ -39,11 +43,11 @@ pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
                     .add(denom_to_string(&offer.denom).as_str())
                     .add(&offer.state.to_string())
             },
-            "offers",
+            offers_pk_namespace,
             "offers__filter",
         ),
     };
-    IndexedMap::new(OFFERS_KEY, indexes)
+    IndexedMap::new(offers_pk_namespace, indexes)
 }
 
 // pub const OFFERS : IndexedMap<&str, Offer, OfferIndexes> = create_offers_indexedmap();
