@@ -103,7 +103,7 @@ function fetchTrade(id: string) {
   })
 }
 
-onBeforeMount(async () => {
+onBeforeMount(() => {
   fetchTrade(route.params.id as string)
 })
 
