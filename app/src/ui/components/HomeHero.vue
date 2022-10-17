@@ -149,11 +149,6 @@ section {
   display: flex;
   flex-direction: column;
   padding: 24px 24px 24px;
-  margin-top: 100px;
-
-  @media only screen and (max-width: $mobile) {
-    margin-top: 0;
-  }
 }
 
 .separator {

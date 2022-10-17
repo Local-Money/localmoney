@@ -2,19 +2,13 @@
 
 <template>
   <main class="page">
-    <div class="wrap-title">
-      <h3>Open Disputes</h3>
-    </div>
+    <h3>Open Disputes</h3>
     <ListDisputes />
   </main>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import '../style/pages.scss';
-
-.wrap-title {
-  display: flex;
-}
 
 h3 {
   margin: 32px 0;

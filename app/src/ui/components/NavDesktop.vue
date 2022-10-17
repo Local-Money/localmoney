@@ -83,10 +83,6 @@ nav {
 
     li {
       padding: 0 20px;
-
-      @media only screen and (max-width: 1080px) {
-        padding: 0 10px;
-      }
     }
 
     a {
@@ -104,12 +100,6 @@ nav {
 
       .icon-24 {
         vertical-align: middle;
-      }
-
-      @media only screen and (max-width: 1150px) {
-        svg {
-          display: none;
-        }
       }
 
       p {
