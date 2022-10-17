@@ -32,11 +32,12 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 }
 
 .modal {
-  display: flex;
+  display: inline-flex;
   justify-content: center;
 }
 
 .modal-inner {
+  height: 100px;
   z-index: $z-modal-content;
   margin-top: 10%;
 
