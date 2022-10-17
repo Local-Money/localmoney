@@ -40,6 +40,6 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   height: 100vh;
   left: 0;
   top: 0;
-  z-index: 150;
+  z-index: 99;
 }
 </style>
