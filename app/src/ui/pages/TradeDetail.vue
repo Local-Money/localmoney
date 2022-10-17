@@ -18,6 +18,8 @@ const client = useClientStore()
 const { userWallet } = storeToRefs(client)
 const priceStore = usePriceStore()
 const tradeInfo = ref()
+const buyerContact = ref('')
+const sellerContact = ref('')
 const secrets = computed(() => client.getSecrets())
 let refreshInterval: NodeJS.Timer
 
@@ -55,7 +57,6 @@ const fiatAmountStr = computed(() => {
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.offer.rate))
-const buyerOrSeller = computed(() => (isBuyer.value ? 'Buyer' : 'Seller'))
 const counterpartyEncryptedContact = computed(() =>
   isBuyer.value ? tradeInfo.value.trade.seller_contact : tradeInfo.value.trade.buyer_contact
 )
@@ -64,7 +65,6 @@ const counterpartyContact = asyncComputed(async () => {
   const encryptedContact = counterpartyEncryptedContact.value
   const privateKey = secrets.value.privateKey
   if (isCounterpartyContactAvailable.value) {
-    console.log('decrypt')
     return await decryptData(privateKey, encryptedContact)
   } else {
     return 'pending ...'
@@ -82,12 +82,9 @@ const maker = computed(() => {
 const taker = computed(() => {
   return tradeInfo.value.trade.buyer === maker ? tradeInfo.value.trade.seller : tradeInfo.value.trade.buyer
 })
-
-const contactsForArbitrator = asyncComputed(async () => {
-  const buyer = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_buyer_contact)
-  const seller = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_seller_contact)
-  const makerContact = tradeInfo.value.trade.buyer === maker.value ? buyer : seller
-  const takerContact = tradeInfo.value.trade.seller === maker.value ? buyer : seller
+const contactsForArbitrator = computed(() => {
+  const makerContact = tradeInfo.value.trade.buyer === maker.value ? buyerContact.value : sellerContact.value
+  const takerContact = tradeInfo.value.trade.seller === maker.value ? buyerContact.value : sellerContact.value
   return {
     makerContact,
     takerContact,
@@ -97,6 +94,8 @@ const contactsForArbitrator = asyncComputed(async () => {
 function fetchTrade(id: string) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
+    buyerContact.value = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_buyer_contact)
+    sellerContact.value = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_seller_contact)
     console.log('tradeInfo.value', tradeInfo.value)
     refreshInterval = setInterval(async () => {
       tradeInfo.value = await client.fetchTradeDetail(id)
