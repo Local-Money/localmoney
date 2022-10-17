@@ -104,6 +104,10 @@ watch(offerType, async () => await fetchOffers())
 <style lang="scss" scoped>
 @import '../../style/tokens.scss';
 
+section {
+  margin-top: 0;
+}
+
 /* ----------- BUY SELL ROW */
 .separator {
   margin: 0 auto 80px;

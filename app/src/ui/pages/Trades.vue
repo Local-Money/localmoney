@@ -64,7 +64,9 @@ watch(userWallet, () => {
 
 <template>
   <main class="page">
-    <h3>Open Trades</h3>
+    <div class="wrap-title">
+      <h3>Open Trades</h3>
+    </div>
     <!-- Open Trades section -->
     <ListContentResult :result="tradeResult" emptyStateMsg="There are no trades here yet">
       <section v-if="hasOpenTrades">
@@ -112,6 +114,9 @@ watch(userWallet, () => {
 
 main {
   margin-bottom: 48px;
+}
+.wrap-title {
+  display: flex;
 }
 
 h3 {
