@@ -5,6 +5,7 @@ import {
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
+  formatEncryptedUserContact,
   formatTradesCountInfo,
   isTelegramHandleValid,
   removeTelegramURLPrefix,
@@ -23,15 +24,9 @@ const priceStore = usePriceStore()
 const client = useClientStore()
 const secrets = computed(() => client.getSecrets())
 
-async function defaultTakerContact() {
+async function defaultUserContact() {
   const contact = client.profile?.contact
-  console.log('contact: ', contact)
-  if (contact !== undefined) {
-    const decryptedContact = await decryptData(secrets.value.privateKey, contact)
-    return addTelegramURLPrefix(decryptedContact)
-  } else {
-    return ''
-  }
+  return formatEncryptedUserContact(secrets.value.privateKey, contact)
 }
 
 let refreshRateInterval: NodeJS.Timer | undefined
@@ -181,7 +176,7 @@ function startExchangeRateRefreshTimer() {
 onMounted(() => {
   startExchangeRateRefreshTimer()
   nextTick(async () => {
-    telegram.value = await defaultTakerContact()
+    telegram.value = await defaultUserContact()
     focus()
   })
 })
