@@ -18,12 +18,8 @@ function toggleModal() {
         </div>
       </div>
 
-      <!-- <button @click="toggleModal">Create a new offer</button> -->
-
       <Modal :modalActive="modalActive" @close="toggleModal()">
-        <div class="modal-content">
-          <CreateOffer @cancel="toggleModal()" />
-        </div>
+        <CreateOffer @cancel="toggleModal()" />
       </Modal>
     </div>
     <ListMyOffers />
@@ -69,20 +65,20 @@ button {
 .modal {
   position: fixed;
   width: 100%;
-  height: 100vh;
   left: 0;
   top: 0;
+  bottom: 0;
+  z-index: $z-modal-overlay;
   backdrop-filter: blur(10px);
-}
 
-.modal-content {
-  display: inline-flex;
-  background-color: $gray150;
-  margin-top: 10%;
-  z-index: 100;
-
-  @media only screen and (max-width: $mobile) {
-    margin-top: 0;
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    width: 8px;
+    background: $gray100;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $gray300;
+    border-radius: 56px;
   }
 }
 </style>

@@ -6,16 +6,18 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 <template>
   <transition name="modal-animation">
     <div v-if="modalActive" class="modal">
-      <div class="modal-outside" @click="emit('close')" />
       <div class="modal-inner">
         <!-- Modal Content -->
         <slot />
       </div>
+      <div class="modal-overlay" @click="emit('close')" />
     </div>
   </transition>
 </template>
 
 <style lang="scss" scoped>
+@import '../../style/tokens.scss';
+@import '../../style/elements.scss';
 .modal-animation-enter-active {
   transition: opacity 0.3s ease;
 }
@@ -29,17 +31,31 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   opacity: 0;
 }
 
-.modal-inner {
-  display: flex;
+.modal {
+  display: inline-flex;
   justify-content: center;
 }
 
-.modal-outside {
+.modal-inner {
+  height: 100px;
+  z-index: $z-modal-content;
+  margin-top: 100px;
+
+  @media only screen and (max-width: $mobile) {
+    margin-top: 0;
+  }
+  @media only screen and (max-height: 900px) {
+    margin-top: 3%;
+  }
+}
+
+.modal-overlay {
   position: fixed;
   width: 100%;
-  height: 100vh;
   left: 0;
+  right: 0;
   top: 0;
-  z-index: 99;
+  bottom: 0;
+  z-index: $z-modal-overlay;
 }
 </style>
