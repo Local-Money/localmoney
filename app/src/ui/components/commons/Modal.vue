@@ -39,7 +39,7 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 .modal-inner {
   height: 100px;
   z-index: $z-modal-content;
-  margin-top: 10%;
+  margin-top: 100px;
 
   @media only screen and (max-width: $mobile) {
     margin-top: 0;
