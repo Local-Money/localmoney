@@ -94,12 +94,14 @@ const contactsForArbitrator = computed(() => {
 function fetchTrade(id: string) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
-    buyerContact.value = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_buyer_contact)
-    sellerContact.value = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_seller_contact)
-    console.log('tradeInfo.value', tradeInfo.value)
     refreshInterval = setInterval(async () => {
       tradeInfo.value = await client.fetchTradeDetail(id)
     }, 10 * 1000)
+
+    if (isArbitrator) {
+      buyerContact.value = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_buyer_contact)
+      sellerContact.value = await decryptData(secrets.value.privateKey, tradeInfo.value.trade.arbitrator_seller_contact)
+    }
   })
 }
 

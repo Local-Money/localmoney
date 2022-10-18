@@ -29,16 +29,20 @@ export async function encryptData(publicKey: string, data: string): Promise<stri
 }
 
 export async function decryptData(privateKey: string, encryptedData: string): Promise<string> {
-  const key = await importPrivateKey(privateKey)
-  const decryptedData = await window.crypto.subtle.decrypt(
-    {
-      name: 'RSA-OAEP',
-      iv: vector,
-    },
-    key,
-    base64ToArrayBuffer(encryptedData)
-  )
-  return arrayBufferToText(decryptedData)
+  try {
+    const key = await importPrivateKey(privateKey)
+    const decryptedData = await window.crypto.subtle.decrypt(
+      {
+        name: 'RSA-OAEP',
+        iv: vector,
+      },
+      key,
+      base64ToArrayBuffer(encryptedData)
+    )
+    return arrayBufferToText(decryptedData)
+  } catch (e) {
+    return ''
+  }
 }
 
 async function exportKeys(keys: CryptoKeyPair): Promise<Secrets> {

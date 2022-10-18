@@ -159,14 +159,22 @@ export const useClientStore = defineStore({
         this.trades = ListResult.error(e as ChainError)
       }
     },
-    async fetchTradeDetail(tradeId: string): Promise<TradeInfo> {
+    async fetchTradeDetail(tradeId: string) {
+      // TODO the fetchTradeDetail should return a TradeInfo
       const trade = await this.client.fetchTradeDetail(tradeId)
-      const offer = await this.client.fetchOffer(trade.offer_id)
-      return {
-        trade,
-        offer,
-        expired: false,
-      } as TradeInfo
+      if (this.userWallet.address === trade.arbitrator) {
+        const offer = await this.client.fetchOffer(trade.offer_id)
+        return {
+          offer,
+          trade,
+          expired: false,
+        } as TradeInfo
+      } else {
+        await this.fetchMyTrades()
+        const tradeIndex = this.trades.data.findIndex((trade) => trade.trade.id === tradeId)
+        this.trades.data[tradeIndex].trade = trade
+        return this.trades.data[tradeIndex]
+      }
     },
     async fetchArbitrators() {
       this.arbitrators = ListResult.loading()
