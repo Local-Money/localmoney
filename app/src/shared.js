@@ -1,3 +1,5 @@
+import { decryptData } from '~/utils/crypto'
+
 /** String Formatting **/
 export function formatAddress(address) {
   const start = address.substr(0, 8)
@@ -122,6 +124,15 @@ export function removeTelegramURLPrefix(telegram) {
 
 export function addTelegramURLPrefix(telegram) {
   return `https://t.me/${telegram}`
+}
+
+export async function formatEncryptedUserContact(privateKey, profileContact) {
+  if (profileContact !== undefined) {
+    const decryptedContact = await decryptData(privateKey, profileContact)
+    return decryptedContact !== '' ? addTelegramURLPrefix(decryptedContact) : decryptedContact
+  } else {
+    return ''
+  }
 }
 
 export function formatTradesCountInfo(tradesCount) {

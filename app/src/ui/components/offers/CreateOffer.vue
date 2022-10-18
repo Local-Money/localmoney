@@ -5,6 +5,7 @@ import {
   calculateFiatPriceByRate,
   convertMarginRateToOfferRate,
   formatAmount,
+  formatEncryptedUserContact,
   isTelegramHandleValid,
   removeTelegramURLPrefix,
 } from '~/shared'
@@ -23,14 +24,9 @@ const client = useClientStore()
 const priceStore = usePriceStore()
 const secrets = computed(() => client.getSecrets())
 
-async function defaultOwnerContact() {
+async function defaultUserContact() {
   const contact = client.profile?.contact
-  if (contact !== undefined) {
-    const decryptedContact = await decryptData(secrets.value.privateKey, contact)
-    return addTelegramURLPrefix(decryptedContact)
-  } else {
-    return ''
-  }
+  return formatEncryptedUserContact(secrets.value.privateKey, contact)
 }
 const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
 const minAmount = ref(0)
@@ -58,7 +54,7 @@ const listener = () => {
 onMounted(() => {
   window.addEventListener('resize', listener)
   nextTick(async () => {
-    ownerContact.value = await defaultOwnerContact()
+    ownerContact.value = await defaultUserContact()
   })
 })
 onUnmounted(() => {
