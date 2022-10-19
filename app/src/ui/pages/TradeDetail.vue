@@ -7,7 +7,6 @@ import {
   convertOfferRateToMarginRate,
   formatAddress,
   formatAmount,
-  formatTradesCountInfo,
 } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { usePriceStore } from '~/stores/price'
@@ -205,7 +204,6 @@ watch(userWallet, async () => {
                 <p class="trader">
                   {{ formatAddress(counterparty) }}
                 </p>
-                <p class="rating">{{ formatTradesCountInfo(tradeInfo.offer.profile.trades_count) }}</p>
               </div>
               <p class="guide-content">
                 Open a chat with the other trader so you can exchange information about payment.
