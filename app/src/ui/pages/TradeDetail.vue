@@ -24,6 +24,19 @@ let refreshInterval: NodeJS.Timer
 
 const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
+const currentStep = computed(() => {
+  if (tradeInfo.value.trade.state === 'request_created') {
+    return 1
+  } else if (tradeInfo.value.trade.state === 'escrow_funded') {
+    return 2
+  } else if (['fiat_deposited', 'escrow_disputed'].includes(tradeInfo.value.trade.state)) {
+    return 3
+  } else if (['escrow_released', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.value.trade.state)) {
+    return 4
+  } else {
+    return 0
+  }
+})
 const stepOneChecked = computed(() => {
   return [
     'escrow_funded',
@@ -137,39 +150,53 @@ watch(userWallet, async () => {
       <div class="step-item">
         <IconDone v-if="stepOneChecked" />
         <div v-else class="icon">
-          <div class="counter">
+          <div :class="currentStep === 1 ? 'currentStep' : ''" class="counter">
             <p>1</p>
           </div>
         </div>
-        <p :class="stepOneChecked ? 'step-checked' : ''">waiting for funds</p>
+        <p v-if="currentStep > 1" :class="stepOneChecked ? 'step-checked' : ''">escrow funded</p>
+        <p v-else :class="stepOneChecked ? 'step-checked' : ''">waiting for funds</p>
       </div>
 
       <!-- Step 2 -->
       <div class="step-item">
         <IconDone v-if="stepTwoChecked" />
         <div v-else class="icon">
-          <div class="counter">
+          <div :class="currentStep === 2 ? 'currentStep' : ''" class="counter">
             <p>2</p>
           </div>
         </div>
-        <p :class="stepTwoChecked ? 'step-checked' : ''">waiting for payment</p>
+        <p v-if="currentStep > 2" :class="stepTwoChecked ? 'step-checked' : ''">marked as paid</p>
+        <p v-else :class="stepTwoChecked ? 'step-checked' : ''">waiting for payment</p>
       </div>
 
       <!-- Step 3 -->
       <div class="step-item">
         <IconDone v-if="stepThreeChecked" />
         <div v-else class="icon">
-          <div class="counter">
+          <div :class="currentStep === 3 ? 'currentStep' : ''" class="counter">
             <p>3</p>
           </div>
         </div>
-        <p
-          v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
-          :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
-        >
-          in dispute
-        </p>
-        <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
+        <template v-if="currentStep > 3">
+          <p
+            v-if="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
+            :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
+          >
+            dispute resolved
+          </p>
+          <p v-else :class="stepThreeChecked ? 'step-checked' : ''">funds released</p>
+        </template>
+
+        <template v-else>
+          <p
+            v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
+            :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
+          >
+            in dispute
+          </p>
+          <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
+        </template>
       </div>
 
       <div class="step-status">
@@ -375,6 +402,10 @@ watch(userWallet, async () => {
 .step-item {
   .icon {
     margin-right: 24px;
+  }
+
+  .currentStep {
+    border: 1px solid red;
   }
 
   .counter {
