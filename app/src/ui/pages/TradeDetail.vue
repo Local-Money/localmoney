@@ -150,7 +150,12 @@ watch(userWallet, async () => {
       <div class="step-item">
         <IconDone v-if="stepOneChecked" />
         <div v-else class="icon">
-          <div :class="currentStep === 1 ? 'currentStep' : ''" class="counter">
+          <div class="counter">
+            <div v-if="currentStep === 1" class="currentStep">
+              <div class="counter-bg"></div>
+              <div class="pulse"></div>
+            </div>
+            <div v-else class="counter-bg"></div>
             <p>1</p>
           </div>
         </div>
@@ -162,7 +167,12 @@ watch(userWallet, async () => {
       <div class="step-item">
         <IconDone v-if="stepTwoChecked" />
         <div v-else class="icon">
-          <div :class="currentStep === 2 ? 'currentStep' : ''" class="counter">
+          <div class="counter">
+            <div v-if="currentStep === 2" class="currentStep">
+              <div class="counter-bg"></div>
+              <div class="pulse"></div>
+            </div>
+            <div v-else class="counter-bg"></div>
             <p>2</p>
           </div>
         </div>
@@ -174,7 +184,12 @@ watch(userWallet, async () => {
       <div class="step-item">
         <IconDone v-if="stepThreeChecked" />
         <div v-else class="icon">
-          <div :class="currentStep === 3 ? 'currentStep' : ''" class="counter">
+          <div class="counter">
+            <div v-if="currentStep === 3" class="currentStep">
+              <div class="counter-bg"></div>
+              <div class="pulse"></div>
+            </div>
+            <div v-else class="counter-bg"></div>
             <p>3</p>
           </div>
         </div>
@@ -401,26 +416,67 @@ watch(userWallet, async () => {
 
 .step-item {
   .icon {
+    display: flex;
+    justify-content: center;
     margin-right: 24px;
   }
 
-  .currentStep {
-    border: 1px solid red;
-  }
-
   .counter {
+    position: relative;
+    justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 100px;
-    background-color: $border;
     text-align: center;
     padding-top: 6px;
     font-size: 14px;
     font-weight: $semi-bold;
+
+    .counter-bg {
+      position: absolute;
+      left: -50%;
+      right: -50%;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 100px;
+      background-color: $border;
+    }
   }
 
   p {
+    position: relative;
     font-size: 14px;
+    z-index: $z-level-3;
+  }
+
+  .currentStep {
+    .pulse {
+      position: absolute;
+      left: -50%;
+      right: -50%;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      background-color: $primary;
+      opacity: 1;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-out infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        width: 32px;
+        height: 32px;
+        opacity: 0.5;
+      }
+      100% {
+        width: 48px;
+        height: 48px;
+        opacity: 0;
+      }
+    }
   }
 
   .step-checked {
