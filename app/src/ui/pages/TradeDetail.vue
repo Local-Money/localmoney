@@ -24,6 +24,19 @@ let refreshInterval: NodeJS.Timer
 
 const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
+const currentStep = computed(() => {
+  if (tradeInfo.value.trade.state === 'request_created') {
+    return 1
+  } else if (tradeInfo.value.trade.state === 'escrow_funded') {
+    return 2
+  } else if (['fiat_deposited', 'escrow_disputed'].includes(tradeInfo.value.trade.state)) {
+    return 3
+  } else if (['escrow_released', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.value.trade.state)) {
+    return 4
+  } else {
+    return 0
+  }
+})
 const stepOneChecked = computed(() => {
   return [
     'escrow_funded',
@@ -138,10 +151,16 @@ watch(userWallet, async () => {
         <IconDone v-if="stepOneChecked" />
         <div v-else class="icon">
           <div class="counter">
+            <div v-if="currentStep === 1" class="currentStep">
+              <div class="counter-bg"></div>
+              <div class="pulse"></div>
+            </div>
+            <div v-else class="counter-bg"></div>
             <p>1</p>
           </div>
         </div>
-        <p :class="stepOneChecked ? 'step-checked' : ''">waiting for funds</p>
+        <p v-if="stepOneChecked" class="step-checked">escrow funded</p>
+        <p v-else :class="currentStep === 1 ? 'currentStepText' : ''">waiting for funds</p>
       </div>
 
       <!-- Step 2 -->
@@ -149,10 +168,16 @@ watch(userWallet, async () => {
         <IconDone v-if="stepTwoChecked" />
         <div v-else class="icon">
           <div class="counter">
+            <div v-if="currentStep === 2" class="currentStep">
+              <div class="counter-bg"></div>
+              <div class="pulse"></div>
+            </div>
+            <div v-else class="counter-bg"></div>
             <p>2</p>
           </div>
         </div>
-        <p :class="stepTwoChecked ? 'step-checked' : ''">waiting for payment</p>
+        <p v-if="stepTwoChecked" class="step-checked">marked as paid</p>
+        <p v-else :class="currentStep === 2 ? 'currentStepText' : ''">waiting for payment</p>
       </div>
 
       <!-- Step 3 -->
@@ -160,16 +185,33 @@ watch(userWallet, async () => {
         <IconDone v-if="stepThreeChecked" />
         <div v-else class="icon">
           <div class="counter">
+            <div v-if="currentStep === 3" class="currentStep">
+              <div class="counter-bg"></div>
+              <div class="pulse"></div>
+            </div>
+            <div v-else class="counter-bg"></div>
             <p>3</p>
           </div>
         </div>
-        <p
-          v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
-          :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
-        >
-          in dispute
-        </p>
-        <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
+        <template v-if="currentStep > 3">
+          <p
+            v-if="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
+            :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
+          >
+            dispute resolved
+          </p>
+          <p v-else :class="stepThreeChecked ? 'step-checked' : ''">funds released</p>
+        </template>
+
+        <template v-else>
+          <p
+            v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
+            :class="currentStep === 3 ? 'currentStepText' : ''"
+          >
+            in dispute
+          </p>
+          <p v-else :class="currentStep === 3 ? 'currentStepText' : ''">waiting for funds release</p>
+        </template>
       </div>
 
       <div class="step-status">
@@ -374,22 +416,73 @@ watch(userWallet, async () => {
 
 .step-item {
   .icon {
+    display: flex;
+    justify-content: center;
     margin-right: 24px;
   }
 
   .counter {
+    position: relative;
+    justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 100px;
-    background-color: $border;
     text-align: center;
     padding-top: 6px;
     font-size: 14px;
     font-weight: $semi-bold;
+
+    .counter-bg {
+      position: absolute;
+      left: -50%;
+      right: -50%;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 100px;
+      background-color: $border;
+      z-index: $z-level-2;
+    }
   }
 
   p {
+    position: relative;
     font-size: 14px;
+    z-index: $z-level-3;
+  }
+
+  .currentStepText {
+    color: $primary;
+  }
+
+  .currentStep {
+    .pulse {
+      position: absolute;
+      left: -50%;
+      right: -50%;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      background-color: $primary;
+      opacity: 1;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-out infinite;
+      z-index: $z-level-1;
+    }
+
+    @keyframes pulse {
+      0% {
+        width: 32px;
+        height: 32px;
+        opacity: 0.5;
+      }
+      100% {
+        width: 48px;
+        height: 48px;
+        opacity: 0;
+      }
+    }
   }
 
   .step-checked {
