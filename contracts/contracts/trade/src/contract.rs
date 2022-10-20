@@ -21,7 +21,6 @@ use localterra_protocol::guards::{
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
-use localterra_protocol::offer::ExecuteMsg as OfferExecuteMsg;
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
 use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
@@ -106,7 +105,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             offer_id: new_trade.offer_id.to_string(),
         });
     }
-    let offer = offer_result.unwrap().offer;
+    let offer_result = offer_result.unwrap();
+    let offer = offer_result.offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
@@ -127,7 +127,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         seller_contact = None // maker
     }
 
-    let trades_count = offer.trades_count + 1;
+    let profile = offer_result.profile;
+    let trades_count = profile.requested_trades_count + 1;
     let trade_id = [offer.id.clone(), trades_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
@@ -137,12 +138,13 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     };
     let trade_state_history = vec![new_trade_state];
 
-    let update_profile_sub_msg = update_profile_msg(
+    let mut sub_msgs = vec![];
+    sub_msgs.push(update_profile_msg(
         hub_cfg.profile_addr.to_string(),
         new_trade.taker.clone(),
         new_trade.profile_taker_contact,
         new_trade.profile_taker_encryption_key,
-    );
+    ));
 
     let random_seed: u32 = (env.block.time.seconds() % 100) as u32;
     let arbitrator = ArbitratorModel::get_arbitrator_random(
@@ -172,9 +174,16 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     )
     .trade;
 
+    // increase profile profile requested_trades_count
+    sub_msgs.push(increase_profile_trades_count_msg(
+        hub_cfg.profile_addr.to_string(),
+        profile.addr,
+        TradeState::RequestCreated,
+    ));
+
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
-        .add_submessage(update_profile_sub_msg)
+        .add_submessages(sub_msgs)
         .add_attribute("action", "create_trade")
         .add_attribute("trade_id", trade_id)
         .add_attribute("offer_id", offer.id.clone())
@@ -539,15 +548,7 @@ fn release_escrow(
     }));
     send_msgs.push(register_trade_msg);
 
-    // Update the last_traded_at timestamp in the offer, so we can filter out stale ones on the user side
-    let update_last_traded_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: hub_cfg.offer_addr.to_string(),
-        msg: to_binary(&OfferExecuteMsg::IncrementTradesCount { offer_id: offer.id }).unwrap(),
-        funds: vec![],
-    }));
-    send_msgs.push(update_last_traded_msg);
-
-    // Update profile trade_count
+    // Update profile released_trades_count
     send_msgs.push(increase_profile_trades_count_msg(
         hub_cfg.profile_addr.to_string(),
         offer.owner.clone(),

@@ -85,7 +85,6 @@ pub enum ExecuteMsg {
     //TODO: Change to Create(OfferMsg)
     Create { offer: OfferMsg },
     UpdateOffer { offer_update: OfferUpdateMsg },
-    IncrementTradesCount { offer_id: String },
     RegisterHub {},
 }
 
@@ -128,7 +127,6 @@ pub struct Offer {
     pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
-    pub trades_count: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -177,12 +175,6 @@ impl OfferModel<'_> {
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
         self.offer.state = msg.state;
-        OfferModel::store(self.storage, &self.offer).unwrap();
-        &self.offer
-    }
-
-    pub fn increment_trades_count(&mut self) -> &Offer {
-        self.offer.trades_count += 1;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
     }
@@ -284,7 +276,9 @@ impl OfferModel<'_> {
         match order {
             OfferOrder::TradesCount => {
                 result.sort_by(|prev, next| {
-                    next.profile.trades_count.cmp(&prev.profile.trades_count)
+                    next.profile
+                        .released_trades_count
+                        .cmp(&prev.profile.released_trades_count)
                 });
             }
             OfferOrder::PriceRate => {

@@ -21,7 +21,7 @@ pub enum ExecuteMsg {
     },
     IncreaseTradeCount {
         profile_addr: Addr,
-        final_trade_state: TradeState,
+        trade_state: TradeState,
     },
     RegisterHub {},
 }
@@ -59,13 +59,13 @@ pub fn update_profile_msg(
 pub fn increase_profile_trades_count_msg(
     profile_contract: String,
     profile_addr: Addr,
-    final_trade_state: TradeState,
+    trade_state: TradeState,
 ) -> SubMsg {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: profile_contract,
         msg: to_binary(&ExecuteMsg::IncreaseTradeCount {
             profile_addr,
-            final_trade_state,
+            trade_state,
         })
         .unwrap(),
         funds: vec![],
@@ -100,7 +100,8 @@ pub fn load_profiles(
 pub struct Profile {
     pub addr: Addr,
     pub created_at: u64,
-    pub trades_count: u64,
+    pub requested_trades_count: u64,
+    pub released_trades_count: u64,
     pub last_trade: u64,
     pub contact: Option<String>,
     pub encryption_key: Option<String>,
@@ -111,7 +112,8 @@ impl Profile {
         Profile {
             addr,
             created_at,
-            trades_count: 0,
+            released_trades_count: 0,
+            requested_trades_count: 0,
             last_trade: 0,
             contact: None,
             encryption_key: None,
@@ -194,7 +196,7 @@ pub fn profiles<'a>() -> IndexedMap<'a, String, Profile, ProfileIndexes<'a>> {
             "profiles__address",
         ),
         trades_count: MultiIndex::new(
-            |p: &Profile| p.trades_count,
+            |p: &Profile| p.released_trades_count,
             "profiles",
             "profiles__trades_count",
         ),

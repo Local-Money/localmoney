@@ -40,8 +40,8 @@ pub fn execute(
         } => update_profile(deps, env, info, profile_addr, contact, encryption_key),
         ExecuteMsg::IncreaseTradeCount {
             profile_addr,
-            final_trade_state,
-        } => increase_trades_count(deps, env, info, profile_addr, final_trade_state),
+            trade_state,
+        } => increase_trades_count(deps, env, info, profile_addr, trade_state),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
@@ -86,7 +86,7 @@ pub fn increase_trades_count(
     env: Env,
     info: MessageInfo,
     profile_addr: Addr,
-    final_trade_state: TradeState,
+    trade_state: TradeState,
 ) -> Result<Response, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
 
@@ -95,14 +95,25 @@ pub fn increase_trades_count(
 
     let profile_result = ProfileModel::from_store(deps.storage, profile_addr.clone());
     let mut profile_model = profile_result.unwrap();
-    profile_model.profile.trades_count += 1;
+    match trade_state {
+        TradeState::RequestCreated => profile_model.profile.requested_trades_count += 1,
+        TradeState::EscrowReleased => profile_model.profile.released_trades_count += 1,
+        _ => {}
+    }
     profile_model.profile.last_trade = env.block.time.seconds();
     let profile = profile_model.save();
 
     let res = Response::new()
         .add_attribute("action", "increase_trades_count")
-        .add_attribute("final_trade_state", final_trade_state.to_string())
-        .add_attribute("trades_count", profile.trades_count.to_string());
+        .add_attribute("trade_state", trade_state.to_string())
+        .add_attribute(
+            "requested_trades_count",
+            profile.requested_trades_count.to_string(),
+        )
+        .add_attribute(
+            "released_trades_count",
+            profile.released_trades_count.to_string(),
+        );
     Ok(res)
 }
 
