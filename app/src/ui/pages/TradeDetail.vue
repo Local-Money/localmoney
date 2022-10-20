@@ -159,8 +159,8 @@ watch(userWallet, async () => {
             <p>1</p>
           </div>
         </div>
-        <p v-if="currentStep > 1" :class="stepOneChecked ? 'step-checked' : ''">escrow funded</p>
-        <p v-else :class="stepOneChecked ? 'step-checked' : ''">waiting for funds</p>
+        <p v-if="stepOneChecked" class="step-checked">escrow funded</p>
+        <p v-else :class="currentStep === 1 ? 'currentStepText' : ''">waiting for funds</p>
       </div>
 
       <!-- Step 2 -->
@@ -176,8 +176,8 @@ watch(userWallet, async () => {
             <p>2</p>
           </div>
         </div>
-        <p v-if="currentStep > 2" :class="stepTwoChecked ? 'step-checked' : ''">marked as paid</p>
-        <p v-else :class="stepTwoChecked ? 'step-checked' : ''">waiting for payment</p>
+        <p v-if="stepTwoChecked" class="step-checked">marked as paid</p>
+        <p v-else :class="currentStep === 2 ? 'currentStepText' : ''">waiting for payment</p>
       </div>
 
       <!-- Step 3 -->
@@ -206,11 +206,11 @@ watch(userWallet, async () => {
         <template v-else>
           <p
             v-if="['escrow_disputed', 'settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)"
-            :class="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state) ? 'step-checked' : ''"
+            :class="currentStep === 3 ? 'currentStepText' : ''"
           >
             in dispute
           </p>
-          <p v-else :class="stepThreeChecked ? 'step-checked' : ''">waiting for funds release</p>
+          <p v-else :class="currentStep === 3 ? 'currentStepText' : ''">waiting for funds release</p>
         </template>
       </div>
 
@@ -442,6 +442,7 @@ watch(userWallet, async () => {
       height: 32px;
       border-radius: 100px;
       background-color: $border;
+      z-index: $z-level-2;
     }
   }
 
@@ -449,6 +450,10 @@ watch(userWallet, async () => {
     position: relative;
     font-size: 14px;
     z-index: $z-level-3;
+  }
+
+  .currentStepText {
+    color: $primary;
   }
 
   .currentStep {
@@ -463,6 +468,7 @@ watch(userWallet, async () => {
       opacity: 1;
       border-radius: 50%;
       animation: pulse 1.5s ease-out infinite;
+      z-index: $z-level-1;
     }
 
     @keyframes pulse {
