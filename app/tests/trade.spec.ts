@@ -35,7 +35,8 @@ offers[0].denom = { native: process.env.OFFER_DENOM! }
 let myOffers: OfferResponse[] = []
 
 describe('trade lifecycle happy path', () => {
-  let offerTradeCount = 0
+  let requestedTradesCount = 0
+  let releasedTradesCount = 0
   it('should have an arbitrator available', async () => {
     const fiat = offers[0].fiat_currency as FiatCurrency
     let arbitrators = await adminClient.fetchArbitrators()
@@ -59,7 +60,8 @@ describe('trade lifecycle happy path', () => {
       await makerClient.createOffer(offer)
     }
     myOffers = await makerClient.fetchMyOffers()
-    offerTradeCount = myOffers[0].profile.trades_count
+    requestedTradesCount = myOffers[0].profile.requested_trades_count
+    releasedTradesCount = myOffers[0].profile.released_trades_count
     expect(myOffers.length).toBeGreaterThan(0)
   })
   // Create Trade
@@ -117,12 +119,14 @@ describe('trade lifecycle happy path', () => {
   })
   it('the trade count should increase after the release', async () => {
     const myOffers = await makerClient.fetchMyOffers()
-    expect(myOffers[0].profile.trades_count).toBe(offerTradeCount + 1)
+    expect(myOffers[0].profile.requested_trades_count).toBe(requestedTradesCount + 1)
+    expect(myOffers[0].profile.released_trades_count).toBe(releasedTradesCount + 1)
   })
 })
 
 describe('trade invalid state changes', () => {
-  let offerTradeCount = 0
+  let requestedTradesCount = 0
+  let releasedTradesCount = 0
   it('should have an arbitrator available', async () => {
     const fiat = offers[0].fiat_currency as FiatCurrency
     let arbitrators = await adminClient.fetchArbitrators()
@@ -146,7 +150,8 @@ describe('trade invalid state changes', () => {
       await makerClient.createOffer(newOffer)
     }
     myOffers = await makerClient.fetchMyOffers()
-    offerTradeCount = myOffers[0].profile.trades_count
+    requestedTradesCount = myOffers[0].profile.requested_trades_count
+    releasedTradesCount = myOffers[0].profile.released_trades_count
   })
   it('should fail to fund a trade in request_created state', async () => {
     const offerResponse = myOffers[0] as OfferResponse
@@ -210,6 +215,7 @@ describe('trade invalid state changes', () => {
   })
   it('the trade count should not increase when a trade is not completed', async () => {
     const myOffers = await makerClient.fetchMyOffers()
-    expect(myOffers[0].profile.trades_count).toBe(offerTradeCount)
+    expect(myOffers[0].profile.requested_trades_count).toBe(requestedTradesCount + 1)
+    expect(myOffers[0].profile.released_trades_count).toBe(releasedTradesCount)
   })
 })

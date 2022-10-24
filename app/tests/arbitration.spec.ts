@@ -9,7 +9,7 @@ import takerSecrets from './fixtures/taker_secrets.json'
 import makerSecrets from './fixtures/maker_secrets.json'
 import adminSecrets from './fixtures/admin_secrets.json'
 import type { FiatCurrency, GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
-import { TradeState } from '~/types/components.interface'
+import { OfferOrder, TradeState } from '~/types/components.interface'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -60,6 +60,7 @@ describe('arbitration tests', () => {
       denom: createdOffer.denom,
       fiatCurrency: createdOffer.fiat_currency,
       offerType: createdOffer.offer_type,
+      order: OfferOrder.trades_count,
     })
     offer = offerResponse[0].offer as GetOffer
     expect(offer.id.length).toBeGreaterThan(0)

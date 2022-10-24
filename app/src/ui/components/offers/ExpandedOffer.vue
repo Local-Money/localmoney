@@ -192,7 +192,7 @@ onUnmounted(() => {
       <p class="wallet">
         {{ formatAddress(offerResponse.offer.owner) }}
       </p>
-      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.offer.trades_count) }}</p>
+      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
     </div>
 
     <div class="divider-horizontal" />

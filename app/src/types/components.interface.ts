@@ -35,7 +35,8 @@ export interface OfferResponse {
 export interface Profile {
   addr: string
   created_at: Date
-  trades_count: number
+  requested_trades_count: number
+  released_trades_count: number
   last_trade: Date
   contact?: string
   encryption_key?: string
@@ -52,7 +53,6 @@ export interface GetOffer {
   denom: Denom
   fiat_currency: FiatCurrency
   timestamp: number
-  trades_count: number
 }
 
 export interface PatchOffer {

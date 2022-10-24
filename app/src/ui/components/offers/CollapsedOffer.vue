@@ -32,7 +32,7 @@ const offerPrice = computed(() => {
       <p class="wallet-addr">
         {{ formatAddress(offerResponse.offer.owner) }}
       </p>
-      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.trades_count) }}</p>
+      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
     </div>
 
     <div class="info">

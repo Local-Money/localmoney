@@ -4,7 +4,7 @@ use cosmwasm_std::{
 
 use crate::state::{offers_count_read, offers_count_storage};
 use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::{HubAlreadyRegistered, Unauthorized};
+use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
@@ -39,9 +39,6 @@ pub fn execute(
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::IncrementTradesCount { offer_id } => {
-            increment_trades_count(deps, info, offer_id)
-        }
     }
 }
 
@@ -109,7 +106,6 @@ pub fn create_offer(
             max_amount: msg.max_amount,
             state: OfferState::Active,
             timestamp: env.block.time.seconds(),
-            trades_count: 0,
         },
     )
     .offer;
@@ -127,33 +123,6 @@ pub fn create_offer(
         .add_attribute("min_amount", offer.min_amount.to_string())
         .add_attribute("max_amount", offer.max_amount.to_string())
         .add_attribute("owner", offer.owner);
-    Ok(res)
-}
-
-pub fn increment_trades_count(
-    deps: DepsMut,
-    info: MessageInfo,
-    offer_id: String,
-) -> Result<Response, ContractError> {
-    let hub_cfg = get_hub_config(deps.as_ref());
-
-    // Only allows to execute_update_last_traded if called by trade
-    if info.sender.ne(&hub_cfg.trade_addr) {
-        return Err(Unauthorized {
-            owner: hub_cfg.trade_addr,
-            caller: info.sender.clone(),
-        });
-    }
-
-    let mut offer_model = OfferModel::may_load(deps.storage, &offer_id);
-
-    let offer = offer_model.increment_trades_count();
-
-    let res = Response::new()
-        .add_attribute("action", "update_last_traded")
-        .add_attribute("tradeAddr", info.sender)
-        .add_attribute("offer_id", &offer.id);
-
     Ok(res)
 }
 
