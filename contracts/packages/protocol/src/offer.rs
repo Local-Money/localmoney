@@ -5,7 +5,7 @@ use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
 use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -86,6 +86,7 @@ pub enum ExecuteMsg {
     Create { offer: OfferMsg },
     UpdateOffer { offer_update: OfferUpdateMsg },
     RegisterHub {},
+    UpdatePrice(CurrencyPrice),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -108,6 +109,7 @@ pub enum QueryMsg {
         owner: Addr,
         limit: u32,
     },
+    Price(FiatCurrency),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -347,6 +349,27 @@ pub enum OfferState {
     Archive,
 }
 
+// Price
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct CurrencyPrice {
+    pub currency: FiatCurrency,
+    pub usd_price: Uint128,
+    pub updated_at: u64,
+}
+
+impl CurrencyPrice {
+    pub fn new(currency: FiatCurrency) -> CurrencyPrice {
+        CurrencyPrice {
+            currency,
+            usd_price: Uint128::zero(),
+            updated_at: 0u64,
+        }
+    }
+}
+
+pub const FIAT_PRICES: Map<&str, CurrencyPrice> = Map::new("fiat_prices");
+
 // Queries
 pub fn load_offer(
     querier: &QuerierWrapper,
@@ -356,6 +379,7 @@ pub fn load_offer(
     querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })
 }
 
+// Migration
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct MigrateMsg {}

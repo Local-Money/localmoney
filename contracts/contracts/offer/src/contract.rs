@@ -8,8 +8,8 @@ use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
-    OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
+    offers, CurrencyPrice, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg,
+    OfferResponse, OfferState, OfferUpdateMsg, OffersCount, QueryMsg, FIAT_PRICES,
 };
 use localterra_protocol::profile::{load_profile, update_profile_msg};
 
@@ -39,6 +39,7 @@ pub fn execute(
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
+        ExecuteMsg::UpdatePrice(price) => update_price(deps, env, info, price),
     }
 }
 
@@ -67,6 +68,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         )?),
         QueryMsg::OffersByOwner { owner, limit } => {
             to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
+        }
+        QueryMsg::Price(fiat_currency) => {
+            to_binary(&FIAT_PRICES.load(deps.storage, fiat_currency.to_string().as_str())?)
         }
     }
 }
@@ -158,6 +162,43 @@ pub fn update_offer(
         .add_attribute("owner", offer.owner.to_string());
 
     Ok(res)
+}
+
+pub fn update_price(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    price: CurrencyPrice,
+) -> Result<Response, ContractError> {
+    // TODO: Permissions check
+
+    // Load existing object or default
+    let path = FIAT_PRICES.key(price.currency.to_string().as_str());
+    let mut currency_price = path
+        .load(deps.storage)
+        .unwrap_or(CurrencyPrice::new(price.currency.clone()));
+
+    // Update price
+    currency_price.usd_price = price.usd_price;
+    currency_price.updated_at = env.block.time.seconds();
+    path.save(deps.storage, &currency_price).unwrap();
+
+    let attrs = vec![
+        ("action", "update_price".to_string()),
+        ("fiat", price.currency.to_string()),
+        ("price", price.usd_price.to_string()),
+    ];
+    let res = Response::new().add_attributes(attrs);
+    Ok(res)
+}
+
+pub fn update_prices(
+    _deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    _prices: Vec<CurrencyPrice>,
+) -> Result<Response, ContractError> {
+    todo!()
 }
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
