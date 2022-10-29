@@ -86,7 +86,7 @@ pub enum ExecuteMsg {
     Create { offer: OfferMsg },
     UpdateOffer { offer_update: OfferUpdateMsg },
     RegisterHub {},
-    UpdatePrice(CurrencyPrice),
+    UpdatePrices(Vec<CurrencyPrice>),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

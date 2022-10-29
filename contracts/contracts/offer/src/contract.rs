@@ -39,7 +39,7 @@ pub fn execute(
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::UpdatePrice(price) => update_price(deps, env, info, price),
+        ExecuteMsg::UpdatePrices(prices) => update_prices(deps, env, info, prices),
     }
 }
 
@@ -164,41 +164,30 @@ pub fn update_offer(
     Ok(res)
 }
 
-pub fn update_price(
+pub fn update_prices(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    price: CurrencyPrice,
+    prices: Vec<CurrencyPrice>,
 ) -> Result<Response, ContractError> {
     // TODO: Permissions check
+    let mut attrs: Vec<(&str, String)> = vec![("action", "update_price".to_string())];
+    prices.iter().for_each(|price| {
+        // Load existing object or default
+        let path = FIAT_PRICES.key(price.currency.to_string().as_str());
+        let mut currency_price = path
+            .load(deps.storage)
+            .unwrap_or(CurrencyPrice::new(price.currency.clone()));
 
-    // Load existing object or default
-    let path = FIAT_PRICES.key(price.currency.to_string().as_str());
-    let mut currency_price = path
-        .load(deps.storage)
-        .unwrap_or(CurrencyPrice::new(price.currency.clone()));
-
-    // Update price
-    currency_price.usd_price = price.usd_price;
-    currency_price.updated_at = env.block.time.seconds();
-    path.save(deps.storage, &currency_price).unwrap();
-
-    let attrs = vec![
-        ("action", "update_price".to_string()),
-        ("fiat", price.currency.to_string()),
-        ("price", price.usd_price.to_string()),
-    ];
+        // Update price
+        currency_price.usd_price = price.usd_price;
+        currency_price.updated_at = env.block.time.seconds();
+        path.save(deps.storage, &currency_price).unwrap();
+        attrs.push(("currency", price.currency.to_string()));
+        attrs.push(("usd_price", price.usd_price.to_string()));
+    });
     let res = Response::new().add_attributes(attrs);
     Ok(res)
-}
-
-pub fn update_prices(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _prices: Vec<CurrencyPrice>,
-) -> Result<Response, ContractError> {
-    todo!()
 }
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
