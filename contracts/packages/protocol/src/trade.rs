@@ -1,8 +1,9 @@
 use std::fmt::{self};
 
-use cosmwasm_std::{Addr, BlockInfo, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, BlockInfo, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128, CustomQuery};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -511,8 +512,8 @@ impl ArbitratorModel {
         Ok(result)
     }
 
-    pub fn get_arbitrator_random(
-        deps: Deps,
+    pub fn get_arbitrator_random<T: CustomQuery>(
+        deps: Deps<T>,
         random_value: usize,
         fiat: FiatCurrency,
     ) -> Arbitrator {

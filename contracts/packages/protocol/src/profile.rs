@@ -1,9 +1,10 @@
 use crate::trade::TradeState;
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, Env, Order, QuerierWrapper, StdResult, Storage, SubMsg,
-    WasmMsg,
+    to_binary, Addr, CosmosMsg, CustomQuery, Deps, Env, Order, QuerierWrapper, StdResult, Storage,
+    SubMsg, WasmMsg,
 };
 use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
+use kujira::msg::KujiraMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -43,7 +44,7 @@ pub fn update_profile_msg(
     profile_addr: Addr,
     contact: String,
     encryption_key: String,
-) -> SubMsg {
+) -> SubMsg<KujiraMsg> {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: profile_contract,
         msg: to_binary(&ExecuteMsg::UpdateProfile {
@@ -60,7 +61,7 @@ pub fn increase_profile_trades_count_msg(
     profile_contract: String,
     profile_addr: Addr,
     trade_state: TradeState,
-) -> SubMsg {
+) -> SubMsg<KujiraMsg> {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: profile_contract,
         msg: to_binary(&ExecuteMsg::IncreaseTradeCount {
@@ -73,8 +74,8 @@ pub fn increase_profile_trades_count_msg(
 }
 
 // Query Util
-pub fn load_profile(
-    querier: &QuerierWrapper,
+pub fn load_profile<T: CustomQuery>(
+    querier: &QuerierWrapper<T>,
     profile_contract: String,
     profile_addr: Addr,
 ) -> StdResult<Profile> {
@@ -86,8 +87,8 @@ pub fn load_profile(
     )
 }
 
-pub fn load_profiles(
-    querier: &QuerierWrapper,
+pub fn load_profiles<T: CustomQuery>(
+    querier: &QuerierWrapper<T>,
     profile_contract: String,
     limit: u32,
     start_at: Option<u64>,

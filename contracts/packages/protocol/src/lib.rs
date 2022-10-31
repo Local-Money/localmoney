@@ -9,3 +9,4 @@ pub mod offer;
 pub mod profile;
 pub mod trade;
 pub mod trading_incentives;
+pub use kujira;

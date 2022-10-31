@@ -29,6 +29,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.66"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "216261ddc8289130e551ddcd5ce8a064710c0d064a4d2895c67151c92b5443f6"
+
+[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -221,9 +227,9 @@ dependencies = [
 
 [[package]]
 name = "cpufeatures"
-version = "0.1.5"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66c99696f6c9dd7f35d486b9d04d7e6e202aa3e8c40d553f2fdf5e7e0c6a71ef"
+checksum = "28d997bd5e24a5928dd43e46dc529867e207907fe0b239c3477d924f7f2ca320"
 dependencies = [
  "libc",
 ]
@@ -816,6 +822,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "kujira"
+version = "0.7.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fe08806028a75b6a05fe2852a19999fff2b54a789a18ab8130d49a11c4d6d89"
+dependencies = [
+ "anyhow",
+ "cosmwasm-std",
+ "hex",
+ "schemars",
+ "serde",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -853,6 +874,7 @@ dependencies = [
  "cosmwasm-vm",
  "cw-storage-plus",
  "cw20",
+ "kujira",
  "schemars",
  "serde",
  "thiserror",
@@ -1424,9 +1446,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.9.5"
+version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b362ae5752fd2137731f9fa25fd4d9058af34666ca1966fb969119cc35719f12"
+checksum = "4d58a1e1bf39749807d89cf2d98ac2dfa0ff1cb3faa38fbb64dd88ac8013d800"
 dependencies = [
  "block-buffer",
  "cfg-if",

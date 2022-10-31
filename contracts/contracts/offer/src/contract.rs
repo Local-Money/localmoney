@@ -1,6 +1,12 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, SubMsg,
 };
+use cw20::Denom;
+use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::kujira::msg::KujiraMsg;
+use localterra_protocol::kujira::querier::KujiraQuerier;
+use localterra_protocol::kujira::query::KujiraQuery;
 
 use crate::state::{offers_count_read, offers_count_storage};
 use localterra_protocol::errors::ContractError;
@@ -8,8 +14,9 @@ use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, CurrencyPrice, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg,
-    OfferResponse, OfferState, OfferUpdateMsg, OffersCount, QueryMsg, FIAT_PRICES,
+    offers, CurrencyPrice, DenomFiatPrice, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer,
+    OfferModel, OfferMsg, OfferResponse, OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
+    FIAT_PRICES,
 };
 use localterra_protocol::profile::{load_profile, update_profile_msg};
 
@@ -19,7 +26,7 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     offers_count_storage(deps.storage)
         .save(&OffersCount { count: 0 })
         .unwrap();
@@ -34,7 +41,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     match msg {
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
@@ -44,7 +51,7 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps, id)?),
@@ -69,8 +76,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::OffersByOwner { owner, limit } => {
             to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
         }
-        QueryMsg::Price(fiat_currency) => {
-            to_binary(&FIAT_PRICES.load(deps.storage, fiat_currency.to_string().as_str())?)
+        QueryMsg::Price { fiat, denom } => {
+            to_binary(&query_fiat_price_for_denom(deps, fiat, denom)?)
         }
     }
 }
@@ -80,7 +87,7 @@ pub fn create_offer(
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
@@ -118,7 +125,7 @@ pub fn create_offer(
         .save(&offers_count)
         .unwrap();
 
-    let res = Response::new()
+    let res = Response::<KujiraMsg>::new()
         .add_submessage(update_profile_msg)
         .add_attribute("action", "create_offer")
         .add_attribute("type", offer.offer_type.to_string())
@@ -135,7 +142,7 @@ pub fn update_offer(
     _env: Env,
     info: MessageInfo,
     msg: OfferUpdateMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let hub_config = get_hub_config(deps.as_ref());
@@ -143,7 +150,7 @@ pub fn update_offer(
 
     assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
 
-    let mut sub_msgs: Vec<SubMsg> = Vec::new();
+    let mut sub_msgs: Vec<SubMsg<KujiraMsg>> = Vec::new();
     if msg.owner_contact.is_some() && msg.owner_encryption_key.is_some() {
         sub_msgs.push(update_profile_msg(
             hub_config.profile_addr.to_string(),
@@ -169,7 +176,7 @@ pub fn update_prices(
     env: Env,
     _info: MessageInfo,
     prices: Vec<CurrencyPrice>,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     // TODO: Permissions check
     let mut attrs: Vec<(&str, String)> = vec![("action", "update_price".to_string())];
     prices.iter().for_each(|price| {
@@ -190,16 +197,16 @@ pub fn update_prices(
     Ok(res)
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response<KujiraMsg>, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_state(deps: Deps) -> StdResult<OffersCount> {
+fn query_state(deps: Deps<KujiraQuery>) -> StdResult<OffersCount> {
     let state = offers_count_read(deps.storage).load().unwrap();
     Ok(state)
 }
 
-pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
+pub fn load_offer_by_id(deps: Deps<KujiraQuery>, id: String) -> StdResult<OfferResponse> {
     let hub_config = get_hub_config(deps);
     let offer = offers()
         .may_load(deps.storage, id.to_string())
@@ -212,6 +219,18 @@ pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
     )
     .unwrap();
     Ok(OfferResponse { offer, profile })
+}
+
+pub fn query_fiat_price_for_denom(
+    deps: Deps<KujiraQuery>,
+    fiat: FiatCurrency,
+    _denom: Denom,
+) -> StdResult<DenomFiatPrice> {
+    let _fiat_price = &FIAT_PRICES.load(deps.storage, fiat.to_string().as_str())?;
+    let kq = KujiraQuerier::new(&deps.querier);
+    let _atom_usd_price = kq.query_exchange_rate("ATOM".to_string()).unwrap();
+    //let denom_usd_price =
+    todo!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

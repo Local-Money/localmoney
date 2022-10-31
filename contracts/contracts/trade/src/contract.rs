@@ -2,8 +2,9 @@ use std::ops::{Mul, Sub};
 use std::str::FromStr;
 
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, CustomQuery, Decimal,
+    Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    Uint128, WasmMsg,
 };
 
 use localterra_protocol::constants::{
@@ -21,6 +22,8 @@ use localterra_protocol::guards::{
     assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
+use localterra_protocol::kujira::msg::KujiraMsg;
+use localterra_protocol::kujira::query::KujiraQuery;
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
 use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
@@ -35,7 +38,7 @@ pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
 pub fn instantiate(
-    _deps: DepsMut,
+    _deps: DepsMut<KujiraQuery>,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
@@ -46,11 +49,11 @@ pub fn instantiate(
 
 #[entry_point]
 pub fn execute(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     match msg {
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
@@ -86,11 +89,19 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(
+    _deps: DepsMut<KujiraQuery>,
+    _env: Env,
+    _msg: MigrateMsg,
+) -> Result<Response<KujiraMsg>, ContractError> {
     Ok(Response::default())
 }
 
-fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, ContractError> {
+fn create_trade(
+    deps: DepsMut<KujiraQuery>,
+    env: Env,
+    new_trade: NewTrade,
+) -> Result<Response<KujiraMsg>, ContractError> {
     // Load Offer
     let hub_cfg = get_hub_config(deps.as_ref());
 
@@ -196,7 +207,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 }
 
 #[entry_point]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps<KujiraQuery>, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Trade { id } => to_binary(&query_trade(deps, id)?),
         QueryMsg::Trades {
@@ -220,11 +231,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+fn register_hub<T: CustomQuery>(
+    deps: DepsMut<T>,
+    info: MessageInfo,
+) -> Result<Response<KujiraMsg>, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
+fn query_trade<T: CustomQuery>(deps: Deps<T>, id: String) -> StdResult<TradeResponse> {
     let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
 
@@ -252,9 +266,9 @@ fn query_trade(deps: Deps, id: String) -> StdResult<TradeResponse> {
     Ok(TradeResponse::map(state, buyer, seller, arbitrator))
 }
 
-pub fn query_trades(
+pub fn query_trades<T: CustomQuery>(
     env: Env,
-    deps: Deps,
+    deps: Deps<T>,
     user: Addr,
     _state: Option<TradeState>,
     index: TraderRole,
@@ -318,12 +332,12 @@ pub fn query_trades(
 }
 
 fn fund_escrow(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
     maker_contact: Option<String>,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     let offer = load_offer(
@@ -395,12 +409,12 @@ fn fund_escrow(
 }
 
 fn accept_request(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
     maker_contact: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer can accept the request
     assert_ownership(info.sender.clone(), trade.buyer.clone()).unwrap();
@@ -430,11 +444,11 @@ fn accept_request(
 }
 
 fn fiat_deposited(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
@@ -459,11 +473,11 @@ fn fiat_deposited(
 }
 
 fn cancel_request(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // Only the buyer or seller can cancel the trade.
     assert_sender_is_buyer_or_seller(
@@ -491,11 +505,11 @@ fn cancel_request(
 }
 
 fn release_escrow(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     // Load trade and validate that permission and state are valid.
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     let trade_denom = denom_to_string(&trade.denom);
@@ -528,7 +542,7 @@ fn release_escrow(
     TradeModel::store(deps.storage, &trade).unwrap();
 
     // Calculate fees and final release amount
-    let mut send_msgs: Vec<SubMsg> = Vec::new();
+    let mut send_msgs: Vec<SubMsg<KujiraMsg>> = Vec::new();
     let mut release_amount = trade.amount.clone();
     let one = Uint128::new(1u128);
     let fee = one.mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
@@ -603,14 +617,14 @@ fn release_escrow(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut<KujiraQuery>, _env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
         SWAP_REPLY_ID => handle_swap_reply(deps, msg),
         id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
     }
 }
 
-fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
+fn handle_swap_reply(deps: DepsMut<KujiraQuery>, msg: Reply) -> StdResult<Response> {
     let hub_cfg = get_hub_config(deps.as_ref());
     let local_denom = denom_to_string(&hub_cfg.local_denom);
     let contract_address = &hub_cfg.trade_addr.to_string();
@@ -650,11 +664,11 @@ fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
 }
 
 fn refund_escrow(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
     let trade = TradeModel::from_store(deps.storage, &trade_id);
     assert_trade_state_change_is_valid(
@@ -688,18 +702,18 @@ fn refund_escrow(
     let send_msg = create_send_msg(trade.seller, refund_amount);
     let res = Response::new()
         .add_attribute("action", "refund_escrow")
-        .add_submessage(SubMsg::new(send_msg));
+        .add_submessage(SubMsg::<KujiraMsg>::new(send_msg));
     Ok(res)
 }
 
 //region arbitration
 pub fn create_arbitrator(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     info: MessageInfo,
     arbitrator_address: Addr,
     fiat: FiatCurrency,
     encryption_key: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
     let hub_config = get_hub_config(deps.as_ref());
     assert_ownership(info.sender, admin)?;
@@ -730,11 +744,11 @@ pub fn create_arbitrator(
 }
 
 pub fn delete_arbitrator(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     info: MessageInfo,
     arbitrator: Addr,
     fiat: FiatCurrency,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let admin = get_hub_admin(deps.as_ref());
     assert_ownership(info.sender, admin.addr)?;
 
@@ -751,13 +765,13 @@ pub fn delete_arbitrator(
 }
 
 fn dispute_escrow(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
     buyer_contact: String,
     seller_contact: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // TODO: check escrow funding timer*
     // Only the buyer or seller can start a dispute
@@ -792,12 +806,12 @@ fn dispute_escrow(
 }
 
 fn settle_dispute(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     trade_id: String,
     winner: Addr,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     // Check if caller is the arbitrator of the given trade
@@ -877,7 +891,7 @@ pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
     amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO: use constant / config
 }
 
-fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
+fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg<KujiraMsg> {
     CosmosMsg::Bank(BankMsg::Send {
         to_address: to_address.to_string(),
         amount,

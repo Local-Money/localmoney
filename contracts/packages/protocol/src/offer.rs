@@ -3,9 +3,10 @@ use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
-use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, CustomQuery, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
+use kujira::query::KujiraQuery;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -109,7 +110,10 @@ pub enum QueryMsg {
         owner: Addr,
         limit: u32,
     },
-    Price(FiatCurrency),
+    Price {
+        fiat: FiatCurrency,
+        denom: Denom,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -181,7 +185,11 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<OfferResponse>> {
+    pub fn query_by_owner(
+        deps: Deps<KujiraQuery>,
+        owner: Addr,
+        limit: u32,
+    ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let range = offers().idx.owner.prefix(owner.into_string()).range(
             deps.storage,
@@ -208,8 +216,8 @@ impl OfferModel<'_> {
         Ok(result)
     }
 
-    pub fn query_by(
-        deps: Deps,
+    pub fn query_by<T: CustomQuery>(
+        deps: Deps<T>,
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
@@ -370,9 +378,16 @@ impl CurrencyPrice {
 
 pub const FIAT_PRICES: Map<&str, CurrencyPrice> = Map::new("fiat_prices");
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DenomFiatPrice {
+    pub denom: Denom,
+    pub fiat: FiatCurrency,
+    pub price: Uint128,
+}
+
 // Queries
-pub fn load_offer(
-    querier: &QuerierWrapper,
+pub fn load_offer<T: CustomQuery>(
+    querier: &QuerierWrapper<T>,
     offer_id: String,
     offer_contract: String,
 ) -> StdResult<OfferResponse> {
