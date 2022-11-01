@@ -3,7 +3,9 @@ use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
-use cosmwasm_std::{Addr, CustomQuery, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
+use cosmwasm_std::{
+    Addr, CustomQuery, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128, Uint256,
+};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
 use kujira::query::KujiraQuery;
@@ -382,7 +384,7 @@ pub const FIAT_PRICES: Map<&str, CurrencyPrice> = Map::new("fiat_prices");
 pub struct DenomFiatPrice {
     pub denom: Denom,
     pub fiat: FiatCurrency,
-    pub price: Uint128,
+    pub price: Uint256,
 }
 
 // Queries

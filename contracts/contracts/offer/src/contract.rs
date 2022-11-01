@@ -1,9 +1,15 @@
+use std::ops::Mul;
+
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult, SubMsg,
+    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, Fraction, MessageInfo, Response,
+    StdResult, SubMsg, Uint128, Uint256,
 };
 use cw20::Denom;
 use localterra_protocol::currencies::FiatCurrency;
+use localterra_protocol::denom_utils::denom_to_string;
+use localterra_protocol::kujira::asset::{Asset, AssetInfo};
+use localterra_protocol::kujira::denom::Denom as KujiraDenom;
+use localterra_protocol::kujira::fin::{QueryMsg as FinQueryMsg, SimulationResponse};
 use localterra_protocol::kujira::msg::KujiraMsg;
 use localterra_protocol::kujira::querier::KujiraQuerier;
 use localterra_protocol::kujira::query::KujiraQuery;
@@ -224,13 +230,34 @@ pub fn load_offer_by_id(deps: Deps<KujiraQuery>, id: String) -> StdResult<OfferR
 pub fn query_fiat_price_for_denom(
     deps: Deps<KujiraQuery>,
     fiat: FiatCurrency,
-    _denom: Denom,
+    denom: Denom,
 ) -> StdResult<DenomFiatPrice> {
-    let _fiat_price = &FIAT_PRICES.load(deps.storage, fiat.to_string().as_str())?;
+    let fiat_price = &FIAT_PRICES.load(deps.storage, fiat.to_string().as_str())?;
     let kq = KujiraQuerier::new(&deps.querier);
-    let _atom_usd_price = kq.query_exchange_rate("ATOM".to_string()).unwrap();
-    //let denom_usd_price =
-    todo!()
+    let atom_usd_price = kq.query_exchange_rate("ATOM".to_string()).unwrap();
+    let pool_addr =
+        Addr::unchecked("kujira18v47nqmhvejx3vc498pantg8vr435xa0rt6x0m6kzhp6yuqmcp8s4x8j2c");
+    let amount = Uint128::new(1u128);
+    let kuji_atom_price_result: SimulationResponse = deps.querier.query_wasm_smart(
+        pool_addr,
+        &FinQueryMsg::Simulation {
+            offer_asset: Asset {
+                info: AssetInfo::NativeToken {
+                    denom: KujiraDenom::from(denom_to_string(&denom)),
+                },
+                amount,
+            },
+        },
+    )?;
+    let atom_usd = atom_usd_price.rate;
+    let kuji_atom = kuji_atom_price_result.return_amount;
+    let kuji_usd = kuji_atom.multiply_ratio(atom_usd.numerator(), atom_usd.denominator());
+    let price = Uint256::from_u128(fiat_price.usd_price.u128()).mul(kuji_usd);
+    Ok(DenomFiatPrice {
+        denom: denom.clone(),
+        fiat: fiat.clone(),
+        price,
+    })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
