@@ -16,7 +16,7 @@ export const KUJIRA_TESTNET_HUB_INFO: HubInfo = {
   hubConfig: {
     offer_addr: 'kujira1x42zrgk0l2k2fqyue2zyhwdky8ajy9d05u6p93yktf5g5pkvr9js4zdtdx',
     trade_addr: 'kujira1kgzvfedtcv57a2yj4fhsckhfu75z0e0lz8dkku2054ry79sf770s4pv3nu',
-    profile_addr: 'kujira1at4ls9w65hcpgk4jnzssdczyky2339h3apszcysh6xq9vx77mf8sdszr0s',
+    profile_addr: 'kujira1pa8l5y9khqlueqq8nqdr485atq978nchwj8dc35rmvwg7hnsuzrshgk06g',
     trading_incentives_addr: 'kujira1c75t034k4tr43dzcw9dyym480p6r3kwdyr5ecnafvrat9gn4n2us83frqq',
     local_market_addr: 'kujira1chejx4qqtvwxy6684yrsmf6pylancxqhk3vsmtleg5ta3zrffljq4xf685',
     local_denom: {
