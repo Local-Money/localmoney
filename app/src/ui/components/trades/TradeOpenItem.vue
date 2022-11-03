@@ -3,11 +3,14 @@ import { formatAddress, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import type { TradeInfo } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
+import { formatTimer } from '~/utils/formatters'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
 let refreshTradeDetailInterval: NodeJS.Timer | undefined
 const secondsUntilTradeDetailRefresh = ref(0)
+const tradeTimer = ref('')
+let tradeTimerInterval: NodeJS.Timer
 const walletAddress = computed(() => client.userWallet.address)
 const stepLabels = {
   buy: {
@@ -122,13 +125,30 @@ function startTradeDetailRefresh() {
   }, countdownInterval)
 }
 
+function startTradeTimer() {
+  tradeTimerInterval = setInterval(tradeTimerRunning, 10)
+}
+
+function tradeTimerRunning() {
+  const currentTime = Date.now()
+  const expiresAt = props.tradeInfo.trade.expires_at * 1000
+  const timer = new Date(expiresAt - currentTime)
+  tradeTimer.value = formatTimer(timer, '00m 00s')
+}
+
+function stopTradeTimer() {
+  clearInterval(tradeTimerInterval)
+}
+
 onMounted(() => {
+  startTradeTimer()
   nextTick(() => {
     startTradeDetailRefresh()
   })
 })
 
 onUnmounted(() => {
+  stopTradeTimer()
   clearInterval(refreshTradeDetailInterval)
 })
 </script>
@@ -162,7 +182,7 @@ onUnmounted(() => {
 
       <div class="wrap">
         <p class="label">Time remaining</p>
-        <p class="content">?? min</p>
+        <p class="content">{{ tradeTimer }}</p>
       </div>
     </div>
 

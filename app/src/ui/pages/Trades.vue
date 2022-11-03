@@ -20,31 +20,27 @@ const trades = computed(() => {
 })
 
 const openTrades = computed(() => {
-  return trades.value.filter(
-    (tradeInfo) =>
-      !tradeInfo.expired &&
-      [
-        TradeState.request_created,
-        TradeState.request_accepted,
-        TradeState.escrow_funded,
-        TradeState.fiat_deposited,
-        TradeState.escrow_disputed,
-      ].includes(tradeInfo.trade.state)
+  return trades.value.filter((tradeInfo) =>
+    [
+      TradeState.request_created,
+      TradeState.request_accepted,
+      TradeState.escrow_funded,
+      TradeState.fiat_deposited,
+      TradeState.escrow_disputed,
+    ].includes(tradeInfo.trade.state)
   )
 })
 
 const closedTrades = computed(() => {
-  return trades.value.filter(
-    (tradeInfo) =>
-      tradeInfo.expired ||
-      [
-        TradeState.request_canceled,
-        TradeState.request_expired,
-        TradeState.escrow_refunded,
-        TradeState.escrow_released,
-        TradeState.settled_for_maker,
-        TradeState.settled_for_taker,
-      ].includes(tradeInfo.trade.state)
+  return trades.value.filter((tradeInfo) =>
+    [
+      TradeState.request_canceled,
+      TradeState.request_expired,
+      TradeState.escrow_refunded,
+      TradeState.escrow_released,
+      TradeState.settled_for_maker,
+      TradeState.settled_for_taker,
+    ].includes(tradeInfo.trade.state)
   )
 })
 
