@@ -4,6 +4,7 @@ import { useClientStore } from '~/stores/client'
 import type { TradeInfo } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 import { formatTimer } from '~/utils/formatters'
+import { checkTradeNeedsRefund } from '~/utils/validations'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
@@ -109,7 +110,11 @@ const stepLabel = computed(() => {
   if (isBuying.value) {
     return stepLabels[type].buyer[labelIdx]
   } else {
-    return stepLabels[type].seller[labelIdx]
+    if (checkTradeNeedsRefund(props.tradeInfo.trade, walletAddress.value)) {
+      return 'You can refund this trade'
+    } else {
+      return stepLabels[type].seller[labelIdx]
+    }
   }
 })
 
