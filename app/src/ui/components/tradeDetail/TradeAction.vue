@@ -30,6 +30,7 @@ const props = defineProps<{
   align-items: center;
 
   .icon {
+    display: flex;
     stroke: $primary;
   }
 
