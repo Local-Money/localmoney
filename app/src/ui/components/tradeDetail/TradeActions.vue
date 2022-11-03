@@ -229,19 +229,19 @@ async function settleDispute(winner: string) {
     </template>
   </section>
 
-  <section class="wrap sub-actions">
-    <button
+  <section class="sub-actions">
+    <div
       v-if="
         (tradeInfo.trade.state === 'request_created' ||
           tradeInfo.trade.state === 'request_accepted' ||
           (tradeInfo.trade.state === 'escrow_funded' && isBuyer)) &&
         !tradeInfo.expired
       "
-      class="tertiary"
-      @click="cancelTradeRequest(tradeInfo.trade.id)"
+      class="wrap"
     >
-      cancel
-    </button>
+      <p>Please note that requesting to cancel the transaction could impact on your reputation.</p>
+      <p class="btn-action" @click="cancelTradeRequest(tradeInfo.trade.id)">Request cancel</p>
+    </div>
 
     <button
       v-if="isSeller && tradeInfo.trade.state === 'escrow_funded' && tradeInfo.expired"
@@ -251,9 +251,13 @@ async function settleDispute(winner: string) {
       refund escrow
     </button>
 
-    <button v-if="tradeInfo.trade.state === 'fiat_deposited'" class="tertiary" @click="openDispute(tradeInfo.trade.id)">
-      open dispute
-    </button>
+    <div v-if="tradeInfo.trade.state === 'fiat_deposited'" class="wrap">
+      <p>
+        If you run into problems with the transaction you can request to open a dispute. Only do this if you already
+        tried to contact the other trader without success.
+      </p>
+      <p class="btn-action" @click="openDispute(tradeInfo.trade.id)">Request dispute</p>
+    </div>
   </section>
 </template>
 
@@ -266,6 +270,31 @@ async function settleDispute(winner: string) {
 
 .sub-actions {
   height: 64px;
+
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: end;
+    gap: 8px;
+    margin-top: 24px;
+    text-align: right;
+    font-size: 14px;
+    color: $gray700;
+
+    p {
+      max-width: 400px;
+
+      &:first-child {
+        font-size: 12px;
+      }
+    }
+
+    .btn-action {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  }
 }
 
 button {

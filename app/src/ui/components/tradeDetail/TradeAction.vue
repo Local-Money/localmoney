@@ -16,7 +16,7 @@ const props = defineProps<{
       <RightArrow />
     </div>
     <p>{{ message }}</p>
-    <button v-for="button in props.buttons" :key="button.label" class="primary" @click="button.action()">
+    <button v-for="button in props.buttons" :key="button.label" class="bg-gray300 primary" @click="button.action()">
       {{ button.label }}
     </button>
   </div>
@@ -30,6 +30,7 @@ const props = defineProps<{
   align-items: center;
 
   .icon {
+    display: flex;
     stroke: $primary;
   }
 
