@@ -17,7 +17,6 @@ import type {
   PatchOffer,
   PostOffer,
   Profile,
-  Trade,
   TradeInfo,
 } from '~/types/components.interface'
 
@@ -281,7 +280,7 @@ export class CosmosChain implements Chain {
     try {
       const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, {
         trade: { id: tradeId },
-      })) as Trade
+      })) as TradeInfo
       return response
     } catch (e) {
       // TODO error state

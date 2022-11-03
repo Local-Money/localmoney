@@ -10,7 +10,6 @@ import type {
   PatchOffer,
   PostOffer,
   Profile,
-  Trade,
   TradeInfo,
 } from '~/types/components.interface'
 import { CosmosChain } from '~/network/cosmos/CosmosChain'
@@ -40,7 +39,7 @@ export interface Chain {
 
   fetchDisputedTrades(): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }>
 
-  fetchTradeDetail(tradeId: string): Promise<Trade>
+  fetchTradeDetail(tradeId: string): Promise<TradeInfo>
 
   fetchArbitrators(): Promise<Arbitrator[]>
 

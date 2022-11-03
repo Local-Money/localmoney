@@ -80,24 +80,28 @@ describe('arbitration tests', () => {
       taker_contact,
     })
 
-    let trade = await makerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
-    trade = await takerClient.fetchTradeDetail(trade.id)
+    tradeInfo = await takerClient.fetchTradeDetail(trade.id)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.fiat_deposited)
 
     // Taker disputes the escrow
     const buyer_contact = await encryptDataMocked(makerContact, trade.arbitrator_encryption_key)
     const seller_contact = await encryptDataMocked(taker_contact, trade.arbitrator_encryption_key)
     await takerClient.openDispute(trade.id, buyer_contact, seller_contact)
-    trade = await takerClient.fetchTradeDetail(trade.id)
+    tradeInfo = await takerClient.fetchTradeDetail(trade.id)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_disputed)
 
     // Arbitrator settles for Taker
     await adminClient.settleDispute(trade.id, takerClient.getWalletAddress())
-    trade = await takerClient.fetchTradeDetail(trade.id)
+    tradeInfo = await takerClient.fetchTradeDetail(trade.id)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.settled_for_taker)
   })
 
@@ -115,7 +119,8 @@ describe('arbitration tests', () => {
       taker_contact,
     })
 
-    let trade = await makerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
@@ -123,12 +128,14 @@ describe('arbitration tests', () => {
 
     // Taker disputes the escrow
     await takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')
-    trade = await takerClient.fetchTradeDetail(trade.id)
+    tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_disputed)
 
     // Arbitrator settles for Maker
     await adminClient.settleDispute(trade.id, makerClient.getWalletAddress())
-    trade = await takerClient.fetchTradeDetail(trade.id)
+    tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.settled_for_maker)
   })
 

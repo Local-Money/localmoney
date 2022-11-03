@@ -125,6 +125,7 @@ export interface Trade {
   offer_contract: string
   offer_id: string
   created_at: number
+  expires_at: number
   amount: string
   denom: Denom
   state: TradeState
