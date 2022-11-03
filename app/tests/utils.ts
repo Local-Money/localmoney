@@ -22,6 +22,7 @@ export function createHubUpdateConfigMsg(
       warchest_fee_pct: '50',
       chain_fee_pct: '10',
       burn_fee_pct: '40',
+      trade_expiration_timer: 20 * 60, // 20 minutes
     },
   }
 }
