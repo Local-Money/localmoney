@@ -59,11 +59,7 @@ pub enum ContractError {
     #[error("Refund error: Not Expired")]
     RefundErrorNotExpired { message: String, trade: String },
     #[error("This trade has expired.")]
-    TradeExpired {
-        timeout: u64,
-        expired_at: u64,
-        created_at: u64,
-    },
+    TradeExpired { expired_at: u64, created_at: u64 },
     /// TradingIncentives Errors
     #[error("Only past periods can be claimed.")]
     DistributionClaimInvalidPeriod {},
