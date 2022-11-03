@@ -229,7 +229,7 @@ async function settleDispute(winner: string) {
     </template>
   </section>
 
-  <section class="wrap sub-actions">
+  <section class="sub-actions">
     <div
       v-if="
         (tradeInfo.trade.state === 'request_created' ||
@@ -237,10 +237,10 @@ async function settleDispute(winner: string) {
           (tradeInfo.trade.state === 'escrow_funded' && isBuyer)) &&
         !tradeInfo.expired
       "
-      class="wrap-cancel"
+      class="wrap"
     >
       <p>Please note that requesting to cancel the transaction could impact on your reputation.</p>
-      <p class="btn-cancel" @click="cancelTradeRequest(tradeInfo.trade.id)">Request cancel</p>
+      <p class="btn-action" @click="cancelTradeRequest(tradeInfo.trade.id)">Request cancel</p>
     </div>
 
     <button
@@ -267,13 +267,13 @@ async function settleDispute(winner: string) {
 .sub-actions {
   height: 64px;
 
-  .wrap-cancel {
+  .wrap {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: end;
     gap: 8px;
-    margin-top: 16px;
+    margin-top: 24px;
     text-align: right;
     font-size: 14px;
     color: $gray700;
@@ -282,7 +282,7 @@ async function settleDispute(winner: string) {
       max-width: 400px;
     }
 
-    .btn-cancel {
+    .btn-action {
       cursor: pointer;
       text-decoration: underline;
     }
