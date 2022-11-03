@@ -52,7 +52,7 @@ const props = defineProps<{
   height: 100vh;
   left: 0;
   top: 0;
-  z-index: $z-modal-overlay;
+  z-index: $z-modal-loading;
   backdrop-filter: blur(10px);
 }
 
