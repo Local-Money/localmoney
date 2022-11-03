@@ -251,9 +251,13 @@ async function settleDispute(winner: string) {
       refund escrow
     </button>
 
-    <button v-if="tradeInfo.trade.state === 'fiat_deposited'" class="tertiary" @click="openDispute(tradeInfo.trade.id)">
-      open dispute
-    </button>
+    <div v-if="tradeInfo.trade.state === 'fiat_deposited'" class="wrap">
+      <p>
+        If you run into problems with the transaction you can request to open a dispute. Only do this if you already
+        tried to contact the other trader without success.
+      </p>
+      <p class="btn-action" @click="openDispute(tradeInfo.trade.id)">Request dispute</p>
+    </div>
   </section>
 </template>
 
@@ -280,6 +284,10 @@ async function settleDispute(winner: string) {
 
     p {
       max-width: 400px;
+
+      &:first-child {
+        font-size: 12px;
+      }
     }
 
     .btn-action {
