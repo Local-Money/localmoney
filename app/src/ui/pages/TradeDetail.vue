@@ -134,17 +134,21 @@ watch(userWallet, async () => {
 
 <template>
   <main v-if="tradeInfo" class="page">
-    <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
-      <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
-      <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
-      <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
-    </h3>
-    <template v-else>
-      <h3 v-if="isBuyer">
-        Buying {{ microDenomToDenom(tradeInfo.trade.denom.native) }} from {{ formatAddress(counterparty) }}
+    <div class="wrap-title">
+      <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
+        <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
+        <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
+        <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
       </h3>
-      <h3 v-else>Selling {{ microDenomToDenom(tradeInfo.trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
-    </template>
+      <template v-else>
+        <h3 v-if="isBuyer">
+          Buying {{ microDenomToDenom(tradeInfo.trade.denom.native) }} from {{ formatAddress(counterparty) }}
+        </h3>
+        <h3 v-else>
+          Selling {{ microDenomToDenom(tradeInfo.trade.denom.native) }} to {{ formatAddress(counterparty) }}
+        </h3>
+      </template>
+    </div>
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
@@ -399,6 +403,16 @@ watch(userWallet, async () => {
 
 <style lang="scss" scoped>
 @import '../style/pages.scss';
+
+.wrap-title {
+  display: flex;
+}
+
+h3 {
+  margin: 32px 0;
+  font-size: 18px;
+  font-weight: $semi-bold;
+}
 
 .stepper {
   display: flex;
