@@ -344,7 +344,6 @@ fn fund_escrow(
 
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
     if trade.request_expired(env.block.time.seconds()) {
-        // TODO: will the store save it if we return an error?
         trade.set_state(TradeState::RequestExpired, &env, &info);
         TradeModel::store(deps.storage, &trade).unwrap();
 
