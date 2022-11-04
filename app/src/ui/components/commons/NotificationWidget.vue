@@ -126,6 +126,7 @@ async function readAll() {
       right: 10px;
       background: $primary;
       border-radius: 56px;
+      z-index: $z-level-3;
 
       p {
         font-size: 12px;
@@ -134,6 +135,7 @@ async function readAll() {
       }
     }
     .btn {
+      position: relative;
       width: 40px;
       height: 40px;
       background: $surface;
@@ -142,6 +144,7 @@ async function readAll() {
       align-items: center;
       justify-content: center;
       margin-right: 24px;
+      z-index: $z-level-2;
 
       svg {
         width: 20px;
@@ -155,7 +158,6 @@ async function readAll() {
       }
       &:active {
         transform: scale(0.9);
-        z-index: 51;
       }
     }
   }
@@ -165,7 +167,7 @@ async function readAll() {
     min-width: 400px;
     margin-top: 64px;
     margin-right: -72px;
-    z-index: 100;
+    z-index: $z-widget-notification;
     background-color: $surface;
     border: 1px solid $border;
     border-radius: 8px;

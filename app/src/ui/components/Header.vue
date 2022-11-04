@@ -46,7 +46,7 @@ header {
   background-color: $background;
   width: 100%;
   min-width: 1000px;
-  z-index: $z-level-3;
+  z-index: $z-navigation;
 
   @media only screen and (max-width: $mobile) {
     position: relative;
