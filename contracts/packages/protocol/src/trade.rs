@@ -149,6 +149,7 @@ pub struct Trade {
     pub offer_contract: Addr,
     pub offer_id: String,
     pub created_at: u64,
+    pub expires_at: u64,
     pub denom: Denom,
     pub amount: Uint128,
     pub fiat: FiatCurrency,
@@ -168,6 +169,7 @@ impl Trade {
         offer_contract: Addr,
         offer_id: String,
         created_at: u64,
+        expires_at: u64,
         denom: Denom,
         amount: Uint128,
         fiat: FiatCurrency,
@@ -186,6 +188,7 @@ impl Trade {
             offer_contract,
             offer_id,
             created_at,
+            expires_at,
             denom,
             amount,
             fiat,
@@ -198,7 +201,16 @@ impl Trade {
         return self.state.clone();
     }
 
+    pub fn request_expired(&self, block_time: u64) -> bool {
+        return self.expires_at.ne(&0) && block_time > self.expires_at;
+    }
+
     pub fn set_state(&mut self, new_state: TradeState, env: &Env, info: &MessageInfo) {
+        // if the fiat is already deposited, the trade can no longer expire
+        if new_state.eq(&TradeState::FiatDeposited) {
+            self.expires_at = 0;
+        }
+
         let block: BlockInfo = env.block.clone();
         self.state = new_state;
         let new_trade_state = TradeStateItem {
@@ -227,6 +239,7 @@ pub struct TradeResponse {
     pub offer_contract: Addr,
     pub offer_id: String,
     pub created_at: u64,
+    pub expires_at: u64,
     pub denom: Denom,
     pub amount: Uint128,
     pub fiat: FiatCurrency,
@@ -240,13 +253,18 @@ impl TradeResponse {
         buyer_profile: Profile,
         seller_profile: Profile,
         arbitrator_profile: Profile,
+        block_time: u64,
     ) -> TradeResponse {
         let trade_states = vec![
             TradeState::EscrowDisputed,
             TradeState::SettledForMaker,
             TradeState::SettledForTaker,
         ];
-        let state = trade.get_state();
+        let state = if trade.request_expired(block_time) {
+            TradeState::RequestExpired
+        } else {
+            trade.get_state()
+        };
 
         let arbitrator_address: Option<Addr> = if trade_states.contains(&state) {
             Some(trade.arbitrator)
@@ -276,6 +294,7 @@ impl TradeResponse {
             offer_contract: trade.offer_contract,
             offer_id: trade.offer_id,
             created_at: trade.created_at,
+            expires_at: trade.expires_at,
             denom: trade.denom,
             amount: trade.amount,
             fiat: trade.fiat,

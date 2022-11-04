@@ -294,7 +294,6 @@ impl OfferModel<'_> {
 pub struct TradeInfo {
     pub trade: TradeResponse,
     pub offer: OfferResponse,
-    pub expired: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -85,10 +85,6 @@ pub fn assert_range_0_to_99(random_value: usize) -> Result<(), ContractError> {
     }
 }
 
-pub fn trade_request_is_expired(block_time: u64, created_at: u64, expire_timer: u64) -> bool {
-    block_time > created_at + expire_timer
-}
-
 pub fn assert_trade_state_and_type(
     trade: &Trade,
     offer_type: &OfferType,

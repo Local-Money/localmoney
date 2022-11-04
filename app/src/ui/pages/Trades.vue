@@ -4,7 +4,7 @@ import TradeOpenItem from '../components/trades/TradeOpenItem.vue'
 import TradeHistoryItem from '../components/trades/TradeHistoryItem.vue'
 import { useClientStore } from '~/stores/client'
 import { TradeState } from '~/types/components.interface'
-import { checkValidOffer } from '~/utils/validations'
+import { checkTradeNeedsRefund, checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -20,23 +20,22 @@ const trades = computed(() => {
 })
 
 const openTrades = computed(() => {
-  return trades.value.filter(
-    (tradeInfo) =>
-      !tradeInfo.expired &&
+  return trades.value.filter((tradeInfo) => {
+    return (
       [
         TradeState.request_created,
         TradeState.request_accepted,
         TradeState.escrow_funded,
         TradeState.fiat_deposited,
         TradeState.escrow_disputed,
-      ].includes(tradeInfo.trade.state)
-  )
+      ].includes(tradeInfo.trade.state) || checkTradeNeedsRefund(tradeInfo.trade, userWallet.value.address)
+    )
+  })
 })
 
 const closedTrades = computed(() => {
-  return trades.value.filter(
-    (tradeInfo) =>
-      tradeInfo.expired ||
+  return trades.value.filter((tradeInfo) => {
+    return (
       [
         TradeState.request_canceled,
         TradeState.request_expired,
@@ -44,8 +43,9 @@ const closedTrades = computed(() => {
         TradeState.escrow_released,
         TradeState.settled_for_maker,
         TradeState.settled_for_taker,
-      ].includes(tradeInfo.trade.state)
-  )
+      ].includes(tradeInfo.trade.state) && !checkTradeNeedsRefund(tradeInfo.trade, userWallet.value.address)
+    )
+  })
 })
 
 const hasOpenTrades = computed(() => openTrades.value.length > 0)
