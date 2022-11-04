@@ -1,8 +1,8 @@
-use std::ops::Mul;
+use std::ops::{Div, Mul};
 
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, Fraction, MessageInfo, Response,
-    StdResult, SubMsg, Uint128, Uint256,
+    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    SubMsg, Uint128, Uint256,
 };
 use cw20::Denom;
 use localterra_protocol::currencies::FiatCurrency;
@@ -20,9 +20,9 @@ use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, CurrencyPrice, DenomFiatPrice, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer,
-    OfferModel, OfferMsg, OfferResponse, OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
-    FIAT_PRICES,
+    offers, CurrencyPrice, DenomFiatPrice, ExecuteMsg, InstantiateMsg,
+    MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse, OfferState, OfferUpdateMsg,
+    OffersCount, QueryMsg, FIAT_PRICES,
 };
 use localterra_protocol::profile::{load_profile, update_profile_msg};
 
@@ -82,8 +82,8 @@ pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Bin
         QueryMsg::OffersByOwner { owner, limit } => {
             to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
         }
-        QueryMsg::Price { fiat, denom } => {
-            to_binary(&query_fiat_price_for_denom(deps, fiat, denom)?)
+        QueryMsg::Price { fiat, denom, pool } => {
+            to_binary(&query_fiat_price_for_denom(deps, fiat, denom, pool)?)
         }
     }
 }
@@ -231,15 +231,14 @@ pub fn query_fiat_price_for_denom(
     deps: Deps<KujiraQuery>,
     fiat: FiatCurrency,
     denom: Denom,
+    pool: Addr,
 ) -> StdResult<DenomFiatPrice> {
     let fiat_price = &FIAT_PRICES.load(deps.storage, fiat.to_string().as_str())?;
     let kq = KujiraQuerier::new(&deps.querier);
     let atom_usd_price = kq.query_exchange_rate("ATOM".to_string()).unwrap();
-    let pool_addr =
-        Addr::unchecked("kujira18v47nqmhvejx3vc498pantg8vr435xa0rt6x0m6kzhp6yuqmcp8s4x8j2c");
-    let amount = Uint128::new(1u128);
+    let amount = Uint128::new(1_000_000u128);
     let kuji_atom_price_result: SimulationResponse = deps.querier.query_wasm_smart(
-        pool_addr,
+        pool,
         &FinQueryMsg::Simulation {
             offer_asset: Asset {
                 info: AssetInfo::NativeToken {
@@ -249,14 +248,17 @@ pub fn query_fiat_price_for_denom(
             },
         },
     )?;
-    let atom_usd = atom_usd_price.rate;
+    let fiat_usd = Uint256::from(fiat_price.usd_price);
+    let atom_usd = Uint256::from(Uint128::new(1_000_000u128).mul(atom_usd_price.rate));
     let kuji_atom = kuji_atom_price_result.return_amount;
-    let kuji_usd = kuji_atom.multiply_ratio(atom_usd.numerator(), atom_usd.denominator());
-    let price = Uint256::from_u128(fiat_price.usd_price.u128()).mul(kuji_usd);
+    let kuji_fiat_price = fiat_usd
+        .mul(&atom_usd)
+        .mul(&kuji_atom)
+        .div(Uint256::from(1_000_000_000_000u128));
     Ok(DenomFiatPrice {
         denom: denom.clone(),
         fiat: fiat.clone(),
-        price,
+        price: kuji_fiat_price,
     })
 }
 

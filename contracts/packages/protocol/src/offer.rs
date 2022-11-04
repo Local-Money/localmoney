@@ -115,6 +115,7 @@ pub enum QueryMsg {
     Price {
         fiat: FiatCurrency,
         denom: Denom,
+        pool: Addr,
     },
 }
 

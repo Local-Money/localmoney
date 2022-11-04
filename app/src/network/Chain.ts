@@ -1,5 +1,5 @@
 import { JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO } from './cosmos/config/juno'
-import { KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO } from './cosmos/config/kujira'
+import { KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_DEV_HUB_INFO, KUJIRA_TESTNET_HUB_INFO } from './cosmos/config/kujira'
 import { DEV_CONFIG, DEV_HUB_INFO } from './cosmos/config/dev'
 import type {
   Arbitrator,
@@ -64,7 +64,8 @@ export interface Chain {
 }
 
 export enum ChainClient {
-  kujira = 'KUJIRA',
+  kujiraTestnet = 'KUJIRA_TESTNET',
+  kujiraTestnetDev = 'KUJIRA_TESTNET_DEV',
   juno = 'JUNO',
   dev = 'DEV',
 }
@@ -72,8 +73,10 @@ export enum ChainClient {
 // Centralized place to instantiate chain client and inject dependencies if needed
 export function chainFactory(client: ChainClient): Chain {
   switch (client) {
-    case ChainClient.kujira:
+    case ChainClient.kujiraTestnet:
       return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
+    case ChainClient.kujiraTestnetDev:
+      return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_DEV_HUB_INFO)
     case ChainClient.juno:
       return new CosmosChain(JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO)
     case ChainClient.dev:
