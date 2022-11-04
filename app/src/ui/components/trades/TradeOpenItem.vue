@@ -5,6 +5,7 @@ import type { TradeInfo } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 import { formatTimer } from '~/utils/formatters'
 import { checkTradeNeedsRefund } from '~/utils/validations'
+import { TradeState } from '~/types/components.interface'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
@@ -111,7 +112,7 @@ const stepLabel = computed(() => {
     return stepLabels[type].buyer[labelIdx]
   } else {
     if (checkTradeNeedsRefund(props.tradeInfo.trade, walletAddress.value)) {
-      return 'You can refund this trade'
+      return 'Refund available'
     } else {
       return stepLabels[type].seller[labelIdx]
     }
@@ -183,12 +184,14 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <div class="divider" />
+      <template v-if="tradeInfo.trade.state !== TradeState.request_expired && tradeInfo.trade.expires_at > 0">
+        <div class="divider" />
 
-      <div class="wrap">
-        <p class="label">Time remaining</p>
-        <p class="content">{{ tradeTimer }}</p>
-      </div>
+        <div class="wrap">
+          <p class="label">Time remaining</p>
+          <p class="content">{{ tradeTimer }}</p>
+        </div>
+      </template>
     </div>
 
     <div class="price">

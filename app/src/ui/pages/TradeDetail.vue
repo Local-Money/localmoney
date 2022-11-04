@@ -13,6 +13,7 @@ import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
 import { decryptData } from '~/utils/crypto'
 import { formatTimer } from '~/utils/formatters'
+import { TradeState } from '~/types/components.interface'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -240,7 +241,10 @@ watch(userWallet, async () => {
         </template>
       </div>
 
-      <div class="step-status">
+      <div
+        v-if="tradeInfo.trade.state !== TradeState.request_expired && tradeInfo.trade.expires_at > 0"
+        class="step-status"
+      >
         <div class="separator" />
         <div class="wrap">
           <p>time remaining</p>
