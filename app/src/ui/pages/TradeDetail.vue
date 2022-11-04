@@ -109,10 +109,10 @@ const contactsForArbitrator = computed(() => {
 })
 
 function startTradeTimer() {
-  tradeTimerInterval = setInterval(tradeTimerRunning, 10)
+  tradeTimerInterval = setInterval(tradeTimerTick, 10)
 }
 
-function tradeTimerRunning() {
+function tradeTimerTick() {
   const currentTime = Date.now()
   const expiresAt = tradeInfo.value.trade.expires_at * 1000
   const timer = new Date(expiresAt - currentTime)
