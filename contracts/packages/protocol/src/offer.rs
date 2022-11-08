@@ -86,9 +86,17 @@ pub struct OfferUpdateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     //TODO: Change to Create(OfferMsg)
-    Create { offer: OfferMsg },
-    UpdateOffer { offer_update: OfferUpdateMsg },
+    Create {
+        offer: OfferMsg,
+    },
+    UpdateOffer {
+        offer_update: OfferUpdateMsg,
+    },
     RegisterHub {},
+    RegisterPriceRouteForDenom {
+        denom: Denom,
+        route: Vec<PriceRoute>,
+    },
     UpdatePrices(Vec<CurrencyPrice>),
 }
 
@@ -115,7 +123,6 @@ pub enum QueryMsg {
     Price {
         fiat: FiatCurrency,
         denom: Denom,
-        pool: Addr,
     },
 }
 
@@ -379,7 +386,26 @@ impl CurrencyPrice {
     }
 }
 
-pub const FIAT_PRICES: Map<&str, CurrencyPrice> = Map::new("fiat_prices");
+pub const FIAT_PRICE: Map<&str, CurrencyPrice> = Map::new("fiat_price");
+pub const DENOM_PRICE_ROUTE: Map<&str, Vec<PriceRoute>> = Map::new("denom_price_route");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct PriceRoute {
+    pub pool: Addr,
+    pub offer_asset: Denom,
+}
+
+impl fmt::Display for PriceRoute {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let denom_str = denom_to_string(&self.offer_asset);
+        write!(
+            f,
+            "pool: {}, offer_asset: {}",
+            self.pool.to_string(),
+            denom_str
+        )
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DenomFiatPrice {

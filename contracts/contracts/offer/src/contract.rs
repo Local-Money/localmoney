@@ -1,8 +1,8 @@
 use std::ops::{Div, Mul};
 
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    SubMsg, Uint128, Uint256,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
+    Uint128, Uint256,
 };
 use cw20::Denom;
 use localterra_protocol::currencies::FiatCurrency;
@@ -18,11 +18,11 @@ use crate::state::{offers_count_read, offers_count_storage};
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{
-    offers, CurrencyPrice, DenomFiatPrice, ExecuteMsg, InstantiateMsg,
-    MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse, OfferState, OfferUpdateMsg,
-    OffersCount, QueryMsg, FIAT_PRICES,
+    offers, CurrencyPrice, DenomFiatPrice, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer,
+    OfferModel, OfferMsg, OfferResponse, OfferState, OfferUpdateMsg, OffersCount, PriceRoute,
+    QueryMsg, DENOM_PRICE_ROUTE, FIAT_PRICE,
 };
 use localterra_protocol::profile::{load_profile, update_profile_msg};
 
@@ -52,7 +52,10 @@ pub fn execute(
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
         ExecuteMsg::UpdateOffer { offer_update } => update_offer(deps, env, info, offer_update),
-        ExecuteMsg::UpdatePrices(prices) => update_prices(deps, env, info, prices),
+        ExecuteMsg::UpdatePrices(prices) => update_prices(deps, env, prices),
+        ExecuteMsg::RegisterPriceRouteForDenom { denom, route } => {
+            register_price_route_for_denom(deps, info, denom, route)
+        }
     }
 }
 
@@ -82,8 +85,8 @@ pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Bin
         QueryMsg::OffersByOwner { owner, limit } => {
             to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
         }
-        QueryMsg::Price { fiat, denom, pool } => {
-            to_binary(&query_fiat_price_for_denom(deps, fiat, denom, pool)?)
+        QueryMsg::Price { fiat, denom } => {
+            to_binary(&query_fiat_price_for_denom(deps, fiat, denom)?)
         }
     }
 }
@@ -180,14 +183,13 @@ pub fn update_offer(
 pub fn update_prices(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
     prices: Vec<CurrencyPrice>,
 ) -> Result<Response<KujiraMsg>, ContractError> {
     // TODO: Permissions check
-    let mut attrs: Vec<(&str, String)> = vec![("action", "update_price".to_string())];
+    let mut attrs: Vec<(&str, String)> = vec![("action", "update_prices".to_string())];
     prices.iter().for_each(|price| {
         // Load existing object or default
-        let path = FIAT_PRICES.key(price.currency.to_string().as_str());
+        let path = FIAT_PRICE.key(price.currency.to_string().as_str());
         let mut currency_price = path
             .load(deps.storage)
             .unwrap_or(CurrencyPrice::new(price.currency.clone()));
@@ -200,6 +202,31 @@ pub fn update_prices(
         attrs.push(("usd_price", price.usd_price.to_string()));
     });
     let res = Response::new().add_attributes(attrs);
+    Ok(res)
+}
+
+pub fn register_price_route_for_denom(
+    deps: DepsMut,
+    info: MessageInfo,
+    denom: Denom,
+    route: Vec<PriceRoute>,
+) -> Result<Response<KujiraMsg>, ContractError> {
+    let admin = get_hub_admin(deps.as_ref()).addr;
+    assert_ownership(info.sender, admin)?;
+
+    let denom_str = denom_to_string(&denom.clone());
+    DENOM_PRICE_ROUTE
+        .save(deps.storage, denom_str.as_str(), &route)
+        .unwrap();
+
+    let mut attrs = vec![
+        ("action".to_string(), "register_price".to_string()),
+        ("denom".to_string(), denom_str),
+    ];
+    route
+        .iter()
+        .for_each(|step| attrs.push(("route_step".to_string(), step.to_string())));
+    let res = Response::default().add_attributes(attrs);
     Ok(res)
 }
 
@@ -231,34 +258,45 @@ pub fn query_fiat_price_for_denom(
     deps: Deps<KujiraQuery>,
     fiat: FiatCurrency,
     denom: Denom,
-    pool: Addr,
 ) -> StdResult<DenomFiatPrice> {
-    let fiat_price = &FIAT_PRICES.load(deps.storage, fiat.to_string().as_str())?;
+    let fiat_price = &FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?;
     let kq = KujiraQuerier::new(&deps.querier);
     let atom_usd_price = kq.query_exchange_rate("ATOM".to_string()).unwrap();
     let amount = Uint128::new(1_000_000u128);
-    let kuji_atom_price_result: SimulationResponse = deps.querier.query_wasm_smart(
-        pool,
-        &FinQueryMsg::Simulation {
-            offer_asset: Asset {
-                info: AssetInfo::NativeToken {
-                    denom: KujiraDenom::from(denom_to_string(&denom)),
-                },
-                amount,
-            },
-        },
-    )?;
+    let denom_str = denom_to_string(&denom.clone());
+    let denom_price_route = &DENOM_PRICE_ROUTE
+        .load(deps.storage, denom_str.as_str())
+        .unwrap();
+    let denom_atom = denom_price_route
+        .iter()
+        .fold(Uint256::from(1u128), |price, route| {
+            let denom_price_result: SimulationResponse = deps
+                .querier
+                .query_wasm_smart(
+                    route.pool.clone(),
+                    &FinQueryMsg::Simulation {
+                        offer_asset: Asset {
+                            info: AssetInfo::NativeToken {
+                                denom: KujiraDenom::from(denom_to_string(&route.offer_asset)),
+                            },
+                            amount,
+                        },
+                    },
+                )
+                .unwrap();
+            price * denom_price_result.return_amount
+        });
     let fiat_usd = Uint256::from(fiat_price.usd_price);
     let atom_usd = Uint256::from(Uint128::new(1_000_000u128).mul(atom_usd_price.rate));
-    let kuji_atom = kuji_atom_price_result.return_amount;
-    let kuji_fiat_price = fiat_usd
+    let decimal_places = 1_000_000_000_000u128;
+    let denom_fiat_price = fiat_usd
         .mul(&atom_usd)
-        .mul(&kuji_atom)
-        .div(Uint256::from(1_000_000_000_000u128));
+        .mul(&denom_atom)
+        .div(Uint256::from(decimal_places));
     Ok(DenomFiatPrice {
         denom: denom.clone(),
         fiat: fiat.clone(),
-        price: kuji_fiat_price,
+        price: denom_fiat_price,
     })
 }
 
