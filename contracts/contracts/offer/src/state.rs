@@ -4,7 +4,7 @@ use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
 
 use localterra_protocol::offer::{OffersCount, TradeAddr};
 
-pub static STATE_KEY: &[u8] = b"state";
+pub static OFFERS_COUNT_KEY: &[u8] = b"offers_count_v0_4_0";
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
@@ -34,9 +34,9 @@ pub fn trades<'a>() -> IndexedMap<'a, &'a str, TradeAddr, TradeIndexes<'a>> {
 }
 
 pub fn offers_count_storage(storage: &mut dyn Storage) -> Singleton<OffersCount> {
-    singleton(storage, STATE_KEY)
+    singleton(storage, OFFERS_COUNT_KEY)
 }
 
 pub fn offers_count_read(storage: &dyn Storage) -> ReadonlySingleton<OffersCount> {
-    singleton_read(storage, STATE_KEY)
+    singleton_read(storage, OFFERS_COUNT_KEY)
 }

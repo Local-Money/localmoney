@@ -30,7 +30,7 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
 }
 
 pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
-    let offers_pk_namespace = "offers_v0_3_0";
+    let offers_pk_namespace = "offers_v0_4_0";
     let indexes = OfferIndexes {
         owner: MultiIndex::new(
             |d| d.owner.clone().to_string(),
@@ -421,6 +421,15 @@ pub fn load_offer<T: CustomQuery>(
     offer_contract: String,
 ) -> StdResult<OfferResponse> {
     querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })
+}
+
+pub fn query_fiat_price_for_denom<T: CustomQuery>(
+    querier: &QuerierWrapper<T>,
+    denom: Denom,
+    fiat: FiatCurrency,
+    offer_contract: String,
+) -> StdResult<DenomFiatPrice> {
+    querier.query_wasm_smart(offer_contract, &QueryMsg::Price { fiat, denom })
 }
 
 // Migration

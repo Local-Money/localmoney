@@ -5,6 +5,8 @@ use cw20::Denom;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::Unauthorized;
 use localterra_protocol::hub::{Admin, ExecuteMsg, HubConfig, InstantiateMsg, QueryMsg};
+use localterra_protocol::kujira::msg::KujiraMsg;
+use localterra_protocol::kujira::query::KujiraQuery;
 use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
 use localterra_protocol::profile::ExecuteMsg::RegisterHub as ProfileRegisterHub;
 use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
@@ -15,11 +17,11 @@ use crate::state::{ADMIN, CONFIG};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let admin = Admin {
         addr: msg.admin_addr.clone(),
     };
@@ -33,11 +35,11 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     match msg {
         ExecuteMsg::UpdateConfig(config) => update_config(deps, info, config),
         ExecuteMsg::UpdateAdmin { admin_addr } => update_admin(deps, info, admin_addr),
@@ -45,10 +47,10 @@ pub fn execute(
 }
 
 fn update_config(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     info: MessageInfo,
     config: HubConfig,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let admin = ADMIN.load(deps.storage).unwrap();
     if !info.sender.eq(&admin.addr) {
         return Err(Unauthorized {
@@ -102,10 +104,10 @@ fn update_config(
 }
 
 fn update_admin(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     info: MessageInfo,
     new_admin: Addr,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let mut admin = ADMIN.load(deps.storage).unwrap();
     if !info.sender.eq(&admin.addr) {
         return Err(Unauthorized {
@@ -134,6 +136,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(
+    _deps: DepsMut<KujiraQuery>,
+    _env: Env,
+    _msg: MigrateMsg,
+) -> Result<Response<KujiraMsg>, ContractError> {
     Ok(Response::default())
 }

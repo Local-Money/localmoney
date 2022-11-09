@@ -33,7 +33,6 @@ use localterra_protocol::trade::{
     SwapMsg, Trade, TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
 };
 use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
-
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
@@ -120,6 +119,26 @@ fn create_trade(
     let offer = offer_result.offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
+    /*
+    //Freeze the Denom price in Fiat using the rate set on Offer by the Maker
+    let denom_fiat_price = query_fiat_price_for_denom(
+        &deps.querier,
+        offer.denom.clone(),
+        offer.fiat_currency.clone(),
+        hub_cfg.offer_addr.to_string(),
+    )
+    .unwrap();
+    //TODO: Error handling
+
+    let offer_rate = Decimal::from_ratio(offer.rate.clone(), Uint128::new(100u128));
+    let offer_rate = Uint256::from(Uint128::new(1u128).mul(offer_rate));
+    let denom_final_price = denom_fiat_price
+        .price
+        .checked_mul(offer_rate)
+        .unwrap_or(Uint256::zero());
+
+
+    */
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
     let buyer_contact: Option<String>;
@@ -201,6 +220,7 @@ fn create_trade(
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)
+        .add_attribute("denom_fiat_price", "0")
         .add_attribute("taker", new_trade.taker.to_string());
 
     Ok(res)

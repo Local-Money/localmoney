@@ -1,6 +1,8 @@
 use std::fmt::{self};
 
-use cosmwasm_std::{Addr, BlockInfo, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128, CustomQuery};
+use cosmwasm_std::{
+    Addr, BlockInfo, CustomQuery, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128,
+};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 
@@ -428,7 +430,7 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
 }
 
 pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
-    let pk_namespace = "trades_v0_3_0";
+    let pk_namespace = "trades_v0_5_0";
     let indexes = TradeIndexes {
         buyer: MultiIndex::new(|t| t.buyer.to_string(), pk_namespace, "trades__buyer"),
         seller: MultiIndex::new(|t| t.seller.to_string(), pk_namespace, "trades__seller"),

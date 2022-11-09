@@ -5,6 +5,8 @@ use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_multiple_ownership, assert_ownership};
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localterra_protocol::kujira::msg::KujiraMsg;
+use localterra_protocol::kujira::query::KujiraQuery;
 use localterra_protocol::profile::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, ProfileModel, QueryMsg,
 };
@@ -16,22 +18,22 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    _deps: DepsMut<KujiraQuery>,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let res = Response::new().add_attribute("action", "instantiate_profile");
     Ok(res)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     match msg {
         ExecuteMsg::UpdateProfile {
             profile_addr,
@@ -47,13 +49,13 @@ pub fn execute(
 }
 
 fn update_profile(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     profile_addr: Addr,
     contact: String,
     encryption_key: String,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
     let owners = vec![
         profile_addr.clone(),
@@ -82,12 +84,12 @@ fn update_profile(
 }
 
 pub fn increase_trades_count(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     profile_addr: Addr,
     trade_state: TradeState,
-) -> Result<Response, ContractError> {
+) -> Result<Response<KujiraMsg>, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
 
     // Only the trade contract should be able to call increase_trades_count
@@ -117,7 +119,10 @@ pub fn increase_trades_count(
     Ok(res)
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+fn register_hub(
+    deps: DepsMut<KujiraQuery>,
+    info: MessageInfo,
+) -> Result<Response<KujiraMsg>, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
@@ -134,7 +139,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(
+    _deps: DepsMut<KujiraQuery>,
+    _env: Env,
+    _msg: MigrateMsg,
+) -> Result<Response<KujiraMsg>, ContractError> {
     Ok(Response::default()
         .add_attribute("version", CONTRACT_VERSION)
         .add_attribute("name", CONTRACT_NAME))

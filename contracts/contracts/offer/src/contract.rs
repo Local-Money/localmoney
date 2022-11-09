@@ -28,7 +28,7 @@ use localterra_protocol::profile::{load_profile, update_profile_msg};
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
@@ -36,14 +36,12 @@ pub fn instantiate(
     offers_count_storage(deps.storage)
         .save(&OffersCount { count: 0 })
         .unwrap();
-
     let res = Response::new().add_attribute("action", "instantiate_offer");
     Ok(res)
 }
-
 #[entry_point]
 pub fn execute(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
@@ -92,7 +90,7 @@ pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Bin
 }
 
 pub fn create_offer(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
@@ -147,7 +145,7 @@ pub fn create_offer(
 }
 
 pub fn update_offer(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     info: MessageInfo,
     msg: OfferUpdateMsg,
@@ -181,7 +179,7 @@ pub fn update_offer(
 }
 
 pub fn update_prices(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     env: Env,
     prices: Vec<CurrencyPrice>,
 ) -> Result<Response<KujiraMsg>, ContractError> {
@@ -206,7 +204,7 @@ pub fn update_prices(
 }
 
 pub fn register_price_route_for_denom(
-    deps: DepsMut,
+    deps: DepsMut<KujiraQuery>,
     info: MessageInfo,
     denom: Denom,
     route: Vec<PriceRoute>,
@@ -230,7 +228,10 @@ pub fn register_price_route_for_denom(
     Ok(res)
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response<KujiraMsg>, ContractError> {
+fn register_hub(
+    deps: DepsMut<KujiraQuery>,
+    info: MessageInfo,
+) -> Result<Response<KujiraMsg>, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
@@ -301,6 +302,14 @@ pub fn query_fiat_price_for_denom(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(
+    deps: DepsMut<KujiraQuery>,
+    _env: Env,
+    _msg: MigrateMsg,
+) -> Result<Response, ContractError> {
+    //TODO temporary
+    offers_count_storage(deps.storage)
+        .save(&OffersCount { count: 0 })
+        .unwrap();
     Ok(Response::default())
 }
