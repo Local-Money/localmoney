@@ -546,9 +546,9 @@ h3 {
     }
 
     .step-time-left {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: $semi-bold;
-      color: $primary;
+      color: $base-text;
     }
   }
 }
@@ -593,6 +593,14 @@ h3 {
       font-size: 14px;
       color: $gray700;
       margin-top: 8px;
+    }
+  }
+
+  .trader-info p {
+    &:first-child {
+      font-size: 16px;
+      font-weight: $regular;
+      color: $gray900;
     }
   }
 
