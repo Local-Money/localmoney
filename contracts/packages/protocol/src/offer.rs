@@ -8,7 +8,6 @@ use cosmwasm_std::{
 };
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
-use kujira::query::KujiraQuery;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -195,11 +194,7 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query_by_owner(
-        deps: Deps<KujiraQuery>,
-        owner: Addr,
-        limit: u32,
-    ) -> StdResult<Vec<OfferResponse>> {
+    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let range = offers().idx.owner.prefix(owner.into_string()).range(
             deps.storage,

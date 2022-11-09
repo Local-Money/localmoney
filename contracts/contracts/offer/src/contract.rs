@@ -10,7 +10,6 @@ use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::kujira::asset::{Asset, AssetInfo};
 use localterra_protocol::kujira::denom::Denom as KujiraDenom;
 use localterra_protocol::kujira::fin::{QueryMsg as FinQueryMsg, SimulationResponse};
-use localterra_protocol::kujira::msg::KujiraMsg;
 use localterra_protocol::kujira::querier::KujiraQuerier;
 use localterra_protocol::kujira::query::KujiraQuery;
 
@@ -28,11 +27,11 @@ use localterra_protocol::profile::{load_profile, update_profile_msg};
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     offers_count_storage(deps.storage)
         .save(&OffersCount { count: 0 })
         .unwrap();
@@ -41,11 +40,11 @@ pub fn instantiate(
 }
 #[entry_point]
 pub fn execute(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
         ExecuteMsg::Create { offer } => create_offer(deps, env, info, offer),
@@ -58,7 +57,7 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Offer { id } => to_binary(&load_offer_by_id(deps, id)?),
@@ -83,18 +82,19 @@ pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Bin
         QueryMsg::OffersByOwner { owner, limit } => {
             to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
         }
-        QueryMsg::Price { fiat, denom } => {
-            to_binary(&query_fiat_price_for_denom(deps, fiat, denom)?)
+        QueryMsg::Price { fiat: _, denom: _ } => {
+            todo!()
+            // to_binary(&query_fiat_price_for_denom(deps, fiat, denom)?)
         }
     }
 }
 
 pub fn create_offer(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
@@ -132,7 +132,7 @@ pub fn create_offer(
         .save(&offers_count)
         .unwrap();
 
-    let res = Response::<KujiraMsg>::new()
+    let res = Response::new()
         .add_submessage(update_profile_msg)
         .add_attribute("action", "create_offer")
         .add_attribute("type", offer.offer_type.to_string())
@@ -145,11 +145,11 @@ pub fn create_offer(
 }
 
 pub fn update_offer(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     msg: OfferUpdateMsg,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let hub_config = get_hub_config(deps.as_ref());
@@ -157,7 +157,7 @@ pub fn update_offer(
 
     assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
 
-    let mut sub_msgs: Vec<SubMsg<KujiraMsg>> = Vec::new();
+    let mut sub_msgs: Vec<SubMsg> = Vec::new();
     if msg.owner_contact.is_some() && msg.owner_encryption_key.is_some() {
         sub_msgs.push(update_profile_msg(
             hub_config.profile_addr.to_string(),
@@ -179,10 +179,10 @@ pub fn update_offer(
 }
 
 pub fn update_prices(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     prices: Vec<CurrencyPrice>,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     // TODO: Permissions check
     let mut attrs: Vec<(&str, String)> = vec![("action", "update_prices".to_string())];
     prices.iter().for_each(|price| {
@@ -204,11 +204,11 @@ pub fn update_prices(
 }
 
 pub fn register_price_route_for_denom(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     info: MessageInfo,
     denom: Denom,
     route: Vec<PriceRoute>,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     let admin = get_hub_admin(deps.as_ref()).addr;
     assert_ownership(info.sender, admin)?;
 
@@ -228,19 +228,16 @@ pub fn register_price_route_for_denom(
     Ok(res)
 }
 
-fn register_hub(
-    deps: DepsMut<KujiraQuery>,
-    info: MessageInfo,
-) -> Result<Response<KujiraMsg>, ContractError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_state(deps: Deps<KujiraQuery>) -> StdResult<OffersCount> {
+fn query_state(deps: Deps) -> StdResult<OffersCount> {
     let state = offers_count_read(deps.storage).load().unwrap();
     Ok(state)
 }
 
-pub fn load_offer_by_id(deps: Deps<KujiraQuery>, id: String) -> StdResult<OfferResponse> {
+pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
     let hub_config = get_hub_config(deps);
     let offer = offers()
         .may_load(deps.storage, id.to_string())
@@ -302,11 +299,7 @@ pub fn query_fiat_price_for_denom(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(
-    deps: DepsMut<KujiraQuery>,
-    _env: Env,
-    _msg: MigrateMsg,
-) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     //TODO temporary
     offers_count_storage(deps.storage)
         .save(&OffersCount { count: 0 })

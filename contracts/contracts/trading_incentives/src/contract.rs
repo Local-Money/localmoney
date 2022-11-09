@@ -14,8 +14,6 @@ use localterra_protocol::errors::ContractError::{
     InvalidTradeState, Unauthorized,
 };
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::kujira::msg::KujiraMsg;
-use localterra_protocol::kujira::query::KujiraQuery;
 use localterra_protocol::offer::load_offer;
 use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, TradeResponse, TradeState};
 use localterra_protocol::trading_incentives::{
@@ -26,11 +24,11 @@ use crate::state::{DISTRIBUTION, TOTAL_VOLUME, TRADER_VOLUME};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     let period_duration = 604800u64; //1 week in seconds
     let distribution_periods = 51u8;
     let total_duration = period_duration * distribution_periods as u64;
@@ -61,11 +59,11 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterTrade { trade } => register_trade(deps, env, info, trade),
         ExecuteMsg::ClaimRewards { period } => claim_rewards(deps, env, info, period),
@@ -118,11 +116,11 @@ fn get_rewards(storage: &dyn Storage, trader: String, period: u8) -> StdResult<T
 }
 
 fn register_trade(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     trade_id: String,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     let hub_cfg = get_hub_config(deps.as_ref());
 
     //Only callable by the Trade Contract.
@@ -192,11 +190,11 @@ fn register_trade(
 }
 
 fn claim_rewards(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     period: u8,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     let distribution = get_distribution_info(env, deps.storage).unwrap();
     let rewards_denom = get_rewards_denom(deps.as_ref());
 
@@ -230,10 +228,10 @@ fn claim_rewards(
 }
 
 fn start_distribution(
-    deps: DepsMut<KujiraQuery>,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
-) -> Result<Response<KujiraMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     let mut distribution = DISTRIBUTION.load(deps.storage).unwrap();
     let rewards_denom = get_rewards_denom(deps.as_ref());
 
@@ -261,7 +259,7 @@ fn start_distribution(
     Ok(res)
 }
 
-fn get_rewards_denom(deps: Deps<KujiraQuery>) -> String {
+fn get_rewards_denom(deps: Deps) -> String {
     let hub_cfg = get_hub_config(deps.clone());
     match hub_cfg.local_denom {
         Denom::Native(name) => name,
@@ -269,18 +267,11 @@ fn get_rewards_denom(deps: Deps<KujiraQuery>) -> String {
     }
 }
 
-fn register_hub(
-    deps: DepsMut<KujiraQuery>,
-    info: MessageInfo,
-) -> Result<Response<KujiraMsg>, ContractError> {
+fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(
-    _deps: DepsMut<KujiraQuery>,
-    _env: Env,
-    _msg: MigrateMsg,
-) -> Result<Response, ContractError> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }

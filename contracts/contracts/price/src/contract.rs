@@ -11,7 +11,7 @@ use localterra_protocol::profile::{
 use localterra_protocol::trade::TradeState;
 
 // version info for migration info
-pub const CONTRACT_NAME: &str = "localmoney.io:profile";
+pub const CONTRACT_NAME: &str = "localmoney.io:price";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
