@@ -232,7 +232,7 @@ async function settleDispute(winner: string) {
         ]"
       />
       <!-- Trade Refunded -->
-      <TradeAction v-if="tradeInfo.trade.state === 'escrow_refunded'" message="This trade has been refunded" />
+      <TradeAction v-if="tradeInfo.trade.state === 'escrow_refunded'" message="Funds claimed successfully" />
     </div>
 
     <!-- Trade Disputed -->

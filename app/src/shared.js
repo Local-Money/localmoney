@@ -57,7 +57,7 @@ export function formatTradeState(state) {
     escrow_funded: 'Expired',
     request_expired: 'Expired',
     request_canceled: 'Canceled',
-    escrow_refunded: 'Refunded',
+    escrow_refunded: 'Canceled',
     escrow_released: 'Completed',
     settled_for_maker: 'Settled',
     settled_for_taker: 'Settled',
