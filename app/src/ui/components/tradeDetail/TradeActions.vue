@@ -16,11 +16,11 @@ const profile = computed(() => client.profile)
 const isBuyer = computed(() => props.tradeInfo.trade.buyer === props.walletAddress)
 const isSeller = computed(() => props.tradeInfo.trade.seller === props.walletAddress)
 
-const disputeWinnerMessage = computed(() => {
-  const taker = `taker: ${formatAddress(getTaker())}`
-  const maker = `maker: ${formatAddress(getMaker())}`
+const disputeWinner = computed(() => {
+  const taker = `${formatAddress(getTaker())}`
+  const maker = `${formatAddress(getMaker())}`
   const winner = props.tradeInfo.trade.state === 'settled_for_taker' ? taker : maker
-  return `Dispute settled for ${winner}`
+  return `${winner}`
 })
 
 const lastTradeState = computed(() => {
@@ -120,7 +120,7 @@ async function settleDispute(winner: string) {
       <!-- The crypto is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
       <TradeAction
         v-if="tradeInfo.trade.state === 'escrow_funded'"
-        message="Only press the mark as paid after you made the payment"
+        message="Only press the mark as paid button after you made the payment"
         :buttons="[
           {
             label: 'mark as paid',
@@ -132,7 +132,7 @@ async function settleDispute(winner: string) {
       />
       <!-- #4 step or #3 step -->
       <!-- After the off-chain payment, the Buyer needs to wait for the Seller to release the funds on escrow -->
-      <TradeAction v-if="tradeInfo.trade.state === 'fiat_deposited'" message="Waiting for funds to be released" />
+      <TradeAction v-if="tradeInfo.trade.state === 'fiat_deposited'" message="Waiting for the funds to be released" />
       <!-- #5 step or #4 step -->
       <!-- The Seller released the funds on escrow, so the Buyer already received the money on his wallet -->
       <TradeAction v-if="tradeInfo.trade.state === 'escrow_released'" message="Trade finished successfully" />
@@ -173,7 +173,10 @@ async function settleDispute(winner: string) {
       />
       <!-- #3 step or #2 step -->
       <!-- The crypto is on the escrow, so the Buyer needs to make the off-chain payment to mark as payed on the blockchain -->
-      <TradeAction v-if="tradeInfo.trade.state === 'escrow_funded'" message="Waiting for payment from the buyer" />
+      <TradeAction
+        v-if="tradeInfo.trade.state === 'escrow_funded'"
+        message="Waiting for the buyer to make the payment"
+      />
       <!-- #4 step or #3 step -->
       <!-- After the off-chain payment, the Seller needs to check the off-chain payment and release the crypto on the escrow to the Buyer -->
       <TradeAction
@@ -236,16 +239,16 @@ async function settleDispute(winner: string) {
     <template v-if="tradeInfo.trade.state === 'escrow_disputed'">
       <TradeAction
         v-if="tradeInfo.trade.arbitrator === client.userWallet.address"
-        message="Dispute in progress, after reviewing the information pick the dispute winner."
+        message="Carefully review the information provided by both parties before reaching a verdict"
         :buttons="[
           {
-            label: 'maker',
+            label: 'vote maker',
             action: () => {
               settleDispute(getMaker())
             },
           },
           {
-            label: 'taker',
+            label: 'vote taker',
             action: () => {
               settleDispute(getTaker())
             },
@@ -257,7 +260,7 @@ async function settleDispute(winner: string) {
 
     <!-- Dispute Settled -->
     <template v-if="['settled_for_taker', 'settled_for_maker'].includes(tradeInfo.trade.state)">
-      <TradeAction :message="disputeWinnerMessage" />
+      <TradeAction message="Dispute settled for" :subMessage="disputeWinner" />
     </template>
   </section>
 
