@@ -196,10 +196,10 @@ async function settleDispute(winner: string) {
         <!-- With funds -->
         <TradeAction
           v-if="lastTradeState === TradeState.escrow_funded"
-          message="This trade has expired with funds"
+          message="This trade has expired. You have funds to be claimed."
           :buttons="[
             {
-              label: 'refund escrow',
+              label: 'claim funds',
               action: () => {
                 refundEscrow(tradeInfo.trade.id)
               },
@@ -218,10 +218,10 @@ async function settleDispute(winner: string) {
       <!-- Trade canceled -->
       <TradeAction
         v-if="tradeInfo.trade.state === 'escrow_canceled'"
-        message="This trade has been canceled with funds"
+        message="This trade has been canceled. You have funds to be claimed. "
         :buttons="[
           {
-            label: 'refund escrow',
+            label: 'claim funds',
             action: () => {
               refundEscrow(tradeInfo.trade.id)
             },
