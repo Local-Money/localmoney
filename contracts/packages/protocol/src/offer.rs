@@ -3,11 +3,9 @@ use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
-use cosmwasm_std::{
-    Addr, CustomQuery, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128, Uint256,
-};
+use cosmwasm_std::{Addr, CustomQuery, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Map, MultiIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
@@ -85,18 +83,9 @@ pub struct OfferUpdateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     //TODO: Change to Create(OfferMsg)
-    Create {
-        offer: OfferMsg,
-    },
-    UpdateOffer {
-        offer_update: OfferUpdateMsg,
-    },
+    Create { offer: OfferMsg },
+    UpdateOffer { offer_update: OfferUpdateMsg },
     RegisterHub {},
-    RegisterPriceRouteForDenom {
-        denom: Denom,
-        route: Vec<PriceRoute>,
-    },
-    UpdatePrices(Vec<CurrencyPrice>),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -118,10 +107,6 @@ pub enum QueryMsg {
     OffersByOwner {
         owner: Addr,
         limit: u32,
-    },
-    Price {
-        fiat: FiatCurrency,
-        denom: Denom,
     },
 }
 
@@ -363,51 +348,6 @@ pub enum OfferState {
 }
 
 // Price
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct CurrencyPrice {
-    pub currency: FiatCurrency,
-    pub usd_price: Uint128,
-    pub updated_at: u64,
-}
-
-impl CurrencyPrice {
-    pub fn new(currency: FiatCurrency) -> CurrencyPrice {
-        CurrencyPrice {
-            currency,
-            usd_price: Uint128::zero(),
-            updated_at: 0u64,
-        }
-    }
-}
-
-pub const FIAT_PRICE: Map<&str, CurrencyPrice> = Map::new("fiat_price");
-pub const DENOM_PRICE_ROUTE: Map<&str, Vec<PriceRoute>> = Map::new("denom_price_route");
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct PriceRoute {
-    pub pool: Addr,
-    pub offer_asset: Denom,
-}
-
-impl fmt::Display for PriceRoute {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let denom_str = denom_to_string(&self.offer_asset);
-        write!(
-            f,
-            "pool: {}, offer_asset: {}",
-            self.pool.to_string(),
-            denom_str
-        )
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DenomFiatPrice {
-    pub denom: Denom,
-    pub fiat: FiatCurrency,
-    pub price: Uint256,
-}
 
 // Queries
 pub fn load_offer<T: CustomQuery>(
@@ -417,16 +357,6 @@ pub fn load_offer<T: CustomQuery>(
 ) -> StdResult<OfferResponse> {
     querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })
 }
-
-pub fn query_fiat_price_for_denom<T: CustomQuery>(
-    querier: &QuerierWrapper<T>,
-    denom: Denom,
-    fiat: FiatCurrency,
-    offer_contract: String,
-) -> StdResult<DenomFiatPrice> {
-    querier.query_wasm_smart(offer_contract, &QueryMsg::Price { fiat, denom })
-}
-
 // Migration
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
