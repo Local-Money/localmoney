@@ -30,7 +30,7 @@ use localterra_protocol::trade::{
     arbitrators, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap,
     SwapMsg, Trade, TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
 };
-use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
+// use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
@@ -562,6 +562,8 @@ fn release_escrow(
     let warchest_amount = fee.mul(Decimal::from_ratio(hub_cfg.warchest_fee_pct, 100u128));
 
     // Create Trade Registration message to be sent to the Trading Incentives contract.
+    // TODO: Disabling Temporarily to use TradingIncentives as Price Contract.
+    /*
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
@@ -571,6 +573,7 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(register_trade_msg);
+    */
 
     // Update profile released_trades_count
     send_msgs.push(increase_profile_trades_count_msg(

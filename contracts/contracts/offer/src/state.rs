@@ -4,7 +4,7 @@ use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
 
 use localterra_protocol::offer::{OffersCount, TradeAddr};
 
-pub static OFFERS_COUNT_KEY: &[u8] = b"offers_count_v0_4_0";
+pub static OFFERS_COUNT_KEY: &[u8] = b"offers_count_v0_4_1";
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element

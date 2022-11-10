@@ -27,7 +27,7 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
 }
 
 pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
-    let offers_pk_namespace = "offers_v0_4_0";
+    let offers_pk_namespace = "offers_v0_4_1";
     let indexes = OfferIndexes {
         owner: MultiIndex::new(
             |d| d.owner.clone().to_string(),
