@@ -11,5 +11,9 @@ export function checkTradeNeedsRefund(trade: Trade, userAddr: string): boolean {
   const isSeller = trade.seller === userAddr
   const lastStateIndex = trade.state_history.length - 1
   const lastTradeState = trade.state_history[lastStateIndex].state
-  return isSeller && trade.state === TradeState.request_expired && lastTradeState === TradeState.escrow_funded
+  return (
+    isSeller &&
+    ((trade.state === TradeState.request_expired && lastTradeState === TradeState.escrow_funded) ||
+      trade.state === TradeState.escrow_canceled)
+  )
 }
