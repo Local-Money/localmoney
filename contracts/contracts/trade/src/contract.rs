@@ -4,7 +4,7 @@ use std::str::FromStr;
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, CustomQuery, Decimal,
     Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
-    Uint128, WasmMsg,
+    Uint128, Uint256, WasmMsg,
 };
 
 use localterra_protocol::constants::{
@@ -23,6 +23,7 @@ use localterra_protocol::guards::{
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
+use localterra_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
 use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
 };
@@ -109,7 +110,6 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let offer = offer_result.offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
-    /*
     //Freeze the Denom price in Fiat using the rate set on Offer by the Maker
     let denom_fiat_price = query_fiat_price_for_denom(
         &deps.querier,
@@ -117,7 +117,11 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         offer.fiat_currency.clone(),
         hub_cfg.offer_addr.to_string(),
     )
-    .unwrap();
+    .unwrap_or(DenomFiatPrice {
+        denom: offer.denom.clone(),
+        fiat: offer.fiat_currency.clone(),
+        price: Uint256::zero(),
+    });
     //TODO: Error handling
 
     let offer_rate = Decimal::from_ratio(offer.rate.clone(), Uint128::new(100u128));
@@ -127,8 +131,6 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         .checked_mul(offer_rate)
         .unwrap_or(Uint256::zero());
 
-
-    */
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
     let buyer_contact: Option<String>;
@@ -189,6 +191,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             offer.denom.clone(),
             new_trade.amount.clone(),
             offer.fiat_currency,
+            denom_final_price,
             trade_state_history,
         ),
     )

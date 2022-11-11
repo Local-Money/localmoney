@@ -2,6 +2,7 @@ use std::fmt::{self};
 
 use cosmwasm_std::{
     Addr, BlockInfo, CustomQuery, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128,
+    Uint256,
 };
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
@@ -155,6 +156,7 @@ pub struct Trade {
     pub denom: Denom,
     pub amount: Uint128,
     pub fiat: FiatCurrency,
+    pub denom_fiat_price: Uint256,
     pub state_history: Vec<TradeStateItem>,
     state: TradeState,
 }
@@ -174,6 +176,7 @@ impl Trade {
         denom: Denom,
         amount: Uint128,
         fiat: FiatCurrency,
+        denom_fiat_price: Uint256,
         state_history: Vec<TradeStateItem>,
     ) -> Trade {
         return Trade {
@@ -192,6 +195,7 @@ impl Trade {
             denom,
             amount,
             fiat,
+            denom_fiat_price,
             state_history,
             state: TradeState::RequestCreated,
         };
@@ -233,6 +237,7 @@ pub struct TradeResponse {
     pub denom: Denom,
     pub amount: Uint128,
     pub fiat: FiatCurrency,
+    pub denom_fiat_price: Uint256,
     pub state_history: Vec<TradeStateItem>,
     pub state: TradeState,
 }
@@ -282,6 +287,7 @@ impl TradeResponse {
             denom: trade.denom,
             amount: trade.amount,
             fiat: trade.fiat,
+            denom_fiat_price: trade.denom_fiat_price,
             state_history: trade.state_history,
             state,
         }
@@ -430,7 +436,7 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
 }
 
 pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
-    let pk_namespace = "trades_v0_4_1";
+    let pk_namespace = "trades_v0_4_2";
     let indexes = TradeIndexes {
         buyer: MultiIndex::new(|t| t.buyer.to_string(), pk_namespace, "trades__buyer"),
         seller: MultiIndex::new(|t| t.seller.to_string(), pk_namespace, "trades__seller"),
