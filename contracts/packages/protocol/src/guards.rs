@@ -47,6 +47,18 @@ pub fn assert_trade_state_change_is_valid(
     }
 }
 
+pub fn assert_trade_state_change(
+    from: TradeState,
+    allowed_states: Vec<TradeState>,
+    to: TradeState,
+) -> Result<(), ContractError> {
+    if allowed_states.contains(&from) {
+        Ok(())
+    } else {
+        Err(ContractError::InvalidTradeStateChange { from, to })
+    }
+}
+
 pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), ContractError> {
     if min >= max {
         Err(ContractError::InvalidMinMax { min, max })

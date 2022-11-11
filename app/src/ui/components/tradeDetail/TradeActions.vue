@@ -138,6 +138,11 @@ async function settleDispute(winner: string) {
       <TradeAction v-if="tradeInfo.trade.state === 'escrow_released'" message="Trade finished successfully" />
       <!-- expired state -->
       <TradeAction v-if="tradeInfo.trade.state === TradeState.request_expired" message="This trade has expired" />
+      <!-- Trade canceled -->
+      <TradeAction
+        v-if="['request_canceled', 'escrow_canceled', 'escrow_refunded'].includes(tradeInfo.trade.state)"
+        message="This trade has been canceled"
+      />
     </div>
 
     <!-- # If the user is selling crypto (Seller) -->
@@ -194,10 +199,10 @@ async function settleDispute(winner: string) {
         <!-- With funds -->
         <TradeAction
           v-if="lastTradeState === TradeState.escrow_funded"
-          message="This trade has expired with funds"
+          message="This trade has expired. You have funds to be claimed."
           :buttons="[
             {
-              label: 'refund escrow',
+              label: 'claim funds',
               action: () => {
                 refundEscrow(tradeInfo.trade.id)
               },
@@ -209,10 +214,26 @@ async function settleDispute(winner: string) {
         <!-- Without funds -->
         <TradeAction v-else message="This trade has expired" />
       </template>
-    </div>
 
-    <!-- Trade canceled -->
-    <TradeAction v-if="tradeInfo.trade.state === 'request_canceled'" message="This trade has been canceled" />
+      <!-- Trade canceled -->
+      <TradeAction v-if="tradeInfo.trade.state === 'request_canceled'" message="This trade has been canceled" />
+
+      <!-- Trade canceled -->
+      <TradeAction
+        v-if="tradeInfo.trade.state === 'escrow_canceled'"
+        message="This trade has been canceled. You have funds to be claimed. "
+        :buttons="[
+          {
+            label: 'claim funds',
+            action: () => {
+              refundEscrow(tradeInfo.trade.id)
+            },
+          },
+        ]"
+      />
+      <!-- Trade Refunded -->
+      <TradeAction v-if="tradeInfo.trade.state === 'escrow_refunded'" message="Funds claimed successfully" />
+    </div>
 
     <!-- Trade Disputed -->
     <template v-if="tradeInfo.trade.state === 'escrow_disputed'">

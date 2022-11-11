@@ -145,6 +145,7 @@ export enum TradeState {
   request_canceled = 'request_canceled',
   request_expired = 'request_expired',
   escrow_funded = 'escrow_funded',
+  escrow_canceled = 'escrow_canceled',
   escrow_refunded = 'escrow_refunded',
   fiat_deposited = 'fiat_deposited',
   escrow_released = 'escrow_released',

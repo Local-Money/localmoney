@@ -121,6 +121,7 @@ pub enum TradeState {
     RequestCanceled,
     RequestExpired,
     EscrowFunded,
+    EscrowCanceled,
     EscrowRefunded,
     FiatDeposited,
     EscrowReleased,
@@ -206,8 +207,8 @@ impl Trade {
     }
 
     pub fn set_state(&mut self, new_state: TradeState, env: &Env, info: &MessageInfo) {
-        // if the fiat is already deposited, the trade can no longer expire
-        if new_state.eq(&TradeState::FiatDeposited) {
+        // if the escrow is canceled or fiat is already deposited, the trade can no longer expire
+        if vec![TradeState::FiatDeposited, TradeState::EscrowCanceled].contains(&new_state) {
             self.expires_at = 0;
         }
 

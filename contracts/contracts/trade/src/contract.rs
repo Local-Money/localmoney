@@ -11,12 +11,12 @@ use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{
-    FundEscrowError, HubAlreadyRegistered, InvalidTradeState, InvalidTradeStateChange,
-    MissingParameter, OfferNotFound, RefundErrorNotExpired, TradeExpired,
+    FundEscrowError, HubAlreadyRegistered, InvalidTradeState, MissingParameter, OfferNotFound,
+    RefundErrorNotExpired, TradeExpired,
 };
 use localterra_protocol::guards::{
     assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
-    assert_trade_state_change_is_valid, assert_value_in_range,
+    assert_trade_state_change, assert_trade_state_change_is_valid, assert_value_in_range,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
@@ -479,18 +479,28 @@ fn cancel_request(
     )
     .unwrap();
 
-    // You can only cancel the trade if the current TradeState is Created or Accepted
-    if !((trade.get_state() == TradeState::RequestCreated)
-        || (trade.get_state() == TradeState::RequestAccepted))
-    {
-        return Err(InvalidTradeStateChange {
-            from: trade.get_state(),
-            to: TradeState::RequestCanceled,
-        });
+    // The trade can be canceled if the state is RequestAccepted or RequestCreated
+    let mut allowed_states = vec![TradeState::RequestAccepted, TradeState::RequestCreated];
+
+    // Only the buyer can cancel the trade if it is already funded
+    if info.sender.clone().eq(&trade.buyer.clone()) {
+        allowed_states.push(TradeState::EscrowFunded)
     }
 
-    // Update trade State to TradeState::RequestCanceled
-    trade.set_state(TradeState::RequestCanceled, &env, &info);
+    assert_trade_state_change(
+        trade.get_state(),
+        allowed_states,
+        TradeState::RequestCanceled,
+    )
+    .unwrap();
+
+    if trade.get_state().eq(&TradeState::EscrowFunded) {
+        // Update trade State to TradeState::EscrowCanceled
+        trade.set_state(TradeState::EscrowCanceled, &env, &info);
+    } else {
+        // Update trade State to TradeState::RequestCanceled
+        trade.set_state(TradeState::RequestCanceled, &env, &info);
+    }
     TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new().add_attribute("action", "cancel_request");
     Ok(res)
@@ -663,16 +673,18 @@ fn refund_escrow(
 ) -> Result<Response, ContractError> {
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
     let trade = TradeModel::from_store(deps.storage, &trade_id);
-    assert_trade_state_change_is_valid(
+
+    //
+    assert_trade_state_change(
         trade.get_state(),
+        vec![TradeState::EscrowFunded, TradeState::EscrowCanceled],
         TradeState::EscrowFunded,
-        TradeState::EscrowRefunded,
     )
     .unwrap();
 
-    // anyone can try to refund, as long as the contract is expired
+    // anyone can try to refund, as long as the trade is funded and expired or escrow canceled
     let block_time = env.block.time.seconds();
-    if !trade.request_expired(block_time) {
+    if trade.get_state().eq(&TradeState::EscrowFunded) && !trade.request_expired(block_time) {
         return Err(RefundErrorNotExpired {
             message:
                 "Only expired trades that are not disputed can be refunded by non-arbitrators."
