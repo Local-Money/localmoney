@@ -32,7 +32,7 @@ beforeAll(async () => {
 let offer: GetOffer
 let offerResponse: OfferResponse[]
 
-describe('arbitration tests', () => {
+describe.skip('arbitration tests', () => {
   it('should have an arbitrator available', async () => {
     const fiat = offers[0].fiat_currency as FiatCurrency
     let arbitrators = await adminClient.fetchArbitrators()
