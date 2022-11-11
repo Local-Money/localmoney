@@ -11,14 +11,14 @@ use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::assert_ownership;
-use localterra_protocol::hub_utils::{get_hub_admin, register_hub_internal};
+use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::kujira::asset::{Asset, AssetInfo};
 use localterra_protocol::kujira::denom::Denom as KujiraDenom;
 use localterra_protocol::kujira::fin::QueryMsg as FinQueryMsg;
 use localterra_protocol::kujira::fin::SimulationResponse;
+use localterra_protocol::kujira::msg::KujiraMsg;
 use localterra_protocol::kujira::querier::KujiraQuerier;
 use localterra_protocol::kujira::query::KujiraQuery;
-use localterra_protocol::kujira::msg::KujiraMsg;
 use localterra_protocol::price::{
     CurrencyPrice, DenomFiatPrice, ExecuteMsg, PriceRoute, QueryMsg, DENOM_PRICE_ROUTE, FIAT_PRICE,
 };
@@ -48,7 +48,7 @@ pub fn execute(
 ) -> Result<Response<KujiraMsg>, ContractError> {
     match msg {
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
-        ExecuteMsg::UpdatePrices(prices) => update_prices(deps, env, prices),
+        ExecuteMsg::UpdatePrices(prices) => update_prices(deps, env, info, prices),
         ExecuteMsg::RegisterPriceRouteForDenom { denom, route } => {
             register_price_route_for_denom(deps, info, denom, route)
         }
@@ -64,16 +64,21 @@ pub fn query(deps: Deps<KujiraQuery>, _env: Env, msg: QueryMsg) -> StdResult<Bin
     }
 }
 
-fn register_hub(deps: DepsMut<KujiraQuery>, info: MessageInfo) -> Result<Response<KujiraMsg>, ContractError> {
+fn register_hub(
+    deps: DepsMut<KujiraQuery>,
+    info: MessageInfo,
+) -> Result<Response<KujiraMsg>, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
 pub fn update_prices(
     deps: DepsMut<KujiraQuery>,
     env: Env,
+    info: MessageInfo,
     prices: Vec<CurrencyPrice>,
 ) -> Result<Response<KujiraMsg>, ContractError> {
-    // TODO: Permissions check
+    let hub_cfg = get_hub_config(deps.as_ref());
+    assert_ownership(info.sender, hub_cfg.price_provider_addr)?;
     let mut attrs: Vec<(&str, String)> = vec![("action", "update_prices".to_string())];
     prices.iter().for_each(|price| {
         // Load existing object or default
@@ -165,7 +170,11 @@ pub fn query_fiat_price_for_denom(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut<KujiraQuery>, _env: Env, _msg: MigrateMsg) -> Result<Response<KujiraMsg>, ContractError> {
+pub fn migrate(
+    _deps: DepsMut<KujiraQuery>,
+    _env: Env,
+    _msg: MigrateMsg,
+) -> Result<Response<KujiraMsg>, ContractError> {
     Ok(Response::default()
         .add_attribute("version", CONTRACT_VERSION)
         .add_attribute("name", CONTRACT_NAME))
