@@ -115,12 +115,12 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         &deps.querier,
         offer.denom.clone(),
         offer.fiat_currency.clone(),
-        hub_cfg.offer_addr.to_string(),
+        hub_cfg.price_addr.to_string(),
     )
     .unwrap_or(DenomFiatPrice {
         denom: offer.denom.clone(),
         fiat: offer.fiat_currency.clone(),
-        price: Uint256::zero(),
+        price: Uint256::from_u128(123456),
     });
     //TODO: Error handling
 
@@ -213,7 +213,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)
-        .add_attribute("denom_fiat_price", "0")
+        .add_attribute("denom_fiat_price", denom_fiat_price.price.to_string())
+        .add_attribute("offer_rate", offer_rate.to_string())
         .add_attribute("taker", new_trade.taker.to_string());
 
     Ok(res)
