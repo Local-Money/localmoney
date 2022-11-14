@@ -163,6 +163,7 @@ export interface HubConfig {
   offer_addr: string
   trade_addr: string
   profile_addr: string
+  price_addr: string
   trading_incentives_addr: string
   local_market_addr: string
 }
@@ -180,4 +181,10 @@ export interface Arbitrator {
   arbitrator: string
   fiat: FiatCurrency
   encryption_key: string
+}
+
+export interface DenomFiatPrice {
+  denom: Denom
+  fiat: FiatCurrency
+  price: number
 }

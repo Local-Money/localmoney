@@ -4,7 +4,9 @@ import { DEV_CONFIG, DEV_HUB_INFO } from './cosmos/config/dev'
 import type {
   Arbitrator,
   Denom,
+  DenomFiatPrice,
   FetchOffersArgs,
+  FiatCurrency,
   NewTrade,
   OfferResponse,
   PatchOffer,
@@ -43,6 +45,8 @@ export interface Chain {
   fetchTradeDetail(tradeId: string): Promise<Trade>
 
   fetchArbitrators(): Promise<Arbitrator[]>
+
+  fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice>
 
   acceptTradeRequest(tradeId: string, makerContact: string): Promise<void>
 

@@ -64,12 +64,12 @@ export function formatTradeState(state) {
   }[state]
 }
 
-export function calculateFiatPriceByRate(usdRate, offerRate) {
+export function calculateFiatPriceByRate(fiatPrice, offerRate) {
   if (offerRate === 0) {
-    return usdRate
+    return fiatPrice
   }
 
-  return usdRate * (offerRate / 100)
+  return fiatPrice * (offerRate / 100)
 }
 
 export function convertOfferRateToMarginRate(offerRate) {

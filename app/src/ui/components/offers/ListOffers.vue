@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OfferResponse } from '~/types/components.interface'
+import type { Denom, OfferResponse } from '~/types/components.interface'
 import { FiatCurrency, OfferOrder, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
@@ -46,13 +46,24 @@ async function fetchOffers() {
   })
 }
 
+async function fetchFiatPriceForDenom() {
+  const denom: Denom = { native: selectedCrypto.value }
+  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+}
+
 onMounted(async () => {
-  await priceStore.fetchPrices()
+  await fetchFiatPriceForDenom()
   await fetchOffers()
 })
 
-watch(fiatCurrency, async () => await fetchOffers())
-watch(selectedCrypto, async () => await fetchOffers())
+watch(fiatCurrency, async () => {
+  await fetchFiatPriceForDenom()
+  await fetchOffers()
+})
+watch(selectedCrypto, async () => {
+  await fetchFiatPriceForDenom()
+  await fetchOffers()
+})
 watch(offerType, async () => await fetchOffers())
 </script>
 

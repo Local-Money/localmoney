@@ -6,7 +6,9 @@ import type { ChainError } from '~/network/chain-error'
 import type {
   Arbitrator,
   Denom,
+  DenomFiatPrice,
   FetchOffersArgs,
+  FiatCurrency,
   NewTrade,
   OfferResponse,
   PatchOffer,
@@ -28,6 +30,7 @@ export const useClientStore = defineStore({
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
       profile: <Profile>{},
+      fiatPrices: new Map<String, Map<String, Number>>(),
       offers: <ListResult<OfferResponse>>ListResult.loading(),
       myOffers: <ListResult<OfferResponse>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
@@ -192,6 +195,19 @@ export const useClientStore = defineStore({
         const disputedTrades = await this.client.fetchDisputedTrades()
         this.openDisputes = ListResult.success(disputedTrades.openDisputes)
         this.closedDisputes = ListResult.success(disputedTrades.closedDisputes)
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom) {
+      try {
+        const price = await this.client.fetchFiatPriceForDenom(fiat, denom)
+        if (this.fiatPrices.has(fiat)) {
+          this.fiatPrices.get(fiat)?.set(denom.native, price.price)
+        } else {
+          const priceForDenom = new Map([[denom.native, price.price]])
+          this.fiatPrices.set(fiat, priceForDenom)
+        }
       } catch (e) {
         console.error(e)
       }

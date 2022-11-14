@@ -1,5 +1,5 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import { FiatCurrency } from '~/types/components.interface'
+import { Denom, FiatCurrency } from '~/types/components.interface'
 
 const fetchPrices = {
   [FiatCurrency.BRL]: async () => {
@@ -32,7 +32,8 @@ export const usePriceStore = defineStore({
   }),
 
   actions: {
-    async fetchPrice(fiatCurrency: FiatCurrency) {
+    async fetchPrice(fiatCurrency: FiatCurrency, denom: Denom) {
+
       this.prices[fiatCurrency] = await fetchPrices[fiatCurrency]()
     },
     async fetchPrices() {
