@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
-import {
-  addTelegramURLPrefix,
-  calculateFiatPriceByRate,
-  convertOfferRateToMarginRate,
-  formatAddress,
-  formatAmount,
-} from '~/shared'
+import { addTelegramURLPrefix, convertOfferRateToMarginRate, formatAddress, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
-import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
 import { decryptData } from '~/utils/crypto'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
-const priceStore = usePriceStore()
 const tradeInfo = ref()
 const buyerContact = ref('')
 const sellerContact = ref('')

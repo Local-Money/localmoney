@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  addTelegramURLPrefix,
   calculateFiatPriceByRate,
   convertOfferRateToMarginRate,
   formatAddress,
@@ -13,14 +12,12 @@ import {
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
 import type { NewTrade, OfferResponse } from '~/types/components.interface'
-import { usePriceStore } from '~/stores/price'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
-import { decryptData, encryptData } from '~/utils/crypto'
+import { encryptData } from '~/utils/crypto'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
-const priceStore = usePriceStore()
 const client = useClientStore()
 const secrets = computed(() => client.getSecrets())
 
@@ -114,11 +111,6 @@ function focus() {
   scrollToElement(expandedCard.value)
 }
 
-function toggleCryptoFiat() {
-  watchingCrypto.value = !watchingCrypto.value
-  watchingFiat.value = !watchingFiat.value
-}
-
 function useMinCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
@@ -144,34 +136,32 @@ function useMaxFiat() {
 }
 
 watch(fiatAmount, (newFiatAmount) => {
-  console.log('newFiatAmount', newFiatAmount, watchingFiat)
   if (watchingFiat && newFiatAmount !== null) {
     const usdRate = fiatPriceByRate.value / 100
-    console.log('usdRate', usdRate)
     const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
     tradingFee.value = cryptoAmount * 0.01
     nextTick(() => {
       cryptoAmountInput.value.update(cryptoAmount)
-      console.log('tickFiat', cryptoAmount)
     })
   }
 })
 
 watch(cryptoAmount, (newCryptoAmount) => {
-  console.log('newCryptoAmount', newCryptoAmount, watchingCrypto)
   if (watchingCrypto && newCryptoAmount !== null) {
     const usdRate = fiatPriceByRate.value / 100
     tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
     nextTick(() => {
       const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
       fiatAmountInput.value.update(fiatAmount)
-      console.log('tickCrypto', fiatAmount)
     })
   }
 })
 
 function refreshExchangeRate() {
-  priceStore.fetchPrices()
+  nextTick(() => {
+    const offer = props.offerResponse.offer
+    client.fetchFiatPriceForDenom(offer.fiat_currency, offer.denom)
+  })
 }
 
 function startExchangeRateRefreshTimer() {
