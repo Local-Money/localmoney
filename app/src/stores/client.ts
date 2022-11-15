@@ -30,7 +30,7 @@ export const useClientStore = defineStore({
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
       profile: <Profile>{},
-      fiatPrices: new Map<String, Map<String, Number>>(),
+      fiatPrices: new Map<String, Map<String, number>>(),
       offers: <ListResult<OfferResponse>>ListResult.loading(),
       myOffers: <ListResult<OfferResponse>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),

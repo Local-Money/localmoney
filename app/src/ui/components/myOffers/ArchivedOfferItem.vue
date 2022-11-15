@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { usePriceStore } from '~/stores/price'
 import { OfferType } from '~/types/components.interface'
 import type { GetOffer } from '~/types/components.interface'
 import { calculateFiatPriceByRate, formatAmount, formatDate } from '~/shared'
@@ -8,14 +7,13 @@ import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
 
-const priceStore = usePriceStore()
 const client = useClientStore()
-const usdRate = computed(() => priceStore.getPrice(props.offer.fiat_currency))
 const currentDate = computed(() => formatDate(new Date(props.offer.timestamp * 1000), false))
 const fiatCurrency = computed(() => props.offer.fiat_currency)
 const price = computed(() => {
+  const denomFiatPrice = client.fiatPrices.get(props.offer.fiat_currency)?.get(props.offer.denom.native) ?? 0
   return `${props.offer.fiat_currency} ${formatAmount(
-    calculateFiatPriceByRate(usdRate.value, props.offer.rate),
+    calculateFiatPriceByRate(denomFiatPrice / 100, props.offer.rate),
     false
   )}`
 })
@@ -31,8 +29,8 @@ function unarchive() {
   client.unarchiveOffer({ ...props.offer })
 }
 
-onMounted(() => {
-  priceStore.fetchPrices()
+onBeforeMount(async () => {
+  await client.fetchFiatPriceForDenom(props.offer.fiat_currency, props.offer.denom)
 })
 </script>
 

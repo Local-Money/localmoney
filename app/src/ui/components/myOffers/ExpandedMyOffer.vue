@@ -6,25 +6,26 @@ import {
   convertOfferRateToMarginRate,
   formatAmount,
 } from '~/shared'
-import { usePriceStore } from '~/stores/price'
 import type { GetOffer } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ offer: GetOffer }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
-const priceStore = usePriceStore()
 const client = useClientStore()
 const updatedOffer = ref<GetOffer>({
   ...props.offer,
   min_amount: `${formatAmount(props.offer.min_amount)}`,
   max_amount: `${formatAmount(props.offer.max_amount)}`,
 })
-const usdRate = computed(() => priceStore.getPrice(props.offer.fiat_currency))
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 const margin = ref(marginRate.value.margin)
 const marginOffset = ref(marginRate.value.marginOffset)
 const rate = ref(0)
-const fiatPriceByRate = computed(() => calculateFiatPriceByRate(usdRate.value, rate.value))
+const fiatPriceByRate = computed(() => {
+  const offer = props.offer
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native) ?? 0
+  return calculateFiatPriceByRate(denomFiatPrice / 100, rate.value)
+})
 const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
 const valid = computed(() => updatedOffer.value.max_amount > updatedOffer.value.min_amount)
 

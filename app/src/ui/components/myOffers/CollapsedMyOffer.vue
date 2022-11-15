@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import { calculateFiatPriceByRate, convertOfferRateToMarginRate, formatAmount } from '~/shared'
-import { usePriceStore } from '~/stores/price'
-import type { GetOffer } from '~/types/components.interface'
+import { useClientStore } from '~/stores/client'
+import type { Denom, GetOffer } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
+
 const emit = defineEmits<{ (e: 'select'): void }>()
-const priceStore = usePriceStore()
+
+const client = useClientStore()
+
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
-const usdRate = computed(() => priceStore.getPrice(props.offer.fiat_currency))
 const offerPrice = computed(() => {
+  const offer = props.offer
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native) ?? 0
   return `${props.offer.fiat_currency} ${formatAmount(
-    calculateFiatPriceByRate(usdRate.value, props.offer.rate),
+    calculateFiatPriceByRate(denomFiatPrice / 100, props.offer.rate),
     false
   )}`
+})
+
+onBeforeMount(async () => {
+  await client.fetchFiatPriceForDenom(props.offer.fiat_currency, props.offer.denom)
 })
 </script>
 
