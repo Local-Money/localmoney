@@ -61,11 +61,10 @@ const counterparty = computed(() => {
   return walletAddress.value === trade.seller ? trade.buyer : trade.seller
 })
 const fiatCurrency = computed(() => tradeInfo.value.offer.offer.fiat_currency)
-const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value))
-const fiatPriceByRate = computed(() => calculateFiatPriceByRate(usdRate.value, tradeInfo.value.offer.offer.rate))
-const offerPrice = computed(() => `${fiatCurrency.value} ${formatAmount(fiatPriceByRate.value, false)}`)
+const denomFiatPrice = computed(() => tradeInfo.value.trade.denom_fiat_price / 100)
+const offerPrice = computed(() => `${fiatCurrency.value} ${formatAmount(denomFiatPrice.value, false)}`)
 const fiatAmountStr = computed(() => {
-  const fiatAmount = formatAmount((parseInt(tradeInfo.value.trade.amount) / 1000000) * fiatPriceByRate.value, false)
+  const fiatAmount = formatAmount((parseInt(tradeInfo.value.trade.amount) / 1000000) * denomFiatPrice.value, false)
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.offer.rate))

@@ -127,6 +127,7 @@ export interface Trade {
   created_at: number
   amount: string
   denom: Denom
+  denom_fiat_price: number
   state: TradeState
   state_history: TradeStateItem[]
   fiat: FiatCurrency
