@@ -3,13 +3,11 @@ import type { Denom, OfferResponse } from '~/types/components.interface'
 import { FiatCurrency, OfferOrder, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
-import { usePriceStore } from '~/stores/price'
 import { defaultMicroDenomAvailable, denomsAvailable } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
 import { checkValidOffer } from '~/utils/validations'
 
 const client = useClientStore()
-const priceStore = usePriceStore()
 const offersResult = computed(() => client.offers)
 const page = reactive({ offers: [] as ExpandableItem<OfferResponse>[] })
 client.$subscribe((mutation, state) => {
