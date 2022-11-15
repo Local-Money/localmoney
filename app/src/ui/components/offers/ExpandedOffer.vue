@@ -41,6 +41,8 @@ const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
+const FIAT_DECIMAL_PLACES = 100000000
+const CRYPTO_DECIMAL_PLACES = 1000000
 
 const fromLabel = computed(() =>
   props.offerResponse.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'
@@ -52,19 +54,25 @@ const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currenc
 const cryptoPlaceholder = computed(
   () => `${microDenomToDenom(props.offerResponse.offer.denom.native)} ${parseFloat('0').toFixed(2)}`
 )
-const fiatPriceByRate = computed(() =>
-  calculateFiatPriceByRate(priceStore.getPrice(props.offerResponse.offer.fiat_currency), props.offerResponse.offer.rate)
+const fiatPriceByRate = computed(() => {
+  const offer = props.offerResponse.offer
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native)
+  return calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
+})
+const minAmountInCrypto = computed(
+  () => parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES
 )
-const minAmountInCrypto = computed(() => parseInt(props.offerResponse.offer.min_amount.toString()) / 1000000)
-const maxAmountInCrypto = computed(() => parseInt(props.offerResponse.offer.max_amount.toString()) / 1000000)
+const maxAmountInCrypto = computed(
+  () => parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES
+)
 const maxAmountInFiat = computed(
-  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / 1000000)
+  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / FIAT_DECIMAL_PLACES)
 )
 const minAmountInFiat = computed(
-  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / 1000000)
+  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / FIAT_DECIMAL_PLACES)
 )
 const offerPrice = computed(
-  () => `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`
+  () => `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value / 100, false)}`
 )
 const valid = computed(
   () =>
@@ -80,8 +88,8 @@ const minMaxFiatStr = computed(() => {
 })
 const minMaxCryptoStr = computed(() => {
   const symbol = microDenomToDenom(props.offerResponse.offer.denom.native)
-  const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / 1000000).toFixed(2)
-  const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / 1000000).toFixed(2)
+  const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
+  const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 
@@ -93,7 +101,7 @@ async function newTrade() {
 
   const newTrade: NewTrade = {
     offer_id: `${props.offerResponse.offer.id}`,
-    amount: `${cryptoAmount.value * 1000000}`,
+    amount: `${cryptoAmount.value * CRYPTO_DECIMAL_PLACES}`,
     taker: `${client.userWallet.address}`,
     profile_taker_contact,
     taker_contact,
@@ -136,23 +144,28 @@ function useMaxFiat() {
 }
 
 watch(fiatAmount, (newFiatAmount) => {
+  console.log('newFiatAmount', newFiatAmount, watchingFiat)
   if (watchingFiat && newFiatAmount !== null) {
-    const usdRate = fiatPriceByRate.value
+    const usdRate = fiatPriceByRate.value / 100
+    console.log('usdRate', usdRate)
     const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
     tradingFee.value = cryptoAmount * 0.01
     nextTick(() => {
       cryptoAmountInput.value.update(cryptoAmount)
+      console.log('tickFiat', cryptoAmount)
     })
   }
 })
 
 watch(cryptoAmount, (newCryptoAmount) => {
+  console.log('newCryptoAmount', newCryptoAmount, watchingCrypto)
   if (watchingCrypto && newCryptoAmount !== null) {
-    const usdRate = fiatPriceByRate.value
+    const usdRate = fiatPriceByRate.value / 100
     tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
     nextTick(() => {
       const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
       fiatAmountInput.value.update(fiatAmount)
+      console.log('tickCrypto', fiatAmount)
     })
   }
 })

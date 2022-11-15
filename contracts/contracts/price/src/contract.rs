@@ -157,7 +157,7 @@ pub fn query_fiat_price_for_denom(
         });
     let fiat_usd = Uint256::from(fiat_price.usd_price);
     let atom_usd = Uint256::from(Uint128::new(1_000_000u128).mul(atom_usd_price.rate));
-    let decimal_places = 1_000_000_000_000u128; //TODO: probably needs to be revisited.
+    let decimal_places = 1_000_000_000_000u128;
     let denom_fiat_price = fiat_usd
         .mul(&atom_usd)
         .mul(&denom_atom)
