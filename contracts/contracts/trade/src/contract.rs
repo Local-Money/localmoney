@@ -123,10 +123,13 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     //TODO: Error handling
 
     let offer_rate = Decimal::from_ratio(offer.rate.clone(), Uint128::new(100u128));
-    let offer_rate = Uint256::from(Uint128::new(1u128).mul(offer_rate));
+    let hundred = Uint128::new(100u128);
+    let offer_rate = Uint256::from(hundred.mul(offer_rate)); //% 100
     let denom_final_price = denom_fiat_price
         .price
         .checked_mul(offer_rate)
+        .unwrap_or(Uint256::zero())
+        .checked_div(Uint256::from(hundred))
         .unwrap_or(Uint256::zero());
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)

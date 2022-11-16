@@ -14,11 +14,11 @@ export const KUJIRA_TESTNET_CONFIG: CosmosConfig = {
 export const KUJIRA_TESTNET_HUB_INFO: HubInfo = {
   hubAddress: 'kujira1fmhvwkzaxnwtjj0pzawclr8eh5twe32vgc272lxqun883wpzkn9squu6zz',
   hubConfig: {
-    offer_addr: 'kujira1x42zrgk0l2k2fqyue2zyhwdky8ajy9d05u6p93yktf5g5pkvr9js4zdtdx',
-    trade_addr: 'kujira1kgzvfedtcv57a2yj4fhsckhfu75z0e0lz8dkku2054ry79sf770s4pv3nu',
-    profile_addr: 'kujira1pa8l5y9khqlueqq8nqdr485atq978nchwj8dc35rmvwg7hnsuzrshgk06g',
-    price_addr: 'kujira1eg7ldgu78g7j9y6kcmms6acw9a6n2z4zun6prgkddped4x27vsgqgmxfcq',
-    trading_incentives_addr: 'kujira1c75t034k4tr43dzcw9dyym480p6r3kwdyr5ecnafvrat9gn4n2us83frqq',
+    offer_addr: 'kujira149hxq2d852xtkp3tgcn2jvfvrajqrah95ytxe8umsdr8nlw8cagqcd472u',
+    trade_addr: 'kujira1gyesrk08chq7au849sv6gx87guy9vr2dlx68xxv2ej66l70mrznsex9g6z',
+    profile_addr: 'kujira1xp4ynuqsqffdwgytfujq7amkxzs7h230yuhlncd9ulkqfvc9thwsfgrrn5',
+    price_addr: 'kujira1deldrarr6uryhhw9hfgaxtyhzm9lkvztp6qpvy9ws5lzuhwpd9dsv9ngxc',
+    trading_incentives_addr: 'kujira1n8sr7ndqvfl5uxp3xumtte3pyza8dpc9saq6ypalatvrcjqd54vstr72tp',
     local_market_addr: 'kujira1chejx4qqtvwxy6684yrsmf6pylancxqhk3vsmtleg5ta3zrffljq4xf685',
     local_denom: {
       native: 'factory/kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w/local',
@@ -30,7 +30,7 @@ export const KUJIRA_TESTNET_HUB_INFO: HubInfo = {
 // the contract must be migrated first.
 // price_addr: 'kujira1z7hlmqyx52mup4gxuspvj2yvyf9kqkektu8e06upuf6qf7yvrgfqrerugc',
 export const KUJIRA_TESTNET_DEV_HUB_INFO: HubInfo = {
-  hubAddress: 'kujira1jycdc7nvsqe2u5w99lw5qetwfus5grrksh7q02h7mtrhwsf7zzlsa2nd6f',
+  hubAddress: 'kujira1jqy9qfatg9jz9gkl6dyrmc4z8hjfaujgf2qujshe0mnsf6yajess8wxnp3',
   hubConfig: {
     offer_addr: 'kujira17yfjhj4adsqlsm452a4hawp6lgtzd2lyrqnmfe057vd5pcpd8rwsykv8na',
     trade_addr: 'kujira1kd0uf7za28hslrlz4ag82kyyaucmd8mzukut44p8nlnrkj4mps0sgxzuck',
