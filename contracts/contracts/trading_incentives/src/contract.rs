@@ -14,8 +14,8 @@ use localterra_protocol::errors::ContractError::{
     InvalidTradeState, Unauthorized,
 };
 use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::offer::load_offer;
-use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, TradeResponse, TradeState};
+use localterra_protocol::offer::TradeInfo;
+use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, TradeState};
 use localterra_protocol::trading_incentives::{
     Distribution, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, TraderRewards,
 };
@@ -131,7 +131,7 @@ fn register_trade(
         });
     }
 
-    let trade: TradeResponse = deps
+    let trade_info: TradeInfo = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: hub_cfg.trade_addr.to_string(),
@@ -142,14 +142,9 @@ fn register_trade(
         }))
         .unwrap();
 
-    let offer = load_offer(
-        &deps.querier,
-        trade.offer_id.to_string(),
-        hub_cfg.offer_addr.to_string(),
-    )
-    .unwrap()
-    .offer;
-    let maker = offer.owner.to_string();
+    let trade = trade_info.trade;
+    let offer_response = trade_info.offer;
+    let maker = offer_response.offer.owner.to_string();
 
     if trade.state != TradeState::EscrowReleased {
         return Err(InvalidTradeState {

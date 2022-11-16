@@ -104,6 +104,8 @@ function getMessageByState(state: TradeState): string {
       return 'Trade request was accepted'
     case TradeState.request_canceled:
       return 'Trade has been canceled'
+    case TradeState.escrow_canceled:
+      return 'Trade has been canceled'
     case TradeState.request_expired:
       return 'Trade expired'
     case TradeState.escrow_funded:

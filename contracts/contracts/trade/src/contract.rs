@@ -7,19 +7,17 @@ use cosmwasm_std::{
     Uint128, Uint256, WasmMsg,
 };
 
-use localterra_protocol::constants::{
-    ARBITRATION_FEE, FUNDING_TIMEOUT, LOCAL_FEE, REQUEST_TIMEOUT,
-};
+use localterra_protocol::constants::{ARBITRATION_FEE, LOCAL_FEE};
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::{
-    FundEscrowError, HubAlreadyRegistered, InvalidTradeState, InvalidTradeStateChange,
-    MissingParameter, OfferNotFound, RefundErrorNotExpired, TradeExpired,
+    FundEscrowError, HubAlreadyRegistered, InvalidTradeState, MissingParameter, OfferNotFound,
+    RefundErrorNotExpired, TradeExpired,
 };
 use localterra_protocol::guards::{
     assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
-    assert_trade_state_change_is_valid, assert_value_in_range, trade_request_is_expired,
+    assert_trade_state_change, assert_trade_state_change_is_valid, assert_value_in_range,
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
@@ -174,6 +172,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         random_seed as usize,
         offer.fiat_currency.clone(),
     );
+
+    let expires_at = env.block.time.seconds() + hub_cfg.trade_expiration_timer;
     //Instantiate Trade state
     let trade = TradeModel::create(
         deps.storage,
@@ -188,6 +188,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             hub_cfg.offer_addr.clone(),
             offer_id,
             env.block.time.seconds(),
+            expires_at,
             offer.denom.clone(),
             new_trade.amount.clone(),
             offer.fiat_currency,
@@ -223,7 +224,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
 #[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Trade { id } => to_binary(&query_trade(deps, id)?),
+        QueryMsg::Trade { id } => to_binary(&query_trade(env, deps, id)?),
         QueryMsg::Trades {
             user,
             state,
@@ -252,7 +253,7 @@ fn register_hub<T: CustomQuery>(
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_trade<T: CustomQuery>(deps: Deps<T>, id: String) -> StdResult<TradeResponse> {
+fn query_trade<T: CustomQuery>(env: Env, deps: Deps<T>, id: String) -> StdResult<TradeInfo> {
     let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
 
@@ -277,7 +278,16 @@ fn query_trade<T: CustomQuery>(deps: Deps<T>, id: String) -> StdResult<TradeResp
     )
     .unwrap();
 
-    Ok(TradeResponse::map(state, buyer, seller, arbitrator))
+    let block_time = env.block.time.seconds();
+    let trade = TradeResponse::map(state, buyer, seller, arbitrator, block_time);
+    let offer = load_offer(
+        &deps.querier,
+        trade.offer_id.clone(),
+        hub_config.offer_addr.to_string(),
+    )
+    .unwrap();
+
+    Ok(TradeInfo { trade, offer })
 }
 
 pub fn query_trades<T: CustomQuery>(
@@ -309,9 +319,6 @@ pub fn query_trades<T: CustomQuery>(
         let offer_id = trade.offer_id.clone();
         let offer_contract = trade.offer_contract.to_string();
         let offer_response = load_offer(&deps.querier, offer_id, offer_contract).unwrap();
-        let current_time = env.block.time.seconds();
-        let expired = trade.get_state().eq(&TradeState::EscrowFunded)
-            && current_time > trade.clone().created_at + REQUEST_TIMEOUT;
 
         // TODO change it to make only one query
         let buyer = load_profile(
@@ -335,10 +342,11 @@ pub fn query_trades<T: CustomQuery>(
         )
         .unwrap();
 
+        let block_time = env.block.time.seconds();
+
         trades_infos.push(TradeInfo {
-            trade: TradeResponse::map(trade.clone(), buyer, seller, arbitrator),
+            trade: TradeResponse::map(trade.clone(), buyer, seller, arbitrator, block_time),
             offer: offer_response,
-            expired,
         })
     });
 
@@ -362,15 +370,13 @@ fn fund_escrow(
     .unwrap()
     .offer;
 
-    // TODO: will the store save it if we return an error ???
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
-    if trade_request_is_expired(env.block.time.seconds(), trade.created_at, REQUEST_TIMEOUT) {
+    if trade.request_expired(env.block.time.seconds()) {
         trade.set_state(TradeState::RequestExpired, &env, &info);
         TradeModel::store(deps.storage, &trade).unwrap();
 
         return Err(TradeExpired {
-            timeout: REQUEST_TIMEOUT,
-            expired_at: env.block.time.seconds() + REQUEST_TIMEOUT,
+            expired_at: trade.expires_at,
             created_at: trade.created_at,
         });
     }
@@ -501,18 +507,28 @@ fn cancel_request(
     )
     .unwrap();
 
-    // You can only cancel the trade if the current TradeState is Created or Accepted
-    if !((trade.get_state() == TradeState::RequestCreated)
-        || (trade.get_state() == TradeState::RequestAccepted))
-    {
-        return Err(InvalidTradeStateChange {
-            from: trade.get_state(),
-            to: TradeState::RequestCanceled,
-        });
+    // The trade can be canceled if the state is RequestAccepted or RequestCreated
+    let mut allowed_states = vec![TradeState::RequestAccepted, TradeState::RequestCreated];
+
+    // Only the buyer can cancel the trade if it is already funded
+    if info.sender.clone().eq(&trade.buyer.clone()) {
+        allowed_states.push(TradeState::EscrowFunded)
     }
 
-    // Update trade State to TradeState::RequestCanceled
-    trade.set_state(TradeState::RequestCanceled, &env, &info);
+    assert_trade_state_change(
+        trade.get_state(),
+        allowed_states,
+        TradeState::RequestCanceled,
+    )
+    .unwrap();
+
+    if trade.get_state().eq(&TradeState::EscrowFunded) {
+        // Update trade State to TradeState::EscrowCanceled
+        trade.set_state(TradeState::EscrowCanceled, &env, &info);
+    } else {
+        // Update trade State to TradeState::RequestCanceled
+        trade.set_state(TradeState::RequestCanceled, &env, &info);
+    }
     TradeModel::store(deps.storage, &trade).unwrap();
     let res = Response::new().add_attribute("action", "cancel_request");
     Ok(res)
@@ -688,17 +704,18 @@ fn refund_escrow(
 ) -> Result<Response, ContractError> {
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
     let trade = TradeModel::from_store(deps.storage, &trade_id);
-    assert_trade_state_change_is_valid(
+
+    //
+    assert_trade_state_change(
         trade.get_state(),
+        vec![TradeState::EscrowFunded, TradeState::EscrowCanceled],
         TradeState::EscrowFunded,
-        TradeState::EscrowRefunded,
     )
     .unwrap();
 
-    // anyone can try to refund, as long as the contract is expired
-    // no one except arbitrator can refund if the trade is in arbitration
-    let expired = env.block.time.seconds() > trade.created_at + FUNDING_TIMEOUT;
-    if !expired {
+    // anyone can try to refund, as long as the trade is funded and expired or escrow canceled
+    let block_time = env.block.time.seconds();
+    if trade.get_state().eq(&TradeState::EscrowFunded) && !trade.request_expired(block_time) {
         return Err(RefundErrorNotExpired {
             message:
                 "Only expired trades that are not disputed can be refunded by non-arbitrators."

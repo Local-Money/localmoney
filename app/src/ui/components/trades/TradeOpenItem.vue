@@ -3,11 +3,16 @@ import { formatAddress, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import type { TradeInfo } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
+import { formatTimer } from '~/utils/formatters'
+import { checkTradeNeedsRefund } from '~/utils/validations'
+import { TradeState } from '~/types/components.interface'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
 let refreshTradeDetailInterval: NodeJS.Timer | undefined
 const secondsUntilTradeDetailRefresh = ref(0)
+const tradeTimer = ref('')
+let tradeTimerInterval: NodeJS.Timer
 const walletAddress = computed(() => client.userWallet.address)
 const stepLabels = {
   buy: {
@@ -106,7 +111,11 @@ const stepLabel = computed(() => {
   if (isBuying.value) {
     return stepLabels[type].buyer[labelIdx]
   } else {
-    return stepLabels[type].seller[labelIdx]
+    if (checkTradeNeedsRefund(props.tradeInfo.trade, walletAddress.value)) {
+      return 'Refund available'
+    } else {
+      return stepLabels[type].seller[labelIdx]
+    }
   }
 })
 
@@ -122,13 +131,30 @@ function startTradeDetailRefresh() {
   }, countdownInterval)
 }
 
+function startTradeTimer() {
+  tradeTimerInterval = setInterval(tradeTimerTick, 10)
+}
+
+function tradeTimerTick() {
+  const currentTime = Date.now()
+  const expiresAt = props.tradeInfo.trade.expires_at * 1000
+  const timer = new Date(expiresAt - currentTime)
+  tradeTimer.value = formatTimer(timer, '00m 00s')
+}
+
+function stopTradeTimer() {
+  clearInterval(tradeTimerInterval)
+}
+
 onMounted(() => {
+  startTradeTimer()
   nextTick(() => {
     startTradeDetailRefresh()
   })
 })
 
 onUnmounted(() => {
+  stopTradeTimer()
   clearInterval(refreshTradeDetailInterval)
 })
 </script>
@@ -158,12 +184,14 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <div class="divider" />
+      <template v-if="tradeInfo.trade.state !== TradeState.request_expired && tradeInfo.trade.expires_at > 0">
+        <div class="divider" />
 
-      <div class="wrap">
-        <p class="label">Time remaining</p>
-        <p class="content">?? min</p>
-      </div>
+        <div class="wrap">
+          <p class="label">Time remaining</p>
+          <p class="content">{{ tradeTimer }}</p>
+        </div>
+      </template>
     </div>
 
     <div class="price">

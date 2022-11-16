@@ -125,6 +125,7 @@ export interface Trade {
   offer_contract: string
   offer_id: string
   created_at: number
+  expires_at: number
   amount: string
   denom: Denom
   denom_fiat_price: number
@@ -145,6 +146,7 @@ export enum TradeState {
   request_canceled = 'request_canceled',
   request_expired = 'request_expired',
   escrow_funded = 'escrow_funded',
+  escrow_canceled = 'escrow_canceled',
   escrow_refunded = 'escrow_refunded',
   fiat_deposited = 'fiat_deposited',
   escrow_released = 'escrow_released',

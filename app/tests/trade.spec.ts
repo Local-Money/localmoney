@@ -23,7 +23,7 @@ const takerContact = 'taker001'
 const makerContact = 'maker001'
 let tradeId = '0'
 
-jest.setTimeout(30 * 1000)
+jest.setTimeout(60 * 1000)
 beforeAll(async () => {
   const result = await setupProtocol()
   makerClient = result.makerClient
@@ -84,38 +84,42 @@ describe.only('trade lifecycle happy path', () => {
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
-    let trade = await makerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     const decryptedTakerContact = await decryptDataMocked(makerSecrets.privateKey, trade.seller_contact!)
     expect(decryptedTakerContact).toBe(takerContact)
     expect(trade.id).toBe(tradeId)
     expect(trade.state).toBe(TradeState.request_created)
     const maker_contact = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
-    trade = await makerClient.fetchTradeDetail(tradeId)
+    tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.request_accepted)
   })
   // Taker funds the escrow
   it('taker should fund the escrow', async () => {
     const tradeAddr = makerClient.getHubInfo().hubConfig.trade_addr
-    let trade = await takerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await takerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     const decryptedMakerContact = await decryptDataMocked(takerSecrets.privateKey, trade.buyer_contact!)
     expect(decryptedMakerContact).toBe(offers[0].owner_contact)
     const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
-    trade = await takerClient.fetchTradeDetail(tradeId)
+    tradeInfo = await takerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_funded)
     expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(trade.amount) * 1.01)
   })
   it('maker should mark trade as paid (fiat_deposited)', async () => {
     await makerClient.setFiatDeposited(tradeId)
-    const trade = await makerClient.fetchTradeDetail(tradeId)
-    expect(trade.state).toBe(TradeState.fiat_deposited)
+    const tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    expect(tradeInfo.trade.state).toBe(TradeState.fiat_deposited)
   })
   it('taker should release the trade.', async () => {
     await takerClient.releaseEscrow(tradeId)
-    const trade = await takerClient.fetchTradeDetail(tradeId)
-    expect(trade.state).toBe(TradeState.escrow_released)
+    const tradeInfo = await takerClient.fetchTradeDetail(tradeId)
+    expect(tradeInfo.trade.state).toBe(TradeState.escrow_released)
   })
   it('the trade count should increase after the release', async () => {
     const myOffers = await makerClient.fetchMyOffers()
@@ -167,51 +171,57 @@ describe('trade invalid state changes', () => {
       profile_taker_encryption_key: taker_encrypt_pk,
       taker_contact,
     })
-    let trade = await takerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await takerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.request_created)
     // Taker tries to fund escrow before maker accepts the trade
     await expect(takerClient.fundEscrow(trade.id, trade.amount, trade.denom)).rejects.toThrow(DefaultError)
-    trade = await takerClient.fetchTradeDetail(trade.id)
+    tradeInfo = await takerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.request_created)
   })
   it('should fail to mark as paid a trade in request_created state', async () => {
-    const trade = await makerClient.fetchTradeDetail(tradeId)
-    expect(trade.state).toBe(TradeState.request_created)
+    const tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    expect(tradeInfo.trade.state).toBe(TradeState.request_created)
     await expect(makerClient.setFiatDeposited(tradeId)).rejects.toThrow()
   })
   it('should fail to release or refund escrow of trade in request_created state', async () => {
-    const trade = await makerClient.fetchTradeDetail(tradeId)
-    expect(trade.state).toBe(TradeState.request_created)
+    const tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    expect(tradeInfo.trade.state).toBe(TradeState.request_created)
     await expect(takerClient.releaseEscrow(tradeId)).rejects.toThrow()
     await expect(takerClient.refundEscrow(tradeId)).rejects.toThrow()
   })
   it('should fail to mark as paid a trade in request_accepted state', async () => {
     const offer = offers[0] as PostOffer
-    let trade = await makerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     const maker_contact = await encryptDataMocked(trade.seller_encryption_key, offer.owner_contact)
     await makerClient.acceptTradeRequest(trade.id, maker_contact)
-    trade = await makerClient.fetchTradeDetail(tradeId)
+    tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.request_accepted)
     await expect(takerClient.setFiatDeposited(tradeId)).rejects.toThrow()
   })
   it('should fail to release or refund a trade in request_accepted state', async () => {
-    const trade = await makerClient.fetchTradeDetail(tradeId)
-    expect(trade.state).toBe(TradeState.request_accepted)
+    const tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    expect(tradeInfo.trade.state).toBe(TradeState.request_accepted)
     await expect(takerClient.releaseEscrow(tradeId)).rejects.toThrow()
     await expect(takerClient.refundEscrow(tradeId)).rejects.toThrow()
   })
   it('should fail to release or refund a trade in escrow_funded state', async () => {
-    let trade = await makerClient.fetchTradeDetail(tradeId)
+    let tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    let trade = tradeInfo.trade
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
-    trade = await makerClient.fetchTradeDetail(tradeId)
+    tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_funded)
   })
   it('should fail to cancel a trade in fiat_deposited state', async () => {
     await makerClient.setFiatDeposited(tradeId)
-    const trade = await makerClient.fetchTradeDetail(tradeId)
-    expect(trade.state).toBe(TradeState.fiat_deposited)
+    const tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    expect(tradeInfo.trade.state).toBe(TradeState.fiat_deposited)
     await expect(makerClient.cancelTradeRequest(tradeId)).rejects.toThrow()
-    expect(trade.state).toBe(TradeState.fiat_deposited)
+    expect(tradeInfo.trade.state).toBe(TradeState.fiat_deposited)
   })
   it('the trade count should not increase when a trade is not completed', async () => {
     const myOffers = await makerClient.fetchMyOffers()

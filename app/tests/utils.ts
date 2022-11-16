@@ -16,6 +16,7 @@ export function createHubUpdateConfigMsg(
       trade_addr: tradeAddr,
       trading_incentives_addr: tradingIncentivesAddr,
       price_addr: priceAddr,
+      price_provider_addr: 'kujira1dm3lt3l4tsp2ddngqv7css30knawmu2ct6myv6',
       profile_addr: profileAddr,
       local_market_addr: process.env.LOCAL_MARKET,
       local_denom: { native: process.env.LOCAL_DENOM },
@@ -24,6 +25,7 @@ export function createHubUpdateConfigMsg(
       warchest_fee_pct: '50',
       chain_fee_pct: '10',
       burn_fee_pct: '40',
+      trade_expiration_timer: 20 * 60, // 20 minutes
     },
   }
 }

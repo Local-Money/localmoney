@@ -1,15 +1,16 @@
 use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
-use cw20::Denom;
+use localterra_protocol::denom_utils::denom_to_string;
 
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::Unauthorized;
-use localterra_protocol::hub::{Admin, ExecuteMsg, HubConfig, InstantiateMsg, QueryMsg};
+use localterra_protocol::hub::{
+    Admin, ExecuteMsg, HubConfig, InstantiateMsg, MigrateMsg, QueryMsg,
+};
 use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
 use localterra_protocol::price::ExecuteMsg::RegisterHub as PriceRegisterHub;
 use localterra_protocol::profile::ExecuteMsg::RegisterHub as ProfileRegisterHub;
 use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
-use localterra_protocol::trade::MigrateMsg;
 // use localterra_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
 
 use crate::state::{ADMIN, CONFIG};
@@ -58,10 +59,7 @@ fn update_config(
         });
     }
     CONFIG.save(deps.storage, &config).unwrap();
-    let local_denom = match config.local_denom {
-        Denom::Native(s) => s,
-        Denom::Cw20(addr) => addr.to_string(),
-    };
+    let local_denom = denom_to_string(&config.local_denom);
 
     let offer_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.offer_addr.to_string(),

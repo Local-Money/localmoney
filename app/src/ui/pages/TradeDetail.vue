@@ -5,6 +5,8 @@ import { addTelegramURLPrefix, convertOfferRateToMarginRate, formatAddress, form
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
 import { decryptData } from '~/utils/crypto'
+import { formatTimer } from '~/utils/formatters'
+import { TradeState } from '~/types/components.interface'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -13,6 +15,8 @@ const buyerContact = ref('')
 const sellerContact = ref('')
 const secrets = computed(() => client.getSecrets())
 let refreshInterval: NodeJS.Timer
+let tradeTimerInterval: NodeJS.Timer
+const tradeTimer = ref('')
 
 const route = useRoute()
 const walletAddress = computed(() => client.userWallet.address)
@@ -29,6 +33,7 @@ const currentStep = computed(() => {
     return 0
   }
 })
+
 const stepOneChecked = computed(() => {
   return [
     'escrow_funded',
@@ -94,6 +99,21 @@ const contactsForArbitrator = computed(() => {
   }
 })
 
+function startTradeTimer() {
+  tradeTimerInterval = setInterval(tradeTimerTick, 10)
+}
+
+function tradeTimerTick() {
+  const currentTime = Date.now()
+  const expiresAt = tradeInfo.value.trade.expires_at * 1000
+  const timer = new Date(expiresAt - currentTime)
+  tradeTimer.value = formatTimer(timer, '00m 00s')
+}
+
+function stopTradeTimer() {
+  clearInterval(tradeTimerInterval)
+}
+
 function fetchTrade(id: string) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
@@ -112,9 +132,12 @@ onBeforeMount(() => {
   fetchTrade(route.params.id as string)
 })
 
-onMounted(() => {})
+onMounted(() => {
+  startTradeTimer()
+})
 
 onUnmounted(() => {
+  stopTradeTimer()
   clearInterval(refreshInterval)
 })
 
@@ -125,17 +148,21 @@ watch(userWallet, async () => {
 
 <template>
   <main v-if="tradeInfo" class="page">
-    <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
-      <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
-      <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
-      <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
-    </h3>
-    <template v-else>
-      <h3 v-if="isBuyer">
-        Buying {{ microDenomToDenom(tradeInfo.trade.denom.native) }} from {{ formatAddress(counterparty) }}
+    <div class="wrap-title">
+      <h3 v-if="tradeInfo.trade.arbitrator === walletAddress">
+        <template v-if="tradeInfo.trade.state === 'escrow_disputed'">Dispute in progress</template>
+        <template v-if="tradeInfo.trade.state === 'settled_for_taker'">Dispute settled for taker</template>
+        <template v-if="tradeInfo.trade.state === 'settled_for_maker'">Dispute settled for maker</template>
       </h3>
-      <h3 v-else>Selling {{ microDenomToDenom(tradeInfo.trade.denom.native) }} to {{ formatAddress(counterparty) }}</h3>
-    </template>
+      <template v-else>
+        <h3 v-if="isBuyer">
+          Buying {{ microDenomToDenom(tradeInfo.trade.denom.native) }} from {{ formatAddress(counterparty) }}
+        </h3>
+        <h3 v-else>
+          Selling {{ microDenomToDenom(tradeInfo.trade.denom.native) }} to {{ formatAddress(counterparty) }}
+        </h3>
+      </template>
+    </div>
     <section class="stepper card">
       <!-- Step 1 -->
       <div class="step-item">
@@ -205,11 +232,14 @@ watch(userWallet, async () => {
         </template>
       </div>
 
-      <div class="step-status">
+      <div
+        v-if="tradeInfo.trade.state !== TradeState.request_expired && tradeInfo.trade.expires_at > 0"
+        class="step-status"
+      >
         <div class="separator" />
         <div class="wrap">
           <p>time remaining</p>
-          <p class="step-time-left">?? min</p>
+          <p class="step-time-left">{{ tradeTimer }}</p>
         </div>
         <div class="icon">
           <svg class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -391,6 +421,16 @@ watch(userWallet, async () => {
 <style lang="scss" scoped>
 @import '../style/pages.scss';
 
+.wrap-title {
+  display: flex;
+}
+
+h3 {
+  margin: 32px 0;
+  font-size: 18px;
+  font-weight: $semi-bold;
+}
+
 .stepper {
   display: flex;
   justify-content: space-between;
@@ -497,9 +537,9 @@ watch(userWallet, async () => {
     }
 
     .step-time-left {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: $semi-bold;
-      color: $primary;
+      color: $base-text;
     }
   }
 }
@@ -544,6 +584,14 @@ watch(userWallet, async () => {
       font-size: 14px;
       color: $gray700;
       margin-top: 8px;
+    }
+  }
+
+  .trader-info p {
+    &:first-child {
+      font-size: 16px;
+      font-weight: $regular;
+      color: $gray900;
     }
   }
 
