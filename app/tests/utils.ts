@@ -16,7 +16,7 @@ export function createHubUpdateConfigMsg(
       trade_addr: tradeAddr,
       trading_incentives_addr: tradingIncentivesAddr,
       price_addr: priceAddr,
-      price_provider_addr: 'kujira1dm3lt3l4tsp2ddngqv7css30knawmu2ct6myv6',
+      price_provider_addr: process.env.PRICE_ADDR,
       profile_addr: profileAddr,
       local_market_addr: process.env.LOCAL_MARKET,
       local_denom: { native: process.env.LOCAL_DENOM },

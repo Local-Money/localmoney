@@ -11,9 +11,9 @@ const client = useClientStore()
 const currentDate = computed(() => formatDate(new Date(props.offer.timestamp * 1000), false))
 const fiatCurrency = computed(() => props.offer.fiat_currency)
 const price = computed(() => {
-  const denomFiatPrice = client.fiatPrices.get(props.offer.fiat_currency)?.get(props.offer.denom.native) ?? 0
+  const denomFiatPrice = client.getFiatPrice(props.offer.fiat_currency, props.offer.denom)
   return `${props.offer.fiat_currency} ${formatAmount(
-    calculateFiatPriceByRate(denomFiatPrice / 100, props.offer.rate),
+    calculateFiatPriceByRate(denomFiatPrice, props.offer.rate),
     false
   )}`
 })

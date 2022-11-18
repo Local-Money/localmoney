@@ -1,8 +1,9 @@
 use std::fmt::{self};
+use std::ops::Mul;
 
 use cosmwasm_std::{
-    Addr, BlockInfo, CustomQuery, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128,
-    Uint256,
+    Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
+    Uint128, Uint256,
 };
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
@@ -594,4 +595,15 @@ impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
         let v: Vec<&dyn Index<Arbitrator>> = vec![&self.arbitrator, &self.fiat];
         Box::new(v.into_iter())
     }
+}
+
+pub fn calc_denom_fiat_price(offer_rate: Uint128, denom_fiat_price: Uint256) -> Uint256 {
+    let hundred = Uint128::new(100u128);
+    let offer_rate = Decimal::from_ratio(offer_rate.clone(), hundred);
+    let offer_rate = Uint256::from(hundred.mul(offer_rate)); //% 100
+    denom_fiat_price
+        .checked_mul(offer_rate)
+        .unwrap_or(Uint256::zero())
+        .checked_div(Uint256::from(hundred))
+        .unwrap_or(Uint256::zero())
 }

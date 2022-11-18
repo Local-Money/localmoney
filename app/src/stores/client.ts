@@ -304,6 +304,14 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
+    getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {
+      const fiatPrice = this.fiatPrices.get(fiatCurrency)?.get(denom.native) ?? 0
+      try {
+        return fiatPrice / 100
+      } catch (e) {
+        return 0
+      }
+    },
   },
 })
 

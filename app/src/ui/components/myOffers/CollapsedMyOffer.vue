@@ -12,10 +12,9 @@ const client = useClientStore()
 
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 const offerPrice = computed(() => {
-  const offer = props.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native) ?? 0
+  const denomFiatPrice = client.getFiatPrice(props.offer.fiat_currency, props.offer.denom)
   return `${props.offer.fiat_currency} ${formatAmount(
-    calculateFiatPriceByRate(denomFiatPrice / 100, props.offer.rate),
+    calculateFiatPriceByRate(denomFiatPrice, props.offer.rate),
     false
   )}`
 })

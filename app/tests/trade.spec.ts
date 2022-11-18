@@ -34,7 +34,7 @@ beforeAll(async () => {
 offers[0].denom = { native: process.env.OFFER_DENOM! }
 let myOffers: OfferResponse[] = []
 
-describe.only('trade lifecycle happy path', () => {
+describe('trade lifecycle happy path', () => {
   let requestedTradesCount = 0
   let releasedTradesCount = 0
   it('should have an arbitrator available', async () => {

@@ -6,6 +6,7 @@ use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, Uint256,
 };
 use cw20::Denom;
+use localterra_protocol::constants::BASE_ORACLE_DENOM;
 use localterra_protocol::currencies::FiatCurrency;
 use localterra_protocol::denom_utils::denom_to_string;
 use localterra_protocol::errors::ContractError;
@@ -130,7 +131,7 @@ pub fn query_fiat_price_for_denom(
 ) -> StdResult<DenomFiatPrice> {
     let fiat_price = &FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?;
     let kq = KujiraQuerier::new(&deps.querier);
-    let atom_usd_price = kq.query_exchange_rate("ATOM".to_string()).unwrap();
+    let atom_usd_price = kq.query_exchange_rate(BASE_ORACLE_DENOM).unwrap();
     let amount = Uint128::new(1_000_000u128);
     let denom_str = denom_to_string(&denom.clone());
     let denom_price_route = &DENOM_PRICE_ROUTE

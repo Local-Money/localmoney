@@ -37,11 +37,11 @@ const offerType = ref<OfferType>(OfferType.buy)
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const valid = computed(() => maxAmount.value > minAmount.value && isTelegramHandleValid(ownerContact.value))
 const offerPrice = computed(() => {
-  const denomFiatPrice = client.fiatPrices.get(fiatCurrency.value)?.get(selectedCrypto.value)
-  if (!denomFiatPrice) {
+  const denomFiatPrice = client.getFiatPrice(fiatCurrency.value, { native: selectedCrypto.value })
+  if (denomFiatPrice === 0) {
     return ''
   }
-  const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, rate.value) / 100
+  const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, rate.value)
   return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
 })
 const fiatLabel = computed(() => (offerType.value === 'sell' ? 'receive' : 'pay'))

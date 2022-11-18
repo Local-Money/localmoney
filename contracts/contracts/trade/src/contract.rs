@@ -26,8 +26,9 @@ use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
 };
 use localterra_protocol::trade::{
-    arbitrators, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap,
-    SwapMsg, Trade, TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
+    arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg,
+    NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
+    TradeStateItem, TraderRole,
 };
 // use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 pub const SWAP_REPLY_ID: u64 = 1u64;
@@ -121,16 +122,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         price: Uint256::from_u128(123456),
     });
     //TODO: Error handling
-
-    let offer_rate = Decimal::from_ratio(offer.rate.clone(), Uint128::new(100u128));
-    let hundred = Uint128::new(100u128);
-    let offer_rate = Uint256::from(hundred.mul(offer_rate)); //% 100
-    let denom_final_price = denom_fiat_price
-        .price
-        .checked_mul(offer_rate)
-        .unwrap_or(Uint256::zero())
-        .checked_div(Uint256::from(hundred))
-        .unwrap_or(Uint256::zero());
+    let denom_final_price = calc_denom_fiat_price(offer.rate, denom_fiat_price.price);
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
@@ -218,7 +210,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)
         .add_attribute("denom_fiat_price", denom_fiat_price.price.to_string())
-        .add_attribute("offer_rate", offer_rate.to_string())
+        .add_attribute("offer_rate", offer.rate.to_string())
         .add_attribute("taker", new_trade.taker.to_string());
 
     Ok(res)

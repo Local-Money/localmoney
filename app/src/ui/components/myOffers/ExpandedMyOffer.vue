@@ -22,9 +22,8 @@ const margin = ref(marginRate.value.margin)
 const marginOffset = ref(marginRate.value.marginOffset)
 const rate = ref(0)
 const fiatPriceByRate = computed(() => {
-  const offer = props.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native) ?? 0
-  return calculateFiatPriceByRate(denomFiatPrice / 100, rate.value)
+  const denomFiatPrice = client.getFiatPrice(props.offer.fiat_currency, props.offer.denom)
+  return calculateFiatPriceByRate(denomFiatPrice, rate.value)
 })
 const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
 const valid = computed(() => updatedOffer.value.max_amount > updatedOffer.value.min_amount)
