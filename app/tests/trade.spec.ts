@@ -23,7 +23,7 @@ const takerContact = 'taker001'
 const makerContact = 'maker001'
 let tradeId = '0'
 
-jest.setTimeout(30 * 1000)
+jest.setTimeout(60 * 1000)
 beforeAll(async () => {
   const result = await setupProtocol()
   makerClient = result.makerClient

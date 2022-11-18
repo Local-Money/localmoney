@@ -2,8 +2,9 @@ use std::ops::{Mul, Sub};
 use std::str::FromStr;
 
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, CustomQuery, Decimal,
+    Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    Uint128, Uint256, WasmMsg,
 };
 
 use localterra_protocol::constants::{ARBITRATION_FEE, LOCAL_FEE};
@@ -20,15 +21,16 @@ use localterra_protocol::guards::{
 };
 use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
+use localterra_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
 use localterra_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
 };
 use localterra_protocol::trade::{
-    arbitrators, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap,
-    SwapMsg, Trade, TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole,
+    arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg,
+    NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
+    TradeStateItem, TraderRole,
 };
-use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
-
+// use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]
@@ -107,6 +109,21 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let offer = offer_result.offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
 
+    //Freeze the Denom price in Fiat using the rate set on Offer by the Maker
+    let denom_fiat_price = query_fiat_price_for_denom(
+        &deps.querier,
+        offer.denom.clone(),
+        offer.fiat_currency.clone(),
+        hub_cfg.price_addr.to_string(),
+    )
+    .unwrap_or(DenomFiatPrice {
+        denom: offer.denom.clone(),
+        fiat: offer.fiat_currency.clone(),
+        price: Uint256::from_u128(123456),
+    });
+    //TODO: Error handling
+    let denom_final_price = calc_denom_fiat_price(offer.rate, denom_fiat_price.price);
+
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
     let buyer_contact: Option<String>;
@@ -170,6 +187,7 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
             offer.denom.clone(),
             new_trade.amount.clone(),
             offer.fiat_currency,
+            denom_final_price,
             trade_state_history,
         ),
     )
@@ -191,6 +209,8 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)
+        .add_attribute("denom_fiat_price", denom_fiat_price.price.to_string())
+        .add_attribute("offer_rate", offer.rate.to_string())
         .add_attribute("taker", new_trade.taker.to_string());
 
     Ok(res)
@@ -221,11 +241,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+fn register_hub<T: CustomQuery>(
+    deps: DepsMut<T>,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_trade(env: Env, deps: Deps, id: String) -> StdResult<TradeInfo> {
+fn query_trade<T: CustomQuery>(env: Env, deps: Deps<T>, id: String) -> StdResult<TradeInfo> {
     let hub_config = get_hub_config(deps);
     let state = TradeModel::from_store(deps.storage, &id);
 
@@ -262,9 +285,9 @@ fn query_trade(env: Env, deps: Deps, id: String) -> StdResult<TradeInfo> {
     Ok(TradeInfo { trade, offer })
 }
 
-pub fn query_trades(
+pub fn query_trades<T: CustomQuery>(
     env: Env,
-    deps: Deps,
+    deps: Deps<T>,
     user: Addr,
     _state: Option<TradeState>,
     index: TraderRole,
@@ -554,6 +577,8 @@ fn release_escrow(
     let warchest_amount = fee.mul(Decimal::from_ratio(hub_cfg.warchest_fee_pct, 100u128));
 
     // Create Trade Registration message to be sent to the Trading Incentives contract.
+    // TODO: Disabling Temporarily to use TradingIncentives as Price Contract.
+    /*
     let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: hub_cfg.trading_incentives_addr.to_string(),
         msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
@@ -563,6 +588,7 @@ fn release_escrow(
         funds: vec![],
     }));
     send_msgs.push(register_trade_msg);
+    */
 
     // Update profile released_trades_count
     send_msgs.push(increase_profile_trades_count_msg(

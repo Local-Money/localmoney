@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '../app/.env' })
 
-import {SigningCosmWasmClient} from "@cosmjs/cosmwasm-stargate";
-import {DirectSecp256k1HdWallet} from "@cosmjs/proto-signing";
-import {GasPrice} from "@cosmjs/stargate";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+import { GasPrice } from "@cosmjs/stargate";
 import * as fs from "fs";
 import findFilesInDir from "./findFilesInDir.js";
 
@@ -19,14 +19,14 @@ if (process.env.RPC) {
 }
 
 const gasPrice = GasPrice.fromString(process.env.GAS_PRICE);
-const wallet = await DirectSecp256k1HdWallet.fromMnemonic(seed, {prefix: process.env.ADDR_PREFIX});
+const wallet = await DirectSecp256k1HdWallet.fromMnemonic(seed, { prefix: process.env.ADDR_PREFIX });
 const accounts = await wallet.getAccounts();
 const walletAddr = accounts[0].address;
 const codeIdsPath = '../app/tests/fixtures/codeIds.json'
 console.log('Wallet Address:', walletAddr);
 
 const cwClient = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, wallet, {
-  broadcastTimeoutMs: 30 * 1000,
+  broadcastTimeoutMs: 60 * 1000,
   gasPrice: gasPrice
 });
 
@@ -74,10 +74,10 @@ async function deploy(contract) {
 }
 
 async function uploadContract(filePath, addr) {
+  await sleep(1000);
   const wasm = fs.readFileSync(filePath);
   const uploadResult = await cwClient.upload(addr, wasm, "auto");
   console.log('upload result:', uploadResult);
-  await sleep(333);
   return uploadResult.codeId;
 }
 

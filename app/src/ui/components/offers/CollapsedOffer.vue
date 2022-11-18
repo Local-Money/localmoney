@@ -7,21 +7,22 @@ import {
   formatAmount,
   formatTradesCountInfo,
 } from '~/shared'
-import { usePriceStore } from '~/stores/price'
 import { OfferType } from '~/types/components.interface'
-import type { GetOffer, OfferResponse, OfferTypeLabel } from '~/types/components.interface'
+import type { OfferResponse, OfferTypeLabel } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
+import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'select'): void }>()
 const { t } = useI18n()
-const priceStore = usePriceStore()
+const client = useClientStore()
 
 const offerTypeLabels: OfferTypeLabel = { [OfferType.buy]: t('label.sell'), [OfferType.sell]: t('label.buy') }
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 const offerPrice = computed(() => {
-  const usdRate = priceStore.getPrice(props.offerResponse.offer.fiat_currency)
-  const fiatPrice = calculateFiatPriceByRate(usdRate, props.offerResponse.offer.rate)
+  const offer = props.offerResponse.offer
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native)
+  const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate) / 100
   return `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
 })
 </script>

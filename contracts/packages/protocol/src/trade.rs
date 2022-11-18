@@ -1,8 +1,13 @@
 use std::fmt::{self};
+use std::ops::Mul;
 
-use cosmwasm_std::{Addr, BlockInfo, Deps, Env, MessageInfo, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{
+    Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
+    Uint128, Uint256,
+};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -154,6 +159,7 @@ pub struct Trade {
     pub denom: Denom,
     pub amount: Uint128,
     pub fiat: FiatCurrency,
+    pub denom_fiat_price: Uint256,
     pub state_history: Vec<TradeStateItem>,
     state: TradeState,
 }
@@ -174,6 +180,7 @@ impl Trade {
         denom: Denom,
         amount: Uint128,
         fiat: FiatCurrency,
+        denom_fiat_price: Uint256,
         state_history: Vec<TradeStateItem>,
     ) -> Trade {
         return Trade {
@@ -193,6 +200,7 @@ impl Trade {
             denom,
             amount,
             fiat,
+            denom_fiat_price,
             state_history,
             state: TradeState::RequestCreated,
         };
@@ -244,6 +252,7 @@ pub struct TradeResponse {
     pub denom: Denom,
     pub amount: Uint128,
     pub fiat: FiatCurrency,
+    pub denom_fiat_price: Uint256,
     pub state_history: Vec<TradeStateItem>,
     pub state: TradeState,
 }
@@ -299,6 +308,7 @@ impl TradeResponse {
             denom: trade.denom,
             amount: trade.amount,
             fiat: trade.fiat,
+            denom_fiat_price: trade.denom_fiat_price,
             state_history: trade.state_history,
             state,
         }
@@ -447,7 +457,7 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
 }
 
 pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
-    let pk_namespace = "trades_v0_3_0";
+    let pk_namespace = "trades_v0_4_2";
     let indexes = TradeIndexes {
         buyer: MultiIndex::new(|t| t.buyer.to_string(), pk_namespace, "trades__buyer"),
         seller: MultiIndex::new(|t| t.seller.to_string(), pk_namespace, "trades__seller"),
@@ -531,8 +541,8 @@ impl ArbitratorModel {
         Ok(result)
     }
 
-    pub fn get_arbitrator_random(
-        deps: Deps,
+    pub fn get_arbitrator_random<T: CustomQuery>(
+        deps: Deps<T>,
         random_value: usize,
         fiat: FiatCurrency,
     ) -> Arbitrator {
@@ -585,4 +595,15 @@ impl<'a> IndexList<Arbitrator> for ArbitratorIndexes<'a> {
         let v: Vec<&dyn Index<Arbitrator>> = vec![&self.arbitrator, &self.fiat];
         Box::new(v.into_iter())
     }
+}
+
+pub fn calc_denom_fiat_price(offer_rate: Uint128, denom_fiat_price: Uint256) -> Uint256 {
+    let hundred = Uint128::new(100u128);
+    let offer_rate = Decimal::from_ratio(offer_rate.clone(), hundred);
+    let offer_rate = Uint256::from(hundred.mul(offer_rate)); //% 100
+    denom_fiat_price
+        .checked_mul(offer_rate)
+        .unwrap_or(Uint256::zero())
+        .checked_div(Uint256::from(hundred))
+        .unwrap_or(Uint256::zero())
 }

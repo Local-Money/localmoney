@@ -1,27 +1,17 @@
 <script setup lang="ts">
-import {
-  calculateFiatPriceByRate,
-  formatAddress,
-  formatAmount,
-  formatDate,
-  formatFiatAmount,
-  formatTradeState,
-} from '~/shared'
+import { formatAddress, formatAmount, formatDate, formatFiatAmount, formatTradeState } from '~/shared'
 import type { TradeInfo } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { usePriceStore } from '~/stores/price'
 import { microDenomToDenom } from '~/utils/denom'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
 const client = useClientStore()
-const priceClient = usePriceStore()
 const currentDate = computed(() => formatDate(new Date(props.tradeInfo.trade.created_at * 1000)))
 const fiatCurrency = computed(() => props.tradeInfo.offer.offer.fiat_currency)
-const fiatPriceByRate = computed(() => {
-  return calculateFiatPriceByRate(priceClient.getPrice(fiatCurrency.value), props.tradeInfo.offer.offer.rate)
-})
 const fiatAmountStr = computed(() => {
-  const fiatAmount = formatFiatAmount((parseInt(props.tradeInfo.trade.amount) / 1000000) * fiatPriceByRate.value)
+  const fiatAmount = formatFiatAmount(
+    (parseInt(props.tradeInfo.trade.amount) / 1000000) * (props.tradeInfo.trade.denom_fiat_price / 100)
+  )
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 

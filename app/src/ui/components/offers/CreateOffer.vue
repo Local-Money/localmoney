@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import CurrencyInput from '../CurrencyInput.vue'
 import {
-  addTelegramURLPrefix,
   calculateFiatPriceByRate,
   convertMarginRateToOfferRate,
   formatAmount,
@@ -9,19 +8,17 @@ import {
   isTelegramHandleValid,
   removeTelegramURLPrefix,
 } from '~/shared'
-import { usePriceStore } from '~/stores/price'
-import type { PostOffer } from '~/types/components.interface'
+import type { Denom, PostOffer } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
-import { decryptData, encryptData } from '~/utils/crypto'
+import { encryptData } from '~/utils/crypto'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 const client = useClientStore()
-const priceStore = usePriceStore()
 const secrets = computed(() => client.getSecrets())
 
 async function defaultUserContact() {
@@ -39,9 +36,12 @@ const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const valid = computed(() => maxAmount.value > minAmount.value && isTelegramHandleValid(ownerContact.value))
-const usdRate = computed(() => priceStore.getPrice(fiatCurrency.value))
 const offerPrice = computed(() => {
-  const fiatPrice = calculateFiatPriceByRate(usdRate.value, rate.value)
+  const denomFiatPrice = client.getFiatPrice(fiatCurrency.value, { native: selectedCrypto.value })
+  if (denomFiatPrice === 0) {
+    return ''
+  }
+  const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, rate.value)
   return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
 })
 const fiatLabel = computed(() => (offerType.value === 'sell' ? 'receive' : 'pay'))
@@ -56,6 +56,10 @@ onMounted(() => {
   nextTick(async () => {
     ownerContact.value = await defaultUserContact()
   })
+})
+onBeforeMount(async () => {
+  const denom: Denom = { native: selectedCrypto.value }
+  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
 })
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
@@ -94,6 +98,16 @@ watch(marginOffset, () => {
 })
 watch(margin, () => {
   calculateMarginRate()
+})
+async function fetchFiatPriceForDenom() {
+  const denom: Denom = { native: selectedCrypto.value }
+  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+}
+watch(selectedCrypto, async () => {
+  await fetchFiatPriceForDenom()
+})
+watch(fiatCurrency, async () => {
+  await fetchFiatPriceForDenom()
 })
 </script>
 

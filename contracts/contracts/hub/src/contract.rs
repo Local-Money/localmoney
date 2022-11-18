@@ -8,6 +8,7 @@ use localterra_protocol::hub::{
     Admin, ExecuteMsg, HubConfig, InstantiateMsg, MigrateMsg, QueryMsg,
 };
 use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
+use localterra_protocol::price::ExecuteMsg::RegisterHub as PriceRegisterHub;
 use localterra_protocol::profile::ExecuteMsg::RegisterHub as ProfileRegisterHub;
 use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
 use localterra_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
@@ -78,6 +79,12 @@ fn update_config(
         funds: info.funds.clone(),
     }));
 
+    let price_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.price_addr.to_string(),
+        msg: to_binary(&PriceRegisterHub {}).unwrap(),
+        funds: info.funds.clone(),
+    }));
+
     let profile_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.profile_addr.to_string(),
         msg: to_binary(&ProfileRegisterHub {}).unwrap(),
@@ -88,13 +95,15 @@ fn update_config(
         .add_attribute("action", "update_config")
         .add_submessage(offer_register_hub)
         .add_submessage(trade_register_hub)
-        .add_submessage(trading_incentives_register_hub)
+        .add_submessage(price_register_hub)
         .add_submessage(profile_register_hub)
+        .add_submessage(trading_incentives_register_hub)
         .add_attribute("local_denom", local_denom)
         .add_attribute("local_market_addr", config.local_market_addr)
         .add_attribute("offer_addr", config.offer_addr)
         .add_attribute("trade_addr", config.trade_addr)
-        .add_attribute("trading_incentives_addr", config.trading_incentives_addr);
+        .add_attribute("trading_incentives_addr", config.trading_incentives_addr)
+        .add_attribute("price_addr", config.price_addr);
 
     Ok(res)
 }

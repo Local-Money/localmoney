@@ -1,0 +1,7 @@
+{
+  "update_prices": [
+    { "currency": "ARS", "usd_price": "31259", "updated_at": 0 },
+    { "currency": "BRL", "usd_price": "540", "updated_at": 0 },
+    { "currency": "COP", "usd_price": "482182", "updated_at": 0 }
+  ]
+}

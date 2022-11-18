@@ -1,8 +1,7 @@
+use crate::state::{offers_count_read, offers_count_storage};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
-
-use crate::state::{offers_count_read, offers_count_storage};
 use localterra_protocol::errors::ContractError;
 use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
 use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
@@ -23,11 +22,9 @@ pub fn instantiate(
     offers_count_storage(deps.storage)
         .save(&OffersCount { count: 0 })
         .unwrap();
-
     let res = Response::new().add_attribute("action", "instantiate_offer");
     Ok(res)
 }
-
 #[entry_point]
 pub fn execute(
     deps: DepsMut,
@@ -80,7 +77,9 @@ pub fn create_offer(
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
-    let mut offers_count = offers_count_storage(deps.storage).load().unwrap();
+    let mut offers_count = offers_count_storage(deps.storage)
+        .load()
+        .unwrap_or(OffersCount { count: 0 });
     offers_count.count += 1;
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
 

@@ -1,15 +1,4 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { usePriceStore } from '~/stores/price'
-import { FiatCurrency } from '~/types/components.interface'
-const price = usePriceStore()
-const { getPrice } = storeToRefs(price)
-const { fetchPrice } = price
-
-onMounted(async () => {
-  await fetchPrice(FiatCurrency.BRL)
-})
-
 const { t } = useI18n()
 
 // TODO - Make isMobile global
@@ -23,7 +12,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
 })
-const isMobile = computed(() => width.value <= 550)
 </script>
 
 <template>

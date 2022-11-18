@@ -3,7 +3,7 @@ use crate::denom_utils::denom_to_string;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
-use cosmwasm_std::{Addr, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, CustomQuery, Deps, Order, QuerierWrapper, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
 use schemars::JsonSchema;
@@ -27,7 +27,7 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
 }
 
 pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
-    let offers_pk_namespace = "offers_v0_3_0";
+    let offers_pk_namespace = "offers_v0_4_1";
     let indexes = OfferIndexes {
         owner: MultiIndex::new(
             |d| d.owner.clone().to_string(),
@@ -206,8 +206,8 @@ impl OfferModel<'_> {
         Ok(result)
     }
 
-    pub fn query_by(
-        deps: Deps,
+    pub fn query_by<T: CustomQuery>(
+        deps: Deps<T>,
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
@@ -346,15 +346,17 @@ pub enum OfferState {
     Archive,
 }
 
+// Price
+
 // Queries
-pub fn load_offer(
-    querier: &QuerierWrapper,
+pub fn load_offer<T: CustomQuery>(
+    querier: &QuerierWrapper<T>,
     offer_id: String,
     offer_contract: String,
 ) -> StdResult<OfferResponse> {
     querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })
 }
-
+// Migration
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct MigrateMsg {}

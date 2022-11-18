@@ -7,7 +7,7 @@ import { useClientStore } from '~/stores/client'
 import './ui/style/reset.scss'
 
 const client = useClientStore()
-client.setClient(ChainClient.kujira) // required to properly init chain
+client.setClient(ChainClient.kujiraTestnet) // required to properly init chain
 const loading = computed(() => client.loadingState)
 
 useHead({

@@ -10,7 +10,9 @@ import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 import type {
   Arbitrator,
   Denom,
+  DenomFiatPrice,
   FetchOffersArgs,
+  FiatCurrency,
   HubConfig,
   NewTrade,
   OfferResponse,
@@ -327,6 +329,25 @@ export class CosmosChain implements Chain {
         this.hubInfo.hubConfig.trade_addr,
         queryMsg
       )) as TradeInfo[]
+      console.log('response >>> ', response)
+      return response
+    } catch (e) {
+      console.error(e)
+      throw new DefaultError()
+    }
+  }
+
+  async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom) {
+    // TODO: fix init
+    if (!this.cwClient) {
+      await this.init()
+    }
+    try {
+      const queryMsg = { price: { fiat, denom } }
+      const response = (await this.cwClient!.queryContractSmart(
+        this.hubInfo.hubConfig.price_addr,
+        queryMsg
+      )) as DenomFiatPrice
       console.log('response >>> ', response)
       return response
     } catch (e) {
