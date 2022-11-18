@@ -1,0 +1,71 @@
+import { TextDecoder, TextEncoder } from 'util'
+import { jest } from '@jest/globals'
+import dotenv from 'dotenv'
+import { setupProtocol } from './utils'
+import type { TestCosmosChain } from './network/TestCosmosChain'
+import prices from './fixtures/update_prices.json'
+import register_price_route_for_denom from './fixtures/register_price_route_for_denom.json'
+import { FiatCurrency } from '~/types/components.interface'
+import 'isomorphic-fetch'
+
+dotenv.config()
+Object.assign(global, { TextEncoder, TextDecoder })
+
+let takerClient: TestCosmosChain
+let adminClient: TestCosmosChain
+
+jest.setTimeout(60 * 1000)
+let priceAddr = ''
+beforeAll(async () => {
+  const result = await setupProtocol()
+  takerClient = result.takerClient
+  adminClient = result.adminClient
+  priceAddr = takerClient.getHubInfo().hubConfig.price_addr
+})
+
+describe('price tests', () => {
+  it('should register fiat prices', async () => {
+    const result = await takerClient
+      .getCwClient()
+      .execute(takerClient.getWalletAddress(), priceAddr, prices, 'auto', 'register fiat prices')
+    expect(result.transactionHash).not.toBeNull()
+  })
+  it('should register price route', async () => {
+    const result = await adminClient
+      .getCwClient()
+      .execute(
+        adminClient.getWalletAddress(),
+        priceAddr,
+        register_price_route_for_denom,
+        'auto',
+        'register price route'
+      )
+    expect(result.transactionHash).not.toBeNull()
+  })
+  it('should query fiat prices for denom', async () => {
+    /*
+    const oracleResponse = await fetch(`${process.env.LCD}oracle/denoms/ATOM/exchange_rate`)
+    const baseCurrencyUsdPrice = await oracleResponse.json()
+
+    const poolAddr = register_price_route_for_denom.register_price_route_for_denom.route[0].pool
+    const finQuery = {
+      simulation: { offer_asset: { info: { native_token: { denom: 'ukuji' } }, amount: '100000' } },
+    }
+    const finSimulation = await takerClient.getCwClient().queryContractSmart(poolAddr, finQuery)
+
+    const arsUsdPrice = parseInt(prices.update_prices[0].usd_price)
+    const brlUsdPrice = parseInt(prices.update_prices[1].usd_price)
+    const copUsdPrice = parseInt(prices.update_prices[2].usd_price)
+    */
+
+    const arsPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.ARS, { native: 'ukuji' })
+    const brlPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.BRL, { native: 'ukuji' })
+    const copPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.COP, { native: 'ukuji' })
+
+    // const expectedDenomUsdPrice = parseInt(finSimulation.return_amount) * baseCurrencyUsdPrice.exchange_rate
+    // TODO: compare price
+    expect(arsPrice.price * 1).toBeGreaterThan(0)
+    expect(brlPrice.price * 1).toBeGreaterThan(0)
+    expect(copPrice.price * 1).toBeGreaterThan(0)
+  })
+})

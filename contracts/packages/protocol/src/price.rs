@@ -73,7 +73,7 @@ pub fn query_fiat_price_for_denom<T: CustomQuery>(
     querier: &QuerierWrapper<T>,
     denom: Denom,
     fiat: FiatCurrency,
-    offer_contract: String,
+    price_contract: String,
 ) -> StdResult<DenomFiatPrice> {
-    querier.query_wasm_smart(offer_contract, &QueryMsg::Price { fiat, denom })
+    querier.query_wasm_smart(price_contract, &QueryMsg::Price { fiat, denom })
 }
