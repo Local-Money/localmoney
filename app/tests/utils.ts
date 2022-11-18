@@ -16,7 +16,7 @@ export function createHubUpdateConfigMsg(
       trade_addr: tradeAddr,
       trading_incentives_addr: tradingIncentivesAddr,
       price_addr: priceAddr,
-      price_provider_addr: process.env.PRICE_ADDR,
+      price_provider_addr: process.env.PRICE_PROVIDER_ADDR,
       profile_addr: profileAddr,
       local_market_addr: process.env.LOCAL_MARKET,
       local_denom: { native: process.env.LOCAL_DENOM },
@@ -53,7 +53,7 @@ export async function setupProtocol() {
     const adminCwClient = adminClient.getCwClient() as SigningCosmWasmClient
 
     const instantiateMsg = { admin_addr: admAddr }
-    const { hub, offer, trade, trading_incentives, profile } = codeIds
+    const { hub, offer, trade, trading_incentives, price, profile } = codeIds
     const opts = { admin: admAddr }
     const hubInstantiateResult = await adminCwClient.instantiate(admAddr, hub, instantiateMsg, 'hub', 'auto', opts)
     const offerInstantiateResult = await adminCwClient.instantiate(
@@ -80,7 +80,7 @@ export async function setupProtocol() {
       'auto',
       opts
     )
-    const priceResult = await adminCwClient.instantiate(admAddr, profile, instantiateMsg, 'price', 'auto', opts)
+    const priceResult = await adminCwClient.instantiate(admAddr, price, instantiateMsg, 'price', 'auto', opts)
     const profileResult = await adminCwClient.instantiate(admAddr, profile, instantiateMsg, 'profile', 'auto', opts)
 
     // Assert that all contracts were instantiated

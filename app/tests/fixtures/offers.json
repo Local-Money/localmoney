@@ -22,7 +22,8 @@
     "denom": {
       "native": ""
     }
-  },{
+  },
+  {
     "offer_type": "buy",
     "fiat_currency": "COP",
     "min_amount": "100000",
