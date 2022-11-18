@@ -6,7 +6,6 @@ import type { ChainError } from '~/network/chain-error'
 import type {
   Arbitrator,
   Denom,
-  DenomFiatPrice,
   FetchOffersArgs,
   FiatCurrency,
   NewTrade,
