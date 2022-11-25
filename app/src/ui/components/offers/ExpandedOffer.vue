@@ -191,11 +191,21 @@ onUnmounted(() => {
 
 <template>
   <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded">
-    <div class="owner">
-      <p class="wallet">
-        {{ formatAddress(offerResponse.offer.owner) }}
-      </p>
-      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
+    <div class="top">
+      <div class="owner">
+        <p class="wallet">
+          {{ formatAddress(offerResponse.offer.owner) }}
+        </p>
+        <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
+      </div>
+
+      <div class="price">
+        <div class="inner-wrap">
+          <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
+          <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+        </div>
+        <p class="ticker">refresh in {{ secondsUntilRateRefresh }}s</p>
+      </div>
     </div>
 
     <div class="divider-horizontal" />
@@ -291,65 +301,80 @@ onUnmounted(() => {
           <input v-model="telegram" type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
+    </div>
 
-      <div class="receipt">
-        <div class="price">
-          <p class="label">Price</p>
-          <div class="wrap">
-            <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-            <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
-            <p class="ticker">Will refresh in {{ secondsUntilRateRefresh }}s</p>
-          </div>
-        </div>
-
-        <div class="summary">
-          <p class="label">Transaction summary</p>
-          <div class="wrap">
-            <div class="item">
-              <p class="info">Trading Fee</p>
-              <p>{{ microDenomToDenom(offerResponse.offer.denom.native) }} {{ tradingFee.toFixed(2) }}</p>
-            </div>
-            <div class="item">
-              <p class="info">Total</p>
-              <p class="total">??????</p>
-            </div>
-          </div>
-        </div>
+    <footer>
+      <div class="time-limit">
+        <p class="label">Trade time limit</p>
+        <p class="value">45 minutes</p>
       </div>
-    </div>
-    <div class="wrap-btns">
-      <button class="secondary" @click="emit('cancel')">cancel</button>
-      <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
-    </div>
+      <div class="wrap-btns">
+        <button class="secondary" @click="emit('cancel')">cancel</button>
+        <button class="primary bg-gray300" :disabled="!valid" @click="newTrade()">open trade</button>
+      </div>
+    </footer>
   </div>
 </template>
 
 <style lang="scss" scoped>
 @import '../../style/tokens.scss';
 
-.owner {
-  .wallet {
-    font-size: 18px;
-    font-weight: 600;
-    color: $base-text;
-  }
-
-  .n-trades {
-    font-size: 14px;
-    color: $gray600;
-  }
-
-  @media only screen and (max-width: $mobile) {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-}
-
 .expanded {
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  .top {
+    display: flex;
+    justify-content: space-between;
+    .owner {
+      .wallet {
+        font-size: 18px;
+        font-weight: 600;
+        color: $base-text;
+      }
+
+      .n-trades {
+        font-size: 14px;
+        color: $gray600;
+      }
+
+      @media only screen and (max-width: $mobile) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .price {
+      display: flex;
+      flex-direction: row-reverse;
+      gap: 32px;
+      align-items: center;
+      .ticker {
+        text-align: center;
+        font-size: 12px;
+        color: $gray900;
+        background-color: $border;
+        padding: 4px 12px;
+        border-radius: 8px;
+      }
+
+      .inner-wrap {
+        text-align: right;
+      }
+
+      .margin {
+        font-size: 14px;
+        color: $gray700;
+      }
+
+      .value {
+        font-size: 16px;
+        color: $base-text;
+      }
+    }
+  }
 
   .divider-horizontal {
     width: 100%;
@@ -434,98 +459,29 @@ onUnmounted(() => {
         }
       }
     }
+  }
 
-    .receipt {
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      width: 100%;
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-      @media only screen and (max-width: $mobile) {
-        border-top: 1px solid $border;
-        padding-top: 24px;
-        margin-top: 24px;
+    .time-limit {
+      .label {
+        font-size: 14px;
+        color: $gray700;
       }
-      .price {
-        flex: 2;
-        .wrap {
-          width: 100%;
-          display: flex;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          background-color: $gray150;
-          padding: 16px 24px;
-          margin-top: 8px;
-          border-radius: 8px;
-          align-items: center;
-          gap: 16px;
-
-          @media only screen and (max-width: $mobile) {
-            flex-direction: column;
-            gap: 4px;
-            padding: 16px 24px;
-          }
-
-          .ticker {
-            width: 100%;
-            text-align: center;
-            font-size: 12px;
-            color: $primary;
-          }
-
-          .margin {
-            font-size: 14px;
-            color: $gray700;
-          }
-
-          .value {
-            font-size: 16px;
-            color: $base-text;
-          }
-        }
-      }
-
-      .summary {
-        flex: 3;
-
-        .wrap {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          background-color: $gray150;
-          border-radius: 8px;
-          padding: 16px 24px;
-          margin-top: 8px;
-
-          gap: 8px;
-
-          .item {
-            display: inline-flex;
-            justify-content: space-between;
-
-            .info {
-              color: $gray700;
-            }
-
-            .price-get {
-              font-weight: 800;
-            }
-
-            .total {
-              color: $primary;
-              font-weight: 600;
-            }
-          }
-        }
+      .value {
+        font-size: 14px;
+        color: $gray900;
       }
     }
-  }
-  .wrap-btns {
-    display: flex;
-    justify-content: flex-end;
-    gap: 24px;
-    margin-top: 8px;
+    .wrap-btns {
+      display: flex;
+      justify-content: flex-end;
+      gap: 24px;
+      margin-top: 8px;
+    }
   }
 }
 </style>
