@@ -69,8 +69,7 @@ fn register_hub(
     deps: DepsMut<KujiraQuery>,
     info: MessageInfo,
 ) -> Result<Response<KujiraMsg>, ContractError> {
-    Ok(Response::default())
-    // register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
+    register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
 pub fn update_prices(
