@@ -1,3 +1,15 @@
+export function formatTimeLimit(time: Date): string {
+  const hours = time.getUTCHours()
+  const mins = time.getUTCMinutes()
+  let timeLimit = ''
+  if (hours > 0) {
+    timeLimit += `${hours} hours `
+  }
+  if (mins > 0) {
+    timeLimit += `${mins} minutes `
+  }
+  return timeLimit
+}
 export function formatTimer(timer: Date, finalState: string): string {
   const hours = zeroPrefix(timer.getUTCHours(), 2)
   const mins = zeroPrefix(timer.getUTCMinutes(), 2)

@@ -169,6 +169,7 @@ export interface HubConfig {
   price_addr: string
   trading_incentives_addr: string
   local_market_addr: string
+  trade_expiration_timer: number
 }
 
 export interface Denom {

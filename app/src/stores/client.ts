@@ -8,6 +8,7 @@ import type {
   Denom,
   FetchOffersArgs,
   FiatCurrency,
+  HubConfig,
   NewTrade,
   OfferResponse,
   PatchOffer,
@@ -62,6 +63,9 @@ export const useClientStore = defineStore({
         this.userWallet = { isConnected: false, address: 'undefined' }
         alert((e as ChainError).message)
       }
+    },
+    getHubConfig(): HubConfig {
+      return this.client.getHubConfig()
     },
     async fetchProfile() {
       this.profile = await this.client.fetchProfile()

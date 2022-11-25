@@ -15,6 +15,7 @@ import type { NewTrade, OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
 import { encryptData } from '~/utils/crypto'
+import { formatTimeLimit, formatTimer } from '~/utils/formatters'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
@@ -40,6 +41,12 @@ const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 const FIAT_DECIMAL_PLACES = 100000000
 const CRYPTO_DECIMAL_PLACES = 1000000
+
+const tradeTimeLimit = computed(() => {
+  const expirationTime = client.getHubConfig().trade_expiration_timer * 1000
+  const time = new Date(expirationTime)
+  return formatTimeLimit(time)
+})
 
 const fromLabel = computed(() =>
   props.offerResponse.offer.offer_type === OfferType.buy ? 'I want to sell' : 'I want to buy'
@@ -306,7 +313,7 @@ onUnmounted(() => {
     <footer>
       <div class="time-limit">
         <p class="label">Trade time limit</p>
-        <p class="value">45 minutes</p>
+        <p class="value">{{ tradeTimeLimit }}</p>
       </div>
       <div class="wrap-btns">
         <button class="secondary" @click="emit('cancel')">cancel</button>
