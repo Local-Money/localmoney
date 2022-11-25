@@ -53,7 +53,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
-        ExecuteMsg::Create(new_trade) => create_trade(deps, env, new_trade),
+        ExecuteMsg::Create(new_trade) => create_trade(deps, env, info, new_trade),
         ExecuteMsg::AcceptRequest {
             trade_id,
             maker_contact,
@@ -90,10 +90,16 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, 
     Ok(Response::default())
 }
 
-fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response, ContractError> {
-    // Load Offer
+fn create_trade(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    new_trade: NewTrade,
+) -> Result<Response, ContractError> {
+    // Load Hub Cfg
     let hub_cfg = get_hub_config(deps.as_ref());
 
+    // Load Offer
     let offer_id = new_trade.offer_id.clone();
     let offer_result = load_offer(
         &deps.querier,
@@ -108,6 +114,14 @@ fn create_trade(deps: DepsMut, env: Env, new_trade: NewTrade) -> Result<Response
     let offer_result = offer_result.unwrap();
     let offer = offer_result.offer;
     assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
+
+    // Can't create Trade with the same wallet
+    if info.sender.eq(&offer.owner) {
+        return Err(ContractError::Unauthorized {
+            owner: offer.owner,
+            caller: info.sender,
+        });
+    }
 
     //Freeze the Denom price in Fiat using the rate set on Offer by the Maker
     let denom_fiat_price = query_fiat_price_for_denom(
