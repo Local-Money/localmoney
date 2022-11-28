@@ -365,7 +365,9 @@ onUnmounted(() => {
       align-items: center;
 
       @include responsive(mobile) {
+        flex-direction: column-reverse;
         justify-content: space-between;
+        gap: 16px;
         margin-top: 16px;
       }
 
@@ -380,16 +382,25 @@ onUnmounted(() => {
 
       .inner-wrap {
         text-align: right;
+        @include responsive(mobile) {
+          text-align: center;
+        }
       }
 
       .margin {
         font-size: 14px;
         color: $gray700;
+        @include responsive(mobile) {
+          font-size: 12px;
+        }
       }
 
       .value {
         font-size: 16px;
         color: $base-text;
+        @include responsive(mobile) {
+          font-size: 14px;
+        }
       }
     }
   }
@@ -493,6 +504,7 @@ onUnmounted(() => {
 
     @include responsive(mobile) {
       flex-direction: column;
+      margin-top: 8px;
     }
 
     .time-limit {
@@ -500,17 +512,20 @@ onUnmounted(() => {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 32px;
+        margin-bottom: 24px;
       }
       .label {
         font-size: 14px;
         color: $gray700;
+        @include responsive(mobile) {
+          font-size: 12px;
+        }
       }
       .value {
         font-size: 14px;
         color: $gray900;
         @include responsive(mobile) {
-          font-size: 16px;
+          font-size: 14px;
         }
       }
     }
