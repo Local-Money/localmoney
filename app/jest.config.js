@@ -2,6 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
+  testSequencer: '<rootDir>/tests/sequencer.js',
   globals: {
     'ts-jest': {
       isolatedModules: true,

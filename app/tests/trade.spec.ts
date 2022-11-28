@@ -8,9 +8,10 @@ import takerSecrets from './fixtures/taker_secrets.json'
 import adminSecrets from './fixtures/admin_secrets.json'
 import { setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
+import prices from './fixtures/update_prices.json'
 import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
-import type { FiatCurrency, OfferResponse, PostOffer } from '~/types/components.interface'
+import type { FiatCurrency, GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
 import { TradeState } from '~/types/components.interface'
 
 dotenv.config()
@@ -227,5 +228,70 @@ describe('trade invalid state changes', () => {
     const myOffers = await makerClient.fetchMyOffers()
     expect(myOffers[0].profile.requested_trades_count).toBe(requestedTradesCount + 1)
     expect(myOffers[0].profile.released_trades_count).toBe(releasedTradesCount)
+  })
+})
+
+describe('trade with invalid price', () => {
+  let requestedTradesCount = 0
+  let offer: GetOffer
+  it('should have an arbitrator available', async () => {
+    const fiat = offers[0].fiat_currency as FiatCurrency
+    let arbitrators = await adminClient.fetchArbitrators()
+    if (arbitrators.find((arbitrator) => arbitrator.fiat === fiat) === undefined) {
+      await adminClient.newArbitrator({
+        arbitrator: adminClient.getWalletAddress(),
+        fiat,
+        encryption_key: 'arbitrator_encrypt_public_key',
+      })
+      arbitrators = await adminClient.fetchArbitrators()
+    }
+    expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
+  })
+  it('should have an available offer', async () => {
+    let myOffers = await makerClient.fetchMyOffers()
+    if (myOffers.length === 0) {
+      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+      const owner_encryption_key = makerSecrets.publicKey
+      const denom = { native: process.env.OFFER_DENOM! }
+      const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
+      await makerClient.createOffer(newOffer)
+    }
+    myOffers = await makerClient.fetchMyOffers()
+    requestedTradesCount = myOffers[0].profile.requested_trades_count
+    offer = (myOffers[0] as OfferResponse).offer
+  })
+  it('should not allow to create a trade when price for denom is zero', async () => {
+    // Set price at Zero for Fiat Currency
+    const priceAddr = takerClient.getHubInfo().hubConfig.price_addr
+    const priceAtZero = {
+      update_prices: [{ currency: offer.fiat_currency, usd_price: '0', updated_at: 0 }],
+    }
+    let update_price_result = await takerClient
+      .getCwClient()
+      .execute(takerClient.getWalletAddress(), priceAddr, priceAtZero, 'auto', 'register fiat prices at zero')
+    expect(update_price_result.transactionHash).not.toBeNull()
+    // Tries to create a trade
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const profile_taker_encrypt_key = takerSecrets.publicKey
+    let tradeId = '0'
+    await expect(async () => {
+      tradeId = await takerClient.openTrade({
+        amount: offer.min_amount,
+        offer_id: offer.id,
+        taker: takerClient.getWalletAddress(),
+        profile_taker_contact,
+        profile_taker_encryption_key: profile_taker_encrypt_key,
+        taker_contact: 'taker_contact',
+      })
+    }).rejects.toThrow()
+    expect(tradeId).toBe('0')
+    myOffers = await makerClient.fetchMyOffers()
+    expect(myOffers[0].profile.requested_trades_count).toStrictEqual(requestedTradesCount)
+    await takerClient.connectWallet()
+    // Fix price
+    update_price_result = await takerClient
+      .getCwClient()
+      .execute(takerClient.getWalletAddress(), priceAddr, prices, 'auto', 'register fiat prices')
+    expect(update_price_result.transactionHash).not.toBeNull()
   })
 })
