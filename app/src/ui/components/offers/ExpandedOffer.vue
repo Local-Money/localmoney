@@ -363,6 +363,12 @@ onUnmounted(() => {
       flex-direction: row-reverse;
       gap: 32px;
       align-items: center;
+
+      @include responsive(mobile) {
+        justify-content: space-between;
+        margin-top: 16px;
+      }
+
       .ticker {
         text-align: center;
         font-size: 12px;
@@ -401,11 +407,6 @@ onUnmounted(() => {
     justify-content: space-between;
     gap: 32px;
 
-    @media only screen and (max-width: $mobile) {
-      flex-direction: column;
-      gap: 0px;
-    }
-
     .label {
       font-size: 14px;
       color: $gray900;
@@ -416,36 +417,47 @@ onUnmounted(() => {
       justify-content: space-between;
       gap: 24px;
 
-      @media only screen and (max-width: $mobile) {
-        width: 100%;
-        min-width: 0;
+      @include responsive(mobile) {
+        flex-direction: column;
+        gap: 8px;
       }
 
-      .input {
-        flex: 1;
+      .input,
+      .telegram {
         margin-bottom: 8px;
+
+        @include responsive(mobile) {
+          margin-bottom: 0;
+        }
 
         input {
           margin-top: 8px;
           color: $base-text;
           background-color: $background;
+        }
+
+        .wrap-label {
+          display: flex;
+          gap: 8px;
+        }
+      }
+
+      .input {
+        flex: 1;
+
+        input {
           text-align: right;
         }
       }
 
       .telegram {
         flex: 2;
-        margin-bottom: 8px;
 
-        .wrap-label {
-          display: flex;
-          gap: 8px;
+        @include responsive(mobile) {
+          margin-top: 16px;
         }
 
         input {
-          margin-top: 8px;
-          color: $base-text;
-          background-color: $background;
           text-align: left;
         }
       }
@@ -479,7 +491,17 @@ onUnmounted(() => {
     align-items: center;
     margin-top: 16px;
 
+    @include responsive(mobile) {
+      flex-direction: column;
+    }
+
     .time-limit {
+      @include responsive(mobile) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 32px;
+      }
       .label {
         font-size: 14px;
         color: $gray700;
@@ -487,6 +509,9 @@ onUnmounted(() => {
       .value {
         font-size: 14px;
         color: $gray900;
+        @include responsive(mobile) {
+          font-size: 16px;
+        }
       }
     }
     .wrap-btns {
