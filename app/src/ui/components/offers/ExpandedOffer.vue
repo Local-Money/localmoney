@@ -334,6 +334,11 @@ onUnmounted(() => {
   .top {
     display: flex;
     justify-content: space-between;
+
+    @include responsive(mobile) {
+      flex-direction: column;
+    }
+
     .owner {
       .wallet {
         font-size: 18px;
@@ -417,7 +422,7 @@ onUnmounted(() => {
       }
 
       .input {
-        flex: 2;
+        flex: 1;
         margin-bottom: 8px;
 
         input {
@@ -429,7 +434,7 @@ onUnmounted(() => {
       }
 
       .telegram {
-        flex: 3;
+        flex: 2;
         margin-bottom: 8px;
 
         .wrap-label {
@@ -472,6 +477,7 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 16px;
 
     .time-limit {
       .label {
@@ -487,7 +493,6 @@ onUnmounted(() => {
       display: flex;
       justify-content: flex-end;
       gap: 24px;
-      margin-top: 8px;
     }
   }
 }

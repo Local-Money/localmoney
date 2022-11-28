@@ -55,6 +55,21 @@ $logo-icon-dark: url(../assets/logo-icon-dark.svg);
 
 $mobile: 550px;
 
+@mixin responsive ($breakpoint) {
+
+  @if $breakpoint == mobile {
+    @media only screen and (max-width: 550px) {
+      @content;
+    }
+  }
+
+  @if $breakpoint == tablet {
+    @media only screen and (max-width: 680px) {
+      @content;
+    }
+  }
+}
+
 
 /* LIGHT MODE
 $primary: #ef6100;
