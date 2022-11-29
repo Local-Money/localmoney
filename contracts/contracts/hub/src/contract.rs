@@ -67,18 +67,6 @@ fn update_config(
         funds: info.funds.clone(),
     }));
 
-    let trade_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.trade_addr.to_string(),
-        msg: to_binary(&TradeRegisterHub {}).unwrap(),
-        funds: info.funds.clone(),
-    }));
-
-    let trading_incentives_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.trading_incentives_addr.to_string(),
-        msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
-        funds: info.funds.clone(),
-    }));
-
     let price_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.price_addr.to_string(),
         msg: to_binary(&PriceRegisterHub {}).unwrap(),
@@ -91,19 +79,32 @@ fn update_config(
         funds: info.funds.clone(),
     }));
 
+    let trade_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.trade_addr.to_string(),
+        msg: to_binary(&TradeRegisterHub {}).unwrap(),
+        funds: info.funds.clone(),
+    }));
+
+    let trading_incentives_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.trading_incentives_addr.to_string(),
+        msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
+        funds: info.funds.clone(),
+    }));
+
     let res = Response::new()
         .add_attribute("action", "update_config")
         .add_submessage(offer_register_hub)
-        .add_submessage(trade_register_hub)
         .add_submessage(price_register_hub)
         .add_submessage(profile_register_hub)
+        .add_submessage(trade_register_hub)
         .add_submessage(trading_incentives_register_hub)
         .add_attribute("local_denom", local_denom)
         .add_attribute("local_market_addr", config.local_market_addr)
         .add_attribute("offer_addr", config.offer_addr)
+        .add_attribute("price_addr", config.price_addr)
+        .add_attribute("profile_addr", config.profile_addr)
         .add_attribute("trade_addr", config.trade_addr)
-        .add_attribute("trading_incentives_addr", config.trading_incentives_addr)
-        .add_attribute("price_addr", config.price_addr);
+        .add_attribute("trading_incentives_addr", config.trading_incentives_addr);
 
     Ok(res)
 }
