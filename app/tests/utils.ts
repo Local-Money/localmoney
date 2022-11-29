@@ -104,7 +104,13 @@ export async function setupProtocol() {
       priceResult.contractAddress,
       profileResult.contractAddress
     )
-    await adminCwClient.execute(admAddr, hubInstantiateResult.contractAddress, updatedConfigMsg, 'auto')
+    const updateCfgResult = await adminCwClient.execute(
+      admAddr,
+      hubInstantiateResult.contractAddress,
+      updatedConfigMsg,
+      'auto'
+    )
+    console.log('Update Config Result: ', updateCfgResult)
     await adminClient.updateHub(hubInstantiateResult.contractAddress)
     await makerClient.updateHub(hubInstantiateResult.contractAddress)
     await takerClient.updateHub(hubInstantiateResult.contractAddress)
