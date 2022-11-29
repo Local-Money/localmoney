@@ -80,8 +80,15 @@ export async function setupProtocol() {
       'auto',
       opts
     )
-    const priceResult = await adminCwClient.instantiate(admAddr, price, instantiateMsg, 'price', 'auto', opts)
     const profileResult = await adminCwClient.instantiate(admAddr, profile, instantiateMsg, 'profile', 'auto', opts)
+
+    // To run to test suit in the testnet
+    let priceResult: InstantiateResult
+    if (process.env.PRICE_ADDR) {
+      priceResult = { contractAddress: process.env.PRICE_ADDR as string } as InstantiateResult
+    } else {
+      priceResult = await adminCwClient.instantiate(admAddr, price, instantiateMsg, 'price', 'auto', opts)
+    }
 
     // Assert that all contracts were instantiated
     const results = [
