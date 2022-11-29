@@ -3,10 +3,12 @@ export function formatTimeLimit(time: Date): string {
   const mins = time.getUTCMinutes()
   let timeLimit = ''
   if (hours > 0) {
-    timeLimit += `${hours} hours `
+    const suffix = hours === 1 ? 'hour' : 'hours'
+    timeLimit += `${hours} ${suffix} `
   }
   if (mins > 0) {
-    timeLimit += `${mins} minutes `
+    const suffix = mins === 1 ? 'minute' : 'minutes'
+    timeLimit += `${mins} ${suffix}`
   }
   return timeLimit
 }
