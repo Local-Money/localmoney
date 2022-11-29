@@ -298,15 +298,12 @@ pub fn query_trades<T: CustomQuery>(
     let hub_config = get_hub_config(deps);
 
     let trade_results = match index {
-        TraderRole::Seller => {
-            TradeModel::trades_by_seller(deps.storage, user.to_string(), last_value, limit).unwrap()
-        }
-        TraderRole::Buyer => {
-            TradeModel::trades_by_buyer(deps.storage, user.to_string(), last_value, limit).unwrap()
-        }
         TraderRole::Arbitrator => {
             TradeModel::trades_by_arbitrator(deps.storage, user.to_string(), last_value, limit)
                 .unwrap()
+        }
+        TraderRole::Trader => {
+            TradeModel::trades_by_trader(deps.storage, user.to_string(), last_value, limit).unwrap()
         }
     };
 
