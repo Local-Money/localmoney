@@ -43,6 +43,8 @@ pub enum ContractError {
         required_amount: Uint128,
         sent_amount: Uint128,
     },
+    #[error("Invalid price for denom. Must be greater than zero.")]
+    InvalidPriceForDenom {},
     #[error("Invalid sender, must be Trade's buyer or seller.")]
     InvalidSender {
         sender: Addr,

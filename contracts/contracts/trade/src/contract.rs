@@ -133,10 +133,12 @@ fn create_trade(
     .unwrap_or(DenomFiatPrice {
         denom: offer.denom.clone(),
         fiat: offer.fiat_currency.clone(),
-        price: Uint256::from_u128(123456),
+        price: Uint256::from_u128(0),
     });
-    //TODO: Error handling
     let denom_final_price = calc_denom_fiat_price(offer.rate, denom_fiat_price.price);
+    if denom_final_price.is_zero() {
+        return Err(ContractError::InvalidPriceForDenom {});
+    }
 
     //Instantiate buyer and seller addresses according to Offer type (buy, sell)
     let buyer: Addr;
