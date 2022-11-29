@@ -61,6 +61,10 @@ export class CosmosChain implements Chain {
     }
   }
 
+  getHubConfig(): HubConfig {
+    return this.hubInfo.hubConfig
+  }
+
   getWalletAddress(): string {
     return this.account ? this.account.address : 'undefined'
   }

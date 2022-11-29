@@ -7,6 +7,7 @@ import type {
   DenomFiatPrice,
   FetchOffersArgs,
   FiatCurrency,
+  HubConfig,
   NewTrade,
   OfferResponse,
   PatchOffer,
@@ -20,6 +21,8 @@ export interface Chain {
   init(): void
 
   connectWallet(): Promise<void>
+
+  getHubConfig(): HubConfig
 
   getWalletAddress(): string
 
