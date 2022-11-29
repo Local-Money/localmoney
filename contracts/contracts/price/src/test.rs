@@ -1,5 +1,5 @@
 use cosmwasm_std::{Uint128, Uint256};
-use localterra_protocol::trade::calc_denom_fiat_price;
+use localmoney_protocol::trade::calc_denom_fiat_price;
 
 #[test]
 fn test() {

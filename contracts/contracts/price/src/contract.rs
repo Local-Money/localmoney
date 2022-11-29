@@ -6,24 +6,24 @@ use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, Uint256,
 };
 use cw20::Denom;
-use localterra_protocol::constants::BASE_ORACLE_DENOM;
-use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::denom_utils::denom_to_string;
-use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
-use localterra_protocol::guards::assert_ownership;
-use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
-use localterra_protocol::kujira::asset::{Asset, AssetInfo};
-use localterra_protocol::kujira::denom::Denom as KujiraDenom;
-use localterra_protocol::kujira::fin::QueryMsg as FinQueryMsg;
-use localterra_protocol::kujira::fin::SimulationResponse;
-use localterra_protocol::kujira::msg::KujiraMsg;
-use localterra_protocol::kujira::querier::KujiraQuerier;
-use localterra_protocol::kujira::query::KujiraQuery;
-use localterra_protocol::price::{
+use localmoney_protocol::constants::BASE_ORACLE_DENOM;
+use localmoney_protocol::currencies::FiatCurrency;
+use localmoney_protocol::denom_utils::denom_to_string;
+use localmoney_protocol::errors::ContractError;
+use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
+use localmoney_protocol::guards::assert_ownership;
+use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
+use localmoney_protocol::kujira::asset::{Asset, AssetInfo};
+use localmoney_protocol::kujira::denom::Denom as KujiraDenom;
+use localmoney_protocol::kujira::fin::QueryMsg as FinQueryMsg;
+use localmoney_protocol::kujira::fin::SimulationResponse;
+use localmoney_protocol::kujira::msg::KujiraMsg;
+use localmoney_protocol::kujira::querier::KujiraQuerier;
+use localmoney_protocol::kujira::query::KujiraQuery;
+use localmoney_protocol::price::{
     CurrencyPrice, DenomFiatPrice, ExecuteMsg, PriceRoute, QueryMsg, DENOM_PRICE_ROUTE, FIAT_PRICE,
 };
-use localterra_protocol::profile::{InstantiateMsg, MigrateMsg};
+use localmoney_protocol::profile::{InstantiateMsg, MigrateMsg};
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = "localmoney.io:price";

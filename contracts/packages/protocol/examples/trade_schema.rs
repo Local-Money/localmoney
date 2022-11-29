@@ -1,5 +1,5 @@
 use cosmwasm_schema::{export_schema_with_title, remove_schemas};
-use localterra_protocol::trade::{
+use localmoney_protocol::trade::{
     ExecuteMsg, InstantiateMsg, QueryMsg, SwapMsg, Trade, TradeState,
 };
 use schemars::schema_for;
