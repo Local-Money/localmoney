@@ -6,7 +6,7 @@ use cosmwasm_std::{
     Uint128, Uint256,
 };
 use cw20::Denom;
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -93,8 +93,7 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TraderRole {
-    Seller,
-    Buyer,
+    Trader,
     Arbitrator,
 }
 
@@ -357,9 +356,9 @@ impl TradeModel<'_> {
         return trade_model;
     }
 
-    pub fn trades_by_buyer(
+    pub fn trades_by_trader(
         storage: &dyn Storage,
-        buyer: String,
+        trader: String,
         last_value: Option<String>,
         limit: u32,
     ) -> StdResult<Vec<Trade>> {
@@ -370,34 +369,19 @@ impl TradeModel<'_> {
 
         let result = trades()
             .idx
-            .buyer
-            .prefix(buyer)
+            .collection
             .range(storage, range_from, None, Order::Descending)
+            .filter_map(|item| {
+                item.and_then(|(_, trade)| {
+                    if trade.seller.eq(&trader) || trade.buyer.eq(&trader) {
+                        Ok(Some(trade))
+                    } else {
+                        Ok(None)
+                    }
+                })
+                .unwrap()
+            })
             .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
-            .collect();
-
-        Ok(result)
-    }
-
-    pub fn trades_by_seller(
-        storage: &dyn Storage,
-        seller: String,
-        last_value: Option<String>,
-        limit: u32,
-    ) -> StdResult<Vec<Trade>> {
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-
-        let result = trades()
-            .idx
-            .seller
-            .prefix(seller)
-            .range(storage, range_from, None, Order::Descending)
-            .take(limit as usize)
-            .flat_map(|item| item.and_then(|(_, trade)| Ok(trade)))
             .collect();
 
         Ok(result)
@@ -444,14 +428,13 @@ impl TradeModel<'_> {
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
-    pub buyer: MultiIndex<'a, String, Trade, String>,
-    pub seller: MultiIndex<'a, String, Trade, String>,
+    pub collection: UniqueIndex<'a, String, Trade, String>,
     pub arbitrator: MultiIndex<'a, String, Trade, String>,
 }
 
 impl<'a> IndexList<Trade> for TradeIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Trade>> + '_> {
-        let v: Vec<&dyn Index<Trade>> = vec![&self.buyer, &self.seller, &self.arbitrator];
+        let v: Vec<&dyn Index<Trade>> = vec![&self.collection, &self.arbitrator];
         Box::new(v.into_iter())
     }
 }
@@ -459,10 +442,9 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
 pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
     let pk_namespace = "trades_v0_4_2";
     let indexes = TradeIndexes {
-        buyer: MultiIndex::new(|t| t.buyer.to_string(), pk_namespace, "trades__buyer"),
-        seller: MultiIndex::new(|t| t.seller.to_string(), pk_namespace, "trades__seller"),
+        collection: UniqueIndex::new(|t| t.id.to_string(), "trades__collection"),
         arbitrator: MultiIndex::new(
-            |t| t.arbitrator.clone().to_string(),
+            |t| t.arbitrator.to_string(),
             pk_namespace,
             "trades__arbitrator",
         ),

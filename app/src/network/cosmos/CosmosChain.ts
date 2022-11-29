@@ -226,24 +226,15 @@ export class CosmosChain implements Chain {
       }
       try {
         // Query of trades as buyer
-        const queryAsBuyerMsg = { trades: { user: userAddr, role: 'buyer', limit: 100 } }
-        const tradesAsBuyer = (await this.cwClient!.queryContractSmart(
+        const queryMsg = { trades: { user: userAddr, role: 'trader', limit: 100, last_value: null } }
+        const response = (await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
-          queryAsBuyerMsg
+          queryMsg
         )) as TradeInfo[]
-
-        // Query of trades as seller
-        const queryAsSellerMsg = { trades: { user: userAddr, role: 'seller', limit: 100 } }
-        const tradesAsSeller = (await this.cwClient!.queryContractSmart(
-          this.hubInfo.hubConfig.trade_addr,
-          queryAsSellerMsg
-        )) as TradeInfo[]
-
-        // Join all trades
-        const response: TradeInfo[] = tradesAsBuyer.concat(tradesAsSeller)
         console.log('response >>> ', response)
         return response
       } catch (e) {
+        console.error(e)
         throw new DefaultError()
       }
     } else {
