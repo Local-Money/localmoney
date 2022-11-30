@@ -29,37 +29,40 @@ const offerPrice = computed(() => {
 
 <template>
   <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed">
-    <div class="owner">
+    <div class="maker">
       <p class="wallet-addr">
         {{ formatAddress(offerResponse.offer.owner) }}
       </p>
       <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
     </div>
 
-    <div class="info">
-      <div class="wrap">
-        <p class="label">Limits</p>
-        <p class="limit">
-          {{ formatAmount(offerResponse.offer.min_amount) }} -
-          {{ formatAmount(offerResponse.offer.max_amount) }}
-          {{ microDenomToDenom(offerResponse.offer.denom.native) }}
-        </p>
+    <div class="inner-wrap">
+      <div class="info">
+        <div class="wrap">
+          <p class="label">Trade limit</p>
+          <p class="limit">
+            {{ formatAmount(offerResponse.offer.min_amount) }} -
+            {{ formatAmount(offerResponse.offer.max_amount) }}
+            {{ microDenomToDenom(offerResponse.offer.denom.native) }}
+          </p>
+        </div>
+        <div class="divider"></div>
+        <div class="description">
+          <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+        </div>
       </div>
 
-      <div class="divider" />
-      <div class="wrap"></div>
-    </div>
-
-    <div class="price">
-      <div class="wrap">
-        <p class="value">
-          {{ offerPrice }}
-        </p>
-        <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+      <div class="price">
+        <div class="wrap">
+          <p class="value">
+            {{ offerPrice }}
+          </p>
+          <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+        </div>
+        <button class="primary bg-gray300" type="button" @click="emit('select')">
+          {{ offerTypeLabels[offerResponse.offer.offer_type] }}
+        </button>
       </div>
-      <button class="primary bg-gray300" type="button" @click="emit('select')">
-        {{ offerTypeLabels[offerResponse.offer.offer_type] }}
-      </button>
     </div>
   </div>
 </template>
@@ -68,17 +71,17 @@ const offerPrice = computed(() => {
 @import '../../style/tokens.scss';
 
 .collapsed {
-  .owner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .maker {
+    width: 20%;
     display: flex;
     flex-direction: column;
 
-    @media only screen and (max-width: $mobile) {
-      flex-direction: row;
-      justify-content: space-between;
-    }
-
     .wallet-addr {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
       color: $base-text;
     }
@@ -87,6 +90,66 @@ const offerPrice = computed(() => {
       font-size: 14px;
       color: $gray700;
       margin-top: 4px;
+    }
+  }
+
+  .inner-wrap {
+    width: 80%;
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    .info {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 32px;
+
+      .divider {
+        height: 40px;
+        width: 1px;
+        background-color: $border;
+      }
+
+      .wrap {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        .label {
+          margin-bottom: 4px;
+          font-size: 12px;
+          color: $gray700;
+        }
+        .limit {
+          font-size: 14px;
+          color: $gray900;
+        }
+      }
+
+      .description {
+        .content {
+          font-size: 14px;
+          color: $gray900;
+        }
+      }
+    }
+
+    .price {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      text-align: right;
+      gap: 32px;
+      flex-shrink: 0;
+
+      .value {
+        font-size: 20px;
+        font-weight: 800;
+        color: $base-text;
+      }
+      .margin {
+        font-size: 14px;
+        color: $gray700;
+      }
     }
   }
 }
