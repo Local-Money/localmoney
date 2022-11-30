@@ -124,7 +124,7 @@ const offerPrice = computed(() => {
       @include responsive(mobile) {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 16px;
       }
 
       .divider {
