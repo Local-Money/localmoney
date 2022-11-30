@@ -492,7 +492,7 @@ fn fiat_deposited(
     // Update trade State to TradeState::FiatDeposited
     trade.set_state(TradeState::FiatDeposited, &env, &info);
     // Sets the time that will enable the dispute
-    let enables_dispute_at = env.block.time.seconds() + hub_config.trade_expiration_timer;
+    let enables_dispute_at = env.block.time.seconds() + hub_config.trade_dispute_timer;
     trade.enables_dispute_at = Some(enables_dispute_at);
 
     TradeModel::store(deps.storage, &trade).unwrap();
