@@ -346,6 +346,11 @@ onUnmounted(() => {
 
     .owner {
       width: 20%;
+
+      @include responsive(mobile) {
+        width: 100%;
+        margin-bottom: 24px;
+      }
       .wallet-addr {
         font-size: 16px;
         font-weight: 600;
@@ -379,6 +384,16 @@ onUnmounted(() => {
       gap: 32px;
       padding-left: 32px;
       border-left: 1px solid $border;
+
+      @include responsive(mobile) {
+        width: 100%;
+        display: flex;
+        flex-direction: column-reverse;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 0;
+        border: none;
+      }
       .price {
         width: 50%;
         display: flex;
@@ -388,10 +403,10 @@ onUnmounted(() => {
         align-items: center;
 
         @include responsive(mobile) {
-          flex-direction: column-reverse;
+          width: 100%;
+          flex-direction: row-reverse;
           justify-content: space-between;
           gap: 16px;
-          margin-top: 16px;
         }
 
         .ticker {
@@ -406,7 +421,7 @@ onUnmounted(() => {
         .wrap {
           text-align: right;
           @include responsive(mobile) {
-            text-align: center;
+            text-align: right;
           }
         }
 
@@ -427,9 +442,17 @@ onUnmounted(() => {
         }
       }
       .description {
+        @include responsive(mobile) {
+          background-color: $gray150;
+          border-radius: 8px;
+          padding: 12px 16px;
+        }
         .content {
           font-size: 14px;
           color: $gray900;
+          @include responsive(mobile) {
+            font-size: 12px;
+          }
         }
       }
     }
