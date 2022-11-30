@@ -200,18 +200,23 @@ onUnmounted(() => {
   <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded">
     <div class="top">
       <div class="owner">
-        <p class="wallet">
+        <p class="wallet-addr">
           {{ formatAddress(offerResponse.offer.owner) }}
         </p>
         <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
       </div>
 
-      <div class="price">
-        <div class="inner-wrap">
-          <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
-          <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+      <div class="inner-wrap">
+        <div class="description">
+          <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
         </div>
-        <p class="ticker">refresh in {{ secondsUntilRateRefresh }}s</p>
+        <div class="price">
+          <div class="wrap">
+            <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
+            <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+          </div>
+          <p class="ticker">refresh in {{ secondsUntilRateRefresh }}s</p>
+        </div>
       </div>
     </div>
 
@@ -340,15 +345,17 @@ onUnmounted(() => {
     }
 
     .owner {
-      .wallet {
-        font-size: 18px;
+      width: 20%;
+      .wallet-addr {
+        font-size: 16px;
         font-weight: 600;
         color: $base-text;
       }
 
       .n-trades {
         font-size: 14px;
-        color: $gray600;
+        color: $gray700;
+        margin-top: 4px;
       }
 
       @media only screen and (max-width: $mobile) {
@@ -358,48 +365,71 @@ onUnmounted(() => {
       }
     }
 
-    .price {
+    .divider {
+      height: 40px;
+      width: 1px;
+      background-color: $border;
+    }
+
+    .inner-wrap {
+      width: 80%;
       display: flex;
-      flex-direction: row-reverse;
-      gap: 32px;
+      justify-content: space-between;
       align-items: center;
+      gap: 32px;
+      padding-left: 32px;
+      border-left: 1px solid $border;
+      .price {
+        width: 50%;
+        display: flex;
+        flex-direction: row-reverse;
+        gap: 32px;
+        flex-shrink: 0;
+        align-items: center;
 
-      @include responsive(mobile) {
-        flex-direction: column-reverse;
-        justify-content: space-between;
-        gap: 16px;
-        margin-top: 16px;
-      }
-
-      .ticker {
-        text-align: center;
-        font-size: 12px;
-        color: $gray900;
-        background-color: $border;
-        padding: 4px 12px;
-        border-radius: 8px;
-      }
-
-      .inner-wrap {
-        text-align: right;
         @include responsive(mobile) {
+          flex-direction: column-reverse;
+          justify-content: space-between;
+          gap: 16px;
+          margin-top: 16px;
+        }
+
+        .ticker {
           text-align: center;
-        }
-      }
-
-      .margin {
-        font-size: 14px;
-        color: $gray700;
-        @include responsive(mobile) {
           font-size: 12px;
+          color: $gray900;
+          background-color: $border;
+          padding: 4px 12px;
+          border-radius: 8px;
+        }
+
+        .wrap {
+          text-align: right;
+          @include responsive(mobile) {
+            text-align: center;
+          }
+        }
+
+        .margin {
+          font-size: 14px;
+          color: $gray700;
+          @include responsive(mobile) {
+            font-size: 12px;
+          }
+        }
+
+        .value {
+          font-size: 16px;
+          color: $base-text;
+          @include responsive(mobile) {
+            font-size: 14px;
+          }
         }
       }
-
-      .value {
-        font-size: 16px;
-        color: $base-text;
-        @include responsive(mobile) {
+      .description {
+        .content {
           font-size: 14px;
+          color: $gray900;
         }
       }
     }
