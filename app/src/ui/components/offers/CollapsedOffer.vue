@@ -29,7 +29,7 @@ const offerPrice = computed(() => {
 
 <template>
   <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed">
-    <div class="maker">
+    <div class="owner">
       <p class="wallet-addr">
         {{ formatAddress(offerResponse.offer.owner) }}
       </p>
@@ -71,15 +71,7 @@ const offerPrice = computed(() => {
 @import '../../style/tokens.scss';
 
 .collapsed {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  @include responsive(mobile) {
-    flex-direction: column;
-  }
-
-  .maker {
+  .owner {
     width: 20%;
     display: flex;
     flex-direction: column;
@@ -101,90 +93,6 @@ const offerPrice = computed(() => {
       font-size: 14px;
       color: $gray700;
       margin-top: 4px;
-    }
-  }
-
-  .inner-wrap {
-    width: 80%;
-    display: flex;
-    justify-content: space-between;
-    gap: 32px;
-
-    @include responsive(mobile) {
-      width: 100%;
-      flex-direction: column;
-      gap: 24px;
-    }
-    .info {
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 32px;
-
-      @include responsive(mobile) {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-      }
-
-      .divider {
-        height: 40px;
-        width: 1px;
-        background-color: $border;
-        @include responsive(mobile) {
-          display: none;
-        }
-      }
-
-      .wrap {
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-      }
-
-      .wrap,
-      .description {
-        @include responsive(mobile) {
-          width: 100%;
-          padding: 12px 16px;
-          background-color: $gray150;
-          border-radius: 8px;
-        }
-        .label {
-          margin-bottom: 4px;
-          font-size: 12px;
-          color: $gray700;
-        }
-        .limit,
-        .content {
-          font-size: 14px;
-          color: $gray900;
-        }
-      }
-    }
-
-    .price {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      text-align: right;
-      gap: 32px;
-      flex-shrink: 0;
-
-      @include responsive(mobile) {
-        text-align: left;
-        justify-content: space-between;
-      }
-
-      .value {
-        font-size: 20px;
-        font-weight: 800;
-        color: $base-text;
-      }
-      .margin {
-        font-size: 14px;
-        color: $gray700;
-      }
     }
   }
 }
