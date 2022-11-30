@@ -23,6 +23,7 @@ export function createHubUpdateConfigMsg(
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
       warchest_addr: process.env.WARCHEST_ADDR,
       warchest_fee_pct: '50',
+      arbitration_fee_pct: '1',
       chain_fee_pct: '10',
       burn_fee_pct: '40',
       trade_expiration_timer: 20 * 60, // 20 minutes
