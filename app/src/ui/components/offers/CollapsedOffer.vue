@@ -140,7 +140,10 @@ const offerPrice = computed(() => {
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
+      }
 
+      .wrap,
+      .description {
         @include responsive(mobile) {
           width: 100%;
           padding: 12px 16px;
@@ -152,19 +155,7 @@ const offerPrice = computed(() => {
           font-size: 12px;
           color: $gray700;
         }
-        .limit {
-          font-size: 14px;
-          color: $gray900;
-        }
-      }
-
-      .description {
-        @include responsive(mobile) {
-          width: 100%;
-          padding: 12px 16px;
-          background-color: $gray150;
-          border-radius: 8px;
-        }
+        .limit,
         .content {
           font-size: 14px;
           color: $gray900;
