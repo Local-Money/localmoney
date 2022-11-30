@@ -44,6 +44,7 @@ pub struct HubConfig {
     pub chain_fee_pct: u128,
     pub warchest_fee_pct: u128,
     pub trade_expiration_timer: u64,
+    pub trade_dispute_timer: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
