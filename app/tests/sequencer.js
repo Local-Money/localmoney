@@ -7,9 +7,9 @@ class CustomSequencer extends Sequencer {
     tests.forEach((test) => {
       if (test.path.includes('hub.spec')) {
         sorted[0] = test
-      } else if (test.path.includes('arbitration.spec')) {
-        sorted[1] = test
       } else if (test.path.includes('price.spec')) {
+        sorted[1] = test
+      } else if (test.path.includes('arbitration.spec')) {
         sorted[2] = test
       } else if (test.path.includes('trade.spec.ts')) {
         sorted[3] = test
