@@ -56,6 +56,7 @@ export async function setupProtocol() {
     const { hub, offer, trade, trading_incentives, price, profile } = codeIds
     const opts = { admin: admAddr }
     const hubInstantiateResult = await adminCwClient.instantiate(admAddr, hub, instantiateMsg, 'hub', 'auto', opts)
+    console.log('Hub Instantiate Result: ', hubInstantiateResult)
     const offerInstantiateResult = await adminCwClient.instantiate(
       admAddr,
       offer,
@@ -64,6 +65,7 @@ export async function setupProtocol() {
       'auto',
       opts
     )
+    console.log('Offer Instantiate Result: ', offerInstantiateResult)
     const tradeInstantiateResult = await adminCwClient.instantiate(
       admAddr,
       trade,
@@ -72,6 +74,7 @@ export async function setupProtocol() {
       'auto',
       opts
     )
+    console.log('Trade Instantiate Result: ', tradeInstantiateResult)
     const tradingIncentivesResult = await adminCwClient.instantiate(
       admAddr,
       trading_incentives,
@@ -80,7 +83,9 @@ export async function setupProtocol() {
       'auto',
       opts
     )
+    console.log('Trading Incentives Instantiate Result: ', tradingIncentivesResult)
     const profileResult = await adminCwClient.instantiate(admAddr, profile, instantiateMsg, 'profile', 'auto', opts)
+    console.log('Profile Instantiate Result: ', profileResult)
 
     // To run to test suit in the testnet
     let priceResult: InstantiateResult
@@ -89,6 +94,7 @@ export async function setupProtocol() {
     } else {
       priceResult = await adminCwClient.instantiate(admAddr, price, instantiateMsg, 'price', 'auto', opts)
     }
+    console.log('Price Instantiate Result: ', priceResult)
 
     // Assert that all contracts were instantiated
     const results = [
