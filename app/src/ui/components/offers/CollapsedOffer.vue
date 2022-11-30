@@ -47,16 +47,16 @@ const offerPrice = computed(() => {
       </div>
 
       <div class="divider" />
-      <div class="wrap">
-        <p class="label">Price</p>
-        <p class="rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-      </div>
+      <div class="wrap"></div>
     </div>
 
     <div class="price">
-      <p class="value">
-        {{ offerPrice }}
-      </p>
+      <div class="wrap">
+        <p class="value">
+          {{ offerPrice }}
+        </p>
+        <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+      </div>
       <button class="primary bg-gray300" type="button" @click="emit('select')">
         {{ offerTypeLabels[offerResponse.offer.offer_type] }}
       </button>
