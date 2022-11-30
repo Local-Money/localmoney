@@ -26,6 +26,7 @@ export function createHubUpdateConfigMsg(
       chain_fee_pct: '10',
       burn_fee_pct: '40',
       trade_expiration_timer: 20 * 60, // 20 minutes
+      trade_dispute_timer: 1 * 60, // 1 minute
     },
   }
 }

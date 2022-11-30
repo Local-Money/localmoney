@@ -126,6 +126,7 @@ export interface Trade {
   offer_id: string
   created_at: number
   expires_at: number
+  enables_dispute_at?: number
   amount: string
   denom: Denom
   denom_fiat_price: number
