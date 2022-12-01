@@ -74,60 +74,72 @@ watch(marginOffset, () => {
     <div class="horizontal-separator" />
 
     <div class="wrap-edit">
-      <div class="inner-wrap">
-        <div class="input-wrap">
-          <p class="label">Margin</p>
-          <select v-model="margin" class="bg-gray100">
-            <option value="above">Above</option>
-            <option value="below">Below</option>
-          </select>
-        </div>
+      <div class="div outer-wrap">
+        <div class="inner-wrap">
+          <div class="input-wrap">
+            <p class="label">Min amount</p>
+            <CurrencyInput
+              v-model="updatedOffer.min_amount"
+              :placeholder="0"
+              :options="{
+                currency: 'USD',
+                currencyDisplay: 'hidden',
+                hideCurrencySymbolOnFocus: false,
+                hideGroupingSeparatorOnFocus: false,
+                precision: 2,
+              }"
+            />
+          </div>
 
-        <div class="input-wrap">
-          <p class="label">Margin offset</p>
-          <input
-            v-model="marginOffset"
-            v-maska="['##%', '#%']"
-            placeholder="0%"
-            @maska="marginRate.marginOffset = $event.target.dataset.maskRawValue"
-          />
+          <div class="input-wrap">
+            <p class="label">Max amount</p>
+            <CurrencyInput
+              v-model="updatedOffer.max_amount"
+              :placeholder="0"
+              :options="{
+                currency: 'USD',
+                currencyDisplay: 'hidden',
+                hideCurrencySymbolOnFocus: false,
+                hideGroupingSeparatorOnFocus: false,
+                precision: 2,
+              }"
+            />
+          </div>
+        </div>
+        <div class="inner-wrap">
+          <div class="input-wrap">
+            <p class="label">Margin</p>
+            <select v-model="margin" class="bg-gray100">
+              <option value="above">Above</option>
+              <option value="below">Below</option>
+            </select>
+          </div>
+
+          <div class="input-wrap">
+            <p class="label">Margin offset</p>
+            <input
+              v-model="marginOffset"
+              v-maska="['##%', '#%']"
+              placeholder="0%"
+              @maska="marginRate.marginOffset = $event.target.dataset.maskRawValue"
+            />
+          </div>
         </div>
       </div>
-
-      <div class="inner-wrap">
-        <div class="input-wrap">
-          <p class="label">Min amount:</p>
-          <CurrencyInput
-            v-model="updatedOffer.min_amount"
-            :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
-          />
+      <div class="bottom-wrap">
+        <div class="description">
+          <div class="wrap">
+            <div class="wrap-label">
+              <label>Edit offer description</label>
+              <IconTooltip content="Here you can write the payment options you will be accepting for this offer." />
+            </div>
+            <textarea maxlength="90" minlength="3" placeholder="Bank transfer, Paypal, Cash..."></textarea>
+          </div>
         </div>
-
-        <div class="input-wrap">
-          <p class="label">Max amount:</p>
-          <CurrencyInput
-            v-model="updatedOffer.max_amount"
-            :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
-          />
+        <div class="wrap-btns">
+          <button class="secondary" @click="emit('cancel')">cancel</button>
+          <button class="primary bg-gray300" :disabled="!valid" @click="update()">update</button>
         </div>
-      </div>
-      <div class="wrap-btns">
-        <button class="secondary" @click="emit('cancel')">cancel</button>
-        <button class="primary" :disabled="!valid" @click="update()">update</button>
       </div>
     </div>
   </div>
@@ -201,50 +213,81 @@ watch(marginOffset, () => {
 
   .wrap-edit {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 32px;
-
-    @media only screen and (max-width: $mobile) {
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .inner-wrap {
-      width: 100%;
-      margin-top: 16px;
-      display: flex;
-      gap: 16px;
-      padding: 8px 0px;
-
-      @media only screen and (max-width: $mobile) {
-        flex-direction: column;
-      }
-
-      .input-wrap {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .label {
-        font-size: 14px;
-        color: $gray600;
-        margin-bottom: 8px;
-      }
-
-      input {
-        color: $base-text;
-        background-color: $background;
-        text-align: right;
-      }
-    }
-  }
-
-  .wrap-btns {
-    display: flex;
-    justify-content: flex-end;
     gap: 24px;
-    margin-top: 32px;
+
+    .outer-wrap {
+      width: 100%;
+      display: flex;
+      gap: 32px;
+
+      .inner-wrap {
+        width: 100%;
+        margin-top: 16px;
+        display: flex;
+        gap: 16px;
+        padding: 8px 0px;
+
+        @media only screen and (max-width: $mobile) {
+          flex-direction: column;
+        }
+
+        .input-wrap {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+        }
+
+        .label {
+          font-size: 14px;
+          color: $gray900;
+          margin-bottom: 8px;
+        }
+
+        input {
+          color: $base-text;
+          background-color: $background;
+          text-align: right;
+        }
+      }
+    }
+    .bottom-wrap {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+
+      .description {
+        flex: 2;
+
+        .wrap-label {
+          display: flex;
+          gap: 8px;
+        }
+
+        label {
+          font-size: 14px;
+          font-weight: 400;
+          color: $gray900;
+          margin-bottom: 8px;
+
+          @media only screen and (max-width: $mobile) {
+            font-size: 12px;
+          }
+        }
+        textarea {
+          background-color: $background;
+        }
+      }
+      .wrap-btns {
+        display: flex;
+        justify-content: flex-end;
+        gap: 24px;
+        flex: 1;
+        margin-bottom: 16px;
+      }
+    }
   }
 }
 </style>
