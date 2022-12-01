@@ -40,6 +40,7 @@ pub struct HubConfig {
     pub local_denom: Denom,
     pub chain_fee_collector_addr: Addr,
     pub warchest_addr: Addr,
+    pub arbitration_fee_pct: u128,
     pub burn_fee_pct: u128,
     pub chain_fee_pct: u128,
     pub warchest_fee_pct: u128,
