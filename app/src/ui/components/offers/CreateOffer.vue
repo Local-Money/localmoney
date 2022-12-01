@@ -204,8 +204,6 @@ watch(fiatCurrency, async () => {
         </div>
       </div>
 
-      <div class="divider" />
-
       <div class="description">
         <div class="wrap">
           <div class="wrap-label">
