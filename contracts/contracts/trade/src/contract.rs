@@ -838,9 +838,11 @@ fn dispute_escrow(
     .unwrap();
 
     // The `enables_dispute_at` is defined in the fiat_deposited
-    let time_to_dispute = trade.enables_dispute_at.unwrap() - env.block.time.seconds();
+    let enables_dispute_at = trade.enables_dispute_at.unwrap();
+    let current_block_time = env.block.time.seconds();
     // Returns an error if is too early to open a dispute
-    if time_to_dispute > 0 {
+    if enables_dispute_at > current_block_time {
+        let time_to_dispute = enables_dispute_at - current_block_time;
         return Err(ContractError::PrematureDisputeRequest { time_to_dispute });
     }
 
