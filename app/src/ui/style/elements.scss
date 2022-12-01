@@ -218,6 +218,18 @@ input {
   outline: none;
 }
 
+textarea {
+  width: 100%;
+  border-radius: 8px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: $base-text;
+  padding: 10px 16px;
+  appearance: none;
+  outline: none;
+}
+
 select {
   width: 100%;
   height: 40px;
