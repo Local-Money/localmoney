@@ -1,14 +1,14 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
-use localterra_protocol::guards::{assert_multiple_ownership, assert_ownership};
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::profile::{
+use localmoney_protocol::errors::ContractError;
+use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
+use localmoney_protocol::guards::{assert_multiple_ownership, assert_ownership};
+use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localmoney_protocol::profile::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, ProfileModel, QueryMsg,
 };
-use localterra_protocol::trade::TradeState;
+use localmoney_protocol::trade::TradeState;
 
 // version info for migration info
 pub const CONTRACT_NAME: &str = "localmoney.io:profile";

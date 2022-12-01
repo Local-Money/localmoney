@@ -8,15 +8,15 @@ use cosmwasm_std::{
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 use cw20::Denom;
 
-use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::{
+use localmoney_protocol::errors::ContractError;
+use localmoney_protocol::errors::ContractError::{
     DistributionClaimInvalidPeriod, DistributionNotStarted, HubAlreadyRegistered,
     InvalidTradeState, Unauthorized,
 };
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::offer::TradeInfo;
-use localterra_protocol::trade::{QueryMsg as TradeQueryMsg, TradeState};
-use localterra_protocol::trading_incentives::{
+use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localmoney_protocol::offer::TradeInfo;
+use localmoney_protocol::trade::{QueryMsg as TradeQueryMsg, TradeState};
+use localmoney_protocol::trading_incentives::{
     Distribution, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, TraderRewards,
 };
 
