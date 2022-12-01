@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, Storage};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 use cw_storage_plus::{Index, IndexList, IndexedMap, MultiIndex};
 
-use localterra_protocol::offer::{OffersCount, TradeAddr};
+use localmoney_protocol::offer::{OffersCount, TradeAddr};
 
 pub static OFFERS_COUNT_KEY: &[u8] = b"offers_count_v0_4_1";
 

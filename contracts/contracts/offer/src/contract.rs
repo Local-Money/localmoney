@@ -2,15 +2,15 @@ use crate::state::{offers_count_read, offers_count_storage};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
-use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::HubAlreadyRegistered;
-use localterra_protocol::guards::{assert_min_g_max, assert_ownership};
-use localterra_protocol::hub_utils::{get_hub_config, register_hub_internal};
-use localterra_protocol::offer::{
+use localmoney_protocol::errors::ContractError;
+use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
+use localmoney_protocol::guards::{assert_min_g_max, assert_ownership};
+use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localmoney_protocol::offer::{
     offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
     OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
 };
-use localterra_protocol::profile::{load_profile, update_profile_msg};
+use localmoney_protocol::profile::{load_profile, update_profile_msg};
 
 #[entry_point]
 pub fn instantiate(

@@ -7,30 +7,30 @@ use cosmwasm_std::{
     Uint128, Uint256, WasmMsg,
 };
 
-use localterra_protocol::constants::LOCAL_FEE;
-use localterra_protocol::currencies::FiatCurrency;
-use localterra_protocol::denom_utils::denom_to_string;
-use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::{
+use localmoney_protocol::constants::LOCAL_FEE;
+use localmoney_protocol::currencies::FiatCurrency;
+use localmoney_protocol::denom_utils::denom_to_string;
+use localmoney_protocol::errors::ContractError;
+use localmoney_protocol::errors::ContractError::{
     FundEscrowError, HubAlreadyRegistered, InvalidTradeState, MissingParameter, OfferNotFound,
     RefundErrorNotExpired, TradeExpired,
 };
-use localterra_protocol::guards::{
+use localmoney_protocol::guards::{
     assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
     assert_trade_state_change, assert_trade_state_change_is_valid, assert_value_in_range,
 };
-use localterra_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
-use localterra_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
-use localterra_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
-use localterra_protocol::profile::{
+use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
+use localmoney_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
+use localmoney_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
+use localmoney_protocol::profile::{
     increase_profile_trades_count_msg, load_profile, update_profile_msg,
 };
-use localterra_protocol::trade::{
+use localmoney_protocol::trade::{
     arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg,
     NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
     TradeStateItem, TraderRole,
 };
-// use localterra_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
+// use localmoney_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
 #[entry_point]

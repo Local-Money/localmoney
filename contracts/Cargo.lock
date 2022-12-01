@@ -769,7 +769,7 @@ dependencies = [
  "cosmwasm-vm",
  "cw-storage-plus",
  "cw20",
- "localterra-protocol",
+ "localmoney-protocol",
  "schemars",
  "serde",
  "snafu",
@@ -865,7 +865,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "localterra-protocol"
+name = "localmoney-protocol"
 version = "1.0.0"
 dependencies = [
  "cosmwasm-schema",
@@ -1001,7 +1001,7 @@ dependencies = [
  "cw-storage-plus",
  "cw20",
  "cw20-base",
- "localterra-protocol",
+ "localmoney-protocol",
  "rand 0.7.3",
  "schemars",
  "serde",
@@ -1060,7 +1060,7 @@ dependencies = [
  "cosmwasm-vm",
  "cw-storage-plus",
  "cw20",
- "localterra-protocol",
+ "localmoney-protocol",
  "schemars",
  "serde",
  "snafu",
@@ -1110,7 +1110,7 @@ dependencies = [
  "cosmwasm-vm",
  "cw-storage-plus",
  "cw20",
- "localterra-protocol",
+ "localmoney-protocol",
  "schemars",
  "serde",
  "snafu",
@@ -1640,7 +1640,7 @@ dependencies = [
  "cw-storage-plus",
  "cw20",
  "cw20-base",
- "localterra-protocol",
+ "localmoney-protocol",
  "schemars",
  "serde",
  "snafu",
@@ -1657,7 +1657,7 @@ dependencies = [
  "cosmwasm-vm",
  "cw-storage-plus",
  "cw20",
- "localterra-protocol",
+ "localmoney-protocol",
  "schemars",
  "serde",
  "snafu",
