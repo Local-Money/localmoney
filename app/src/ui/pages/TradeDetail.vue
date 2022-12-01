@@ -330,6 +330,10 @@ watch(userWallet, async () => {
       <div class="summary">
         <!-- Trade Summary -->
         <div v-if="!isArbitrator" class="trade-summary card">
+          <div class="description">
+            <p class="label">Offer description</p>
+            <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+          </div>
           <div class="trade-info">
             <p class="label">Price</p>
             <div class="current-price">
@@ -673,6 +677,7 @@ h3 {
 .trade-summary,
 .dispute-summary {
   display: flex;
+  gap: 32px;
 
   .label {
     margin-bottom: 8px;
@@ -680,9 +685,24 @@ h3 {
     color: $gray900;
   }
 
-  .trade-info {
-    width: 100%;
+  .description {
+    flex: 1;
+    .label {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: $gray900;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid $border;
+    }
+    .content {
+      font-size: 14px;
+      color: $gray700;
+    }
+  }
 
+  .trade-info {
+    flex: 2.5;
     .current-price,
     .transaction {
       background-color: $gray150;
