@@ -2,12 +2,13 @@ import { TextDecoder, TextEncoder } from 'util'
 import dotenv from 'dotenv'
 import { jest } from '@jest/globals'
 import offers from './fixtures/offers.json'
-import { setupProtocol } from './utils'
+import { setupProtocol, sleep } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import { encryptDataMocked } from './helper'
 import takerSecrets from './fixtures/taker_secrets.json'
 import makerSecrets from './fixtures/maker_secrets.json'
 import adminSecrets from './fixtures/admin_secrets.json'
+import { TRADE_DISPUTE_TIMER } from './configs'
 import type { FiatCurrency, GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
 import { OfferOrder, TradeState } from '~/types/components.interface'
 
@@ -21,7 +22,7 @@ let adminClient: TestCosmosChain
 const takerContact = 'taker001'
 const makerContact = 'maker001'
 
-jest.setTimeout(60 * 1000)
+jest.setTimeout(3 * 60 * 1000)
 beforeAll(async () => {
   const result = await setupProtocol()
   makerClient = result.makerClient
@@ -90,6 +91,8 @@ describe('arbitration tests', () => {
     trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.fiat_deposited)
 
+    // Wait the time to enable dispute
+    await sleep((TRADE_DISPUTE_TIMER + 1) * 1000)
     // Taker disputes the escrow
     const buyer_contact = await encryptDataMocked(makerContact, trade.arbitrator_encryption_key)
     const seller_contact = await encryptDataMocked(taker_contact, trade.arbitrator_encryption_key)
@@ -125,7 +128,8 @@ describe('arbitration tests', () => {
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
     await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
     await makerClient.setFiatDeposited(trade.id)
-
+    // Wait the time to enable dispute
+    await sleep((TRADE_DISPUTE_TIMER + 1) * 1000)
     // Taker disputes the escrow
     await takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')
     tradeInfo = await makerClient.fetchTradeDetail(tradeId)
@@ -137,6 +141,30 @@ describe('arbitration tests', () => {
     tradeInfo = await makerClient.fetchTradeDetail(tradeId)
     trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.settled_for_maker)
+  })
+
+  it('should not be able to open a dispute prematurely', async () => {
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const taker_encrypt_pk = takerSecrets.publicKey
+    const taker_contact = await encryptDataMocked(offerResponse[0].profile.encryption_key!, takerContact)
+
+    const tradeId = await takerClient.openTrade({
+      amount: offer.min_amount,
+      offer_id: offer.id,
+      taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      profile_taker_encryption_key: taker_encrypt_pk,
+      taker_contact,
+    })
+
+    const tradeInfo = await makerClient.fetchTradeDetail(tradeId)
+    const trade = tradeInfo.trade
+    const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
+    await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
+    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await makerClient.setFiatDeposited(trade.id)
+    // Tries to open dispute prematurely
+    await expect(takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')).rejects.toThrow()
   })
 
   it('should query trades by arbitrator', async () => {
