@@ -1,6 +1,7 @@
 use crate::state::{offers_count_read, offers_count_storage};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
+    Uint128,
 };
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
@@ -88,6 +89,9 @@ pub fn create_offer(
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
 
     let hub_config = get_hub_config(deps.as_ref());
+    let trading_limit = Uint128::new(hub_config.profile_daily_trading_limit);
+    //TODO: the offer amount is in crypto and the trading limit is in USD, we should put both as same currency before comparing.
+    assert_offer_max_inside_trading_limit(msg.max_amount, trading_limit)?;
 
     let update_profile_msg = update_profile_msg(
         hub_config.profile_addr.to_string(),

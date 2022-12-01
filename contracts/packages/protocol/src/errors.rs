@@ -29,6 +29,11 @@ pub enum ContractError {
     },
     #[error("Invalid state change.")]
     InvalidOfferStateChange { from: OfferState, to: OfferState },
+    #[error("Offer max amount: {max_amount:?} is above the trading limit: {trading_limit:?}.")]
+    OfferMaxAboveTradingLimit {
+        max_amount: Uint128,
+        trading_limit: Uint128,
+    },
     #[error("Offer not found.")]
     OfferNotFound { offer_id: String },
     #[error("Value out of range.")]

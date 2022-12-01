@@ -69,6 +69,20 @@ pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), ContractError>
     }
 }
 
+pub fn assert_offer_max_inside_trading_limit(
+    max_amount: Uint128,
+    trading_limit: Uint128,
+) -> Result<(), ContractError> {
+    if max_amount > trading_limit {
+        Err(ContractError::OfferMaxAboveTradingLimit {
+            max_amount,
+            trading_limit,
+        })
+    } else {
+        Ok(())
+    }
+}
+
 pub fn assert_value_in_range(
     min: Uint128,
     max: Uint128,

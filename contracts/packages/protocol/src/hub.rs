@@ -44,6 +44,7 @@ pub struct HubConfig {
     pub burn_fee_pct: u128,
     pub chain_fee_pct: u128,
     pub warchest_fee_pct: u128,
+    pub profile_daily_trading_limit: u128,
     pub trade_expiration_timer: u64,
     pub trade_dispute_timer: u64,
 }
