@@ -7,7 +7,7 @@ use cosmwasm_std::{
     Uint128, Uint256, WasmMsg,
 };
 
-use localmoney_protocol::constants::{ARBITRATION_FEE, LOCAL_FEE};
+use localmoney_protocol::constants::LOCAL_FEE;
 use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
@@ -854,6 +854,7 @@ fn settle_dispute(
     trade_id: String,
     winner: Addr,
 ) -> Result<Response, ContractError> {
+    let hub_cfg = get_hub_config(deps.as_ref());
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     // Check if caller is the arbitrator of the given trade
@@ -904,14 +905,14 @@ fn settle_dispute(
     TradeModel::store(deps.storage, &trade).unwrap();
 
     // Pay arbitration fee
-    let amount = trade.amount.clone();
-    let fee_rate: Uint128 = Uint128::new(ARBITRATION_FEE);
-    let fee_amount = amount.multiply_ratio(Uint128::new(1), fee_rate);
+    let fee_amount = trade
+        .amount
+        .multiply_ratio(hub_cfg.arbitration_fee_pct, 100u128);
 
     let denom = denom_to_string(&trade.denom);
     let fee = vec![Coin::new(fee_amount.u128(), denom.clone())];
     let winner_amount = vec![Coin::new(
-        amount.u128().sub(fee_amount.u128()),
+        trade.amount.u128().sub(fee_amount.u128()),
         denom.clone(),
     )];
 
