@@ -258,8 +258,17 @@ watch(marginOffset, () => {
       align-items: flex-end;
       justify-content: space-between;
 
+      @include responsive(mobile) {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
       .description {
         flex: 2;
+        @include responsive(mobile) {
+          width: 100%;
+        }
 
         .wrap-label {
           display: flex;
