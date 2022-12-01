@@ -1,6 +1,7 @@
 import type { InstantiateResult, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { TestCosmosChain } from './network/TestCosmosChain'
 import codeIds from './fixtures/codeIds.json'
+import { TRADE_DISPUTE_TIMER, TRADE_EXPIRATION_TIMER } from './configs'
 import { DEV_CONFIG, DEV_HUB_INFO } from '~/network/cosmos/config/dev'
 
 export function createHubUpdateConfigMsg(
@@ -25,8 +26,8 @@ export function createHubUpdateConfigMsg(
       warchest_fee_pct: '50',
       chain_fee_pct: '10',
       burn_fee_pct: '40',
-      trade_expiration_timer: 20 * 60, // 20 minutes
-      trade_dispute_timer: 1 * 60, // 1 minute
+      trade_expiration_timer: TRADE_EXPIRATION_TIMER,
+      trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
   }
 }
@@ -132,4 +133,8 @@ export async function setupProtocol() {
     console.log('Hub Address:', hubInstantiateResult.contractAddress)
   }
   return { adminClient, makerClient, takerClient }
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
