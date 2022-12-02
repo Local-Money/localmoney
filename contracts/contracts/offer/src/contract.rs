@@ -2,10 +2,11 @@ use crate::state::{offers_count_read, offers_count_storage};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
-use localmoney_protocol::constants::OFFER_DESCRIPTION_LIMIT;
 use localmoney_protocol::errors::ContractError;
-use localmoney_protocol::errors::ContractError::{HubAlreadyRegistered, InvalidParameter};
-use localmoney_protocol::guards::{assert_min_g_max, assert_ownership};
+use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
+use localmoney_protocol::guards::{
+    assert_min_g_max, assert_offer_description_valid, assert_ownership,
+};
 use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localmoney_protocol::offer::{
     offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
@@ -77,6 +78,8 @@ pub fn create_offer(
 ) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
+    assert_offer_description_valid(msg.description.clone()).unwrap();
+
     // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
     let mut offers_count = offers_count_storage(deps.storage)
         .load()
@@ -92,18 +95,6 @@ pub fn create_offer(
         msg.owner_contact.clone(),
         msg.owner_encryption_key.clone(),
     );
-
-    let description = msg.description.clone().unwrap_or(String::new());
-    if description.len() > OFFER_DESCRIPTION_LIMIT {
-        let mut message = "The description can not be longer than ".to_string();
-        message.push_str(OFFER_DESCRIPTION_LIMIT.to_string().as_str());
-        message.push_str(" characters.");
-
-        return Err(InvalidParameter {
-            parameter: "description".to_string(),
-            message: Some(message),
-        });
-    }
 
     let offer = OfferModel::create(
         deps.storage,
@@ -151,6 +142,8 @@ pub fn update_offer(
     let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
 
     assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
+
+    assert_offer_description_valid(msg.description.clone()).unwrap();
 
     let mut sub_msgs: Vec<SubMsg> = Vec::new();
     if msg.owner_contact.is_some() && msg.owner_encryption_key.is_some() {

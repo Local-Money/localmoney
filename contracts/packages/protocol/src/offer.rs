@@ -178,6 +178,7 @@ impl OfferModel<'_> {
         self.offer.min_amount = msg.min_amount;
         self.offer.max_amount = msg.max_amount;
         self.offer.state = msg.state;
+        self.offer.description = msg.description;
         OfferModel::store(self.storage, &self.offer).unwrap();
         &self.offer
     }
