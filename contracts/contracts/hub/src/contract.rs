@@ -1,17 +1,17 @@
 use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
-use localterra_protocol::denom_utils::denom_to_string;
+use localmoney_protocol::denom_utils::denom_to_string;
 
-use localterra_protocol::errors::ContractError;
-use localterra_protocol::errors::ContractError::Unauthorized;
-use localterra_protocol::hub::{
+use localmoney_protocol::errors::ContractError;
+use localmoney_protocol::errors::ContractError::Unauthorized;
+use localmoney_protocol::hub::{
     Admin, ExecuteMsg, HubConfig, InstantiateMsg, MigrateMsg, QueryMsg,
 };
-use localterra_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
-use localterra_protocol::price::ExecuteMsg::RegisterHub as PriceRegisterHub;
-use localterra_protocol::profile::ExecuteMsg::RegisterHub as ProfileRegisterHub;
-use localterra_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
-use localterra_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
+use localmoney_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
+use localmoney_protocol::price::ExecuteMsg::RegisterHub as PriceRegisterHub;
+use localmoney_protocol::profile::ExecuteMsg::RegisterHub as ProfileRegisterHub;
+use localmoney_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
+use localmoney_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
 
 use crate::state::{ADMIN, CONFIG};
 

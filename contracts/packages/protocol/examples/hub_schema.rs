@@ -1,5 +1,5 @@
 use cosmwasm_schema::{export_schema_with_title, remove_schemas};
-use localterra_protocol::hub::{ExecuteMsg, HubConfig, InstantiateMsg, QueryMsg};
+use localmoney_protocol::hub::{ExecuteMsg, HubConfig, InstantiateMsg, QueryMsg};
 use schemars::schema_for;
 use std::env::current_dir;
 use std::fs::create_dir_all;

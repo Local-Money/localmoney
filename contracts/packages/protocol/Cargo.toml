@@ -1,13 +1,13 @@
 [package]
-name = "localterra-protocol"
+name = "localmoney-protocol"
 version = "1.0.0"
-authors = ["LocalTerra Developers"]
+authors = ["LocalMoney Developers"]
 edition = "2018"
-description = "Common helpers for localterra-protocol"
+description = "Common helpers for localmoney-protocol"
 license = "Apache-2.0"
-repository = "https://github.com/Local-Terra/localterra-contracts"
-homepage = "https://localterra.money"
-documentation = "https://docs.localterra.money"
+repository = "https://github.com/Local-Money/localmoney/tree/main/contracts"
+homepage = "https://localmoney.io"
+documentation = "https://localmoney.gitbook.io"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

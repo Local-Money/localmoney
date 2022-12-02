@@ -1,6 +1,6 @@
 use cosmwasm_schema::{export_schema_with_title, remove_schemas};
-use localterra_protocol::hub_utils::HubAddr;
-use localterra_protocol::offer::{
+use localmoney_protocol::hub_utils::HubAddr;
+use localmoney_protocol::offer::{
     ExecuteMsg, InstantiateMsg, Offer, OfferMsg, OfferState, OfferType, OfferUpdateMsg,
     OffersCount, QueryMsg, TradeAddr, TradeInfo,
 };
