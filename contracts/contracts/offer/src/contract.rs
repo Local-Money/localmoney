@@ -2,8 +2,9 @@ use crate::state::{offers_count_read, offers_count_storage};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
+use localmoney_protocol::constants::OFFER_DESCRIPTION_LIMIT;
 use localmoney_protocol::errors::ContractError;
-use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
+use localmoney_protocol::errors::ContractError::{HubAlreadyRegistered, InvalidParameter};
 use localmoney_protocol::guards::{assert_min_g_max, assert_ownership};
 use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localmoney_protocol::offer::{
@@ -92,6 +93,18 @@ pub fn create_offer(
         msg.owner_encryption_key.clone(),
     );
 
+    let description = msg.description.clone().unwrap_or(String::new());
+    if description.len() > OFFER_DESCRIPTION_LIMIT {
+        let mut message = "The description can not be longer than ".to_string();
+        message.push_str(OFFER_DESCRIPTION_LIMIT.to_string().as_str());
+        message.push_str(" characters.");
+
+        return Err(InvalidParameter {
+            parameter: "description".to_string(),
+            message: Some(message),
+        });
+    }
+
     let offer = OfferModel::create(
         deps.storage,
         Offer {
@@ -104,6 +117,7 @@ pub fn create_offer(
             min_amount: msg.min_amount,
             max_amount: msg.max_amount,
             state: OfferState::Active,
+            description: msg.description,
             timestamp: env.block.time.seconds(),
         },
     )

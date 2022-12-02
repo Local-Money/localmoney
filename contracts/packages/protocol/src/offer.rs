@@ -66,6 +66,7 @@ pub struct OfferMsg {
     pub denom: Denom,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
+    pub description: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -77,6 +78,7 @@ pub struct OfferUpdateMsg {
     pub min_amount: Uint128,
     pub max_amount: Uint128,
     pub state: OfferState,
+    pub description: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -124,6 +126,7 @@ pub struct Offer {
     pub rate: Uint128,
     pub min_amount: Uint128,
     pub max_amount: Uint128,
+    pub description: Option<String>,
     pub denom: Denom,
     pub state: OfferState,
     pub timestamp: u64,
