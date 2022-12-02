@@ -36,30 +36,33 @@ const offerPrice = computed(() => {
       <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
     </div>
 
-    <div class="info">
-      <div class="wrap">
-        <p class="label">Limits</p>
-        <p class="limit">
-          {{ formatAmount(offerResponse.offer.min_amount) }} -
-          {{ formatAmount(offerResponse.offer.max_amount) }}
-          {{ microDenomToDenom(offerResponse.offer.denom.native) }}
-        </p>
+    <div class="inner-wrap">
+      <div class="info">
+        <div class="wrap">
+          <p class="label">Trade limit</p>
+          <p class="limit">
+            {{ formatAmount(offerResponse.offer.min_amount) }} -
+            {{ formatAmount(offerResponse.offer.max_amount) }}
+            {{ microDenomToDenom(offerResponse.offer.denom.native) }}
+          </p>
+        </div>
+        <div class="divider"></div>
+        <div class="description">
+          <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+        </div>
       </div>
 
-      <div class="divider" />
-      <div class="wrap">
-        <p class="label">Price</p>
-        <p class="rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+      <div class="price">
+        <div class="wrap">
+          <p class="value">
+            {{ offerPrice }}
+          </p>
+          <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+        </div>
+        <button class="primary bg-gray300" type="button" @click="emit('select')">
+          {{ offerTypeLabels[offerResponse.offer.offer_type] }}
+        </button>
       </div>
-    </div>
-
-    <div class="price">
-      <p class="value">
-        {{ offerPrice }}
-      </p>
-      <button class="primary bg-gray300" type="button" @click="emit('select')">
-        {{ offerTypeLabels[offerResponse.offer.offer_type] }}
-      </button>
     </div>
   </div>
 </template>
@@ -69,16 +72,19 @@ const offerPrice = computed(() => {
 
 .collapsed {
   .owner {
+    width: 20%;
     display: flex;
     flex-direction: column;
 
-    @media only screen and (max-width: $mobile) {
+    @include responsive(mobile) {
+      width: 100%;
       flex-direction: row;
       justify-content: space-between;
+      margin-bottom: 24px;
     }
 
     .wallet-addr {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
       color: $base-text;
     }

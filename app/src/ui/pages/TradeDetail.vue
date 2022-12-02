@@ -330,6 +330,10 @@ watch(userWallet, async () => {
       <div class="summary">
         <!-- Trade Summary -->
         <div v-if="!isArbitrator" class="trade-summary card">
+          <div class="description">
+            <p class="label">Offer description</p>
+            <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+          </div>
           <div class="trade-info">
             <p class="label">Price</p>
             <div class="current-price">
@@ -361,44 +365,50 @@ watch(userWallet, async () => {
 
         <!-- Trade Dispute Summary -->
         <div v-else class="dispute-summary card">
-          <div class="dispute-wrap">
-            <div class="peer-wrap">
-              <p class="peer">Maker</p>
-              <p class="address">{{ formatAddress(maker) }}</p>
-            </div>
-            <div class="separator">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 12H19" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path
-                  d="M12 5L19 12L12 19"
-                  stroke="inherit"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-            <div class="peer-wrap">
-              <p class="peer">Taker</p>
-              <p class="address">{{ formatAddress(taker) }}</p>
-            </div>
+          <div class="description">
+            <p class="label">Offer description</p>
+            <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
           </div>
-          <div class="trade-info">
-            <p class="label">Transaction summary</p>
-            <div class="transaction">
-              <div class="list-item">
-                <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Maker is selling</p>
-                <p v-else class="list-item-label">Maker is buying</p>
-                <p class="value">
-                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
-                </p>
+          <div class="dispute-wrap">
+            <div class="traders-info">
+              <div class="peer-wrap">
+                <p class="peer">Maker</p>
+                <p class="address">{{ formatAddress(maker) }}</p>
               </div>
-              <div class="list-item">
-                <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Taker should pay</p>
-                <p v-else class="list-item-label">Taker should receive</p>
-                <p class="value fiat">
-                  {{ fiatAmountStr }}
-                </p>
+              <div class="separator">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 12H19" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <path
+                    d="M12 5L19 12L12 19"
+                    stroke="inherit"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="peer-wrap">
+                <p class="peer">Taker</p>
+                <p class="address">{{ formatAddress(taker) }}</p>
+              </div>
+            </div>
+            <div class="trade-info">
+              <p class="label">Transaction summary</p>
+              <div class="transaction">
+                <div class="list-item">
+                  <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Maker is selling</p>
+                  <p v-else class="list-item-label">Maker is buying</p>
+                  <p class="value">
+                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+                <div class="list-item">
+                  <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Taker should pay</p>
+                  <p v-else class="list-item-label">Taker should receive</p>
+                  <p class="value fiat">
+                    {{ fiatAmountStr }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -641,9 +651,10 @@ h3 {
 }
 
 .dispute-summary {
-  flex-direction: column;
-
   .dispute-wrap {
+    flex: 2.5;
+  }
+  .traders-info {
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -673,6 +684,7 @@ h3 {
 .trade-summary,
 .dispute-summary {
   display: flex;
+  gap: 32px;
 
   .label {
     margin-bottom: 8px;
@@ -680,9 +692,24 @@ h3 {
     color: $gray900;
   }
 
-  .trade-info {
-    width: 100%;
+  .description {
+    flex: 1;
+    .label {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: $gray900;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid $border;
+    }
+    .content {
+      font-size: 14px;
+      color: $gray700;
+    }
+  }
 
+  .trade-info {
+    flex: 2.5;
     .current-price,
     .transaction {
       background-color: $gray150;

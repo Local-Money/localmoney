@@ -203,6 +203,17 @@ watch(fiatCurrency, async () => {
           <input v-model="ownerContact" type="text" placeholder="t.me/your-user-name" />
         </div>
       </div>
+
+      <div class="description">
+        <div class="wrap">
+          <div class="wrap-label">
+            <label>Offer description</label>
+            <IconTooltip content="Here you can write the payment options you will be accepting for this offer." />
+          </div>
+          <textarea maxlength="90" minlength="3" placeholder="Bank transfer, Paypal, Cash..."></textarea>
+        </div>
+      </div>
+
       <div class="divider" />
     </div>
 
@@ -256,6 +267,7 @@ watch(fiatCurrency, async () => {
   .currency,
   .min-max,
   .market-price,
+  .description,
   .chat {
     display: flex;
     gap: 24px;
@@ -288,6 +300,9 @@ watch(fiatCurrency, async () => {
 
       input {
         width: 100%;
+        background-color: $background;
+      }
+      textarea {
         background-color: $background;
       }
     }
