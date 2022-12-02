@@ -33,28 +33,33 @@ onBeforeMount(async () => {
       <p class="type">{{ offer.offer_type }}ing</p>
     </div>
 
-    <div class="info">
-      <!-- <p class="state">{{ offer.state }}</p>
+    <div class="inner-wrap">
+      <div class="info">
+        <!-- <p class="state">{{ offer.state }}</p>
       <div class="divider"></div> -->
-      <div class="wrap">
-        <p class="label">Limits</p>
-        <p class="limit">
-          {{ formatAmount(offer.min_amount) }} - {{ formatAmount(offer.max_amount) }}
-          {{ microDenomToDenom(offer.denom.native) }}
-        </p>
+        <div class="wrap">
+          <p class="label">Limits</p>
+          <p class="limit">
+            {{ formatAmount(offer.min_amount) }} - {{ formatAmount(offer.max_amount) }}
+            {{ microDenomToDenom(offer.denom.native) }}
+          </p>
+        </div>
+        <div class="divider" />
+        <div class="description">
+          <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+        </div>
       </div>
-      <div class="divider" />
-      <div class="wrap">
-        <p class="label">Price</p>
-        <p class="rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-      </div>
-    </div>
 
-    <div class="price">
-      <p class="value">
-        {{ offerPrice }}
-      </p>
-      <button class="secondary bg-gray300" type="button" @click="emit('select')">edit</button>
+      <div class="price">
+        <div class="wrap">
+          <p class="value">
+            {{ offerPrice }}
+          </p>
+          <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+        </div>
+
+        <button class="secondary bg-gray300" type="button" @click="emit('select')">edit</button>
+      </div>
     </div>
   </div>
 </template>
