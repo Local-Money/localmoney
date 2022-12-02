@@ -208,7 +208,7 @@ onUnmounted(() => {
 
       <div class="inner-wrap">
         <div class="description">
-          <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+          <p class="content">{{ offerResponse.offer.description ?? 'No Description' }}</p>
         </div>
         <div class="price">
           <div class="wrap">

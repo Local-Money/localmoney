@@ -46,7 +46,7 @@ onBeforeMount(async () => {
         </div>
         <div class="divider" />
         <div class="description">
-          <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+          <p class="content">{{ offer.description ?? 'No Description' }}</p>
         </div>
       </div>
 

@@ -332,7 +332,7 @@ watch(userWallet, async () => {
         <div v-if="!isArbitrator" class="trade-summary card">
           <div class="description">
             <p class="label">Offer description</p>
-            <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+            <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
           </div>
           <div class="trade-info">
             <p class="label">Price</p>

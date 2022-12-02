@@ -51,6 +51,7 @@ export interface GetOffer {
   owner: string
   offer_type: OfferType
   denom: Denom
+  description?: string
   fiat_currency: FiatCurrency
   timestamp: number
 }
@@ -63,6 +64,7 @@ export interface PatchOffer {
   max_amount: string
   owner_contact?: string
   owner_encryption_key?: string
+  description?: string
 }
 
 export interface PostOffer {
@@ -74,6 +76,7 @@ export interface PostOffer {
   fiat_currency: FiatCurrency
   min_amount: string
   max_amount: string
+  description?: string
 }
 
 export enum FiatCurrency {
