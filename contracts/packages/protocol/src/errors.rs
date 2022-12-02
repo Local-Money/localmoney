@@ -10,9 +10,9 @@ pub enum ContractError {
     Unauthorized { owner: Addr, caller: Addr },
     #[error("Unauthorized.")]
     UnauthorizedMultipleOwnership { owners: Vec<Addr>, caller: Addr },
-    #[error("Some parameter is missing")]
-    MissingParameter {
-        missing: String,
+    #[error("The parameter {parameter:?} is invalid. {message:?}")]
+    InvalidParameter {
+        parameter: String,
         message: Option<String>,
     },
     /// Hub Errors

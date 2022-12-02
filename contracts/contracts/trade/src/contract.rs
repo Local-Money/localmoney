@@ -12,7 +12,7 @@ use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::{
-    FundEscrowError, HubAlreadyRegistered, InvalidTradeState, MissingParameter, OfferNotFound,
+    FundEscrowError, HubAlreadyRegistered, InvalidParameter, InvalidTradeState, OfferNotFound,
     RefundErrorNotExpired, TradeExpired,
 };
 use localmoney_protocol::guards::{
@@ -398,8 +398,8 @@ fn fund_escrow(
             // Set maker_contact as seller_contact
             trade.seller_contact = maker_contact
         } else {
-            return Err(MissingParameter {
-                missing: "maker_contact".to_string(),
+            return Err(InvalidParameter {
+                parameter: "maker_contact".to_string(),
                 message: Some("At this point the maker_contact can not be undefined".to_string()),
             });
         }
