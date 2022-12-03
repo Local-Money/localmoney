@@ -4,6 +4,7 @@ import { TradeState } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { formatAddress } from '~/shared'
 import { decryptData, encryptData } from '~/utils/crypto'
+import { formatTimer } from '~/utils/formatters'
 
 const props = defineProps<{
   tradeInfo: TradeInfo
@@ -15,6 +16,12 @@ const profile = computed(() => client.profile)
 
 const isBuyer = computed(() => props.tradeInfo.trade.buyer === props.walletAddress)
 const isSeller = computed(() => props.tradeInfo.trade.seller === props.walletAddress)
+
+const timeToEnableDispute = computed(() => {
+  const currentTime = Date.now()
+  const enablesDisputeAt = (props.tradeInfo.trade.enables_dispute_at ?? 0) * 1000
+  return new Date(enablesDisputeAt - currentTime)
+})
 
 const disputeWinner = computed(() => {
   const taker = `${formatAddress(getTaker())}`
@@ -276,13 +283,22 @@ async function settleDispute(winner: string) {
       <p>Please note that requesting to cancel the transaction could impact on your reputation.</p>
       <p class="btn-action" @click="cancelTradeRequest(tradeInfo.trade.id)">Request cancel</p>
     </div>
-    <div v-if="tradeInfo.trade.state === 'fiat_deposited'" class="wrap">
-      <p>
-        If you run into problems with the transaction you can request to open a dispute. Only do this if you already
-        tried to contact the other trader without success.
-      </p>
-      <p class="btn-action" @click="openDispute(tradeInfo.trade.id)">Request dispute</p>
-    </div>
+    <template v-if="tradeInfo.trade.state === 'fiat_deposited'">
+      <div v-if="timeToEnableDispute.getTime() > 0" class="wrap">
+        <p>
+          Depending on your choice of payment method, it can take a little longer to confirm the transaction. If this
+          does not happen, an option to open a dispute will be available in
+          {{ formatTimer(timeToEnableDispute, '00h 00m 00s') }}.
+        </p>
+      </div>
+      <div v-else class="wrap">
+        <p>
+          If you run into problems with the transaction you can request to open a dispute. Only do this if you already
+          tried to contact the other trader without success.
+        </p>
+        <p class="btn-action" @click="openDispute(tradeInfo.trade.id)">Request dispute</p>
+      </div>
+    </template>
   </section>
 </template>
 

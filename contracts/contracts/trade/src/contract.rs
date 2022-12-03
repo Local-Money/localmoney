@@ -477,6 +477,7 @@ fn fiat_deposited(
     info: MessageInfo,
     trade_id: String,
 ) -> Result<Response, ContractError> {
+    let hub_config = get_hub_config(deps.as_ref());
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
@@ -490,6 +491,10 @@ fn fiat_deposited(
 
     // Update trade State to TradeState::FiatDeposited
     trade.set_state(TradeState::FiatDeposited, &env, &info);
+    // Sets the time that will enable the dispute
+    let enables_dispute_at = env.block.time.seconds() + hub_config.trade_dispute_timer;
+    trade.enables_dispute_at = Some(enables_dispute_at);
+
     TradeModel::store(deps.storage, &trade).unwrap();
 
     let res = Response::new()
@@ -831,6 +836,15 @@ fn dispute_escrow(
         TradeState::EscrowDisputed,
     )
     .unwrap();
+
+    // The `enables_dispute_at` is defined in the fiat_deposited
+    let enables_dispute_at = trade.enables_dispute_at.unwrap();
+    let current_block_time = env.block.time.seconds();
+    // Returns an error if is too early to open a dispute
+    if enables_dispute_at > current_block_time {
+        let time_to_dispute = enables_dispute_at - current_block_time;
+        return Err(ContractError::PrematureDisputeRequest { time_to_dispute });
+    }
 
     // Update trade State to TradeState::Disputed and sets arbitrator
     trade.set_state(TradeState::EscrowDisputed, &env, &info);

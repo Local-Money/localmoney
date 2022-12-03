@@ -43,6 +43,8 @@ pub enum ContractError {
         required_amount: Uint128,
         sent_amount: Uint128,
     },
+    #[error("Dispute requested too early. Time to enable dispute: {time_to_dispute:?}")]
+    PrematureDisputeRequest { time_to_dispute: u64 },
     #[error("Invalid price for denom. Must be greater than zero.")]
     InvalidPriceForDenom {},
     #[error("Invalid sender, must be Trade's buyer or seller.")]
