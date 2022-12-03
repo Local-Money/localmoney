@@ -31,6 +31,7 @@ const maxAmount = ref(0)
 const margin = ref('above')
 const marginOffset = ref('')
 const ownerContact = ref('')
+const description = ref('')
 const marginOffsetUnmasked = ref(0)
 const rate = ref(0)
 const offerType = ref<OfferType>(OfferType.buy)
@@ -89,6 +90,7 @@ async function createOffer() {
     denom: { native: selectedCrypto.value },
     min_amount: `${minAmount.value * 1000000}`,
     max_amount: `${maxAmount.value * 1000000}`,
+    description: description.value,
   }
   await client.createOffer(postOffer)
   emit('cancel')
@@ -210,7 +212,7 @@ watch(fiatCurrency, async () => {
             <label>Offer description</label>
             <IconTooltip content="Here you can write the payment options you will be accepting for this offer." />
           </div>
-          <textarea maxlength="90" minlength="3" placeholder="Bank transfer, Paypal, Cash..."></textarea>
+          <textarea v-model="description" maxlength="90" minlength="3" placeholder="Bank transfer, Paypal, Cash..." />
         </div>
       </div>
 

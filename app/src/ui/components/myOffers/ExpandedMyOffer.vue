@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import CurrencyInput from '../CurrencyInput.vue'
 import {
   calculateFiatPriceByRate,
@@ -27,6 +28,7 @@ const fiatPriceByRate = computed(() => {
 })
 const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
 const valid = computed(() => updatedOffer.value.max_amount > updatedOffer.value.min_amount)
+const description = ref(updatedOffer.value.description)
 
 function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(marginRate.value.margin, marginRate.value.marginOffset)
@@ -40,6 +42,7 @@ function update() {
     rate: `${rate.value}`,
     min_amount: `${formatAmount(offer.min_amount, false) * 1000000}`,
     max_amount: `${formatAmount(offer.max_amount, false) * 1000000}`,
+    description: description.value,
   })
 }
 
@@ -133,7 +136,12 @@ watch(marginOffset, () => {
               <label>Edit offer description</label>
               <IconTooltip content="Here you can write the payment options you will be accepting for this offer." />
             </div>
-            <textarea maxlength="90" minlength="3" placeholder="Bank transfer, Paypal, Cash..."></textarea>
+            <textarea
+              v-model="description"
+              maxlength="90"
+              minlength="3"
+              placeholder="Bank transfer, Paypal, Cash..."
+            ></textarea>
           </div>
         </div>
         <div class="wrap-btns">

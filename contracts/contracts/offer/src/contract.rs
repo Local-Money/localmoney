@@ -4,7 +4,9 @@ use cosmwasm_std::{
 };
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
-use localmoney_protocol::guards::{assert_min_g_max, assert_ownership};
+use localmoney_protocol::guards::{
+    assert_min_g_max, assert_offer_description_valid, assert_ownership,
+};
 use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
 use localmoney_protocol::offer::{
     offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
@@ -76,6 +78,8 @@ pub fn create_offer(
 ) -> Result<Response, ContractError> {
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
+    assert_offer_description_valid(msg.description.clone()).unwrap();
+
     // Load offers count to create the next sequential id, maybe we can switch to a hash based id in the future.
     let mut offers_count = offers_count_storage(deps.storage)
         .load()
@@ -104,6 +108,7 @@ pub fn create_offer(
             min_amount: msg.min_amount,
             max_amount: msg.max_amount,
             state: OfferState::Active,
+            description: msg.description,
             timestamp: env.block.time.seconds(),
         },
     )
@@ -137,6 +142,8 @@ pub fn update_offer(
     let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
 
     assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
+
+    assert_offer_description_valid(msg.description.clone()).unwrap();
 
     let mut sub_msgs: Vec<SubMsg> = Vec::new();
     if msg.owner_contact.is_some() && msg.owner_encryption_key.is_some() {

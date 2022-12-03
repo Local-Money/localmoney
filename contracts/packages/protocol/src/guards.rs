@@ -1,4 +1,6 @@
+use crate::constants::OFFER_DESCRIPTION_LIMIT;
 use crate::errors::ContractError;
+use crate::errors::ContractError::InvalidParameter;
 use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{Addr, Uint128};
@@ -114,4 +116,20 @@ pub fn assert_trade_state_and_type(
             },
         })
     }
+}
+
+pub fn assert_offer_description_valid(description: Option<String>) -> Result<(), ContractError> {
+    let description = description.unwrap_or(String::new());
+    return if description.len() > OFFER_DESCRIPTION_LIMIT {
+        let mut message = "The description can not be longer than ".to_string();
+        message.push_str(OFFER_DESCRIPTION_LIMIT.to_string().as_str());
+        message.push_str(" characters.");
+
+        Err(InvalidParameter {
+            parameter: "description".to_string(),
+            message: Some(message),
+        })
+    } else {
+        Ok(())
+    };
 }
