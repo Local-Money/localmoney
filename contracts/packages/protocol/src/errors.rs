@@ -1,6 +1,6 @@
 use crate::offer::OfferState;
 use crate::trade::TradeState;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Uint128, Uint256};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -31,8 +31,8 @@ pub enum ContractError {
     InvalidOfferStateChange { from: OfferState, to: OfferState },
     #[error("Offer max amount: {max_amount:?} is above the trading limit: {trading_limit:?}.")]
     OfferMaxAboveTradingLimit {
-        max_amount: Uint128,
-        trading_limit: Uint128,
+        max_amount: Uint256,
+        trading_limit: Uint256,
     },
     #[error("Offer not found.")]
     OfferNotFound { offer_id: String },
@@ -74,4 +74,9 @@ pub enum ContractError {
     DistributionClaimInvalidPeriod {},
     #[error("Distribution hasn't started yet.")]
     DistributionNotStarted {},
+    /// Profile Errors
+    #[error("You have reached the limit of active offers. Limit: {limit:?}.")]
+    ActiveOffersLimitReached { limit: u8 },
+    #[error("You have reached the limit of active trades. Limit: {limit:?}.")]
+    ActiveTradesLimitReached { limit: u8 },
 }

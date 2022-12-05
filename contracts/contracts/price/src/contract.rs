@@ -129,7 +129,6 @@ pub fn query_fiat_price_for_denom(
     fiat: FiatCurrency,
     denom: Denom,
 ) -> StdResult<DenomFiatPrice> {
-    let fiat_price = &FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?;
     let kq = KujiraQuerier::new(&deps.querier);
     let atom_usd_price = kq.query_exchange_rate(BASE_ORACLE_DENOM).unwrap();
     let amount = Uint128::new(1_000_000u128);
@@ -156,9 +155,19 @@ pub fn query_fiat_price_for_denom(
                 .unwrap();
             price * denom_price_result.return_amount
         });
-    let fiat_usd = Uint256::from(fiat_price.usd_price);
+
     let atom_usd = Uint256::from(Uint128::new(1_000_000u128).mul(atom_usd_price.rate));
+    let fiat_price = match fiat {
+        FiatCurrency::USD => CurrencyPrice {
+            currency: FiatCurrency::USD,
+            usd_price: Uint128::new(100u128),
+            updated_at: 0,
+        },
+        _ => FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?,
+    };
+    let fiat_usd = Uint256::from(fiat_price.usd_price);
     let decimal_places = 1_000_000_000_000u128;
+
     let denom_fiat_price = fiat_usd
         .mul(&atom_usd)
         .mul(&denom_atom)

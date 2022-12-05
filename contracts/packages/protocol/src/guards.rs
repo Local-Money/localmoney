@@ -3,7 +3,7 @@ use crate::errors::ContractError;
 use crate::errors::ContractError::InvalidParameter;
 use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Uint128, Uint256};
 
 pub fn assert_multiple_ownership(caller: Addr, owners: Vec<Addr>) -> Result<(), ContractError> {
     if owners.contains(&caller) {
@@ -70,8 +70,8 @@ pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), ContractError>
 }
 
 pub fn assert_offer_max_inside_trading_limit(
-    max_amount: Uint128,
-    trading_limit: Uint128,
+    max_amount: Uint256,
+    trading_limit: Uint256,
 ) -> Result<(), ContractError> {
     if max_amount > trading_limit {
         Err(ContractError::OfferMaxAboveTradingLimit {

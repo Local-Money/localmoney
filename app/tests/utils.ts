@@ -27,6 +27,10 @@ export function createHubUpdateConfigMsg(
       arbitration_fee_pct: '1',
       chain_fee_pct: '10',
       burn_fee_pct: '40',
+      offer_max_limit: '1000', // in USD
+      active_offers_limit: 3,
+      active_trades_limit: 3,
+      trade_expiration_timer: 20 * 60, // in seconds
       trade_expiration_timer: TRADE_EXPIRATION_TIMER,
       trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
