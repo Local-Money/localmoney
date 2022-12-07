@@ -8,13 +8,14 @@ const props = defineProps<{
   message: string
   subMessage?: string
   buttons?: TradeActionButton[]
+  icon?: string
 }>()
 </script>
 
 <template>
   <div class="wrap">
     <div class="wrap-message">
-      <RightArrow />
+      <BaseIcon :icon="icon ?? 'arrow'" :class="icon === 'check' ? 'done' : 'color'" />
       <p>
         {{ message }} <span v-if="subMessage">{{ subMessage }}</span>
       </p>
