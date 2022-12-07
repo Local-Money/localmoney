@@ -1,9 +1,6 @@
-use std::ops::Mul;
-
 use crate::state::{offers_count_read, offers_count_storage};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
-    Uint256,
 };
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
@@ -15,7 +12,9 @@ use localmoney_protocol::offer::{
     offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
     OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
 };
-use localmoney_protocol::profile::{load_profile, update_profile_msg};
+use localmoney_protocol::profile::{
+    load_profile, update_profile_active_offers_msg, update_profile_contact_msg,
+};
 
 #[entry_point]
 pub fn instantiate(
@@ -73,12 +72,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+/// Creates a new offer
 pub fn create_offer(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
 ) -> Result<Response, ContractError> {
+    let hub_config = get_hub_config(deps.as_ref());
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     assert_offer_description_valid(msg.description.clone()).unwrap();
@@ -90,27 +91,7 @@ pub fn create_offer(
     offers_count.count += 1;
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
 
-    let hub_config = get_hub_config(deps.as_ref());
-
-    //TODO: the offer amount is in crypto and the trading limit is in USD, we should put both as same currency before comparing.
-    let denom_usd_price = query_fiat_price_for_denom(
-        &deps.querier,
-        msg.denom.clone(),
-        FiatCurrency::USD,
-        hub_config.price_addr.to_string(),
-    )
-    .unwrap_or(DenomFiatPrice {
-        denom: msg.denom.clone(),
-        fiat: FiatCurrency::USD,
-        price: Uint256::zero(),
-    })
-    .price;
-    let max_amount_in_usd = Uint256::from(msg.max_amount.clone()).mul(denom_usd_price);
-    assert_offer_max_inside_trading_limit(
-        max_amount_in_usd,
-        Uint256::from(hub_config.offer_max_limit),
-    )?;
-
+    // Update profile contact info
     let update_profile_contact_msg = update_profile_contact_msg(
         hub_config.profile_addr.to_string(),
         info.sender.clone(),
@@ -136,10 +117,12 @@ pub fn create_offer(
     )
     .offer;
 
+    // Update offers count
     offers_count_storage(deps.storage)
         .save(&offers_count)
         .unwrap();
 
+    // Update profile active offers
     let update_profile_offers_msg = update_profile_active_offers_msg(
         hub_config.profile_addr.to_string(),
         info.sender.clone(),

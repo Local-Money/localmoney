@@ -2,7 +2,11 @@ import type { InstantiateResult, SigningCosmWasmClient } from '@cosmjs/cosmwasm-
 import { TestCosmosChain } from './network/TestCosmosChain'
 import codeIds from './fixtures/codeIds.json'
 import { TRADE_DISPUTE_TIMER, TRADE_EXPIRATION_TIMER } from './configs'
+import { encryptDataMocked } from './helper'
+import makerSecrets from './fixtures/maker_secrets.json'
+import offers from './fixtures/offers.json'
 import { DEV_CONFIG, DEV_HUB_INFO } from '~/network/cosmos/config/dev'
+import type { OfferResponse, PostOffer } from '~/types/components.interface'
 
 export function createHubUpdateConfigMsg(
   offerAddr: string,
@@ -23,14 +27,13 @@ export function createHubUpdateConfigMsg(
       local_denom: { native: process.env.LOCAL_DENOM },
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
       warchest_addr: process.env.WARCHEST_ADDR,
-      warchest_fee_pct: '50',
       arbitration_fee_pct: '1',
-      chain_fee_pct: '10',
       burn_fee_pct: '40',
-      offer_max_limit: '1000', // in USD
+      chain_fee_pct: '10',
+      warchest_fee_pct: '50',
+      trade_limit: '100', // in USD
       active_offers_limit: 3,
       active_trades_limit: 3,
-      trade_expiration_timer: 20 * 60, // in seconds
       trade_expiration_timer: TRADE_EXPIRATION_TIMER,
       trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
@@ -148,4 +151,18 @@ export async function setupProtocol() {
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export async function getOrCreateOffer(makerClient: TestCosmosChain): Promise<OfferResponse> {
+  let myOffers = await makerClient.fetchMyOffers()
+  if (myOffers.length === 0) {
+    const makerContact = 'maker001'
+    const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+    const owner_encryption_key = makerSecrets.publicKey
+    const denom = { native: process.env.OFFER_DENOM! }
+    const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
+    await makerClient.createOffer(newOffer)
+  }
+  myOffers = await makerClient.fetchMyOffers()
+  return myOffers[0]
 }

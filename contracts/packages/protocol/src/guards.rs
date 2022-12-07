@@ -61,6 +61,7 @@ pub fn assert_trade_state_change(
     }
 }
 
+// Asserts that min value is lower than max value
 pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), ContractError> {
     if min >= max {
         Err(ContractError::InvalidMinMax { min, max })

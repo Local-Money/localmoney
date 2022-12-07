@@ -58,6 +58,11 @@ pub enum ContractError {
         buyer: Addr,
         seller: Addr,
     },
+    #[error("Invalid trade amount. Amount: {amount:?} must be less than or equal to max amount: {max_amount:?}.")]
+    InvalidTradeAmount {
+        amount: Uint256,
+        max_amount: Uint256,
+    },
     #[error("Trade state is invalid.")]
     InvalidTradeState {
         current: TradeState,

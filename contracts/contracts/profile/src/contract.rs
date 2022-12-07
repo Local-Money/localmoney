@@ -5,6 +5,7 @@ use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
 use localmoney_protocol::guards::{assert_multiple_ownership, assert_ownership};
 use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localmoney_protocol::offer::OfferState;
 use localmoney_protocol::profile::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, ProfileModel, QueryMsg,
 };

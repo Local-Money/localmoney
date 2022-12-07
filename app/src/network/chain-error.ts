@@ -6,6 +6,12 @@ export class DefaultError extends ChainError {
     // Set the prototype explicitly.
     Object.setPrototypeOf(this, DefaultError.prototype)
   }
+
+  static fromError(e) {
+    if (Object.hasOwn(e, 'message')) {
+      return new DefaultError(e.message)
+    }
+  }
 }
 
 export class WalletNotInstalled extends ChainError {

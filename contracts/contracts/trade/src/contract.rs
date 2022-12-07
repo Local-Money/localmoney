@@ -23,7 +23,7 @@ use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub
 use localmoney_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
 use localmoney_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
 use localmoney_protocol::profile::{
-    increase_profile_trades_count_msg, load_profile, update_profile_msg,
+    load_profile, update_profile_contact_msg, update_profile_trades_count_msg,
 };
 use localmoney_protocol::trade::{
     arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg,
@@ -120,6 +120,33 @@ fn create_trade(
         return Err(ContractError::Unauthorized {
             owner: offer.owner,
             caller: info.sender,
+        });
+    }
+
+    // Check if new_trade.amount in fiat is lower than the trade limit at hub_cfg
+    let offer_denom_usd_price = query_fiat_price_for_denom(
+        &deps.querier,
+        offer.denom.clone(),
+        FiatCurrency::USD,
+        hub_cfg.price_addr.to_string(),
+    )
+    .unwrap_or(DenomFiatPrice {
+        denom: offer.denom.clone(),
+        fiat: FiatCurrency::USD,
+        price: Uint256::from_u128(0),
+    });
+    let offer_usd_price = calc_denom_fiat_price(offer.rate, offer_denom_usd_price.price);
+    let new_trade_amount = Uint256::from_u128(new_trade.amount.u128());
+    let usd_trade_amount = (new_trade_amount * offer_usd_price)
+        .checked_div(Uint256::from_u128(100u128))
+        .unwrap()
+        .checked_div(Uint256::from_u128(1_000_000u128))
+        .unwrap();
+    // Check that usd_trade_amount is lower or equal than the trade limit and return error if not.
+    if usd_trade_amount > Uint256::from_u128(hub_cfg.trade_limit) {
+        return Err(ContractError::InvalidTradeAmount {
+            amount: usd_trade_amount,
+            max_amount: Uint256::from_u128(hub_cfg.trade_limit),
         });
     }
 
@@ -233,7 +260,9 @@ fn create_trade(
         .add_attribute("denom", denom_str)
         .add_attribute("denom_fiat_price", denom_fiat_price.price.to_string())
         .add_attribute("offer_rate", offer.rate.to_string())
-        .add_attribute("taker", new_trade.taker.to_string());
+        .add_attribute("taker", new_trade.taker.to_string())
+        .add_attribute("usd_trade_amount", usd_trade_amount.to_string())
+        .add_attribute("offer_usd_price", offer_usd_price.to_string());
 
     Ok(res)
 }

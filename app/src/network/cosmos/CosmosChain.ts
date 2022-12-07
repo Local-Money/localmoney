@@ -209,7 +209,7 @@ export class CosmosChain implements Chain {
         return trade_id ?? ''
       } catch (e) {
         console.error(e)
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -332,7 +332,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom) {
+  async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice> {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()

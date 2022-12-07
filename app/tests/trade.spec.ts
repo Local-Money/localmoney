@@ -6,13 +6,13 @@ import offers from './fixtures/offers.json'
 import makerSecrets from './fixtures/maker_secrets.json'
 import takerSecrets from './fixtures/taker_secrets.json'
 import adminSecrets from './fixtures/admin_secrets.json'
-import { setupProtocol } from './utils'
+import { getOrCreateOffer, setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import prices from './fixtures/update_prices.json'
 import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
-import type { FiatCurrency, GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
-import { TradeState } from '~/types/components.interface'
+import type { GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
+import { FiatCurrency, TradeState } from '~/types/components.interface'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -38,6 +38,7 @@ let myOffers: OfferResponse[] = []
 describe('trade lifecycle happy path', () => {
   let requestedTradesCount = 0
   let releasedTradesCount = 0
+  let offerResponse: OfferResponse
   it('should have an arbitrator available', async () => {
     const fiat = offers[0].fiat_currency as FiatCurrency
     let arbitrators = await adminClient.fetchArbitrators()
@@ -53,35 +54,27 @@ describe('trade lifecycle happy path', () => {
   })
   // Create Offer
   it('should have an available offer', async () => {
-    myOffers = await makerClient.fetchMyOffers()
-    if (myOffers.length === 0) {
-      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
-      const owner_encryption_key = makerSecrets.publicKey
-      const offer = { ...offers[0], owner_contact, owner_encryption_key } as PostOffer
-      await makerClient.createOffer(offer)
-    }
-    myOffers = await makerClient.fetchMyOffers()
-    requestedTradesCount = myOffers[0].profile.requested_trades_count
-    releasedTradesCount = myOffers[0].profile.released_trades_count
-    expect(myOffers.length).toBeGreaterThan(0)
+    offerResponse = await getOrCreateOffer(makerClient)
+    expect(offerResponse).toBeDefined()
+    requestedTradesCount = offerResponse.profile.requested_trades_count
+    releasedTradesCount = offerResponse.profile.released_trades_count
   })
   // Create Trade
   it('taker should create a trade', async () => {
-    const offerResponse = myOffers[0] as OfferResponse
     const offer = offerResponse.offer
     const taker_contact = await encryptDataMocked(offerResponse.profile.encryption_key!, takerContact)
     expect(offer).toHaveProperty('id')
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
     tradeId = await takerClient.openTrade({
-      amount: offer.min_amount,
+      amount: offer.max_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
       profile_taker_encryption_key: profile_taker_encrypt_key,
       taker_contact,
     })
-    console.log('Trade Id:', tradeId)
+    expect(tradeId).toBeDefined()
   })
   // Maker accepts the trade request
   it('maker should accept the trade request', async () => {
@@ -146,17 +139,10 @@ describe('trade invalid state changes', () => {
     expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
   })
   it('should have an available offer', async () => {
-    let myOffers = await makerClient.fetchMyOffers()
-    if (myOffers.length === 0) {
-      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
-      const owner_encryption_key = makerSecrets.publicKey
-      const denom = { native: process.env.OFFER_DENOM! }
-      const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
-      await makerClient.createOffer(newOffer)
-    }
-    myOffers = await makerClient.fetchMyOffers()
-    requestedTradesCount = myOffers[0].profile.requested_trades_count
-    releasedTradesCount = myOffers[0].profile.released_trades_count
+    const offer = await getOrCreateOffer(makerClient)
+    expect(offer).toBeDefined()
+    requestedTradesCount = offer.profile.requested_trades_count
+    releasedTradesCount = offer.profile.released_trades_count
   })
   it('should fail to fund a trade in request_created state', async () => {
     const offerResponse = myOffers[0] as OfferResponse
@@ -248,17 +234,10 @@ describe('trade with invalid price', () => {
     expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
   })
   it('should have an available offer', async () => {
-    let myOffers = await makerClient.fetchMyOffers()
-    if (myOffers.length === 0) {
-      const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
-      const owner_encryption_key = makerSecrets.publicKey
-      const denom = { native: process.env.OFFER_DENOM! }
-      const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
-      await makerClient.createOffer(newOffer)
-    }
-    myOffers = await makerClient.fetchMyOffers()
-    requestedTradesCount = myOffers[0].profile.requested_trades_count
-    offer = (myOffers[0] as OfferResponse).offer
+    const offerResponse = await getOrCreateOffer(makerClient)
+    expect(offerResponse).toBeDefined()
+    offer = offerResponse.offer
+    requestedTradesCount = offerResponse.profile.requested_trades_count
   })
   it('should not allow to create a trade when price for denom is zero', async () => {
     // Set price at Zero for Fiat Currency
@@ -293,5 +272,39 @@ describe('trade with invalid price', () => {
       .getCwClient()
       .execute(takerClient.getWalletAddress(), priceAddr, prices, 'auto', 'register fiat prices')
     expect(update_price_result.transactionHash).not.toBeNull()
+  })
+})
+
+describe('test trade limits', () => {
+  let offer: GetOffer
+  it('should have an available offer', async () => {
+    offer = (await getOrCreateOffer(makerClient)).offer
+    expect(offer).toBeDefined()
+  })
+  it('should not allow a trade to be created above the limit', async () => {
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    // Try to create a trade with the amount above the limit
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const profile_taker_encrypt_key = takerSecrets.publicKey
+    let tradeId = '0'
+    // Query Price for Offer denom
+    const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+    const fiatPriceDecimals = 100
+    const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
+    const denomDecimals = 1_000_000
+    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 100.01
+
+    await expect(async () => {
+      tradeId = await takerClient.openTrade({
+        amount: invalidAmount.toFixed(0),
+        offer_id: offer.id,
+        taker: takerClient.getWalletAddress(),
+        profile_taker_contact,
+        profile_taker_encryption_key: profile_taker_encrypt_key,
+        taker_contact: 'taker_contact',
+      })
+    }).rejects.toThrow(/Invalid trade amount/)
+    expect(tradeId).toBe('0')
   })
 })
