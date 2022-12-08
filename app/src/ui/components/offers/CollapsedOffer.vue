@@ -28,7 +28,7 @@ const offerPrice = computed(() => {
 </script>
 
 <template>
-  <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed">
+  <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed card" @click="emit('select')">
     <div class="owner">
       <p class="wallet-addr">
         {{ formatAddress(offerResponse.offer.owner) }}
@@ -71,6 +71,7 @@ const offerPrice = computed(() => {
 @import '../../style/tokens.scss';
 
 .collapsed {
+  cursor: pointer;
   .owner {
     width: 20%;
     display: flex;
@@ -90,7 +91,7 @@ const offerPrice = computed(() => {
     }
 
     .n-trades {
-      font-size: 14px;
+      font-size: 12px;
       color: $gray700;
       margin-top: 4px;
     }

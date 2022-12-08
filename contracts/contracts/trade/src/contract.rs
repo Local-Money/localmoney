@@ -25,7 +25,7 @@ use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub
 use localmoney_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
 use localmoney_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
 use localmoney_protocol::profile::{
-    increase_profile_trades_count_msg, load_profile, update_profile_msg,
+    load_profile, update_profile_contact_msg, update_profile_trades_count_msg,
 };
 use localmoney_protocol::trade::{
     arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg,
@@ -145,6 +145,33 @@ fn create_trade(
         });
     }
 
+    // Check if new_trade.amount in fiat is lower than the trade limit at hub_cfg
+    let offer_denom_usd_price = query_fiat_price_for_denom(
+        &deps.querier,
+        offer.denom.clone(),
+        FiatCurrency::USD,
+        hub_cfg.price_addr.to_string(),
+    )
+    .unwrap_or(DenomFiatPrice {
+        denom: offer.denom.clone(),
+        fiat: FiatCurrency::USD,
+        price: Uint256::from_u128(0),
+    });
+    let offer_usd_price = calc_denom_fiat_price(offer.rate, offer_denom_usd_price.price);
+    let new_trade_amount = Uint256::from_u128(new_trade.amount.u128());
+    let usd_trade_amount = (new_trade_amount * offer_usd_price)
+        .checked_div(Uint256::from_u128(100u128))
+        .unwrap()
+        .checked_div(Uint256::from_u128(1_000_000u128))
+        .unwrap();
+    // Check that usd_trade_amount is lower or equal than the trade limit and return error if not.
+    if usd_trade_amount > Uint256::from_u128(hub_cfg.trade_limit) {
+        return Err(ContractError::InvalidTradeAmount {
+            amount: usd_trade_amount,
+            max_amount: Uint256::from_u128(hub_cfg.trade_limit),
+        });
+    }
+
     //Freeze the Denom price in Fiat using the rate set on Offer by the Maker
     let denom_fiat_price = query_fiat_price_for_denom(
         &deps.querier,
@@ -192,7 +219,7 @@ fn create_trade(
     let trade_state_history = vec![new_trade_state];
 
     let mut sub_msgs = vec![];
-    sub_msgs.push(update_profile_msg(
+    sub_msgs.push(update_profile_contact_msg(
         hub_cfg.profile_addr.to_string(),
         new_trade.taker.clone(),
         new_trade.profile_taker_contact,
@@ -213,8 +240,8 @@ fn create_trade(
         Trade::new(
             trade_id.clone(),
             env.contract.address.clone(),
-            buyer,
-            seller,
+            buyer.clone(),
+            seller.clone(),
             seller_contact,
             buyer_contact,
             arbitrator.arbitrator,
@@ -231,10 +258,16 @@ fn create_trade(
     )
     .trade;
 
-    // increase profile profile requested_trades_count
-    sub_msgs.push(increase_profile_trades_count_msg(
+    // increment buyer profile trades count
+    sub_msgs.push(update_profile_trades_count_msg(
         hub_cfg.profile_addr.to_string(),
-        profile.addr,
+        buyer.clone(),
+        TradeState::RequestCreated,
+    ));
+    // increment seller profile trades count
+    sub_msgs.push(update_profile_trades_count_msg(
+        hub_cfg.profile_addr.to_string(),
+        seller.clone(),
         TradeState::RequestCreated,
     ));
 
@@ -249,7 +282,9 @@ fn create_trade(
         .add_attribute("denom", denom_str)
         .add_attribute("denom_fiat_price", denom_fiat_price.price.to_string())
         .add_attribute("offer_rate", offer.rate.to_string())
-        .add_attribute("taker", new_trade.taker.to_string());
+        .add_attribute("taker", new_trade.taker.to_string())
+        .add_attribute("usd_trade_amount", usd_trade_amount.to_string())
+        .add_attribute("offer_usd_price", offer_usd_price.to_string());
 
     Ok(res)
 }
@@ -565,7 +600,24 @@ fn cancel_request(
         trade.set_state(TradeState::RequestCanceled, &env, &info);
     }
     TradeModel::store(deps.storage, &trade).unwrap();
-    let res = Response::new().add_attribute("action", "cancel_request");
+    let hub_config = get_hub_config(deps.as_ref());
+    let update_buyer_profile_trades_count_msg = update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.buyer.clone(),
+        trade.get_state(),
+    );
+    let update_seller_profile_trades_count_msg = update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.seller.clone(),
+        trade.get_state(),
+    );
+    let msgs = vec![
+        update_buyer_profile_trades_count_msg,
+        update_seller_profile_trades_count_msg,
+    ];
+    let res = Response::new()
+        .add_attribute("action", "cancel_request")
+        .add_submessages(msgs);
     Ok(res)
 }
 
@@ -593,14 +645,7 @@ fn release_escrow(
     }
 
     // Load HubConfig
-    let hub_cfg = get_hub_config(deps.as_ref());
-    let offer = load_offer(
-        &deps.querier,
-        trade.offer_id.clone(),
-        hub_cfg.offer_addr.to_string(),
-    )
-    .unwrap()
-    .offer;
+    let hub_config = get_hub_config(deps.as_ref());
 
     // Update trade State to TradeState::EscrowReleased
     trade.set_state(TradeState::EscrowReleased, &env, &info);
@@ -612,28 +657,20 @@ fn release_escrow(
     let one = Uint128::new(1u128);
     let fee = one.mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
     release_amount = release_amount.checked_sub(fee.clone()).unwrap();
-    let burn_amount = fee.mul(Decimal::from_ratio(hub_cfg.burn_fee_pct, 100u128));
-    let chain_amount = fee.mul(Decimal::from_ratio(hub_cfg.chain_fee_pct, 100u128));
-    let warchest_amount = fee.mul(Decimal::from_ratio(hub_cfg.warchest_fee_pct, 100u128));
+    let burn_amount = fee.mul(Decimal::from_ratio(hub_config.burn_fee_pct, 100u128));
+    let chain_amount = fee.mul(Decimal::from_ratio(hub_config.chain_fee_pct, 100u128));
+    let warchest_amount = fee.mul(Decimal::from_ratio(hub_config.warchest_fee_pct, 100u128));
 
-    // Create Trade Registration message to be sent to the Trading Incentives contract.
-    // TODO: Disabling Temporarily to use TradingIncentives as Price Contract.
-    /*
-    let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: hub_cfg.trading_incentives_addr.to_string(),
-        msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
-            trade: trade.id.clone(),
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
-    send_msgs.push(register_trade_msg);
-    */
-
-    // Update profile released_trades_count
-    send_msgs.push(increase_profile_trades_count_msg(
-        hub_cfg.profile_addr.to_string(),
-        offer.owner.clone(),
+    // Update buyer profile released_trades_count
+    send_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.buyer.clone(),
+        trade.get_state(),
+    ));
+    // Update seller profile released_trades_count
+    send_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.seller.clone(),
         trade.get_state(),
     ));
 
@@ -644,13 +681,13 @@ fn release_escrow(
     })));
 
     // Fee Distribution
-    let local_denom = denom_to_string(&hub_cfg.local_denom);
+    let local_denom = denom_to_string(&hub_config.local_denom);
     //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
     if trade_denom.ne(&local_denom) {
         send_msgs.push(SubMsg {
             id: SWAP_REPLY_ID,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: hub_cfg.local_market_addr.to_string(),
+                contract_addr: hub_config.local_market_addr.to_string(),
                 msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
                 funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
             }),
@@ -666,13 +703,13 @@ fn release_escrow(
 
     // Warchest
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: hub_cfg.warchest_addr.to_string(),
+        to_address: hub_config.warchest_addr.to_string(),
         amount: vec![coin(warchest_amount.u128(), trade_denom.clone())],
     })));
 
     // Chain Fee Sharing
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: hub_cfg.chain_fee_collector_addr.to_string(),
+        to_address: hub_config.chain_fee_collector_addr.to_string(),
         amount: vec![coin(chain_amount.u128(), trade_denom.clone())],
     })));
 
@@ -795,7 +832,7 @@ pub fn create_arbitrator(
         },
     );
 
-    let create_profile_sub_msg = update_profile_msg(
+    let create_profile_sub_msg = update_profile_contact_msg(
         hub_config.profile_addr.to_string(),
         arbitrator_address.clone(),
         "N/A".to_string(),
@@ -955,13 +992,31 @@ fn settle_dispute(
     let winner_msg = create_send_msg(winner.clone(), winner_amount);
     let arbitrator_msg = create_send_msg(trade.arbitrator.clone(), fee);
 
+    // Create Update Profile SubMsgs
+    let hub_config = get_hub_config(deps.as_ref());
+    let update_buyer_profile_trades_count = update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.buyer.clone(),
+        trade.get_state(),
+    );
+    let update_seller_profile_trades_count = update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.seller.clone(),
+        trade.get_state(),
+    );
+    let profile_submsgs = vec![
+        update_buyer_profile_trades_count,
+        update_seller_profile_trades_count,
+    ];
+
     let res = Response::new()
         .add_attribute("arbitrator", trade.arbitrator.to_string())
         .add_attribute("winner", winner.to_string())
         .add_attribute("maker", maker.to_string())
         .add_attribute("taker", taker.to_string())
         .add_submessage(SubMsg::new(winner_msg))
-        .add_submessage(SubMsg::new(arbitrator_msg));
+        .add_submessage(SubMsg::new(arbitrator_msg))
+        .add_submessages(profile_submsgs);
     Ok(res)
 }
 

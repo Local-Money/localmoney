@@ -13,7 +13,9 @@ use localmoney_protocol::offer::{
     offers, ExecuteMsg, InstantiateMsg, MigrateMsg, Offer, OfferModel, OfferMsg, OfferResponse,
     OfferState, OfferUpdateMsg, OffersCount, QueryMsg,
 };
-use localmoney_protocol::profile::{load_profile, update_profile_msg};
+use localmoney_protocol::profile::{
+    load_profile, update_profile_active_offers_msg, update_profile_contact_msg,
+};
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -76,12 +78,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+/// Creates a new offer
 pub fn create_offer(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: OfferMsg,
 ) -> Result<Response, ContractError> {
+    let hub_config = get_hub_config(deps.as_ref());
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     assert_offer_description_valid(msg.description.clone()).unwrap();
@@ -93,9 +97,8 @@ pub fn create_offer(
     offers_count.count += 1;
     let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
 
-    let hub_config = get_hub_config(deps.as_ref());
-
-    let update_profile_msg = update_profile_msg(
+    // Update profile contact info
+    let update_profile_contact_msg = update_profile_contact_msg(
         hub_config.profile_addr.to_string(),
         info.sender.clone(),
         msg.owner_contact.clone(),
@@ -120,12 +123,21 @@ pub fn create_offer(
     )
     .offer;
 
+    // Update offers count
     offers_count_storage(deps.storage)
         .save(&offers_count)
         .unwrap();
 
+    // Update profile active offers
+    let update_profile_offers_msg = update_profile_active_offers_msg(
+        hub_config.profile_addr.to_string(),
+        info.sender.clone(),
+        offer.state,
+    );
+
     let res = Response::new()
-        .add_submessage(update_profile_msg)
+        .add_submessage(update_profile_contact_msg)
+        .add_submessage(update_profile_offers_msg)
         .add_attribute("action", "create_offer")
         .add_attribute("type", offer.offer_type.to_string())
         .add_attribute("id", offer.id.to_string())
@@ -153,12 +165,19 @@ pub fn update_offer(
 
     let mut sub_msgs: Vec<SubMsg> = Vec::new();
     if msg.owner_contact.is_some() && msg.owner_encryption_key.is_some() {
-        sub_msgs.push(update_profile_msg(
+        sub_msgs.push(update_profile_contact_msg(
             hub_config.profile_addr.to_string(),
             info.sender.clone(),
             msg.owner_contact.clone().unwrap(),
             msg.owner_encryption_key.clone().unwrap(),
         ));
+    }
+    if msg.state != offer_model.offer.state {
+        sub_msgs.push(update_profile_active_offers_msg(
+            hub_config.profile_addr.to_string(),
+            info.sender.clone(),
+            msg.state.clone(),
+        ))
     }
 
     let offer = offer_model.update(msg);

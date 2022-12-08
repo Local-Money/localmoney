@@ -8,6 +8,7 @@ use localmoney_protocol::guards::{
     assert_migration_parameters, assert_multiple_ownership, assert_ownership,
 };
 use localmoney_protocol::hub_utils::{get_hub_config, register_hub_internal};
+use localmoney_protocol::offer::OfferState;
 use localmoney_protocol::profile::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, ProfileModel, QueryMsg,
 };
@@ -37,20 +38,24 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateProfile {
+        ExecuteMsg::UpdateContact {
             profile_addr,
             contact,
             encryption_key,
-        } => update_profile(deps, env, info, profile_addr, contact, encryption_key),
-        ExecuteMsg::IncreaseTradeCount {
+        } => update_profile_contact(deps, env, info, profile_addr, contact, encryption_key),
+        ExecuteMsg::UpdateTradesCount {
             profile_addr,
             trade_state,
-        } => increase_trades_count(deps, env, info, profile_addr, trade_state),
+        } => update_trades_count(deps, env, info, profile_addr, trade_state),
+        ExecuteMsg::UpdateActiveOffers {
+            profile_addr,
+            offer_state,
+        } => update_active_offers(deps, info, profile_addr, offer_state),
         ExecuteMsg::RegisterHub {} => register_hub(deps, info),
     }
 }
 
-fn update_profile(
+fn update_profile_contact(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -85,30 +90,54 @@ fn update_profile(
     Ok(res)
 }
 
-pub fn increase_trades_count(
+pub fn update_trades_count(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     profile_addr: Addr,
     trade_state: TradeState,
 ) -> Result<Response, ContractError> {
+    // Only the trade contract should be able to call this method.
     let hub_config = get_hub_config(deps.as_ref());
-
-    // Only the trade contract should be able to call increase_trades_count
     assert_ownership(info.sender, hub_config.trade_addr).unwrap();
 
-    let profile_result = ProfileModel::from_store(deps.storage, profile_addr.clone());
-    let mut profile_model = profile_result.unwrap();
+    let mut profile_model = ProfileModel::from_store(deps.storage, profile_addr.clone()).unwrap();
+    let profile = &mut profile_model.profile;
+
     match trade_state {
-        TradeState::RequestCreated => profile_model.profile.requested_trades_count += 1,
-        TradeState::EscrowReleased => profile_model.profile.released_trades_count += 1,
+        TradeState::RequestCreated => {
+            profile.requested_trades_count += 1;
+            if profile.active_trades_count < hub_config.active_trades_limit {
+                profile.active_trades_count += 1;
+            } else {
+                return Err(ContractError::ActiveTradesLimitReached {
+                    limit: hub_config.active_trades_limit,
+                });
+            }
+        }
+        TradeState::RequestCanceled => {
+            if profile.active_trades_count > 0 {
+                profile.active_trades_count -= 1;
+            }
+        }
+        TradeState::EscrowReleased => {
+            profile.released_trades_count += 1;
+            if profile.active_trades_count > 0 {
+                profile.active_trades_count -= 1;
+            }
+        }
+        TradeState::SettledForMaker | TradeState::SettledForTaker => {
+            if profile.active_trades_count > 0 {
+                profile.active_trades_count -= 1;
+            }
+        }
         _ => {}
     }
     profile_model.profile.last_trade = env.block.time.seconds();
     let profile = profile_model.save();
 
     let res = Response::new()
-        .add_attribute("action", "increase_trades_count")
+        .add_attribute("action", "increment_trades_count")
         .add_attribute("trade_state", trade_state.to_string())
         .add_attribute(
             "requested_trades_count",
@@ -119,6 +148,44 @@ pub fn increase_trades_count(
             profile.released_trades_count.to_string(),
         );
     Ok(res)
+}
+
+pub fn update_active_offers(
+    deps: DepsMut,
+    info: MessageInfo,
+    profile_addr: Addr,
+    offer_state: OfferState,
+) -> Result<Response, ContractError> {
+    // Only the Offer contract should be able to call this method.
+    let hub_config = get_hub_config(deps.as_ref());
+    assert_ownership(info.sender, hub_config.offer_addr)?;
+
+    let mut profile_model = ProfileModel::from_store(deps.storage, profile_addr.clone()).unwrap();
+    let profile = &mut profile_model.profile;
+
+    match offer_state {
+        OfferState::Active => {
+            if profile.active_offers_count < hub_config.active_offers_limit {
+                profile.active_offers_count += 1;
+            } else {
+                return Err(ContractError::ActiveOffersLimitReached {
+                    limit: hub_config.active_offers_limit,
+                });
+            }
+        }
+        OfferState::Paused => {
+            if profile.active_offers_count > 0 {
+                profile.active_offers_count -= 1;
+            }
+        }
+        OfferState::Archive => {
+            if profile.active_offers_count > 0 {
+                profile.active_offers_count -= 1;
+            }
+        }
+    }
+    profile_model.save();
+    Ok(Response::default())
 }
 
 fn register_hub(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
