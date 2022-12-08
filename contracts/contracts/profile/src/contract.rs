@@ -1,6 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cw2::{get_contract_version, set_contract_version};
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
 use localmoney_protocol::guards::{assert_multiple_ownership, assert_ownership};
@@ -11,17 +12,18 @@ use localmoney_protocol::profile::{
 use localmoney_protocol::trade::TradeState;
 
 // version info for migration info
-pub const CONTRACT_NAME: &str = "localmoney.io:profile";
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let res = Response::new().add_attribute("action", "instantiate_profile");
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
     Ok(res)
 }
 
@@ -134,8 +136,34 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let new_version = CONTRACT_VERSION;
+    let contract_version = get_contract_version(deps.storage).unwrap();
+    let previous_version = contract_version.version.as_str();
+
+    if contract_version.contract != CONTRACT_NAME {
+        return Err(ContractError::InvalidParameter {
+            parameter: "CONTRACT_NAME".to_string(),
+            message: Some("Can only upgrade from same type.".to_string()),
+        });
+    }
+
+    if previous_version >= new_version {
+        let message = format!(
+            "The new version of the contract ({}) must be greater than the previous one ({}).",
+            new_version, previous_version
+        );
+        return Err(ContractError::InvalidParameter {
+            parameter: "CONTRACT_VERSION".to_string(),
+            message: Some(message),
+        });
+    }
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    // If state structure changes we should treat it here
+
     Ok(Response::default()
-        .add_attribute("version", CONTRACT_VERSION)
+        .add_attribute("previous_version", contract_version.version)
+        .add_attribute("new_version", CONTRACT_VERSION)
         .add_attribute("name", CONTRACT_NAME))
 }
