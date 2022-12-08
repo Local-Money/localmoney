@@ -367,7 +367,7 @@ watch(userWallet, async () => {
         <div v-else class="dispute-summary card">
           <div class="description">
             <p class="label">Offer description</p>
-            <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+            <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
           </div>
           <div class="dispute-wrap">
             <div class="traders-info">
