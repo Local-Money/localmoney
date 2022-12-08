@@ -24,8 +24,8 @@ pub fn instantiate(
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let res = Response::new().add_attribute("action", "instantiate_profile");
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    let res = Response::new().add_attribute("action", "instantiate_profile");
     Ok(res)
 }
 
@@ -149,7 +149,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     .unwrap();
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
-    // If state structure changes we should treat it here
+    // If the structure of the data in storage changes, we must treat it here
 
     Ok(Response::default()
         .add_attribute("previous_version", previous_contract_version.version)
