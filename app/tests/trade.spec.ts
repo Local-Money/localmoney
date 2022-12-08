@@ -125,8 +125,13 @@ describe('trade lifecycle happy path', () => {
 describe('trade invalid state changes', () => {
   let requestedTradesCount = 0
   let releasedTradesCount = 0
+  let offerResponse: OfferResponse
   it('should have an arbitrator available', async () => {
-    const fiat = offers[0].fiat_currency as FiatCurrency
+    offerResponse = await getOrCreateOffer(makerClient)
+    expect(offerResponse).toBeDefined()
+    requestedTradesCount = offerResponse.profile.requested_trades_count
+    releasedTradesCount = offerResponse.profile.released_trades_count
+    const fiat = offerResponse.offer.fiat_currency
     let arbitrators = await adminClient.fetchArbitrators()
     if (arbitrators.find((arbitrator) => arbitrator.fiat === fiat) === undefined) {
       await adminClient.newArbitrator({
@@ -138,21 +143,13 @@ describe('trade invalid state changes', () => {
     }
     expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
   })
-  it('should have an available offer', async () => {
-    const offer = await getOrCreateOffer(makerClient)
-    expect(offer).toBeDefined()
-    requestedTradesCount = offer.profile.requested_trades_count
-    releasedTradesCount = offer.profile.released_trades_count
-  })
   it('should fail to fund a trade in request_created state', async () => {
-    const offerResponse = myOffers[0] as OfferResponse
-    const offer = offerResponse.offer
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
     const taker_contact = await encryptDataMocked(offerResponse.profile.encryption_key!, takerContact)
     tradeId = await takerClient.openTrade({
-      amount: offer.min_amount,
-      offer_id: offer.id,
+      amount: offerResponse.offer.min_amount,
+      offer_id: offerResponse.offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
       profile_taker_encryption_key: taker_encrypt_pk,
