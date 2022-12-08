@@ -67,7 +67,7 @@ describe('trade lifecycle happy path', () => {
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
     tradeId = await takerClient.openTrade({
-      amount: offer.max_amount,
+      amount: offer.min_amount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
@@ -293,7 +293,7 @@ describe('test trade limits', () => {
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
     const denomDecimals = 1_000_000
-    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 100.01
+    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 1.02 // 2% above the limit
 
     await expect(async () => {
       tradeId = await takerClient.openTrade({

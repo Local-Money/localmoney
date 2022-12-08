@@ -33,7 +33,7 @@ export function createHubUpdateConfigMsg(
       warchest_fee_pct: '50',
       trade_limit: '100', // in USD
       active_offers_limit: 3,
-      active_trades_limit: 3,
+      active_trades_limit: 10,
       trade_expiration_timer: TRADE_EXPIRATION_TIMER,
       trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
