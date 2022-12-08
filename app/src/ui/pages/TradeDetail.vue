@@ -345,15 +345,22 @@ watch(userWallet, async () => {
             <p class="label">Transaction summary</p>
             <div class="transaction">
               <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will get</p>
-                <p v-else class="list-item-label">You will send</p>
+                <p v-if="isBuyer" class="list-item-label">You will receive</p>
+                <p v-else class="list-item-label">You will sell</p>
                 <p class="value">
                   {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                 </p>
               </div>
+
+              <!-- TO-DO - This list-item should only appear for the Maker -->
               <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will send</p>
-                <p v-else class="list-item-label">You will get</p>
+                <p>Platform fee</p>
+                <p class="value">???????</p>
+              </div>
+
+              <div class="list-item">
+                <p v-if="isBuyer" class="list-item-label">You will pay</p>
+                <p v-else class="list-item-label">You will receive</p>
                 <p class="value fiat">
                   {{ fiatAmountStr }}
                 </p>
@@ -739,10 +746,7 @@ h3 {
         display: flex;
         justify-content: space-between;
         align-items: center;
-
-        &:first-child {
-          margin-bottom: 8px;
-        }
+        margin-bottom: 4px;
 
         p {
           font-size: 16px;
