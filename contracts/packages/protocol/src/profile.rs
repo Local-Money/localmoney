@@ -1,4 +1,4 @@
-use crate::trade::TradeState;
+use crate::{offer::OfferState, trade::TradeState};
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, CustomQuery, Deps, Env, Order, QuerierWrapper, StdResult, Storage,
     SubMsg, WasmMsg,
@@ -14,12 +14,16 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateProfile {
+    UpdateContact {
         profile_addr: Addr,
         contact: String,
         encryption_key: String,
     },
-    IncreaseTradeCount {
+    UpdateActiveOffers {
+        profile_addr: Addr,
+        offer_state: OfferState,
+    },
+    UpdateTradesCount {
         profile_addr: Addr,
         trade_state: TradeState,
     },
@@ -38,7 +42,7 @@ pub enum QueryMsg {
 pub struct MigrateMsg {}
 
 // Execute Util
-pub fn update_profile_msg(
+pub fn update_profile_contact_msg(
     profile_contract: String,
     profile_addr: Addr,
     contact: String,
@@ -46,7 +50,7 @@ pub fn update_profile_msg(
 ) -> SubMsg {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: profile_contract,
-        msg: to_binary(&ExecuteMsg::UpdateProfile {
+        msg: to_binary(&ExecuteMsg::UpdateContact {
             profile_addr,
             contact,
             encryption_key,
@@ -56,16 +60,32 @@ pub fn update_profile_msg(
     }))
 }
 
-pub fn increase_profile_trades_count_msg(
-    profile_contract: String,
+pub fn update_profile_trades_count_msg(
+    contract_addr: String,
     profile_addr: Addr,
     trade_state: TradeState,
 ) -> SubMsg {
     SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: profile_contract,
-        msg: to_binary(&ExecuteMsg::IncreaseTradeCount {
+        contract_addr,
+        msg: to_binary(&ExecuteMsg::UpdateTradesCount {
             profile_addr,
             trade_state,
+        })
+        .unwrap(),
+        funds: vec![],
+    }))
+}
+
+pub fn update_profile_active_offers_msg(
+    contract_addr: String,
+    profile_addr: Addr,
+    offer_state: OfferState,
+) -> SubMsg {
+    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr,
+        msg: to_binary(&ExecuteMsg::UpdateActiveOffers {
+            profile_addr,
+            offer_state,
         })
         .unwrap(),
         funds: vec![],
@@ -105,6 +125,8 @@ pub struct Profile {
     pub last_trade: u64,
     pub contact: Option<String>,
     pub encryption_key: Option<String>,
+    pub active_offers_count: u8,
+    pub active_trades_count: u8,
 }
 
 impl Profile {
@@ -117,6 +139,8 @@ impl Profile {
             last_trade: 0,
             contact: None,
             encryption_key: None,
+            active_offers_count: 0,
+            active_trades_count: 0,
         }
     }
 }

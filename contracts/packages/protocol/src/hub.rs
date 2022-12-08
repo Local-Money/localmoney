@@ -44,8 +44,11 @@ pub struct HubConfig {
     pub burn_fee_pct: u128,
     pub chain_fee_pct: u128,
     pub warchest_fee_pct: u128,
-    pub trade_expiration_timer: u64,
+    pub active_offers_limit: u8,
+    pub active_trades_limit: u8,
+    pub trade_expiration_timer: u64, // in seconds
     pub trade_dispute_timer: u64,
+    pub trade_limit: u128, // in USD
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

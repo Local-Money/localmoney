@@ -40,6 +40,8 @@ export interface Profile {
   last_trade: Date
   contact?: string
   encryption_key?: string
+  active_offers_count: number
+  active_trades_count: number
 }
 
 export interface GetOffer {
@@ -83,6 +85,7 @@ export enum FiatCurrency {
   BRL = 'BRL',
   ARS = 'ARS',
   COP = 'COP',
+  USD = 'USD',
 }
 
 export enum OfferState {
@@ -166,14 +169,23 @@ export interface TradeInfo {
 }
 
 export interface HubConfig {
-  local_denom: Denom
   offer_addr: string
   trade_addr: string
   profile_addr: string
   price_addr: string
+  price_provider_addr: string
   trading_incentives_addr: string
   local_market_addr: string
+  chain_fee_collector_addr: string
+  warchest_addr: string
+  local_denom: Denom
+  burn_fee_pct: number
+  chain_fee_pct: number
+  warchest_fee_pct: number
+  active_offers_limit: number
+  active_trades_limit: number
   trade_expiration_timer: number
+  trade_limit: number
 }
 
 export interface Denom {

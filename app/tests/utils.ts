@@ -2,7 +2,11 @@ import type { InstantiateResult, SigningCosmWasmClient } from '@cosmjs/cosmwasm-
 import { TestCosmosChain } from './network/TestCosmosChain'
 import codeIds from './fixtures/codeIds.json'
 import { TRADE_DISPUTE_TIMER, TRADE_EXPIRATION_TIMER } from './configs'
+import { encryptDataMocked } from './helper'
+import makerSecrets from './fixtures/maker_secrets.json'
+import offers from './fixtures/offers.json'
 import { DEV_CONFIG, DEV_HUB_INFO } from '~/network/cosmos/config/dev'
+import type { OfferResponse, PostOffer } from '~/types/components.interface'
 
 export function createHubUpdateConfigMsg(
   offerAddr: string,
@@ -23,16 +27,22 @@ export function createHubUpdateConfigMsg(
       local_denom: { native: process.env.LOCAL_DENOM },
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
       warchest_addr: process.env.WARCHEST_ADDR,
-      warchest_fee_pct: '50',
       arbitration_fee_pct: '1',
-      chain_fee_pct: '10',
       burn_fee_pct: '40',
+      chain_fee_pct: '10',
+      warchest_fee_pct: '50',
+      trade_limit: '100', // in USD
+      active_offers_limit: 3,
+      active_trades_limit: 10,
       trade_expiration_timer: TRADE_EXPIRATION_TIMER,
       trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
   }
 }
 
+/**
+ * Instantiate all contracts and setup Hub:
+ */
 export async function setupProtocol() {
   const adminClient = new TestCosmosChain(DEV_CONFIG, DEV_HUB_INFO)
   adminClient.seed = process.env.ADMIN_SEED!
@@ -144,4 +154,24 @@ export async function setupProtocol() {
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Creates an offer if the maker doesn't have any.
+ * @param makerClient the maker client.
+ * @param forceCreate if true, it will create a new offer even if the maker has one.
+ * @returns an offer.
+ */
+export async function getOrCreateOffer(makerClient: TestCosmosChain, forceCreate = false): Promise<OfferResponse> {
+  let myOffers = await makerClient.fetchMyOffers()
+  if (myOffers.length === 0 || forceCreate) {
+    const makerContact = 'maker001'
+    const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+    const owner_encryption_key = makerSecrets.publicKey
+    const denom = { native: process.env.OFFER_DENOM! }
+    const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
+    await makerClient.createOffer(newOffer)
+  }
+  myOffers = await makerClient.fetchMyOffers()
+  return myOffers[0]
 }
