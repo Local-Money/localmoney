@@ -329,49 +329,93 @@ watch(userWallet, async () => {
 
       <div class="summary">
         <!-- Trade Summary -->
-        <div v-if="!isArbitrator" class="trade-summary card">
-          <div class="description">
-            <p class="label">Offer description</p>
-            <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
-          </div>
-          <div class="trade-info">
-            <p class="label">Price</p>
-            <div class="current-price">
-              <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-              <p class="price">
-                {{ offerPrice }}
-              </p>
+        <div v-if="!isArbitrator" class="card">
+          <div v-if="tradeInfo.trade.state === 'escrow_disputed'" class="trade-summary">
+            <div class="description">
+              <p class="label">Offer description</p>
+              <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
             </div>
-            <p class="label">Transaction summary</p>
-            <div class="transaction">
-              <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will receive</p>
-                <p v-else class="list-item-label">You will sell</p>
-                <p class="value">
-                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+            <div class="trade-info">
+              <p class="label">Price</p>
+              <div class="current-price">
+                <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+                <p class="price">
+                  {{ offerPrice }}
                 </p>
               </div>
+              <p class="label">Transaction summary</p>
+              <div class="transaction">
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">You will receive</p>
+                  <p v-else class="list-item-label">You will sell</p>
+                  <p class="value">
+                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
 
-              <!-- TO-DO - This list-item should only appear for the Maker -->
-              <div class="list-item">
-                <p>Platform fee</p>
-                <p class="value">???????</p>
+                <!-- TO-DO - This list-item should only appear for the Maker -->
+                <div class="list-item">
+                  <p>Platform fee</p>
+                  <p class="value">???????</p>
+                </div>
+
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">You will pay</p>
+                  <p v-else class="list-item-label">You will receive</p>
+                  <p class="value fiat">
+                    {{ fiatAmountStr }}
+                  </p>
+                </div>
               </div>
+            </div>
+          </div>
+          <!-- End Trade Summary -->
 
-              <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will pay</p>
-                <p v-else class="list-item-label">You will receive</p>
-                <p class="value fiat">
-                  {{ fiatAmountStr }}
+          <!-- Trade Dispute Summary -->
+          <div v-else class="dispute-summary">
+            <div class="description">
+              <p class="label">Offer description</p>
+              <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
+            </div>
+            <div class="trade-info">
+              <p class="label">Price</p>
+              <div class="current-price">
+                <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+                <p class="price">
+                  {{ offerPrice }}
                 </p>
+              </div>
+              <p class="label">Transaction summary</p>
+              <div class="transaction">
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">You will receive</p>
+                  <p v-else class="list-item-label">You will sell</p>
+                  <p class="value">
+                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <!-- TO-DO - This list-item should only appear for the Maker -->
+                <div class="list-item">
+                  <p>Platform fee</p>
+                  <p class="value">???????</p>
+                </div>
+
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">You will pay</p>
+                  <p v-else class="list-item-label">You will receive</p>
+                  <p class="value fiat">
+                    {{ fiatAmountStr }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <!-- End Trade Summary -->
+        <!-- End Trade Dispute Summary -->
 
-        <!-- Trade Dispute Summary -->
-        <div v-else class="dispute-summary card">
+        <!-- Arbitrator view - Trade Dispute Summary -->
+        <div v-else class="arbitrator-dispute-summary card">
           <div class="description">
             <p class="label">Offer description</p>
             <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
@@ -689,7 +733,8 @@ h3 {
 }
 
 .trade-summary,
-.dispute-summary {
+.dispute-summary,
+.arbitrator-dispute-summary {
   display: flex;
   gap: 32px;
 
