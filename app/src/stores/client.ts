@@ -130,7 +130,7 @@ export const useClientStore = defineStore({
     async unarchiveOffer(updateOffer: PatchOffer) {
       this.loadingState = LoadingState.show('Archiving Offer...')
       try {
-        updateOffer.state = OfferState.PAUSED
+        updateOffer.state = OfferState.paused
         await this.client.updateOffer(updateOffer)
         await this.fetchMyOffers()
       } catch (e) {
