@@ -10,7 +10,7 @@ pub enum ContractError {
     Unauthorized { owner: Addr, caller: Addr },
     #[error("Unauthorized.")]
     UnauthorizedMultipleOwnership { owners: Vec<Addr>, caller: Addr },
-    #[error("The parameter {parameter:?} is invalid. {message:?}")]
+    #[error("The parameter {0} is invalid. {1}", parameter, message.clone().unwrap_or_default())]
     InvalidParameter {
         parameter: String,
         message: Option<String>,
