@@ -97,9 +97,9 @@ pub fn increment_active_offers(
 
     // Try to increment active offers
     let mut profile_model = ProfileModel::from_store(deps.storage, profile_addr.clone()).unwrap();
-    return if profile_model.profile.active_offers < hub_config.active_offers_limit {
-        profile_model.profile.active_offers += 1;
-        let active_offers = profile_model.profile.active_offers;
+    return if profile_model.profile.active_offers_count < hub_config.active_offers_limit {
+        profile_model.profile.active_offers_count += 1;
+        let active_offers = profile_model.profile.active_offers_count;
         profile_model.save();
         let attrs = vec![
             ("action", "increment_active_offers".to_string()),
@@ -131,8 +131,8 @@ pub fn update_trades_count(
     match trade_state {
         TradeState::RequestCreated => {
             profile.requested_trades_count += 1;
-            if profile.active_trades < hub_config.active_trades_limit {
-                profile.active_trades += 1;
+            if profile.active_trades_count < hub_config.active_trades_limit {
+                profile.active_trades_count += 1;
             } else {
                 return Err(ContractError::ActiveTradesLimitReached {
                     limit: hub_config.active_trades_limit,
@@ -140,19 +140,19 @@ pub fn update_trades_count(
             }
         }
         TradeState::RequestCanceled => {
-            if profile.active_trades > 0 {
-                profile.active_trades -= 1;
+            if profile.active_trades_count > 0 {
+                profile.active_trades_count -= 1;
             }
         }
         TradeState::EscrowReleased => {
             profile.released_trades_count += 1;
-            if profile.active_trades > 0 {
-                profile.active_trades -= 1;
+            if profile.active_trades_count > 0 {
+                profile.active_trades_count -= 1;
             }
         }
         TradeState::SettledForMaker | TradeState::SettledForTaker => {
-            if profile.active_trades > 0 {
-                profile.active_trades -= 1;
+            if profile.active_trades_count > 0 {
+                profile.active_trades_count -= 1;
             }
         }
         _ => {}
@@ -189,8 +189,8 @@ pub fn update_active_offers(
 
     match offer_state {
         OfferState::Active => {
-            if profile.active_offers < hub_config.active_offers_limit {
-                profile.active_offers += 1;
+            if profile.active_offers_count < hub_config.active_offers_limit {
+                profile.active_offers_count += 1;
             } else {
                 return Err(ContractError::ActiveOffersLimitReached {
                     limit: hub_config.active_offers_limit,
@@ -198,16 +198,17 @@ pub fn update_active_offers(
             }
         }
         OfferState::Paused => {
-            if profile.active_offers > 0 {
-                profile.active_offers -= 1;
+            if profile.active_offers_count > 0 {
+                profile.active_offers_count -= 1;
             }
         }
         OfferState::Archive => {
-            if profile.active_offers > 0 {
-                profile.active_offers -= 1;
+            if profile.active_offers_count > 0 {
+                profile.active_offers_count -= 1;
             }
         }
     }
+    profile_model.save();
     Ok(Response::default())
 }
 

@@ -125,8 +125,8 @@ pub struct Profile {
     pub last_trade: u64,
     pub contact: Option<String>,
     pub encryption_key: Option<String>,
-    pub active_offers: u8,
-    pub active_trades: u8,
+    pub active_offers_count: u8,
+    pub active_trades_count: u8,
 }
 
 impl Profile {
@@ -139,8 +139,8 @@ impl Profile {
             last_trade: 0,
             contact: None,
             encryption_key: None,
-            active_offers: 0,
-            active_trades: 0,
+            active_offers_count: 0,
+            active_trades_count: 0,
         }
     }
 }

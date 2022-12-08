@@ -100,7 +100,7 @@ export class CosmosChain implements Chain {
         console.log('Create offer result >> ', result)
       } catch (e) {
         console.error(e)
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()

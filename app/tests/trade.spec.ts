@@ -6,7 +6,7 @@ import offers from './fixtures/offers.json'
 import makerSecrets from './fixtures/maker_secrets.json'
 import takerSecrets from './fixtures/taker_secrets.json'
 import adminSecrets from './fixtures/admin_secrets.json'
-import { getOrCreateOffer, setupProtocol } from './utils'
+import { createHubUpdateConfigMsg, getOrCreateOffer, setupProtocol } from './utils'
 import type { TestCosmosChain } from './network/TestCosmosChain'
 import prices from './fixtures/update_prices.json'
 import { decryptDataMocked, encryptDataMocked } from './helper'
@@ -278,7 +278,7 @@ describe('test trade limits', () => {
     offer = (await getOrCreateOffer(makerClient)).offer
     expect(offer).toBeDefined()
   })
-  it('should not allow a trade to be created above the limit', async () => {
+  it('should not allow a trade to have an amount above the hub limit', async () => {
     // Get Hub Info
     const hubInfo = makerClient.getHubInfo()
     // Try to create a trade with the amount above the limit
@@ -303,5 +303,86 @@ describe('test trade limits', () => {
       })
     }).rejects.toThrow(/Invalid trade amount/)
     expect(tradeId).toBe('0')
+  })
+  it('should not allow a trader to have more active trades than the hub limit', async () => {
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    const hubCfg = hubInfo.hubConfig
+    // Fetch taker profile
+    const takerProfile = await takerClient.fetchProfile()
+    // Update Hub Config to have a limit of profile active trades + 1
+    hubCfg.active_trades_limit = takerProfile.active_trades_count + 1
+    const updateHubMsg = createHubUpdateConfigMsg(
+      hubCfg.offer_addr,
+      hubCfg.trade_addr,
+      hubCfg.trading_incentives_addr,
+      hubCfg.price_addr,
+      hubCfg.profile_addr
+    )
+    const newTradesLimit = (updateHubMsg.update_config.active_trades_limit = takerProfile.active_trades_count + 1)
+    await adminClient
+      .getCwClient()
+      .execute(adminClient.getWalletAddress(), hubInfo.hubAddress, updateHubMsg, 'auto', 'update hub config')
+    // Check that the updated hubInfo has the new limit
+    await takerClient.updateHub(hubInfo.hubAddress)
+    expect(takerClient.getHubInfo().hubConfig.active_trades_limit).toBe(newTradesLimit)
+    // Create a trade and expect it to be successful
+    const offer = (await getOrCreateOffer(makerClient)).offer
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const profile_taker_encrypt_key = takerSecrets.publicKey
+    const tradeId = await takerClient.openTrade({
+      amount: offer.min_amount,
+      offer_id: offer.id,
+      taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      profile_taker_encryption_key: profile_taker_encrypt_key,
+      taker_contact: 'taker_contact',
+    })
+    expect(tradeId).not.toHaveLength(0)
+    // Try to create another trade and expect it to fail
+    await expect(async () => {
+      await takerClient.openTrade({
+        amount: offer.min_amount,
+        offer_id: offer.id,
+        taker: takerClient.getWalletAddress(),
+        profile_taker_contact,
+        profile_taker_encryption_key: profile_taker_encrypt_key,
+        taker_contact: 'taker_contact',
+      })
+    }).rejects.toThrow(/Active trades limit reached/)
+  })
+  it('should not allow to create more offers than the hub limit', async () => {
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    const hubCfg = hubInfo.hubConfig
+    // Fetch maker profile
+    const makerProfile = await makerClient.fetchProfile()
+    console.log('makerProfile', makerProfile)
+    // Update Hub Config to have a limit of profile active offers + 1
+    const updateHubMsg = createHubUpdateConfigMsg(
+      hubCfg.offer_addr,
+      hubCfg.trade_addr,
+      hubCfg.trading_incentives_addr,
+      hubCfg.price_addr,
+      hubCfg.profile_addr
+    )
+    const newOffersLimit = (updateHubMsg.update_config.active_offers_limit = makerProfile.active_offers_count + 1)
+    console.log('newOffersLimit', newOffersLimit)
+    await adminClient
+      .getCwClient()
+      .execute(adminClient.getWalletAddress(), hubInfo.hubAddress, updateHubMsg, 'auto', 'update hub config')
+    // Check that the updated hubInfo has the new limit
+    await makerClient.updateHub(hubInfo.hubAddress)
+    expect(makerClient.getHubInfo().hubConfig.active_offers_limit).toBe(newOffersLimit)
+    // Create an offer and expect it to be successful
+    const offer = await getOrCreateOffer(makerClient, true)
+    expect(offer).toBeDefined()
+    // Fetch updated maker profile
+    const updatedMakerProfile = await makerClient.fetchProfile()
+    console.log('updatedMakerProfile', updatedMakerProfile)
+    // Try to create another offer and expect it to fail
+    await expect(async () => {
+      await makerClient.createOffer(offers[0] as PostOffer)
+    }).rejects.toThrow(/Active offers limit reached/)
   })
 })

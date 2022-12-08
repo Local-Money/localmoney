@@ -80,8 +80,8 @@ pub enum ContractError {
     #[error("Distribution hasn't started yet.")]
     DistributionNotStarted {},
     /// Profile Errors
-    #[error("You have reached the limit of active offers. Limit: {limit:?}.")]
+    #[error("Active offers limit reached. Limit: {limit:?}.")]
     ActiveOffersLimitReached { limit: u8 },
-    #[error("You have reached the limit of active trades. Limit: {limit:?}.")]
+    #[error("Active trades limit reached. Limit: {limit:?}.")]
     ActiveTradesLimitReached { limit: u8 },
 }

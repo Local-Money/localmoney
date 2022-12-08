@@ -40,6 +40,8 @@ export interface Profile {
   last_trade: Date
   contact?: string
   encryption_key?: string
+  active_offers_count: number
+  active_trades_count: number
 }
 
 export interface GetOffer {

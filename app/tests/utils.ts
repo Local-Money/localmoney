@@ -153,9 +153,9 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export async function getOrCreateOffer(makerClient: TestCosmosChain): Promise<OfferResponse> {
+export async function getOrCreateOffer(makerClient: TestCosmosChain, forceCreate = false): Promise<OfferResponse> {
   let myOffers = await makerClient.fetchMyOffers()
-  if (myOffers.length === 0) {
+  if (myOffers.length === 0 || forceCreate) {
     const makerContact = 'maker001'
     const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
     const owner_encryption_key = makerSecrets.publicKey
