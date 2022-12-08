@@ -1,9 +1,9 @@
 use crate::constants::OFFER_DESCRIPTION_LIMIT;
 use crate::errors::ContractError;
-use crate::errors::ContractError::InvalidParameter;
 use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
 use cosmwasm_std::{Addr, Uint128};
+use cw2::ContractVersion;
 
 pub fn assert_multiple_ownership(caller: Addr, owners: Vec<Addr>) -> Result<(), ContractError> {
     if owners.contains(&caller) {
@@ -125,11 +125,39 @@ pub fn assert_offer_description_valid(description: Option<String>) -> Result<(),
         message.push_str(OFFER_DESCRIPTION_LIMIT.to_string().as_str());
         message.push_str(" characters.");
 
-        Err(InvalidParameter {
+        Err(ContractError::InvalidParameter {
             parameter: "description".to_string(),
             message: Some(message),
         })
     } else {
         Ok(())
     };
+}
+
+pub fn assert_migration_parameters(
+    previous_contract_version: ContractVersion,
+    contract_name: String,
+    contract_version: &str,
+) -> Result<(), ContractError> {
+    let previous_version = previous_contract_version.version.as_str();
+
+    if previous_contract_version.contract != contract_name {
+        return Err(ContractError::InvalidParameter {
+            parameter: "CONTRACT_NAME".to_string(),
+            message: Some("Can only upgrade from same type.".to_string()),
+        });
+    }
+
+    if previous_version >= contract_version {
+        let message = format!(
+            "The new version of the contract ({}) must be greater than the previous one ({}).",
+            contract_version, previous_version
+        );
+        return Err(ContractError::InvalidParameter {
+            parameter: "CONTRACT_VERSION".to_string(),
+            message: Some(message),
+        });
+    }
+
+    Ok(())
 }

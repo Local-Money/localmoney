@@ -28,8 +28,8 @@ thiserror = "1.0.25"
 schemars = "0.8.10"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
-cw20 = { version = "0.13.1" }
 cw2 = { version = "0.13.1" }
+cw20 = { version = "0.13.1" }
 localmoney-protocol = { path = "../../packages/protocol" }
 cw-storage-plus = { version = "0.13.1", features = ["iterator"] }
 
