@@ -108,7 +108,7 @@ pub struct Profile {
 }
 
 impl Profile {
-    pub const fn new(addr: Addr, created_at: u64) -> Self {
+    pub fn new(addr: Addr, created_at: u64) -> Self {
         Profile {
             addr,
             created_at,
