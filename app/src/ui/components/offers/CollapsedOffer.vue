@@ -91,7 +91,7 @@ const offerPrice = computed(() => {
     }
 
     .n-trades {
-      font-size: 14px;
+      font-size: 12px;
       color: $gray700;
       margin-top: 4px;
     }
