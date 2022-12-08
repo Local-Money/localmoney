@@ -197,7 +197,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded">
+  <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded card">
     <div class="top">
       <div class="owner">
         <p class="wallet-addr">
