@@ -86,34 +86,6 @@ fn update_profile_contact(
     Ok(res)
 }
 
-pub fn increment_active_offers(
-    deps: DepsMut,
-    info: MessageInfo,
-    profile_addr: Addr,
-) -> Result<Response, ContractError> {
-    // Only the Offer contract should be able to call this method.
-    let hub_config = get_hub_config(deps.as_ref());
-    assert_ownership(info.sender, hub_config.offer_addr)?;
-
-    // Try to increment active offers
-    let mut profile_model = ProfileModel::from_store(deps.storage, profile_addr.clone()).unwrap();
-    return if profile_model.profile.active_offers_count < hub_config.active_offers_limit {
-        profile_model.profile.active_offers_count += 1;
-        let active_offers = profile_model.profile.active_offers_count;
-        profile_model.save();
-        let attrs = vec![
-            ("action", "increment_active_offers".to_string()),
-            ("active_offers", active_offers.to_string()),
-        ];
-        let res = Response::new().add_attributes(attrs);
-        Ok(res)
-    } else {
-        Err(ContractError::ActiveOffersLimitReached {
-            limit: hub_config.active_offers_limit,
-        })
-    };
-}
-
 pub fn update_trades_count(
     deps: DepsMut,
     env: Env,

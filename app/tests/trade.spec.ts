@@ -12,7 +12,7 @@ import prices from './fixtures/update_prices.json'
 import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
 import type { GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
-import { FiatCurrency, TradeState } from '~/types/components.interface'
+import { FiatCurrency, OfferState, TradeState } from '~/types/components.interface'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -384,5 +384,83 @@ describe('test trade limits', () => {
     await expect(async () => {
       await makerClient.createOffer(offers[0] as PostOffer)
     }).rejects.toThrow(/Active offers limit reached/)
+  })
+  it('should decrease the number of active offers when pausing or archiving an offer', async () => {
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    const hubCfg = hubInfo.hubConfig
+    // Fetch maker profile
+    const makerProfile = await makerClient.fetchProfile()
+    const makerActiveOffers = makerProfile.active_offers_count
+    // Update Hub Config to have a limit of profile active offers + 1
+    const updateHubMsg = createHubUpdateConfigMsg(
+      hubCfg.offer_addr,
+      hubCfg.trade_addr,
+      hubCfg.trading_incentives_addr,
+      hubCfg.price_addr,
+      hubCfg.profile_addr
+    )
+    const newOffersLimit = (updateHubMsg.update_config.active_offers_limit = makerProfile.active_offers_count + 1)
+    await adminClient
+      .getCwClient()
+      .execute(adminClient.getWalletAddress(), hubInfo.hubAddress, updateHubMsg, 'auto', 'update hub config')
+    // Check that the updated hubInfo has the new limit
+    await makerClient.updateHub(hubInfo.hubAddress)
+    expect(makerClient.getHubInfo().hubConfig.active_offers_limit).toBe(newOffersLimit)
+    // Create an offer and expect it to be successful
+    const offerResponse = await getOrCreateOffer(makerClient, true)
+    expect(offerResponse).toBeDefined()
+    // Pause the offer and expect the active offers count to be decreased
+    await makerClient.updateOffer({ ...offerResponse.offer, state: OfferState.paused })
+    const updatedMakerProfile = await makerClient.fetchProfile()
+    expect(updatedMakerProfile.active_offers_count).toBe(makerActiveOffers)
+    // Activate the offer and expect the active offers count to be increased
+    await makerClient.updateOffer({ ...offerResponse.offer, state: OfferState.active })
+    const updatedMakerProfile2 = await makerClient.fetchProfile()
+    expect(updatedMakerProfile2.active_offers_count).toBe(makerActiveOffers + 1)
+    // Archive the offer and expect the active offers count to be decreased
+    await makerClient.updateOffer({ ...offerResponse.offer, state: OfferState.archived })
+    const updatedMakerProfile3 = await makerClient.fetchProfile()
+    expect(updatedMakerProfile3.active_offers_count).toBe(makerActiveOffers)
+  })
+  it('it should decrease the number of active trades when canceling a trade request', async () => {
+    // Get Hub Info
+    const hubInfo = takerClient.getHubInfo()
+    const hubCfg = hubInfo.hubConfig
+    // Fetch taker profile
+    const takerProfile = await takerClient.fetchProfile()
+    const takerActiveTrades = takerProfile.active_trades_count
+    // Update Hub Config to have a limit of profile active trades + 1
+    const updateHubMsg = createHubUpdateConfigMsg(
+      hubCfg.offer_addr,
+      hubCfg.trade_addr,
+      hubCfg.trading_incentives_addr,
+      hubCfg.price_addr,
+      hubCfg.profile_addr
+    )
+    const newTradesLimit = (updateHubMsg.update_config.active_trades_limit = takerProfile.active_trades_count + 1)
+    await adminClient
+      .getCwClient()
+      .execute(adminClient.getWalletAddress(), hubInfo.hubAddress, updateHubMsg, 'auto', 'update hub config')
+    // Check that the updated hubInfo has the new limit
+    await takerClient.updateHub(hubInfo.hubAddress)
+    expect(takerClient.getHubInfo().hubConfig.active_trades_limit).toBe(newTradesLimit)
+    // Create a trade and expect it to be successful
+    const offer = (await getOrCreateOffer(makerClient)).offer
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const profile_taker_encrypt_key = takerSecrets.publicKey
+    const tradeId = await takerClient.openTrade({
+      amount: offer.min_amount,
+      offer_id: offer.id,
+      taker: takerClient.getWalletAddress(),
+      profile_taker_contact,
+      profile_taker_encryption_key: profile_taker_encrypt_key,
+      taker_contact: 'taker_contact',
+    })
+    expect(tradeId).not.toHaveLength(0)
+    // Cancel the trade and expect the active trades count to be decreased
+    await takerClient.cancelTradeRequest(tradeId)
+    const updatedTakerProfile = await takerClient.fetchProfile()
+    expect(updatedTakerProfile.active_trades_count).toBe(takerActiveTrades)
   })
 })

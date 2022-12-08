@@ -40,6 +40,9 @@ export function createHubUpdateConfigMsg(
   }
 }
 
+/**
+ * Instantiate all contracts and setup Hub:
+ */
 export async function setupProtocol() {
   const adminClient = new TestCosmosChain(DEV_CONFIG, DEV_HUB_INFO)
   adminClient.seed = process.env.ADMIN_SEED!
@@ -153,6 +156,12 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/**
+ * Creates an offer if the maker doesn't have any.
+ * @param makerClient the maker client.
+ * @param forceCreate if true, it will create a new offer even if the maker has one.
+ * @returns an offer.
+ */
 export async function getOrCreateOffer(makerClient: TestCosmosChain, forceCreate = false): Promise<OfferResponse> {
   let myOffers = await makerClient.fetchMyOffers()
   if (myOffers.length === 0 || forceCreate) {

@@ -136,6 +136,7 @@ pub fn query_fiat_price_for_denom(
     let denom_price_route = &DENOM_PRICE_ROUTE
         .load(deps.storage, denom_str.as_str())
         .unwrap();
+    // Query the price of the denom in ATOM
     let denom_atom = denom_price_route
         .iter()
         .fold(Uint256::from(1u128), |price, route| {
@@ -155,8 +156,9 @@ pub fn query_fiat_price_for_denom(
                 .unwrap();
             price * denom_price_result.return_amount
         });
-
     let atom_usd = Uint256::from(Uint128::new(1_000_000u128).mul(atom_usd_price.rate));
+
+    // If fiat is USD, we don't need to query the price
     let fiat_price = match fiat {
         FiatCurrency::USD => CurrencyPrice {
             currency: FiatCurrency::USD,
@@ -165,9 +167,10 @@ pub fn query_fiat_price_for_denom(
         },
         _ => FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?,
     };
+
+    // Calculate the price of the denom in fiat
     let fiat_usd = Uint256::from(fiat_price.usd_price);
     let decimal_places = 1_000_000_000_000u128;
-
     let denom_fiat_price = fiat_usd
         .mul(&atom_usd)
         .mul(&denom_atom)
