@@ -136,7 +136,7 @@ export async function formatEncryptedUserContact(privateKey, profileContact) {
 }
 
 export function formatTradesCountInfo(tradesCount) {
-  const tradesLabel = tradesCount === 1 ? 'trade' : 'trades'
+  const tradesLabel = tradesCount === 1 ? 'completed trade' : 'completed trades'
   return `${tradesCount} ${tradesLabel}`
 }
 

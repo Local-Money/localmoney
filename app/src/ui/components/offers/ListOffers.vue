@@ -93,12 +93,7 @@ watch(offerType, async () => await fetchOffers())
       <!-- Offers for -->
       <ListContentResult :result="offersResult" emptyStateMsg="There are no offers available yet">
         <ul>
-          <li
-            v-for="offer in page.offers"
-            :key="offer.data.id"
-            class="card"
-            :class="offer.isExpanded ? 'card-active' : ''"
-          >
+          <li v-for="offer in page.offers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
             <!-- Collapsed Offer -->
             <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
             <!-- Expanded Offer Desktop -->
