@@ -33,7 +33,6 @@ pub struct HubConfig {
     pub offer_addr: Addr,
     pub trade_addr: Addr,
     pub profile_addr: Addr,
-    pub trading_incentives_addr: Addr,
     pub price_addr: Addr,
     pub price_provider_addr: Addr,
     pub local_market_addr: Addr,

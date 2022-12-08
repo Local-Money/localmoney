@@ -3,6 +3,7 @@ use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, Su
 use cw2::{get_contract_version, set_contract_version};
 use localmoney_protocol::denom_utils::denom_to_string;
 
+use crate::state::{ADMIN, CONFIG};
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::Unauthorized;
 use localmoney_protocol::guards::assert_migration_parameters;
@@ -13,9 +14,6 @@ use localmoney_protocol::offer::ExecuteMsg::RegisterHub as OfferRegisterHub;
 use localmoney_protocol::price::ExecuteMsg::RegisterHub as PriceRegisterHub;
 use localmoney_protocol::profile::ExecuteMsg::RegisterHub as ProfileRegisterHub;
 use localmoney_protocol::trade::ExecuteMsg::RegisterHub as TradeRegisterHub;
-use localmoney_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeIncentivesRegisterHub;
-
-use crate::state::{ADMIN, CONFIG};
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -66,7 +64,6 @@ fn update_config(
         });
     }
     CONFIG.save(deps.storage, &config).unwrap();
-    let local_denom = denom_to_string(&config.local_denom);
 
     let offer_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.offer_addr.to_string(),
@@ -92,27 +89,17 @@ fn update_config(
         funds: info.funds.clone(),
     }));
 
-    let trading_incentives_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.trading_incentives_addr.to_string(),
-        msg: to_binary(&TradeIncentivesRegisterHub {}).unwrap(),
-        funds: info.funds.clone(),
-    }));
-
     let res = Response::new()
         .add_attribute("action", "update_config")
         .add_submessage(offer_register_hub)
         .add_submessage(price_register_hub)
         .add_submessage(profile_register_hub)
         .add_submessage(trade_register_hub)
-        .add_submessage(trading_incentives_register_hub)
-        .add_attribute("local_denom", local_denom)
         .add_attribute("local_market_addr", config.local_market_addr)
         .add_attribute("offer_addr", config.offer_addr)
         .add_attribute("price_addr", config.price_addr)
         .add_attribute("profile_addr", config.profile_addr)
-        .add_attribute("trade_addr", config.trade_addr)
-        .add_attribute("trading_incentives_addr", config.trading_incentives_addr);
-
+        .add_attribute("trade_addr", config.trade_addr);
     Ok(res)
 }
 

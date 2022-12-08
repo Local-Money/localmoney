@@ -18,7 +18,6 @@ export const KUJIRA_TESTNET_HUB_INFO: HubInfo = {
     trade_addr: 'kujira1y8artn4enfulxlau9ycv33e8xrsy6a29n20dl6pfhxgflfqd005qp0vj6n',
     price_addr: 'kujira14e8dc9x2vqltcs28wwu96jtnymrse80cmmj9nc37x4ymh7xjmrjqavedqd',
     profile_addr: 'kujira190ea5krlq7gvdalsaay8u2ww23v9y6qs9qvyljh2s0x6h8qpkvwq4sgc7c',
-    trading_incentives_addr: 'kujira1e3zup87nv4uqfk2vruhsp6nfhm2ep6xf0erzgwxessuqdamp93gqtlrtec',
     local_market_addr: 'kujira1chejx4qqtvwxy6684yrsmf6pylancxqhk3vsmtleg5ta3zrffljq4xf685',
     local_denom: {
       native: 'factory/kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w/local',

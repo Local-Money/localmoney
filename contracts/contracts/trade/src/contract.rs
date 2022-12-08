@@ -32,7 +32,6 @@ use localmoney_protocol::trade::{
     NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
     TradeStateItem, TraderRole,
 };
-// use localmoney_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -661,10 +660,24 @@ fn release_escrow(
     let chain_amount = fee.mul(Decimal::from_ratio(hub_config.chain_fee_pct, 100u128));
     let warchest_amount = fee.mul(Decimal::from_ratio(hub_config.warchest_fee_pct, 100u128));
 
-    // Update buyer profile released_trades_count
-    send_msgs.push(update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
-        trade.buyer.clone(),
+    // Create Trade Registration message to be sent to the Trading Incentives contract.
+    // TODO: Disabling Temporarily to use TradingIncentives as Price Contract.
+    /*
+    let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: hub_cfg.trading_incentives_addr.to_string(),
+        msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
+            trade: trade.id.clone(),
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+    send_msgs.push(register_trade_msg);
+    */
+
+    // Update profile released_trades_count
+    send_msgs.push(increase_profile_trades_count_msg(
+        hub_cfg.profile_addr.to_string(),
+        offer.owner.clone(),
         trade.get_state(),
     ));
     // Update seller profile released_trades_count

@@ -10,4 +10,3 @@ pub mod offer;
 pub mod price;
 pub mod profile;
 pub mod trade;
-pub mod trading_incentives;
