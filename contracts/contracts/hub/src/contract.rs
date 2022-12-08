@@ -1,9 +1,11 @@
 use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
+use cw2::{get_contract_version, set_contract_version};
 use localmoney_protocol::denom_utils::denom_to_string;
 
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::Unauthorized;
+use localmoney_protocol::guards::assert_migration_parameters;
 use localmoney_protocol::hub::{
     Admin, ExecuteMsg, HubConfig, InstantiateMsg, MigrateMsg, QueryMsg,
 };
@@ -15,6 +17,9 @@ use localmoney_protocol::trading_incentives::ExecuteMsg::RegisterHub as TradeInc
 
 use crate::state::{ADMIN, CONFIG};
 
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -22,6 +27,8 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+
     let admin = Admin {
         addr: msg.admin_addr.clone(),
     };
@@ -142,6 +149,21 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let previous_contract_version = get_contract_version(deps.storage).unwrap();
+
+    assert_migration_parameters(
+        previous_contract_version.clone(),
+        CONTRACT_NAME.to_string(),
+        CONTRACT_VERSION,
+    )
+    .unwrap();
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    // If the structure of the data in storage changes, we must treat it here
+
+    Ok(Response::default()
+        .add_attribute("previous_version", previous_contract_version.version)
+        .add_attribute("new_version", CONTRACT_VERSION)
+        .add_attribute("name", CONTRACT_NAME))
 }
