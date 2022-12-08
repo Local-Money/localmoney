@@ -6,6 +6,7 @@ use cosmwasm_std::{
     Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
     Uint128, Uint256, WasmMsg,
 };
+use cw2::{get_contract_version, set_contract_version};
 
 use localmoney_protocol::constants::LOCAL_FEE;
 use localmoney_protocol::currencies::FiatCurrency;
@@ -16,8 +17,9 @@ use localmoney_protocol::errors::ContractError::{
     RefundErrorNotExpired, TradeExpired,
 };
 use localmoney_protocol::guards::{
-    assert_ownership, assert_sender_is_buyer_or_seller, assert_trade_state_and_type,
-    assert_trade_state_change, assert_trade_state_change_is_valid, assert_value_in_range,
+    assert_migration_parameters, assert_ownership, assert_sender_is_buyer_or_seller,
+    assert_trade_state_and_type, assert_trade_state_change, assert_trade_state_change_is_valid,
+    assert_value_in_range,
 };
 use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localmoney_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
@@ -33,13 +35,18 @@ use localmoney_protocol::trade::{
 // use localmoney_protocol::trading_incentives::ExecuteMsg as TradingIncentivesMsg;
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[entry_point]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+
     let res = Response::new().add_attribute("action", "instantiate_trade");
     Ok(res)
 }
@@ -86,8 +93,23 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let previous_contract_version = get_contract_version(deps.storage).unwrap();
+
+    assert_migration_parameters(
+        previous_contract_version.clone(),
+        CONTRACT_NAME.to_string(),
+        CONTRACT_VERSION,
+    )
+    .unwrap();
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    // If the structure of the data in storage changes, we must treat it here
+
+    Ok(Response::default()
+        .add_attribute("previous_version", previous_contract_version.version)
+        .add_attribute("new_version", CONTRACT_VERSION)
+        .add_attribute("name", CONTRACT_NAME))
 }
 
 fn create_trade(
