@@ -5,13 +5,14 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, Uint256,
 };
+use cw2::{get_contract_version, set_contract_version};
 use cw20::Denom;
 use localmoney_protocol::constants::BASE_ORACLE_DENOM;
 use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
-use localmoney_protocol::guards::assert_ownership;
+use localmoney_protocol::guards::{assert_migration_parameters, assert_ownership};
 use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localmoney_protocol::kujira::asset::{Asset, AssetInfo};
 use localmoney_protocol::kujira::denom::Denom as KujiraDenom;
@@ -26,16 +27,17 @@ use localmoney_protocol::price::{
 use localmoney_protocol::profile::{InstantiateMsg, MigrateMsg};
 
 // version info for migration info
-pub const CONTRACT_NAME: &str = "localmoney.io:price";
+pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut<KujiraQuery>,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response<KujiraMsg>, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
     let res = Response::new().add_attribute("action", "instantiate_price");
     Ok(res)
 }
@@ -184,11 +186,24 @@ pub fn query_fiat_price_for_denom(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(
-    _deps: DepsMut<KujiraQuery>,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     _msg: MigrateMsg,
 ) -> Result<Response<KujiraMsg>, ContractError> {
+    let previous_contract_version = get_contract_version(deps.storage).unwrap();
+
+    assert_migration_parameters(
+        previous_contract_version.clone(),
+        CONTRACT_NAME.to_string(),
+        CONTRACT_VERSION,
+    )
+    .unwrap();
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    // If the structure of the data in storage changes, we must treat it here
+
     Ok(Response::default()
-        .add_attribute("version", CONTRACT_VERSION)
+        .add_attribute("previous_version", previous_contract_version.version)
+        .add_attribute("new_version", CONTRACT_VERSION)
         .add_attribute("name", CONTRACT_NAME))
 }

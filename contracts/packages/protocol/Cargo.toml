@@ -17,6 +17,7 @@ documentation = "https://localmoney.gitbook.io"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
+cw2 = { version = "0.13.1" }
 cw20 = { version = "0.13.1" }
 cosmwasm-std = { version = "1.0.0" }
 cosmwasm-storage = { version = "1.0.0" }
