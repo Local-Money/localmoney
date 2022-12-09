@@ -20,6 +20,7 @@ use localmoney_protocol::guards::{
     assert_trade_state_and_type, assert_trade_state_change, assert_trade_state_change_is_valid,
     assert_value_in_range,
 };
+use localmoney_protocol::hub::HubConfig;
 use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localmoney_protocol::offer::{load_offer, Arbitrator, OfferType, TradeInfo};
 use localmoney_protocol::price::{query_fiat_price_for_denom, DenomFiatPrice};
@@ -27,8 +28,8 @@ use localmoney_protocol::profile::{
     load_profile, update_profile_contact_msg, update_profile_trades_count_msg,
 };
 use localmoney_protocol::trade::{
-    arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, InstantiateMsg, MigrateMsg,
-    NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
+    arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, FeeInfo, InstantiateMsg,
+    MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
     TradeStateItem, TraderRole,
 };
 pub const SWAP_REPLY_ID: u64 = 1u64;
@@ -649,7 +650,6 @@ fn release_escrow(
     trade.set_state(TradeState::EscrowReleased, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
-    // Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let mut release_amount = trade.amount.clone();
     let burn_amount = release_amount.mul(hub_config.burn_fee_pct);
@@ -722,10 +722,7 @@ fn release_escrow(
         .add_attribute("trade_id", trade_id.clone())
         .add_attribute("state", trade.get_state().clone().to_string())
         .add_attribute("trade_denom", denom_to_string(&trade.denom))
-        .add_attribute("total_amount", trade.amount.u128().to_string())
-        .add_attribute("burn_amount", burn_amount.u128().to_string())
-        .add_attribute("chain_amount", chain_amount.u128().to_string())
-        .add_attribute("warchest_amount", warchest_amount.u128().to_string());
+        .add_attribute("total_amount", trade.amount.u128().to_string());
     Ok(res)
 }
 
@@ -985,20 +982,31 @@ fn settle_dispute(
     }
     TradeModel::store(deps.storage, &trade).unwrap();
 
-    // Pay arbitration fee
-    let fee_amount = trade
-        .amount
-        .multiply_ratio(hub_cfg.arbitration_fee_pct, 100u128);
+    // Collect Protocol Fees
+    let trade_denom = denom_to_string(&trade.denom);
+    let mut send_msgs: Vec<SubMsg> = vec![];
+    let fee_info =
+        add_protocol_fees_msgs(&mut send_msgs, &trade.amount, trade_denom.clone(), &hub_cfg);
 
+    // Pay arbitration fee
+    let arbitration_fee_amount = trade.amount.mul(hub_cfg.arbitration_fee_pct);
+
+    // Send funds to winner and arbitrator
     let denom = denom_to_string(&trade.denom);
-    let fee = vec![Coin::new(fee_amount.u128(), denom.clone())];
+    let arbitration_fee = vec![Coin::new(arbitration_fee_amount.u128(), denom.clone())];
     let winner_amount = vec![Coin::new(
-        trade.amount.u128().sub(fee_amount.u128()),
+        trade
+            .amount
+            .u128()
+            .sub(arbitration_fee_amount.u128())
+            .sub(fee_info.total_fees().u128()),
         denom.clone(),
     )];
-
-    let winner_msg = create_send_msg(winner.clone(), winner_amount);
-    let arbitrator_msg = create_send_msg(trade.arbitrator.clone(), fee);
+    send_msgs.push(SubMsg::new(create_send_msg(winner.clone(), winner_amount)));
+    send_msgs.push(SubMsg::new(create_send_msg(
+        trade.arbitrator.clone(),
+        arbitration_fee,
+    )));
 
     // Create Update Profile SubMsgs
     let hub_config = get_hub_config(deps.as_ref());
@@ -1022,21 +1030,77 @@ fn settle_dispute(
         .add_attribute("winner", winner.to_string())
         .add_attribute("maker", maker.to_string())
         .add_attribute("taker", taker.to_string())
-        .add_submessage(SubMsg::new(winner_msg))
-        .add_submessage(SubMsg::new(arbitrator_msg))
         .add_submessages(profile_submsgs);
     Ok(res)
 }
 
 // region utils
-pub fn get_fee_amount(amount: Uint128, fee: u128) -> Uint128 {
-    amount.clone().checked_div(Uint128::new(fee)).unwrap() // TODO: use constant / config
-}
-
+// Creates a BankMsg::Send message
 fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
     CosmosMsg::Bank(BankMsg::Send {
         to_address: to_address.to_string(),
         amount,
     })
+}
+
+// Adds protocol fees to the given send_msgs.
+fn add_protocol_fees_msgs(
+    send_msgs: &mut Vec<SubMsg>,
+    release_amount: &Uint128,
+    trade_denom: String,
+    hub_cfg: &HubConfig,
+) -> FeeInfo {
+    // Calculate fees and final release amount
+    let mut release_amount = release_amount.clone();
+    let burn_amount = release_amount.clone().mul(hub_cfg.burn_fee_pct);
+    let chain_amount = release_amount.mul(hub_cfg.chain_fee_pct);
+    let warchest_amount = release_amount.mul(hub_cfg.warchest_fee_pct);
+    let total_fee = burn_amount + chain_amount + warchest_amount;
+    release_amount = release_amount.sub(total_fee);
+
+    // Protocol Fee (Burn)
+    if !burn_amount.is_zero() {
+        //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
+        let local_denom = denom_to_string(&hub_cfg.local_denom);
+        if trade_denom.ne(&local_denom) {
+            send_msgs.push(SubMsg {
+                id: SWAP_REPLY_ID,
+                msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: hub_cfg.local_market_addr.to_string(),
+                    msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
+                    funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            });
+        } else {
+            //If coin being traded is $LOCAL, add message burning the local_burn amount
+            send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Burn {
+                amount: vec![coin(burn_amount.u128(), local_denom.clone())],
+            })));
+        }
+    }
+
+    // Chain Fee Sharing
+    if !chain_amount.is_zero() {
+        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: hub_cfg.chain_fee_collector_addr.to_string(),
+            amount: vec![coin(chain_amount.u128(), trade_denom.clone())],
+        })));
+    }
+
+    // Warchest
+    if !warchest_amount.is_zero() {
+        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: hub_cfg.warchest_addr.to_string(),
+            amount: vec![coin(warchest_amount.u128(), trade_denom.clone())],
+        })));
+    }
+    FeeInfo {
+        burn_amount,
+        chain_amount,
+        warchest_amount,
+        release_amount,
+    }
 }
 //endregion

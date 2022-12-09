@@ -1,5 +1,5 @@
 use std::fmt::{self};
-use std::ops::Mul;
+use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
     Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
@@ -84,6 +84,23 @@ pub enum QueryMsg {
     ArbitratorsFiat {
         fiat: FiatCurrency,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct FeeInfo {
+    pub burn_amount: Uint128,
+    pub chain_amount: Uint128,
+    pub warchest_amount: Uint128,
+    pub release_amount: Uint128,
+}
+
+impl FeeInfo {
+    pub fn total_fees(&self) -> Uint128 {
+        self.burn_amount
+            .add(self.chain_amount)
+            .add(self.warchest_amount)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
