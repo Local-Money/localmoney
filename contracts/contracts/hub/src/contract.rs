@@ -1,7 +1,6 @@
 use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw2::{get_contract_version, set_contract_version};
-use localmoney_protocol::denom_utils::denom_to_string;
 
 use crate::state::{ADMIN, CONFIG};
 use localmoney_protocol::errors::ContractError;

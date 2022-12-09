@@ -315,7 +315,6 @@ describe('test trade limits', () => {
     const updateHubMsg = createHubUpdateConfigMsg(
       hubCfg.offer_addr,
       hubCfg.trade_addr,
-      hubCfg.trading_incentives_addr,
       hubCfg.price_addr,
       hubCfg.profile_addr
     )
@@ -362,7 +361,6 @@ describe('test trade limits', () => {
     const updateHubMsg = createHubUpdateConfigMsg(
       hubCfg.offer_addr,
       hubCfg.trade_addr,
-      hubCfg.trading_incentives_addr,
       hubCfg.price_addr,
       hubCfg.profile_addr
     )
@@ -396,7 +394,6 @@ describe('test trade limits', () => {
     const updateHubMsg = createHubUpdateConfigMsg(
       hubCfg.offer_addr,
       hubCfg.trade_addr,
-      hubCfg.trading_incentives_addr,
       hubCfg.price_addr,
       hubCfg.profile_addr
     )
@@ -434,7 +431,6 @@ describe('test trade limits', () => {
     const updateHubMsg = createHubUpdateConfigMsg(
       hubCfg.offer_addr,
       hubCfg.trade_addr,
-      hubCfg.trading_incentives_addr,
       hubCfg.price_addr,
       hubCfg.profile_addr
     )

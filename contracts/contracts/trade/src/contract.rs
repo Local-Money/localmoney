@@ -660,24 +660,10 @@ fn release_escrow(
     let chain_amount = fee.mul(Decimal::from_ratio(hub_config.chain_fee_pct, 100u128));
     let warchest_amount = fee.mul(Decimal::from_ratio(hub_config.warchest_fee_pct, 100u128));
 
-    // Create Trade Registration message to be sent to the Trading Incentives contract.
-    // TODO: Disabling Temporarily to use TradingIncentives as Price Contract.
-    /*
-    let register_trade_msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: hub_cfg.trading_incentives_addr.to_string(),
-        msg: to_binary(&TradingIncentivesMsg::RegisterTrade {
-            trade: trade.id.clone(),
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
-    send_msgs.push(register_trade_msg);
-    */
-
-    // Update profile released_trades_count
-    send_msgs.push(increase_profile_trades_count_msg(
-        hub_cfg.profile_addr.to_string(),
-        offer.owner.clone(),
+    // Update buyer profile released_trades_count
+    send_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.buyer.clone(),
         trade.get_state(),
     ));
     // Update seller profile released_trades_count
