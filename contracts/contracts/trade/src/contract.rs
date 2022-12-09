@@ -2,13 +2,12 @@ use std::ops::{Mul, Sub};
 use std::str::FromStr;
 
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, CustomQuery, Decimal,
-    Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
-    Uint128, Uint256, WasmMsg,
+    coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, CustomQuery, Deps,
+    DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    Uint256, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 
-use localmoney_protocol::constants::LOCAL_FEE;
 use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
@@ -653,12 +652,11 @@ fn release_escrow(
     // Calculate fees and final release amount
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     let mut release_amount = trade.amount.clone();
-    let one = Uint128::new(1u128);
-    let fee = one.mul(Decimal::from_ratio(release_amount, LOCAL_FEE));
-    release_amount = release_amount.checked_sub(fee.clone()).unwrap();
-    let burn_amount = fee.mul(Decimal::from_ratio(hub_config.burn_fee_pct, 100u128));
-    let chain_amount = fee.mul(Decimal::from_ratio(hub_config.chain_fee_pct, 100u128));
-    let warchest_amount = fee.mul(Decimal::from_ratio(hub_config.warchest_fee_pct, 100u128));
+    let burn_amount = release_amount.mul(hub_config.burn_fee_pct);
+    let chain_amount = release_amount.mul(hub_config.chain_fee_pct);
+    let warchest_amount = release_amount.mul(hub_config.warchest_fee_pct);
+    let total_fee = burn_amount + chain_amount + warchest_amount;
+    release_amount = release_amount.sub(total_fee);
 
     // Update buyer profile released_trades_count
     send_msgs.push(update_profile_trades_count_msg(
@@ -679,44 +677,55 @@ fn release_escrow(
         amount: vec![Coin::new(release_amount.u128(), trade_denom.clone())],
     })));
 
-    // Fee Distribution
-    let local_denom = denom_to_string(&hub_config.local_denom);
-    //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
-    if trade_denom.ne(&local_denom) {
-        send_msgs.push(SubMsg {
-            id: SWAP_REPLY_ID,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: hub_config.local_market_addr.to_string(),
-                msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
-                funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        });
-    } else {
-        //If coin being traded is $LOCAL, add message burning the local_burn amount
-        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Burn {
-            amount: vec![coin(burn_amount.u128(), local_denom.clone())],
+    // Protocol Fee (Burn)
+    if !burn_amount.is_zero() {
+        //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
+        let local_denom = denom_to_string(&hub_config.local_denom);
+        if trade_denom.ne(&local_denom) {
+            send_msgs.push(SubMsg {
+                id: SWAP_REPLY_ID,
+                msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: hub_config.local_market_addr.to_string(),
+                    msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
+                    funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            });
+        } else {
+            //If coin being traded is $LOCAL, add message burning the local_burn amount
+            send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Burn {
+                amount: vec![coin(burn_amount.u128(), local_denom.clone())],
+            })));
+        }
+    }
+
+    // Chain Fee Sharing
+    if !chain_amount.is_zero() {
+        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: hub_config.chain_fee_collector_addr.to_string(),
+            amount: vec![coin(chain_amount.u128(), trade_denom.clone())],
         })));
     }
 
     // Warchest
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: hub_config.warchest_addr.to_string(),
-        amount: vec![coin(warchest_amount.u128(), trade_denom.clone())],
-    })));
-
-    // Chain Fee Sharing
-    send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: hub_config.chain_fee_collector_addr.to_string(),
-        amount: vec![coin(chain_amount.u128(), trade_denom.clone())],
-    })));
+    if !warchest_amount.is_zero() {
+        send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: hub_config.warchest_addr.to_string(),
+            amount: vec![coin(warchest_amount.u128(), trade_denom.clone())],
+        })));
+    }
 
     let res = Response::new()
         .add_submessages(send_msgs)
         .add_attribute("action", "release_escrow")
         .add_attribute("trade_id", trade_id.clone())
-        .add_attribute("state", trade.get_state().clone().to_string());
+        .add_attribute("state", trade.get_state().clone().to_string())
+        .add_attribute("trade_denom", denom_to_string(&trade.denom))
+        .add_attribute("total_amount", trade.amount.u128().to_string())
+        .add_attribute("burn_amount", burn_amount.u128().to_string())
+        .add_attribute("chain_amount", chain_amount.u128().to_string())
+        .add_attribute("warchest_amount", warchest_amount.u128().to_string());
     Ok(res)
 }
 

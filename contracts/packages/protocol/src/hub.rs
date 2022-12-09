@@ -1,4 +1,4 @@
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Decimal};
 use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -40,11 +40,11 @@ pub struct HubConfig {
     pub chain_fee_collector_addr: Addr,
     pub warchest_addr: Addr,
     pub arbitration_fee_pct: u128,
-    pub burn_fee_pct: u128,
-    pub chain_fee_pct: u128,
-    pub warchest_fee_pct: u128,
     pub active_offers_limit: u8,
     pub active_trades_limit: u8,
+    pub burn_fee_pct: Decimal,
+    pub chain_fee_pct: Decimal,
+    pub warchest_fee_pct: Decimal,
     pub trade_expiration_timer: u64, // in seconds
     pub trade_dispute_timer: u64,
     pub trade_limit: u128, // in USD
