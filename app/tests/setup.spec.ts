@@ -17,7 +17,7 @@ beforeAll(async () => {
   adminClient = result.adminClient
 })
 
-describe('hub tests', () => {
+describe('setup protocol', () => {
   it('query hub config', async () => {
     expect(adminClient.getHubInfo().hubConfig).toBeDefined()
     expect(takerClient.getHubInfo().hubConfig).toEqual(adminClient.getHubInfo().hubConfig)

@@ -5,7 +5,7 @@ class CustomSequencer extends Sequencer {
   sort(tests) {
     const sorted = []
     tests.forEach((test) => {
-      if (test.path.includes('hub.spec')) {
+      if (test.path.includes('setup.spec')) {
         sorted[0] = test
       } else if (test.path.includes('price.spec')) {
         sorted[1] = test
