@@ -74,11 +74,6 @@ pub enum ContractError {
     RefundErrorNotExpired { message: String, trade: String },
     #[error("This trade has expired.")]
     TradeExpired { expired_at: u64, created_at: u64 },
-    /// TradingIncentives Errors
-    #[error("Only past periods can be claimed.")]
-    DistributionClaimInvalidPeriod {},
-    #[error("Distribution hasn't started yet.")]
-    DistributionNotStarted {},
     /// Profile Errors
     #[error("Active offers limit reached. Limit: {limit:?}.")]
     ActiveOffersLimitReached { limit: u8 },

@@ -8,32 +8,25 @@ import offers from './fixtures/offers.json'
 import { DEV_CONFIG, DEV_HUB_INFO } from '~/network/cosmos/config/dev'
 import type { OfferResponse, PostOffer } from '~/types/components.interface'
 
-export function createHubUpdateConfigMsg(
-  offerAddr: string,
-  tradeAddr: string,
-  tradingIncentivesAddr: string,
-  priceAddr: string,
-  profileAddr: string
-) {
+export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, priceAddr: string, profileAddr: string) {
   return {
     update_config: {
       offer_addr: offerAddr,
       trade_addr: tradeAddr,
-      trading_incentives_addr: tradingIncentivesAddr,
       price_addr: priceAddr,
-      price_provider_addr: process.env.PRICE_PROVIDER_ADDR,
       profile_addr: profileAddr,
+      price_provider_addr: process.env.PRICE_PROVIDER_ADDR,
       local_market_addr: process.env.LOCAL_MARKET,
       local_denom: { native: process.env.LOCAL_DENOM },
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
       warchest_addr: process.env.WARCHEST_ADDR,
-      arbitration_fee_pct: '1',
-      burn_fee_pct: '40',
-      chain_fee_pct: '10',
-      warchest_fee_pct: '50',
       trade_limit: '100', // in USD
       active_offers_limit: 3,
       active_trades_limit: 10,
+      arbitration_fee_pct: '1',
+      burn_fee_pct: '0.002',
+      chain_fee_pct: '0.003',
+      warchest_fee_pct: '0.005',
       trade_expiration_timer: TRADE_EXPIRATION_TIMER,
       trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
@@ -66,7 +59,7 @@ export async function setupProtocol() {
     const adminCwClient = adminClient.getCwClient() as SigningCosmWasmClient
 
     const instantiateMsg = { admin_addr: admAddr }
-    const { hub, offer, trade, trading_incentives, price, profile } = codeIds
+    const { hub, offer, trade, price, profile } = codeIds
     const opts = { admin: admAddr }
     const hubInstantiateResult = await adminCwClient.instantiate(admAddr, hub, instantiateMsg, 'hub', 'auto', opts)
     console.log('Hub Instantiate Result: ', hubInstantiateResult)
@@ -88,15 +81,6 @@ export async function setupProtocol() {
       opts
     )
     console.log('Trade Instantiate Result: ', tradeInstantiateResult)
-    const tradingIncentivesResult = await adminCwClient.instantiate(
-      admAddr,
-      trading_incentives,
-      instantiateMsg,
-      'trading_incentives',
-      'auto',
-      opts
-    )
-    console.log('Trading Incentives Instantiate Result: ', tradingIncentivesResult)
     const profileResult = await adminCwClient.instantiate(admAddr, profile, instantiateMsg, 'profile', 'auto', opts)
     console.log('Profile Instantiate Result: ', profileResult)
 
@@ -110,14 +94,7 @@ export async function setupProtocol() {
     console.log('Price Instantiate Result: ', priceResult)
 
     // Assert that all contracts were instantiated
-    const results = [
-      hubInstantiateResult,
-      offerInstantiateResult,
-      tradeInstantiateResult,
-      tradingIncentivesResult,
-      priceResult,
-      profileResult,
-    ]
+    const results = [hubInstantiateResult, offerInstantiateResult, tradeInstantiateResult, priceResult, profileResult]
     results.forEach((result: InstantiateResult) => {
       expect(result).toHaveProperty('contractAddress')
     })
@@ -126,7 +103,6 @@ export async function setupProtocol() {
     const updatedConfigMsg = createHubUpdateConfigMsg(
       offerInstantiateResult.contractAddress,
       tradeInstantiateResult.contractAddress,
-      tradingIncentivesResult.contractAddress,
       priceResult.contractAddress,
       profileResult.contractAddress
     )

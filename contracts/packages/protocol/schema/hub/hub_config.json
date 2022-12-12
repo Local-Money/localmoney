@@ -10,7 +10,6 @@
     "local_market_addr",
     "offer_addr",
     "trade_addr",
-    "trading_incentives_addr",
     "warchest_addr",
     "warchest_fee_pct"
   ],
@@ -38,9 +37,6 @@
       "$ref": "#/definitions/Addr"
     },
     "trade_addr": {
-      "$ref": "#/definitions/Addr"
-    },
-    "trading_incentives_addr": {
       "$ref": "#/definitions/Addr"
     },
     "warchest_addr": {

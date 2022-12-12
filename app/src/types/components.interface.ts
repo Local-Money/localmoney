@@ -174,7 +174,6 @@ export interface HubConfig {
   profile_addr: string
   price_addr: string
   price_provider_addr: string
-  trading_incentives_addr: string
   local_market_addr: string
   chain_fee_collector_addr: string
   warchest_addr: string
