@@ -15,7 +15,7 @@ pub static CONFIG_KEY: &[u8] = b"config";
 
 pub struct OfferIndexes<'a> {
     // pk goes to second tuple element
-    pub owner: MultiIndex<'a, String, Offer, String>,
+    pub owner: MultiIndex<'a, Addr, Offer, String>,
     pub filter: MultiIndex<'a, String, Offer, String>,
 }
 
@@ -27,13 +27,9 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
 }
 
 pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
-    let offers_pk_namespace = "offers_v0_4_1";
+    let offers_pk_namespace = "offers";
     let indexes = OfferIndexes {
-        owner: MultiIndex::new(
-            |d| d.owner.clone().to_string(),
-            offers_pk_namespace,
-            "offers__owner",
-        ),
+        owner: MultiIndex::new(|d| d.owner.clone(), offers_pk_namespace, "offers__owner"),
         filter: MultiIndex::new(
             |offer: &Offer| {
                 offer
@@ -49,8 +45,6 @@ pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
     };
     IndexedMap::new(offers_pk_namespace, indexes)
 }
-
-// pub const OFFERS : IndexedMap<&str, Offer, OfferIndexes> = create_offers_indexedmap();
 
 ///Messages
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -109,6 +103,7 @@ pub enum QueryMsg {
     OffersByOwner {
         owner: Addr,
         limit: u32,
+        last: Option<String>,
     },
 }
 
@@ -183,16 +178,20 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<OfferResponse>> {
+    pub fn query_by_owner(
+        deps: Deps,
+        owner: Addr,
+        limit: u32,
+        last: Option<String>,
+    ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
-        let range = offers().idx.owner.prefix(owner.into_string()).range(
-            deps.storage,
-            None,
-            None,
-            Order::Descending,
-        );
+        let range_from = last.map(Bound::exclusive);
 
-        let result = range
+        let result = offers()
+            .idx
+            .owner
+            .prefix(owner)
+            .range(deps.storage, range_from, None, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {

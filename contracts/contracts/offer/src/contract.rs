@@ -72,8 +72,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             order,
         )?),
-        QueryMsg::OffersByOwner { owner, limit } => {
-            to_binary(&OfferModel::query_by_owner(deps, owner, limit)?)
+        QueryMsg::OffersByOwner { owner, limit, last } => {
+            to_binary(&OfferModel::query_by_owner(deps, owner, limit, last)?)
         }
     }
 }
