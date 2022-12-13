@@ -702,6 +702,9 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
+/// Handle the reply from the swap contract.
+/// It checkes if the received asset is LOCAL, if it is, it burns it.
+/// Otherwise, it continues the conversion following the ConversionRoute.
 fn handle_swap_reply(deps: DepsMut, _msg: Reply) -> StdResult<Response> {
     // Load Hub Config
     let hub_config = get_hub_config(deps.as_ref());
@@ -733,7 +736,14 @@ fn handle_swap_reply(deps: DepsMut, _msg: Reply) -> StdResult<Response> {
         )));
     }
 
-    let conversion_step_attr = ("conversion_step", conversion_step.step.to_string());
+    let conversion_step_attr = (
+        "conversion_step",
+        format!(
+            "{} out of {}",
+            (conversion_step.step + 1),
+            conversion_route.len()
+        ),
+    );
     let event_attr = ("event", "swap_reply".to_string());
 
     // Check if the received asset denom is the LOCAL Denom. If so, we can burn the asset and return.
