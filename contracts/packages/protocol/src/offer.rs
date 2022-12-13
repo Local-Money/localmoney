@@ -95,10 +95,9 @@ pub enum QueryMsg {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
-        min: Option<String>,
-        max: Option<String>,
         order: OfferOrder,
         limit: u32,
+        last: Option<String>,
     },
     OffersByOwner {
         owner: Addr,
@@ -214,23 +213,14 @@ impl OfferModel<'_> {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
         order: OfferOrder,
+        limit: u32,
+        last: Option<String>,
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let storage = deps.storage;
         let std_order = Order::Descending;
-        let range_min = match min {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-
-        let range_max = match max {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
+        let range_from = last.map(Bound::exclusive);
 
         let mut profiles = load_profiles(
             &deps.querier,
@@ -240,17 +230,16 @@ impl OfferModel<'_> {
         )
         .unwrap();
 
+        let prefix = fiat_currency.to_string()
+            + &offer_type.to_string()
+            + &denom_to_string(&denom)
+            + &*OfferState::Active.to_string();
+
         let mut result: Vec<OfferResponse> = offers()
             .idx
             .filter
-            .prefix(
-                fiat_currency.to_string()
-                    + &offer_type.to_string()
-                    + &denom_to_string(&denom)
-                    + &*OfferState::Active.to_string(),
-            )
-            .range(storage, range_min, range_max, std_order)
-            .take(limit as usize)
+            .prefix(prefix)
+            .range(storage, range_from, None, std_order)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
                     let profile_found = profiles
@@ -274,6 +263,7 @@ impl OfferModel<'_> {
                     Ok(OfferResponse { offer, profile })
                 })
             })
+            .take(limit as usize)
             .collect();
 
         match order {

@@ -174,10 +174,8 @@ export class CosmosChain implements Chain {
           fiat_currency: args.fiatCurrency,
           offer_type: args.offerType,
           denom: args.denom,
-          // min: "",
-          // max: "",
-          limit: 10,
           order: args.order,
+          limit: 10,
         },
       }
       const response = (await this.cwClient!.queryContractSmart(
