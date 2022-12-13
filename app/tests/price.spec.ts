@@ -43,9 +43,9 @@ describe('price tests', () => {
     expect(result.transactionHash).not.toBeNull()
   })
   it('should query fiat prices for denom', async () => {
-    const arsPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.ARS, { native: 'ukuji' })
-    const brlPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.BRL, { native: 'ukuji' })
-    const copPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.COP, { native: 'ukuji' })
+    const arsPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.ARS, { native: process.env.OFFER_DENOM! })
+    const brlPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.BRL, { native: process.env.OFFER_DENOM! })
+    const copPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.COP, { native: process.env.OFFER_DENOM! })
     expect(arsPrice.price * 1).toBeGreaterThan(0)
     expect(brlPrice.price * 1).toBeGreaterThan(0)
     expect(copPrice.price * 1).toBeGreaterThan(0)

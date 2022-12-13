@@ -21,7 +21,7 @@ beforeAll(async () => {
 })
 
 describe('fees tests', () => {
-  it('should register conversion route for LOCAL', async () => {
+  it('should register conversion route for KUJI', async () => {
     await adminClient.getCwClient().execute(
       adminClient.getWalletAddress(),
       tradeAddr,
