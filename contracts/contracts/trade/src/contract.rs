@@ -1,13 +1,12 @@
-use std::ops::{Mul, Sub};
-use std::str::FromStr;
-
 use cosmwasm_std::{
     coin, entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, CustomQuery, Deps,
     DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
     Uint256, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
+use std::ops::{Mul, Sub};
 
+use cw20::Denom;
 use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
@@ -28,9 +27,10 @@ use localmoney_protocol::profile::{
     load_profile, update_profile_contact_msg, update_profile_trades_count_msg,
 };
 use localmoney_protocol::trade::{
-    arbitrators, calc_denom_fiat_price, ArbitratorModel, ExecuteMsg, FeeInfo, InstantiateMsg,
-    MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade, TradeModel, TradeResponse, TradeState,
-    TradeStateItem, TraderRole,
+    arbitrators, calc_denom_fiat_price, ArbitratorModel, ConversionRoute, ConversionStep,
+    ExecuteMsg, FeeInfo, InstantiateMsg, MigrateMsg, NewTrade, QueryMsg, Swap, SwapMsg, Trade,
+    TradeModel, TradeResponse, TradeState, TradeStateItem, TraderRole, DENOM_CONVERSION_ROUTE,
+    DENOM_CONVERSION_STEP,
 };
 pub const SWAP_REPLY_ID: u64 = 1u64;
 
@@ -87,6 +87,9 @@ pub fn execute(
         }
         ExecuteMsg::SettleDispute { trade_id, winner } => {
             settle_dispute(deps, env, info, trade_id, winner)
+        }
+        ExecuteMsg::RegisterConversionRouteForDenom { denom, route } => {
+            register_conversion_route_for_denom(deps, info, denom, route)
         }
     }
 }
@@ -654,6 +657,7 @@ fn release_escrow(
     // Calculate and add protocol fees
     let mut release_amount = trade.amount.clone();
     let fee_info = add_protocol_fees_msgs(
+        deps,
         &mut send_msgs,
         &release_amount,
         trade_denom.clone(),
@@ -698,43 +702,98 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn handle_swap_reply(deps: DepsMut, msg: Reply) -> StdResult<Response> {
-    let hub_cfg = get_hub_config(deps.as_ref());
-    let local_denom = denom_to_string(&hub_cfg.local_denom);
-    let contract_address = &hub_cfg.trade_addr.to_string();
+fn handle_swap_reply(deps: DepsMut, _msg: Reply) -> StdResult<Response> {
+    // Load Hub Config
+    let hub_config = get_hub_config(deps.as_ref());
+    let contract_address = &hub_config.trade_addr.to_string();
 
-    let mut last_receiver = String::new();
-    let mut local_amount_received = String::from("0");
-    let events = msg.result.unwrap().events;
-    for e in events {
-        if e.ty.eq("coin_received") {
-            for attr in e.attributes {
-                if attr.key.eq("receiver") {
-                    last_receiver = attr.value.to_string();
-                } else if attr.key.eq("amount") && last_receiver.eq(contract_address) {
-                    local_amount_received =
-                        attr.value.to_string().replace(local_denom.as_str(), "");
-                }
-            }
-        }
+    // Load the ConversionRoute for the current step denom's.
+    let conversion_step = DENOM_CONVERSION_STEP.load(deps.storage).unwrap();
+    let next_step = (conversion_step.step + 1) as usize;
+    let trade_denom = denom_to_string(&conversion_step.trade_denom);
+    let conversion_route = DENOM_CONVERSION_ROUTE
+        .load(deps.storage, &trade_denom)
+        .unwrap();
+
+    // TODO: save initial balance of the asset being received in the ConversionStep and check that it has increased by the amount of the swap. We shouldn't assume an initial zero balance.
+    // Query the contract's balance of the ask_asset of the current step of the conversion route.
+    let received_denom =
+        denom_to_string(&conversion_route[conversion_step.step as usize].ask_asset);
+    let received_asset = deps
+        .querier
+        .query_balance(contract_address, received_denom)
+        .unwrap();
+
+    // Check that the received amount is greater than zero and return an error if not.
+    if received_asset.amount.is_zero() {
+        // TODO: Create or use a custom error type for this.
+        return Err(StdError::generic_err(format!(
+            "Received amount is zero for denom: {}",
+            received_asset.denom
+        )));
     }
 
-    //Burn $LOCAL
-    let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
-        amount: vec![coin(
-            u128::from_str(local_amount_received.as_str()).unwrap(),
-            local_denom.clone(),
-        )],
-    });
+    let conversion_step_attr = ("conversion_step", conversion_step.step.to_string());
+    let event_attr = ("event", "swap_reply".to_string());
 
-    let res = Response::new()
-        .add_attributes(vec![
-            ("event", "swap_reply"),
-            ("burn_amount", local_amount_received.as_str()),
-            ("denom", local_denom.as_str()),
-        ])
-        .add_submessage(SubMsg::new(burn_msg));
-    Ok(res)
+    // Check if the received asset denom is the LOCAL Denom. If so, we can burn the asset and return.
+    // If not, we need to swap the asset for the next denom in the conversion route.
+    let local_denom = denom_to_string(&hub_config.local_denom);
+    return if received_asset.denom.eq(&local_denom) {
+        // Burn $LOCAL
+        let burn_msg = CosmosMsg::Bank(BankMsg::Burn {
+            amount: vec![coin(received_asset.amount.u128(), local_denom.clone())],
+        });
+
+        // Reset the DENOM_CONVERSION_STEP
+        DENOM_CONVERSION_STEP.remove(deps.storage);
+
+        let res = Response::new()
+            .add_attributes(vec![
+                event_attr,
+                conversion_step_attr,
+                ("burn_amount", received_asset.amount.to_string()),
+                ("received_denom", local_denom),
+            ])
+            .add_submessage(SubMsg::new(burn_msg));
+        Ok(res)
+    } else if conversion_route.len() > next_step {
+        // Update the DENOM_CONVERSION_STEP
+        DENOM_CONVERSION_STEP.save(
+            deps.storage,
+            &ConversionStep {
+                trade_denom: conversion_step.trade_denom.clone(),
+                step_denom: conversion_step.step_denom.clone(),
+                step: conversion_step.step + 1,
+            },
+        )?;
+        let route_step = conversion_route.get(next_step).unwrap();
+        // Return a Swap SubMsg to swap the received asset for the next denom in the conversion route.
+        let res = Response::new()
+            .add_attributes(vec![
+                event_attr,
+                conversion_step_attr,
+                ("swap_amount", received_asset.amount.to_string()),
+                ("received_denom", received_asset.denom.clone()),
+            ])
+            .add_submessage(SubMsg {
+                id: SWAP_REPLY_ID,
+                msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: route_step.pool.to_string(),
+                    msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
+                    funds: vec![received_asset],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            });
+        Ok(res)
+    } else {
+        // TODO: Create or use custom error type for this.
+        Err(StdError::generic_err(format!(
+            "Conversion route is invalid: {:?}",
+            conversion_route
+        )))
+    };
 }
 
 fn refund_escrow(
@@ -896,7 +955,7 @@ fn settle_dispute(
     trade_id: String,
     winner: Addr,
 ) -> Result<Response, ContractError> {
-    let hub_cfg = get_hub_config(deps.as_ref());
+    let hub_config = get_hub_config(deps.as_ref());
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
 
     // Check if caller is the arbitrator of the given trade
@@ -949,11 +1008,16 @@ fn settle_dispute(
     // Collect Protocol Fees
     let trade_denom = denom_to_string(&trade.denom);
     let mut send_msgs: Vec<SubMsg> = vec![];
-    let fee_info =
-        add_protocol_fees_msgs(&mut send_msgs, &trade.amount, trade_denom.clone(), &hub_cfg);
+    let fee_info = add_protocol_fees_msgs(
+        deps,
+        &mut send_msgs,
+        &trade.amount,
+        trade_denom.clone(),
+        &hub_config,
+    );
 
     // Pay arbitration fee
-    let arbitration_fee_amount = trade.amount.mul(hub_cfg.arbitration_fee_pct);
+    let arbitration_fee_amount = trade.amount.mul(hub_config.arbitration_fee_pct);
 
     // Send funds to winner and arbitrator
     let denom = denom_to_string(&trade.denom);
@@ -973,7 +1037,6 @@ fn settle_dispute(
     )));
 
     // Create Update Profile SubMsgs
-    let hub_config = get_hub_config(deps.as_ref());
     let update_buyer_profile_trades_count = update_profile_trades_count_msg(
         hub_config.profile_addr.to_string(),
         trade.buyer.clone(),
@@ -998,6 +1061,29 @@ fn settle_dispute(
     Ok(res)
 }
 
+/// Registers a conversion route for a given denom.
+fn register_conversion_route_for_denom(
+    deps: DepsMut,
+    info: MessageInfo,
+    denom: Denom,
+    route: Vec<ConversionRoute>,
+) -> Result<Response, ContractError> {
+    // Check if caller is the hub contract's admin
+    let admin = get_hub_admin(deps.as_ref()).addr;
+    assert_ownership(info.sender, admin)?;
+
+    // Store conversion route
+    let denom = denom_to_string(&denom);
+    DENOM_CONVERSION_ROUTE
+        .save(deps.storage, &denom, &route)
+        .unwrap();
+
+    let res = Response::new()
+        .add_attribute("action", "register_conversion_route_for_denom")
+        .add_attribute("denom", denom);
+    Ok(res)
+}
+
 // region utils
 // Creates a BankMsg::Send message
 fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
@@ -1009,6 +1095,7 @@ fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
 
 // Adds protocol fees to the given send_msgs.
 fn add_protocol_fees_msgs(
+    deps: DepsMut,
     send_msgs: &mut Vec<SubMsg>,
     release_amount: &Uint128,
     trade_denom: String,
@@ -1016,7 +1103,7 @@ fn add_protocol_fees_msgs(
 ) -> FeeInfo {
     // Calculate fees and final release amount
     let mut release_amount = release_amount.clone();
-    let burn_amount = release_amount.clone().mul(hub_cfg.burn_fee_pct);
+    let burn_amount = release_amount.mul(hub_cfg.burn_fee_pct);
     let chain_amount = release_amount.mul(hub_cfg.chain_fee_pct);
     let warchest_amount = release_amount.mul(hub_cfg.warchest_fee_pct);
     let total_fee = burn_amount + chain_amount + warchest_amount;
@@ -1027,10 +1114,31 @@ fn add_protocol_fees_msgs(
         //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
         let local_denom = denom_to_string(&hub_cfg.local_denom);
         if trade_denom.ne(&local_denom) {
+            // Load the ConversionRoute route for trade_denom
+            let conversion_route = DENOM_CONVERSION_ROUTE
+                .may_load(deps.storage, &trade_denom)
+                .unwrap()
+                .unwrap()
+                .first()
+                .unwrap()
+                .clone();
+
+            DENOM_CONVERSION_STEP
+                .save(
+                    deps.storage,
+                    &ConversionStep {
+                        trade_denom: Denom::Native(trade_denom.clone()),
+                        step_denom: Denom::Native(trade_denom.clone()),
+                        step: 0,
+                    },
+                )
+                .unwrap();
+
+            // Add message to swap the burn_amount and burn it on swap reply
             send_msgs.push(SubMsg {
                 id: SWAP_REPLY_ID,
                 msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: hub_cfg.local_market_addr.to_string(),
+                    contract_addr: conversion_route.pool.to_string(),
                     msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
                     funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
                 }),

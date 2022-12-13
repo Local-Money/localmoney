@@ -2,7 +2,7 @@
   {
     "offer_type": "buy",
     "fiat_currency": "ARS",
-    "min_amount": "100000",
+    "min_amount": "1000000",
     "max_amount": "12000000",
     "rate": "100",
     "description": "Banco 1, Banco 2 y Banco 3",
@@ -15,7 +15,7 @@
   {
     "offer_type": "buy",
     "fiat_currency": "BRL",
-    "min_amount": "100000",
+    "min_amount": "1000000",
     "max_amount": "12000000",
     "rate": "100",
     "description": "Banco 1, Banco 2 y Banco 3",
@@ -28,7 +28,7 @@
   {
     "offer_type": "buy",
     "fiat_currency": "COP",
-    "min_amount": "100000",
+    "min_amount": "1000000",
     "max_amount": "2500000",
     "description": "Banco 1, Banco 2 y Banco 3",
     "rate": "100",

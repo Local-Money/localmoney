@@ -187,8 +187,20 @@ export interface HubConfig {
   trade_limit: number
 }
 
-export interface Denom {
-  native: string
+export type Addr = string
+
+export type Denom =
+  | {
+      native: string
+    }
+  | {
+      cw20: Addr
+    }
+
+export interface ConversionRoute {
+  ask_asset: Denom
+  offer_asset: Denom
+  pool: Addr
 }
 
 export interface UserWallet {
