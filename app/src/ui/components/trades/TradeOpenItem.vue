@@ -185,9 +185,8 @@ onUnmounted(() => {
           </p>
         </div>
 
-        <div class="divider" />
-
         <template v-if="tradeInfo.trade.state !== TradeState.request_expired && tradeInfo.trade.expires_at > 0">
+          <div class="divider" />
           <div class="wrap">
             <p class="label">Time remaining</p>
             <p class="content">{{ tradeTimer }}</p>
