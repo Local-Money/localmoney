@@ -3,7 +3,7 @@ use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
     Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
-    Uint128, Uint256,
+    Uint128, Uint256, Coin,
 };
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
@@ -123,7 +123,7 @@ pub struct ConversionRoute {
 #[serde(rename_all = "snake_case")]
 pub struct ConversionStep {
     pub trade_denom: Denom,
-    pub step_denom: Denom,
+    pub step_previous_balance: Coin,
     pub step: u8,
 }
 
