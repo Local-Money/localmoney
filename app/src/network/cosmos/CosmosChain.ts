@@ -128,13 +128,14 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchMyOffers() {
+  async fetchMyOffers(limit = 10, last = '') {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
         return (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
           offers_by_owner: {
             owner: this.getWalletAddress(),
-            limit: 10,
+            limit,
+            last,
           },
         })) as OfferResponse[]
       } catch (e) {
@@ -163,7 +164,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchOffers(args: FetchOffersArgs) {
+  async fetchOffers(args: FetchOffersArgs, limit = 10, last = '') {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()
@@ -175,7 +176,8 @@ export class CosmosChain implements Chain {
           offer_type: args.offerType,
           denom: args.denom,
           order: args.order,
-          limit: 10,
+          limit,
+          last,
         },
       }
       const response = (await this.cwClient!.queryContractSmart(
