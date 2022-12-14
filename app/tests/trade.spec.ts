@@ -287,6 +287,7 @@ describe('test trade limits', () => {
     let tradeId = '0'
     // Query Price for Offer denom
     const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+    console.log('usd price for denom', usdPrice.price, offer.denom)
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
     const denomDecimals = 1_000_000
