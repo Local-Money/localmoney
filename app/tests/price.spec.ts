@@ -34,6 +34,7 @@ describe('price tests', () => {
     // Iterate over all the price routes and register them
     for (const i in priceRoutes) {
       const msg = priceRoutes[i]
+      console.log('registering price route', msg)
       const result = await adminClient
         .getCwClient()
         .execute(adminClient.getWalletAddress(), priceAddr, msg, 'auto', 'register price route')
@@ -45,18 +46,13 @@ describe('price tests', () => {
     // expect all prices * 1 to be greater than 0
     for (const i in priceRoutes) {
       const priceRoute = priceRoutes[i]
-      const arsPrice = await takerClient.fetchFiatPriceForDenom(
-        FiatCurrency.ARS,
-        priceRoute.register_price_route_for_denom.denom
-      )
-      const brlPrice = await takerClient.fetchFiatPriceForDenom(
-        FiatCurrency.BRL,
-        priceRoute.register_price_route_for_denom.denom
-      )
-      const copPrice = await takerClient.fetchFiatPriceForDenom(
-        FiatCurrency.COP,
-        priceRoute.register_price_route_for_denom.denom
-      )
+      const denom = priceRoute.register_price_route_for_denom.denom
+      const arsPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.ARS, denom)
+      const brlPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.BRL, denom)
+      const copPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.COP, denom)
+      console.log('ars Price for denom', denom, arsPrice)
+      console.log('brl Price for denom', denom, brlPrice)
+      console.log('cop Price for denom', denom, copPrice)
       expect(arsPrice.price * 1).toBeGreaterThan(0)
       expect(brlPrice.price * 1).toBeGreaterThan(0)
       expect(copPrice.price * 1).toBeGreaterThan(0)

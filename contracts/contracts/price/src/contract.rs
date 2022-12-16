@@ -138,6 +138,7 @@ pub fn query_fiat_price_for_denom(
     let denom_price_route = &DENOM_PRICE_ROUTE
         .load(deps.storage, denom_str.as_str())
         .unwrap();
+
     // Query the price of the denom in ATOM
     let denom_atom = denom_price_route
         .iter()

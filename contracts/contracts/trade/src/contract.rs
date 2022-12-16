@@ -163,11 +163,13 @@ fn create_trade(
     let new_trade_amount = Uint256::from_u128(new_trade.amount.u128());
     let usd_trade_amount = (new_trade_amount * offer_usd_price)
         .checked_div(Uint256::from_u128(100u128))
-        .unwrap()
+        .unwrap_or(Uint256::zero());
+    let usd_trade_amount = usd_trade_amount
         .checked_div(Uint256::from_u128(1_000_000u128))
-        .unwrap();
+        .unwrap_or(Uint256::zero());
+
     // Check that usd_trade_amount is lower or equal than the trade limit and return error if not.
-    if usd_trade_amount > Uint256::from_u128(hub_cfg.trade_limit) {
+    if usd_trade_amount.is_zero() || usd_trade_amount > Uint256::from_u128(hub_cfg.trade_limit) {
         return Err(ContractError::InvalidTradeAmount {
             amount: usd_trade_amount,
             max_amount: Uint256::from_u128(hub_cfg.trade_limit),

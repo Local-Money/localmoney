@@ -2,8 +2,8 @@ use std::fmt::{self};
 use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
-    Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
-    Uint128, Uint256, Coin,
+    Addr, BlockInfo, Coin, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
+    Uint128, Uint256,
 };
 use cw20::Denom;
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
