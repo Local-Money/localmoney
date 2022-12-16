@@ -279,6 +279,7 @@ describe('test trade limits', () => {
     expect(offer).toBeDefined()
   })
   it('should not allow a trade to have an amount above the hub limit', async () => {
+    offer = (await getOrCreateOffer(makerClient)).offer
     // Get Hub Info
     const hubInfo = makerClient.getHubInfo()
     // Try to create a trade with the amount above the limit
@@ -291,7 +292,8 @@ describe('test trade limits', () => {
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
     const denomDecimals = 1_000_000
-    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 1.02 // 2% above the limit
+    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 1.04 // 4% above the limit
+    console.log('invalidAmount', invalidAmount)
 
     await expect(async () => {
       tradeId = await takerClient.openTrade({

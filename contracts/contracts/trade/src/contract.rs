@@ -137,7 +137,7 @@ fn create_trade(
     }
     let offer_result = offer_result.unwrap();
     let offer = offer_result.offer;
-    assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone()).unwrap();
+    assert_value_in_range(offer.min_amount, offer.max_amount, new_trade.amount.clone())?;
 
     // Can't create Trade with the same wallet
     if info.sender.eq(&offer.owner) {
