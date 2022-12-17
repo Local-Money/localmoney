@@ -294,13 +294,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Trade { id } => to_binary(&query_trade(env, deps, id)?),
         QueryMsg::Trades {
             user,
-            state,
-            role: index,
-            last_value,
+            role,
             limit,
-        } => to_binary(&query_trades(
-            env, deps, user, state, index, last_value, limit,
-        )?),
+            last,
+        } => to_binary(&query_trades(env, deps, user, role, limit, last)?),
         QueryMsg::Arbitrator { arbitrator } => to_binary(&ArbitratorModel::query_arbitrator(
             deps.storage,
             arbitrator,
@@ -361,23 +358,22 @@ pub fn query_trades<T: CustomQuery>(
     env: Env,
     deps: Deps<T>,
     user: Addr,
-    _state: Option<TradeState>,
-    index: TraderRole,
-    last_value: Option<String>,
+    role: TraderRole,
     limit: u32,
+    last: Option<String>,
 ) -> StdResult<Vec<TradeInfo>> {
     let mut trades_infos: Vec<TradeInfo> = vec![];
     let hub_config = get_hub_config(deps);
 
-    let trade_results = match index {
+    let trade_results = match role {
         TraderRole::Arbitrator => {
-            TradeModel::trades_by_arbitrator(deps.storage, user.to_string(), last_value, limit)
-                .unwrap()
+            TradeModel::trades_by_arbitrator(deps.storage, user.to_string(), limit, last)
         }
         TraderRole::Trader => {
-            TradeModel::trades_by_trader(deps.storage, user.to_string(), last_value, limit).unwrap()
+            TradeModel::trades_by_trader(deps.storage, user.to_string(), limit, last)
         }
-    };
+    }
+    .unwrap();
 
     trade_results.iter().for_each(|trade: &Trade| {
         let offer_id = trade.offer_id.clone();

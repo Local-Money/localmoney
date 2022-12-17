@@ -72,10 +72,9 @@ pub enum QueryMsg {
     },
     Trades {
         user: Addr,
-        state: Option<TradeState>,
         role: TraderRole,
-        last_value: Option<String>,
         limit: u32,
+        last: Option<String>,
     },
     Arbitrator {
         arbitrator: Addr,
@@ -380,13 +379,10 @@ impl TradeModel<'_> {
     pub fn trades_by_trader(
         storage: &dyn Storage,
         trader: String,
-        last_value: Option<String>,
         limit: u32,
+        last: Option<String>,
     ) -> StdResult<Vec<Trade>> {
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
+        let range_from = last.map(Bound::exclusive);
 
         let result = trades()
             .idx
@@ -411,13 +407,10 @@ impl TradeModel<'_> {
     pub fn trades_by_arbitrator(
         storage: &dyn Storage,
         arbitrator: String,
-        last_value: Option<String>,
         limit: u32,
+        last: Option<String>,
     ) -> StdResult<Vec<Trade>> {
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
+        let range_from = last.map(Bound::exclusive);
 
         let trade_states = vec![
             TradeState::EscrowDisputed,
