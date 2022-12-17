@@ -103,6 +103,7 @@ describe('trade lifecycle happy path', () => {
     tradeInfo = await takerClient.fetchTradeDetail(tradeId)
     trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_funded)
+    console.log('trade.state', trade.state)
     expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(trade.amount))
   })
   it('maker should mark trade as paid (fiat_deposited)', async () => {

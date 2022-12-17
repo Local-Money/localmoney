@@ -1,4 +1,4 @@
-use std::fmt::{self};
+use std::fmt::{self, Display};
 use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
@@ -100,7 +100,16 @@ pub struct FeeInfo {
     pub burn_amount: Uint128,
     pub chain_amount: Uint128,
     pub warchest_amount: Uint128,
-    pub release_amount: Uint128,
+}
+
+impl Display for FeeInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "burn_amount: {}, chain_amount: {}, warchest_amount: {}",
+            self.burn_amount, self.chain_amount, self.warchest_amount
+        )
+    }
 }
 
 impl FeeInfo {

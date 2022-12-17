@@ -373,10 +373,11 @@ export class CosmosChain implements Chain {
 
     // If current user is the maker, add the fee to the amount to fund
     if (tradeInfo.offer.offer.owner === this.getWalletAddress()) {
-      const totalFee =
-        Number(hubConfig.burn_fee_pct) + Number(hubConfig.chain_fee_pct) + Number(hubConfig.warchest_fee_pct)
-      const localFee = fundAmount * totalFee
-      fundAmount += localFee
+      const burnAmount = Number(hubConfig.burn_fee_pct) * fundAmount
+      const chainAmount = Number(hubConfig.chain_fee_pct) * fundAmount
+      const warchestAmount = Number(hubConfig.warchest_fee_pct) * fundAmount
+      const totalFee = burnAmount + chainAmount + warchestAmount
+      fundAmount += totalFee
       console.log('fund amount after fees', fundAmount)
     }
 
@@ -386,6 +387,7 @@ export class CosmosChain implements Chain {
         denom: tradeInfo.trade.denom.native,
       },
     ]
+    console.log('funds', funds)
     await this.changeTradeState(
       this.hubInfo.hubConfig.trade_addr,
       { fund_escrow: { trade_id: tradeInfo.trade.id, maker_contact: makerContact } },
