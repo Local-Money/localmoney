@@ -11,8 +11,8 @@ import type { TestCosmosChain } from './network/TestCosmosChain'
 import prices from './fixtures/update_prices.json'
 import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
-import type { GetOffer, OfferResponse, PostOffer } from '~/types/components.interface'
-import { FiatCurrency, OfferState, TradeState } from '~/types/components.interface'
+import type { GetOffer, OfferResponse, PostOffer, TradeInfo } from '~/types/components.interface'
+import { FiatCurrency, OfferState, OfferType, TradeState } from '~/types/components.interface'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -98,12 +98,12 @@ describe('trade lifecycle happy path', () => {
     const decryptedMakerContact = await decryptDataMocked(takerSecrets.privateKey, trade.buyer_contact!)
     expect(decryptedMakerContact).toBe(offers[0].owner_contact)
     const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
-    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await takerClient.fundEscrow(tradeInfo)
     const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
     tradeInfo = await takerClient.fetchTradeDetail(tradeId)
     trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_funded)
-    expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(trade.amount) * 1.01)
+    expect(parseInt(newTradeBalance)).toBe(parseInt(tradeBalance) + parseInt(trade.amount))
   })
   it('maker should mark trade as paid (fiat_deposited)', async () => {
     await makerClient.setFiatDeposited(tradeId)
@@ -159,7 +159,7 @@ describe('trade invalid state changes', () => {
     let trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.request_created)
     // Taker tries to fund escrow before maker accepts the trade
-    await expect(takerClient.fundEscrow(trade.id, trade.amount, trade.denom)).rejects.toThrow(DefaultError)
+    await expect(takerClient.fundEscrow(tradeInfo)).rejects.toThrow(DefaultError)
     tradeInfo = await takerClient.fetchTradeDetail(tradeId)
     trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.request_created)
@@ -194,11 +194,9 @@ describe('trade invalid state changes', () => {
   })
   it('should fail to release or refund a trade in escrow_funded state', async () => {
     let tradeInfo = await makerClient.fetchTradeDetail(tradeId)
-    let trade = tradeInfo.trade
-    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await takerClient.fundEscrow(tradeInfo)
     tradeInfo = await makerClient.fetchTradeDetail(tradeId)
-    trade = tradeInfo.trade
-    expect(trade.state).toBe(TradeState.escrow_funded)
+    expect(tradeInfo.trade.state).toBe(TradeState.escrow_funded)
   })
   it('should fail to cancel a trade in fiat_deposited state', async () => {
     await makerClient.setFiatDeposited(tradeId)
@@ -461,5 +459,78 @@ describe('test trade limits', () => {
     await takerClient.cancelTradeRequest(tradeId)
     const updatedTakerProfile = await takerClient.fetchProfile()
     expect(updatedTakerProfile.active_trades_count).toBe(takerActiveTrades)
+  })
+  it('should send fee amount on fund escrow if maker is selling', async () => {
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    const hubConfig = hubInfo.hubConfig
+    // Fetch maker profile
+    const makerProfile = await makerClient.fetchProfile()
+    // If maker has same active offers as Hub Limit, increase it by 1
+    if (makerProfile.active_offers_count === hubConfig.active_offers_limit) {
+      const updateHubMsg = createHubUpdateConfigMsg(
+        hubConfig.offer_addr,
+        hubConfig.trade_addr,
+        hubConfig.price_addr,
+        hubConfig.profile_addr
+      )
+      const newOffersLimit = (updateHubMsg.update_config.active_offers_limit = makerProfile.active_offers_count + 1)
+      const newActiveTradesLimit = (updateHubMsg.update_config.active_trades_limit =
+        makerProfile.active_trades_count + 1)
+      await adminClient
+        .getCwClient()
+        .execute(adminClient.getWalletAddress(), hubInfo.hubAddress, updateHubMsg, 'auto', 'update hub config')
+      // Check that the updated hubInfo has the new limit
+      await makerClient.updateHub(hubInfo.hubAddress)
+      expect(makerClient.getHubInfo().hubConfig.active_offers_limit).toBe(newOffersLimit)
+      expect(makerClient.getHubInfo().hubConfig.active_trades_limit).toBe(newActiveTradesLimit)
+    }
+    // Create an Offer of type sell
+    const offerResponse = await getOrCreateOffer(makerClient, true, OfferType.sell)
+    expect(offerResponse).toBeDefined()
+    // Query the balance of the Denom of the trade owned by the trade contract
+    const tradeBalance = await makerClient
+      .getCwClient()
+      .getBalance(hubInfo.hubConfig.trade_addr, offerResponse.offer.denom.native)
+    // Create a trade
+    const tradeId = await takerClient.openTrade({
+      amount: offerResponse.offer.min_amount,
+      offer_id: offerResponse.offer.id,
+      taker: takerClient.getWalletAddress(),
+      profile_taker_contact: 'profile_taker_contact',
+      profile_taker_encryption_key: 'profile_taker_encryption_key',
+      taker_contact: 'taker_contact',
+    })
+    expect(tradeId).not.toHaveLength(0)
+    const tradeInfo = (await takerClient.fetchTradeDetail(tradeId)) as TradeInfo
+    // Maker funds the escrow
+    const encryptedMakerContact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
+    await makerClient.fundEscrow(tradeInfo, encryptedMakerContact)
+    // Query the Updated Trade Contract balance
+    const tradeBalanceAfter = await makerClient
+      .getCwClient()
+      .getBalance(hubInfo.hubConfig.trade_addr, offerResponse.offer.denom.native)
+    // Calculate the difference between the balances
+    console.log('tradeBalance', tradeBalance)
+    console.log('tradeBalanceAfter', tradeBalanceAfter)
+    const balanceIncrease = Number(tradeBalanceAfter.amount) - Number(tradeBalance.amount)
+    const totalFeePct =
+      Number(hubConfig.burn_fee_pct) + Number(hubConfig.chain_fee_pct) + Number(hubConfig.warchest_fee_pct)
+    console.log('totalFeePct', totalFeePct)
+    const tradeAmount = Number(tradeInfo.trade.amount)
+    const feeAmount = tradeAmount * totalFeePct
+    console.log('feeAmount', feeAmount)
+    console.log('tradeAmount', tradeAmount)
+    console.log('balanceIncrease', balanceIncrease)
+    expect(balanceIncrease).toBe(tradeAmount + feeAmount)
+    // Taker should set the trade state to fiat_deposited
+    await takerClient.setFiatDeposited(tradeId)
+    // Maker should release the escrow
+    await makerClient.releaseEscrow(tradeId)
+    // CHeck that trade state is escrow_released
+    const tradeInfoAfter = (await takerClient.fetchTradeDetail(tradeId)) as TradeInfo
+    expect(tradeInfoAfter.trade.state).toBe(TradeState.escrow_released)
+    // Archive Offer
+    await makerClient.updateOffer({ ...offerResponse.offer, state: OfferState.archived })
   })
 })

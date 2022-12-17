@@ -429,8 +429,8 @@ fn fund_escrow(
     trade_id: String,
     maker_contact: Option<String>,
 ) -> Result<Response, ContractError> {
+    // Load Trade & Offer
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
-
     let offer = load_offer(
         &deps.querier.clone(),
         trade.offer_id.clone(),
@@ -451,7 +451,7 @@ fn fund_escrow(
     }
 
     // Only the seller wallet is authorized to fund this trade.
-    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
+    assert_ownership(info.sender.clone(), trade.seller.clone())?;
 
     // If seller_contact is not already defined it needs to be defined here
     if trade.seller_contact.is_none() {
@@ -467,7 +467,7 @@ fn fund_escrow(
     }
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
-    assert_trade_state_and_type(&trade, &offer.offer_type).unwrap();
+    assert_trade_state_and_type(&trade, &offer.offer_type)?;
     let denom = denom_to_string(&trade.denom);
     let default = coin(0, denom.clone());
     let balance = info

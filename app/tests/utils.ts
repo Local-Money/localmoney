@@ -8,6 +8,7 @@ import makerSecrets from './fixtures/maker_secrets.json'
 import offers from './fixtures/offers.json'
 import { DEV_CONFIG, DEV_HUB_INFO } from '~/network/cosmos/config/dev'
 import type { OfferResponse, PostOffer } from '~/types/components.interface'
+import { OfferType } from '~/types/components.interface'
 
 export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, priceAddr: string, profileAddr: string) {
   return {
@@ -140,14 +141,18 @@ export function sleep(ms: number): Promise<void> {
  * @param forceCreate if true, it will create a new offer even if the maker has one.
  * @returns an offer.
  */
-export async function getOrCreateOffer(makerClient: TestCosmosChain, forceCreate = false): Promise<OfferResponse> {
+export async function getOrCreateOffer(
+  makerClient: TestCosmosChain,
+  forceCreate = false,
+  offer_type = OfferType.buy
+): Promise<OfferResponse> {
   let myOffers = await makerClient.fetchMyOffers()
   if (myOffers.length === 0 || forceCreate) {
     const makerContact = 'maker001'
     const owner_contact = await encryptDataMocked(makerSecrets.publicKey, makerContact)
     const owner_encryption_key = makerSecrets.publicKey
     const denom = { native: process.env.OFFER_DENOM! }
-    const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom } as PostOffer
+    const newOffer = { ...offers[0], owner_contact, owner_encryption_key, denom, offer_type } as PostOffer
     await makerClient.createOffer(newOffer)
   }
   myOffers = await makerClient.fetchMyOffers()
