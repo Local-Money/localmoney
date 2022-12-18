@@ -1,3 +1,4 @@
+import fs from 'fs'
 import type { InstantiateResult, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { TestCosmosChain } from './network/TestCosmosChain'
 import codeIds from './fixtures/codeIds.json'
@@ -124,6 +125,7 @@ export async function setupProtocol() {
     console.log('Maker Wallet: ', makerClient.getWalletAddress())
     console.log('Taker Wallet: ', takerClient.getWalletAddress())
     console.log('Hub Address:', hubInstantiateResult.contractAddress)
+    fs.appendFileSync('.env', `\r\nHUB=${hubInstantiateResult.contractAddress}`)
   }
   return { adminClient, makerClient, takerClient }
 }

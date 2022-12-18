@@ -2,11 +2,11 @@ use std::fmt::{self};
 use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
-    Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
+    Addr, BlockInfo, Coin, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
     Uint128, Uint256,
 };
 use cw20::Denom;
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,10 @@ use crate::currencies::FiatCurrency;
 use crate::guards::assert_range_0_to_99;
 use crate::offer::Arbitrator;
 use crate::profile::Profile;
+
+pub const DENOM_CONVERSION_ROUTE: Map<&str, Vec<ConversionRoute>> =
+    Map::new("denom_conversion_route");
+pub const DENOM_CONVERSION_STEP: Item<ConversionStep> = Item::new("denom_conversion_step");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {}
@@ -48,7 +52,6 @@ pub enum ExecuteMsg {
     CancelRequest {
         trade_id: String,
     },
-    RegisterHub {},
     NewArbitrator {
         arbitrator: Addr,
         fiat: FiatCurrency,
@@ -61,6 +64,11 @@ pub enum ExecuteMsg {
     SettleDispute {
         trade_id: String,
         winner: Addr,
+    },
+    RegisterHub {},
+    RegisterConversionRouteForDenom {
+        denom: Denom,
+        route: Vec<ConversionRoute>,
     },
 }
 
@@ -100,6 +108,22 @@ impl FeeInfo {
             .add(self.chain_amount)
             .add(self.warchest_amount)
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct ConversionRoute {
+    pub pool: Addr,
+    pub ask_asset: Denom,
+    pub offer_asset: Denom,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct ConversionStep {
+    pub trade_denom: Denom,
+    pub step_previous_balance: Coin,
+    pub step: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -74,6 +74,12 @@ pub enum ContractError {
     RefundErrorNotExpired { message: String, trade: String },
     #[error("This trade has expired.")]
     TradeExpired { expired_at: u64, created_at: u64 },
+    #[error("Swap Error: received amount is less than expected.")]
+    SwapErrorInvalidAmount {},
+    #[error("Swap Error: missing denom.")]
+    SwapErrorMissingDenom { expected_denom: String },
+    #[error("Unknown reply id: {reply_id:?}")]
+    UnknownReplyId { reply_id: u64 },
     /// Profile Errors
     #[error("Active offers limit reached. Limit: {limit:?}.")]
     ActiveOffersLimitReached { limit: u8 },
