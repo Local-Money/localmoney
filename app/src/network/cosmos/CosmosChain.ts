@@ -128,7 +128,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchMyOffers(limit = 10, last = '') {
+  async fetchMyOffers(limit = 100, last = '') {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
         return (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
@@ -164,7 +164,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchOffers(args: FetchOffersArgs, limit = 10, last = '') {
+  async fetchOffers(args: FetchOffersArgs, limit = 100, last = '') {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()
@@ -217,7 +217,7 @@ export class CosmosChain implements Chain {
   }
 
   // TODO maybe we can do a single trades_query
-  async fetchTrades() {
+  async fetchTrades(limit = 100, last = '') {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
       // TODO fix init
@@ -226,11 +226,9 @@ export class CosmosChain implements Chain {
       }
       try {
         // Query of trades as buyer
-        const queryMsg = { trades: { user: userAddr, role: 'trader', limit: 100, last_value: null } }
-        const response = (await this.cwClient!.queryContractSmart(
-          this.hubInfo.hubConfig.trade_addr,
-          queryMsg
-        )) as TradeInfo[]
+        const response = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.trade_addr, {
+          trades: { user: userAddr, role: 'trader', limit, last },
+        })) as TradeInfo[]
         console.log('response >>> ', response)
         return response
       } catch (e) {
@@ -242,7 +240,10 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchDisputedTrades(): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }> {
+  async fetchDisputedTrades(
+    limit = 100,
+    last = ''
+  ): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }> {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
       // TODO fix init
@@ -251,7 +252,7 @@ export class CosmosChain implements Chain {
       }
       try {
         // Query of trades as buyer
-        const queryMsg = { trades: { user: userAddr, role: 'arbitrator', limit: 100 } }
+        const queryMsg = { trades: { user: userAddr, role: 'arbitrator', limit, last } }
         const disputedTrades = (await this.cwClient!.queryContractSmart(
           this.hubInfo.hubConfig.trade_addr,
           queryMsg
