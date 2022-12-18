@@ -21,6 +21,7 @@ export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, p
       local_denom: { native: process.env.LOCAL_DENOM },
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
       warchest_addr: process.env.WARCHEST_ADDR,
+      trade_limit_min: '1', // in USD
       trade_limit: '100', // in USD
       active_offers_limit: 3,
       active_trades_limit: 10,
