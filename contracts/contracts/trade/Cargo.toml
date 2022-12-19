@@ -1,6 +1,6 @@
 [package]
 name = "trade"
-version = "0.0.1"
+version = "0.0.0"
 authors = ["localmoney devs"]
 edition = "2018"
 
