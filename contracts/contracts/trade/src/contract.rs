@@ -170,7 +170,7 @@ fn create_trade(
 
     // The min amount
     let min_amount = Uint256::from_u128(hub_cfg.trade_limit_min);
-    let max_amount = Uint256::from_u128(hub_cfg.trade_limit);
+    let max_amount = Uint256::from_u128(hub_cfg.trade_limit_max);
 
     // Check that usd_trade_amount is lower or equal than the trade limit and return error if not.
     if usd_trade_amount < min_amount || usd_trade_amount > max_amount {

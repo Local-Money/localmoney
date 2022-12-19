@@ -291,7 +291,7 @@ describe('test trade limits', () => {
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
     const denomDecimals = 1_000_000
-    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 1.04 // 4% above the limit
+    const invalidAmount = (hubInfo.hubConfig.trade_limit_max / price) * denomDecimals * fiatPriceDecimals * 1.04 // 4% above the limit
     console.log('invalidAmount', invalidAmount)
 
     await expect(async () => {
