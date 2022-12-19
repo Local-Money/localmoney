@@ -277,7 +277,34 @@ describe('test trade limits', () => {
     offer = (await getOrCreateOffer(makerClient)).offer
     expect(offer).toBeDefined()
   })
-  it('should not allow a trade to have an amount above the hub limit', async () => {
+  it('should not allow a trade to have an amount bellow the trade limit min', async () => {
+    offer = (await getOrCreateOffer(makerClient)).offer
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    // Try to create a trade with the amount bellow the limit
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const profile_taker_encryption_key = takerSecrets.publicKey
+    let tradeId = '0'
+    // Query Price for Offer denom
+    const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+    const fiatPriceDecimals = 100
+    const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
+    const denomDecimals = 1_000_000
+    const invalidAmount = (hubInfo.hubConfig.trade_limit_min / price) * denomDecimals * fiatPriceDecimals * 0.96 // 4% bellow the limit min
+
+    await expect(async () => {
+      tradeId = await takerClient.openTrade({
+        amount: invalidAmount.toFixed(0),
+        offer_id: offer.id,
+        taker: takerClient.getWalletAddress(),
+        profile_taker_contact,
+        profile_taker_encryption_key,
+        taker_contact: 'taker_contact',
+      })
+    }).rejects.toThrow(/Invalid trade amount/)
+    expect(tradeId).toBe('0')
+  })
+  it('should not allow a trade to have an amount above the trade limit max', async () => {
     offer = (await getOrCreateOffer(makerClient)).offer
     // Get Hub Info
     const hubInfo = makerClient.getHubInfo()

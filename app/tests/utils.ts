@@ -23,7 +23,7 @@ export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, p
       chain_fee_collector_addr: process.env.CHAIN_FEE_COLLECTOR,
       warchest_addr: process.env.WARCHEST_ADDR,
       trade_limit_min: '1', // in USD
-      trade_limit: '100', // in USD
+      trade_limit_max: '100', // in USD
       active_offers_limit: 3,
       active_trades_limit: 10,
       arbitration_fee_pct: '1',
