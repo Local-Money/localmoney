@@ -54,7 +54,7 @@ export interface Chain {
 
   cancelTradeRequest(tradeId: string): Promise<void>
 
-  fundEscrow(tradeId: string, amount: string, denom: Denom, maker_contact?: string): Promise<void>
+  fundEscrow(tradeInfo: TradeInfo, maker_contact?: string): Promise<void>
 
   setFiatDeposited(tradeId: string): Promise<void>
 

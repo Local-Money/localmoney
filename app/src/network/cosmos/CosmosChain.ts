@@ -365,20 +365,31 @@ export class CosmosChain implements Chain {
     })
   }
 
-  // TODO encrypt maker_contact field
-  async fundEscrow(tradeId: string, amount: string, denom: Denom, makerContact?: string) {
-    let fundAmount = Number(amount)
-    const localFee = fundAmount * 0.01
-    fundAmount += localFee
+  async fundEscrow(tradeInfo: TradeInfo, makerContact?: string) {
+    const hubConfig = this.hubInfo.hubConfig
+    let fundAmount = Number(tradeInfo.trade.amount)
+    console.log('fund amount before fees', fundAmount)
+
+    // If current user is the maker, add the fee to the amount to fund
+    if (tradeInfo.offer.offer.owner === this.getWalletAddress()) {
+      const burnAmount = Number(hubConfig.burn_fee_pct) * fundAmount
+      const chainAmount = Number(hubConfig.chain_fee_pct) * fundAmount
+      const warchestAmount = Number(hubConfig.warchest_fee_pct) * fundAmount
+      const totalFee = burnAmount + chainAmount + warchestAmount
+      fundAmount += totalFee
+      console.log('fund amount after fees', fundAmount)
+    }
+
     const funds: Coin[] = [
       {
         amount: `${fundAmount}`,
-        denom: denom.native,
+        denom: tradeInfo.trade.denom.native,
       },
     ]
+    console.log('funds', funds)
     await this.changeTradeState(
       this.hubInfo.hubConfig.trade_addr,
-      { fund_escrow: { trade_id: tradeId, maker_contact: makerContact } },
+      { fund_escrow: { trade_id: tradeInfo.trade.id, maker_contact: makerContact } },
       funds
     )
   }

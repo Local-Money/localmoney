@@ -43,13 +43,17 @@ pub enum ContractError {
         range_end: usize,
     },
     /// Trade Errors
-    #[error("Fund escrow error.")]
+    #[error(
+        "Fund escrow error. Required amount: {required_amount:?}, Sent amount: {sent_amount:?}."
+    )]
     FundEscrowError {
         required_amount: Uint128,
         sent_amount: Uint128,
     },
     #[error("Dispute requested too early. Time to enable dispute: {time_to_dispute:?}")]
     PrematureDisputeRequest { time_to_dispute: u64 },
+    #[error("Invalid denom. Expected: {expected:?}, Received: {received:?}.")]
+    InvalidDenom { expected: String, received: String },
     #[error("Invalid price for denom. Must be greater than zero.")]
     InvalidPriceForDenom {},
     #[error("Invalid sender, must be Trade's buyer or seller.")]

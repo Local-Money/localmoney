@@ -11,8 +11,8 @@ use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::{
-    FundEscrowError, HubAlreadyRegistered, InvalidParameter, InvalidTradeState, OfferNotFound,
-    RefundErrorNotExpired, TradeExpired,
+    FundEscrowError, HubAlreadyRegistered, InvalidDenom, InvalidParameter, InvalidTradeState,
+    OfferNotFound, RefundErrorNotExpired, TradeExpired,
 };
 use localmoney_protocol::guards::{
     assert_migration_parameters, assert_ownership, assert_sender_is_buyer_or_seller,
@@ -430,8 +430,9 @@ fn fund_escrow(
     trade_id: String,
     maker_contact: Option<String>,
 ) -> Result<Response, ContractError> {
+    // Load HubConfig, Trade & Offer
+    let hub_config = get_hub_config(deps.as_ref());
     let mut trade = TradeModel::from_store(deps.storage, &trade_id);
-
     let offer = load_offer(
         &deps.querier.clone(),
         trade.offer_id.clone(),
@@ -439,6 +440,20 @@ fn fund_escrow(
     )
     .unwrap()
     .offer;
+
+    // Ensure the message has the correct funds
+    let trade_denom = &denom_to_string(&trade.denom);
+    let balance = match info.funds.first().unwrap() {
+        coin if coin.denom.eq(trade_denom) => coin.clone(),
+        _ => {
+            let received = info.funds.first().unwrap_or(&Coin::default()).denom.clone();
+            return Err(InvalidDenom {
+                expected: trade_denom.clone(),
+                received,
+            });
+        }
+    };
+    let fee_info = calculate_fees(&hub_config, trade.amount.clone());
 
     // Everybody can set the state to RequestExpired, if it is expired (they are doing as a favor).
     if trade.request_expired(env.block.time.seconds()) {
@@ -452,7 +467,7 @@ fn fund_escrow(
     }
 
     // Only the seller wallet is authorized to fund this trade.
-    assert_ownership(info.sender.clone(), trade.seller.clone()).unwrap();
+    assert_ownership(info.sender.clone(), trade.seller.clone())?;
 
     // If seller_contact is not already defined it needs to be defined here
     if trade.seller_contact.is_none() {
@@ -468,26 +483,27 @@ fn fund_escrow(
     }
 
     // Ensure TradeState::Created for Sell and TradeState::Accepted for Buy orders
-    assert_trade_state_and_type(&trade, &offer.offer_type).unwrap();
-    let denom = denom_to_string(&trade.denom);
-    let default = coin(0, denom.clone());
-    let balance = info
-        .funds
-        .iter()
-        .find(|&coin| &coin.denom == &denom)
-        .unwrap_or(&default);
+    assert_trade_state_and_type(&trade, &offer.offer_type)?;
 
-    // TODO: only accept exact funding amounts, return otherwise
-    if balance.amount >= trade.amount {
-        trade.set_state(TradeState::EscrowFunded, &env, &info);
+    // If the sender funding the escrow is the maker, the fee must be added on top of the trade amount
+    let total_fees = if offer.owner.eq(&info.sender) {
+        fee_info.total_fees()
     } else {
+        Uint128::new(0u128)
+    };
+
+    // Ensure the amount sent is equal to the trade amount + fees
+    if balance.amount != trade.amount + total_fees {
         return Err(FundEscrowError {
-            required_amount: trade.amount.clone(),
-            sent_amount: balance.amount.clone(),
+            required_amount: trade.amount + total_fees,
+            sent_amount: balance.amount,
         });
     }
 
+    // Set the state to EscrowFunded and store the trade
+    trade.set_state(TradeState::EscrowFunded, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
+
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
         .add_attribute("trade_id", trade_id)
@@ -1113,6 +1129,19 @@ fn create_send_msg(to_address: Addr, amount: Vec<Coin>) -> CosmosMsg {
     })
 }
 
+/// Returns a FeeInfo struct containing the calculated fees and the final release amount.
+fn calculate_fees(hub_config: &HubConfig, amount: Uint128) -> FeeInfo {
+    let burn_amount = amount.mul(hub_config.burn_fee_pct);
+    let chain_amount = amount.mul(hub_config.chain_fee_pct);
+    let warchest_amount = amount.mul(hub_config.warchest_fee_pct);
+
+    FeeInfo {
+        burn_amount,
+        chain_amount,
+        warchest_amount,
+    }
+}
+
 // Adds protocol fees to the given send_msgs.
 fn add_protocol_fees_msgs(
     deps: DepsMut,
@@ -1121,16 +1150,11 @@ fn add_protocol_fees_msgs(
     trade_denom: String,
     hub_cfg: &HubConfig,
 ) -> FeeInfo {
-    // Calculate fees and final release amount
-    let mut release_amount = release_amount.clone();
-    let burn_amount = release_amount.mul(hub_cfg.burn_fee_pct);
-    let chain_amount = release_amount.mul(hub_cfg.chain_fee_pct);
-    let warchest_amount = release_amount.mul(hub_cfg.warchest_fee_pct);
-    let total_fee = burn_amount + chain_amount + warchest_amount;
-    release_amount = release_amount.sub(total_fee);
+    // Calculate fees
+    let fee_info = calculate_fees(hub_cfg, release_amount.clone());
 
     // Protocol Fee (Burn)
-    if !burn_amount.is_zero() {
+    if !fee_info.burn_amount.is_zero() {
         //If coin being traded is not $LOCAL, swap it and burn it on swap reply.
         let local_denom = denom_to_string(&hub_cfg.local_denom);
         if trade_denom.ne(&local_denom) {
@@ -1172,7 +1196,7 @@ fn add_protocol_fees_msgs(
                 msg: CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: conversion_route.pool.to_string(),
                     msg: to_binary(&SwapMsg { swap: Swap {} }).unwrap(),
-                    funds: vec![coin(burn_amount.u128(), trade_denom.clone())],
+                    funds: vec![coin(fee_info.burn_amount.u128(), trade_denom.clone())],
                 }),
                 gas_limit: None,
                 reply_on: ReplyOn::Success,
@@ -1180,31 +1204,26 @@ fn add_protocol_fees_msgs(
         } else {
             //If coin being traded is $LOCAL, add message burning the local_burn amount
             send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Burn {
-                amount: vec![coin(burn_amount.u128(), local_denom.clone())],
+                amount: vec![coin(fee_info.burn_amount.u128(), local_denom.clone())],
             })));
         }
     }
 
     // Chain Fee Sharing
-    if !chain_amount.is_zero() {
+    if !fee_info.chain_amount.is_zero() {
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: hub_cfg.chain_fee_collector_addr.to_string(),
-            amount: vec![coin(chain_amount.u128(), trade_denom.clone())],
+            amount: vec![coin(fee_info.chain_amount.u128(), trade_denom.clone())],
         })));
     }
 
     // Warchest
-    if !warchest_amount.is_zero() {
+    if !fee_info.warchest_amount.is_zero() {
         send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: hub_cfg.warchest_addr.to_string(),
-            amount: vec![coin(warchest_amount.u128(), trade_denom.clone())],
+            amount: vec![coin(fee_info.warchest_amount.u128(), trade_denom.clone())],
         })));
     }
-    FeeInfo {
-        burn_amount,
-        chain_amount,
-        warchest_amount,
-        release_amount,
-    }
+    fee_info
 }
 //endregion
