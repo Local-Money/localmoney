@@ -365,8 +365,6 @@ export class CosmosChain implements Chain {
     })
   }
 
-  // TODO: can we remove the TODO below?
-  // TODO encrypt maker_contact field
   async fundEscrow(tradeInfo: TradeInfo, makerContact?: string) {
     const hubConfig = this.hubInfo.hubConfig
     let fundAmount = Number(tradeInfo.trade.amount)
