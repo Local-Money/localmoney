@@ -974,7 +974,8 @@ fn settle_dispute(
         .add_attribute("winner", winner.to_string())
         .add_attribute("maker", maker.to_string())
         .add_attribute("taker", taker.to_string())
-        .add_submessages(profile_submsgs);
+        .add_submessages(profile_submsgs)
+        .add_submessages(send_msgs);
     Ok(res)
 }
 
