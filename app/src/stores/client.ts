@@ -229,11 +229,11 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fundEscrow(tradeId: string, amount: string, denom: Denom, makerContact?: string) {
+    async fundEscrow(tradeInfo: TradeInfo, makerContact?: string) {
       this.loadingState = LoadingState.show('Funding trade...')
       try {
-        await this.client.fundEscrow(tradeId, amount, denom, makerContact)
-        await this.fetchTradeDetail(tradeId)
+        await this.client.fundEscrow(tradeInfo, makerContact)
+        await this.fetchTradeDetail(tradeInfo.trade.id)
       } catch (e) {
         // TODO handle error
         alert((e as ChainError).message)
