@@ -26,10 +26,10 @@ export function createHubUpdateConfigMsg(offerAddr: string, tradeAddr: string, p
       trade_limit_max: '100', // in USD
       active_offers_limit: 3,
       active_trades_limit: 10,
-      arbitration_fee_pct: '0.01',
-      burn_fee_pct: '0.002',
-      chain_fee_pct: '0.003',
-      warchest_fee_pct: '0.005',
+      arbitration_fee_pct: '0.01', // 1%
+      burn_fee_pct: '0.002', // 0.2%
+      chain_fee_pct: '0.003', // 0.3%
+      warchest_fee_pct: '0.005', // 0.5%
       trade_expiration_timer: TRADE_EXPIRATION_TIMER,
       trade_dispute_timer: TRADE_DISPUTE_TIMER,
     },
