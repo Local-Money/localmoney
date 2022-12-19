@@ -382,7 +382,7 @@ export class CosmosChain implements Chain {
 
     const funds: Coin[] = [
       {
-        amount: `${fundAmount}`,
+        amount: Math.floor(fundAmount).toFixed(0),
         denom: tradeInfo.trade.denom.native,
       },
     ]
