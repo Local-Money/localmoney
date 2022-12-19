@@ -42,8 +42,8 @@ describe('offers pagination', () => {
         await makerClient.createOffer({
           denom: args.denom,
           fiat_currency: args.fiatCurrency,
-          min_amount: '3000000',
-          max_amount: '10000000',
+          min_amount: '120000',
+          max_amount: '5000000',
           offer_type: args.offerType,
           owner_contact: ownerContact,
           owner_encryption_key: makerSecrets.publicKey,
