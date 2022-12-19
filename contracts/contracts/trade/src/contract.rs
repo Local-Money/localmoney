@@ -168,11 +168,16 @@ fn create_trade(
         .checked_div(Uint256::from_u128(1_000_000u128))
         .unwrap_or(Uint256::zero());
 
+    // The min amount
+    let min_amount = Uint256::from_u128(hub_cfg.trade_limit_min);
+    let max_amount = Uint256::from_u128(hub_cfg.trade_limit_max);
+
     // Check that usd_trade_amount is lower or equal than the trade limit and return error if not.
-    if usd_trade_amount.is_zero() || usd_trade_amount > Uint256::from_u128(hub_cfg.trade_limit) {
+    if usd_trade_amount < min_amount || usd_trade_amount > max_amount {
         return Err(ContractError::InvalidTradeAmount {
             amount: usd_trade_amount,
-            max_amount: Uint256::from_u128(hub_cfg.trade_limit),
+            min_amount,
+            max_amount,
         });
     }
 

@@ -184,7 +184,8 @@ export interface HubConfig {
   active_offers_limit: number
   active_trades_limit: number
   trade_expiration_timer: number
-  trade_limit: number
+  trade_limit_min: number
+  trade_limit_max: number
 }
 
 export type Addr = string

@@ -14,7 +14,7 @@ dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
 
 const args = {
-  denom: { native: 'ukuji' },
+  denom: { native: process.env.OFFER_DENOM! },
   fiatCurrency: FiatCurrency.ARS,
   offerType: OfferType.sell,
   order: OfferOrder.trades_count,
@@ -42,8 +42,8 @@ describe('offers pagination', () => {
         await makerClient.createOffer({
           denom: args.denom,
           fiat_currency: args.fiatCurrency,
-          min_amount: '100000',
-          max_amount: '1000000',
+          min_amount: '120000',
+          max_amount: '5000000',
           offer_type: args.offerType,
           owner_contact: ownerContact,
           owner_encryption_key: makerSecrets.publicKey,

@@ -2,7 +2,7 @@
   {
     "offer_type": "buy",
     "fiat_currency": "ARS",
-    "min_amount": "250000",
+    "min_amount": "10000",
     "max_amount": "1000000000",
     "rate": "97",
     "description": "Banco 1, Banco 2 y Banco 3",

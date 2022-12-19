@@ -35,6 +35,17 @@ beforeAll(async () => {
 offers[0].denom = { native: process.env.OFFER_DENOM! }
 let myOffers: OfferResponse[] = []
 
+async function getValidTradeAmount(client: TestCosmosChain, offer: GetOffer): Promise<string> {
+  const hubInfo = client.getHubInfo()
+  const usdPrice = await client.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+  const fiatPriceDecimals = 100
+  const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
+  const denomDecimals = 1_000_000
+  const tradeAmount = (hubInfo.hubConfig.trade_limit_min / price) * denomDecimals * fiatPriceDecimals * 1.01
+  console.log('tradeAmount', tradeAmount)
+  return Math.floor(tradeAmount).toFixed(0)
+}
+
 describe('trade lifecycle happy path', () => {
   let requestedTradesCount = 0
   let releasedTradesCount = 0
@@ -66,8 +77,10 @@ describe('trade lifecycle happy path', () => {
     expect(offer).toHaveProperty('id')
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
+    const tradeAmount = await getValidTradeAmount(takerClient, offer)
+
     tradeId = await takerClient.openTrade({
-      amount: offer.min_amount,
+      amount: tradeAmount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
@@ -145,11 +158,15 @@ describe('trade invalid state changes', () => {
     expect(arbitrators.filter((arb) => arb.fiat === fiat).length).toBeGreaterThan(0)
   })
   it('should fail to fund a trade in request_created state', async () => {
+    // Fetch Offer and USD price for denom
+    const offer = offerResponse.offer
+    const tradeAmount = await getValidTradeAmount(takerClient, offer)
+
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const taker_encrypt_pk = takerSecrets.publicKey
     const taker_contact = await encryptDataMocked(offerResponse.profile.encryption_key!, takerContact)
     tradeId = await takerClient.openTrade({
-      amount: offerResponse.offer.min_amount,
+      amount: tradeAmount,
       offer_id: offerResponse.offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
@@ -245,13 +262,15 @@ describe('trade with invalid price', () => {
       .getCwClient()
       .execute(takerClient.getWalletAddress(), priceAddr, priceAtZero, 'auto', 'register fiat prices at zero')
     expect(update_price_result.transactionHash).not.toBeNull()
+
     // Tries to create a trade
+    const tradeAmount = await getValidTradeAmount(takerClient, offer)
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
     let tradeId = '0'
     await expect(async () => {
       tradeId = await takerClient.openTrade({
-        amount: offer.min_amount,
+        amount: tradeAmount,
         offer_id: offer.id,
         taker: takerClient.getWalletAddress(),
         profile_taker_contact,
@@ -271,13 +290,40 @@ describe('trade with invalid price', () => {
   })
 })
 
-describe('test trade limits', () => {
+describe('trade limits', () => {
   let offer: GetOffer
   it('should have an available offer', async () => {
     offer = (await getOrCreateOffer(makerClient)).offer
     expect(offer).toBeDefined()
   })
-  it('should not allow a trade to have an amount above the hub limit', async () => {
+  it('should not allow a trade to have an amount bellow the trade limit min', async () => {
+    offer = (await getOrCreateOffer(makerClient)).offer
+    // Get Hub Info
+    const hubInfo = makerClient.getHubInfo()
+    // Try to create a trade with the amount bellow the limit
+    const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
+    const profile_taker_encryption_key = takerSecrets.publicKey
+    let tradeId = '0'
+    // Query Price for Offer denom
+    const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+    const fiatPriceDecimals = 100
+    const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
+    const denomDecimals = 1_000_000
+    const invalidAmount = (hubInfo.hubConfig.trade_limit_min / price) * denomDecimals * fiatPriceDecimals * 0.96 // 4% bellow the limit min
+
+    await expect(async () => {
+      tradeId = await takerClient.openTrade({
+        amount: invalidAmount.toFixed(0),
+        offer_id: offer.id,
+        taker: takerClient.getWalletAddress(),
+        profile_taker_contact,
+        profile_taker_encryption_key,
+        taker_contact: 'taker_contact',
+      })
+    }).rejects.toThrow(/Invalid trade amount/)
+    expect(tradeId).toBe('0')
+  })
+  it('should not allow a trade to have an amount above the trade limit max', async () => {
     offer = (await getOrCreateOffer(makerClient)).offer
     // Get Hub Info
     const hubInfo = makerClient.getHubInfo()
@@ -291,7 +337,7 @@ describe('test trade limits', () => {
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
     const denomDecimals = 1_000_000
-    const invalidAmount = (hubInfo.hubConfig.trade_limit / price) * denomDecimals * fiatPriceDecimals * 1.04 // 4% above the limit
+    const invalidAmount = (hubInfo.hubConfig.trade_limit_max / price) * denomDecimals * fiatPriceDecimals * 1.04 // 4% above the limit
     console.log('invalidAmount', invalidAmount)
 
     await expect(async () => {
@@ -327,12 +373,16 @@ describe('test trade limits', () => {
     // Check that the updated hubInfo has the new limit
     await takerClient.updateHub(hubInfo.hubAddress)
     expect(takerClient.getHubInfo().hubConfig.active_trades_limit).toBe(newTradesLimit)
-    // Create a trade and expect it to be successful
+
+    // Fetch Offer and USD price for denom
     const offer = (await getOrCreateOffer(makerClient)).offer
+    const tradeAmount = await getValidTradeAmount(takerClient, offer)
+
+    // Create a trade and expect it to be successful
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
     const tradeId = await takerClient.openTrade({
-      amount: offer.min_amount,
+      amount: tradeAmount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
@@ -343,7 +393,7 @@ describe('test trade limits', () => {
     // Try to create another trade and expect it to fail
     await expect(async () => {
       await takerClient.openTrade({
-        amount: offer.min_amount,
+        amount: tradeAmount,
         offer_id: offer.id,
         taker: takerClient.getWalletAddress(),
         profile_taker_contact,
@@ -443,12 +493,16 @@ describe('test trade limits', () => {
     // Check that the updated hubInfo has the new limit
     await takerClient.updateHub(hubInfo.hubAddress)
     expect(takerClient.getHubInfo().hubConfig.active_trades_limit).toBe(newTradesLimit)
-    // Create a trade and expect it to be successful
+
+    // Fetch Offer and USD price for denom
     const offer = (await getOrCreateOffer(makerClient)).offer
+    const tradeAmount = await getValidTradeAmount(takerClient, offer)
+
+    // Create a trade and expect it to be successful
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
     const tradeId = await takerClient.openTrade({
-      amount: offer.min_amount,
+      amount: tradeAmount,
       offer_id: offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact,
@@ -489,13 +543,16 @@ describe('test trade limits', () => {
     // Create an Offer of type sell
     const offerResponse = await getOrCreateOffer(makerClient, true, OfferType.sell)
     expect(offerResponse).toBeDefined()
+    // Fetch Offer and USD price for denom
+    const offer = offerResponse.offer
+    const createTradeAmount = await getValidTradeAmount(takerClient, offer)
     // Query the balance of the Denom of the trade owned by the trade contract
     const tradeBalance = await makerClient
       .getCwClient()
       .getBalance(hubInfo.hubConfig.trade_addr, offerResponse.offer.denom.native)
     // Create a trade
     const tradeId = await takerClient.openTrade({
-      amount: offerResponse.offer.min_amount,
+      amount: createTradeAmount,
       offer_id: offerResponse.offer.id,
       taker: takerClient.getWalletAddress(),
       profile_taker_contact: 'profile_taker_contact',
@@ -514,16 +571,16 @@ describe('test trade limits', () => {
     // Calculate the difference between the balances
     console.log('tradeBalance', tradeBalance)
     console.log('tradeBalanceAfter', tradeBalanceAfter)
-    const balanceIncrease = Number(tradeBalanceAfter.amount) - Number(tradeBalance.amount)
+    const balanceIncrease = Math.floor(Number(tradeBalanceAfter.amount) - Number(tradeBalance.amount))
     const totalFeePct =
       Number(hubConfig.burn_fee_pct) + Number(hubConfig.chain_fee_pct) + Number(hubConfig.warchest_fee_pct)
     console.log('totalFeePct', totalFeePct)
-    const tradeAmount = Number(tradeInfo.trade.amount)
+    const tradeAmount = Math.floor(Number(tradeInfo.trade.amount))
     const feeAmount = tradeAmount * totalFeePct
     console.log('feeAmount', feeAmount)
     console.log('tradeAmount', tradeAmount)
     console.log('balanceIncrease', balanceIncrease)
-    expect(balanceIncrease).toBe(tradeAmount + feeAmount)
+    expect(balanceIncrease).toBe(Math.floor(tradeAmount + feeAmount))
     // Taker should set the trade state to fiat_deposited
     await takerClient.setFiatDeposited(tradeId)
     // Maker should release the escrow
