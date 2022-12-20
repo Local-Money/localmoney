@@ -947,18 +947,17 @@ fn settle_dispute(
 
     // Pay arbitration fee
     let arbitration_fee_amount = trade.amount.mul(hub_config.arbitration_fee_pct);
+    let mut release_amount = trade.amount.sub(arbitration_fee_amount);
+
+    // Only deducts fees from the release_amount if the maker (offer owner) is the buyer
+    if trade.buyer.eq(&offer.owner) {
+        release_amount = release_amount.sub(fee_info.total_fees());
+    }
 
     // Send funds to winner and arbitrator
     let denom = denom_to_string(&trade.denom);
     let arbitration_fee = vec![Coin::new(arbitration_fee_amount.u128(), denom.clone())];
-    let winner_amount = vec![Coin::new(
-        trade
-            .amount
-            .u128()
-            .sub(arbitration_fee_amount.u128())
-            .sub(fee_info.total_fees().u128()),
-        denom.clone(),
-    )];
+    let winner_amount = vec![Coin::new(release_amount.u128(), denom.clone())];
     send_msgs.push(SubMsg::new(create_send_msg(winner.clone(), winner_amount)));
     send_msgs.push(SubMsg::new(create_send_msg(
         trade.arbitrator.clone(),
