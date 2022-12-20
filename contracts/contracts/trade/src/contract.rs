@@ -672,6 +672,14 @@ fn release_escrow(
     trade.set_state(TradeState::EscrowReleased, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
+    // Load the offer related to this trade
+    let offer_response = load_offer(
+        &deps.querier,
+        trade.offer_id.clone(),
+        hub_config.offer_addr.to_string(),
+    )
+    .unwrap();
+
     let mut send_msgs: Vec<SubMsg> = Vec::new();
     // Calculate and add protocol fees
     let mut release_amount = trade.amount.clone();
@@ -682,7 +690,11 @@ fn release_escrow(
         trade_denom.clone(),
         &hub_config,
     );
-    release_amount = release_amount.sub(fee_info.total_fees());
+
+    // Only deducts fees from the release_amount if the maker (offer owner) is the buyer
+    if trade.buyer.eq(&offer_response.offer.owner) {
+        release_amount = release_amount.sub(fee_info.total_fees());
+    }
 
     // Update buyer profile released_trades_count
     send_msgs.push(update_profile_trades_count_msg(
@@ -974,7 +986,8 @@ fn settle_dispute(
         .add_attribute("winner", winner.to_string())
         .add_attribute("maker", maker.to_string())
         .add_attribute("taker", taker.to_string())
-        .add_submessages(profile_submsgs);
+        .add_submessages(profile_submsgs)
+        .add_submessages(send_msgs);
     Ok(res)
 }
 
