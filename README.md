@@ -5,23 +5,18 @@
 </p>
 
 # Local Money P2P marketplace
-
 Welcome to Local Money, Decentralized P2P marketplace for Interchain & IBC assets.
 
 ## App
-
 [see more](app/README.md)
 
-## Contracts
+## Tests
+[see more](app/tests/README.md)
 
+## Contracts
 [see more](contracts/README.md)
 
-## Integration Tests
-
-[see more](integration-tests/README.md)
-
-## Testsuite
-
-[see more](testsuite/README.md)
+## Deploy
+[see more](deploy/README.md)
 
 #### License: [GPL V3.0](LICENSE)
