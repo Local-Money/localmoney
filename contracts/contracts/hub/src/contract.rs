@@ -2,7 +2,7 @@ use cosmwasm_std::{entry_point, Addr, Binary, Decimal, Deps, StdResult, Storage,
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw2::{get_contract_version, set_contract_version};
 use localmoney_protocol::constants::{
-    MAX_PLATFORM_FEE, MINIMUM_TRADE_DISPUTE_TIMER, MINIMUM_TRADE_EXPIRATION_TIMER,
+    MAX_PLATFORM_FEE, MAX_TRADE_DISPUTE_TIMER, MAX_TRADE_EXPIRATION_TIMER,
 };
 
 use crate::state::{ADMIN, CONFIG};
@@ -116,20 +116,22 @@ fn save_config(storage: &mut dyn Storage, config: &HubConfig) -> Result<(), Cont
         });
     }
 
-    if config.trade_expiration_timer < MINIMUM_TRADE_EXPIRATION_TIMER {
+    if config.trade_expiration_timer <= 0u64
+        || config.trade_expiration_timer > MAX_TRADE_EXPIRATION_TIMER
+    {
         let parameter = format!("trade_expiration_timer");
         let message = Some(format!(
-            "This value should be greater than {0}.",
-            MINIMUM_TRADE_DISPUTE_TIMER
+            "This value cannot be 0 and should be smaller than {0}.",
+            MAX_TRADE_DISPUTE_TIMER
         ));
         return Err(ContractError::InvalidParameter { parameter, message });
     }
 
-    if config.trade_dispute_timer < MINIMUM_TRADE_DISPUTE_TIMER {
+    if config.trade_dispute_timer <= 0u64 || config.trade_dispute_timer > MAX_TRADE_DISPUTE_TIMER {
         let parameter = format!("trade_dispute_timer");
         let message = Some(format!(
-            "This value should be greater than {0}.",
-            MINIMUM_TRADE_DISPUTE_TIMER
+            "This value cannot be 0 and should be smaller than {0}.",
+            MAX_TRADE_DISPUTE_TIMER
         ));
         return Err(ContractError::InvalidParameter { parameter, message });
     }
