@@ -1,6 +1,6 @@
 use crate::offer::OfferState;
 use crate::trade::TradeState;
-use cosmwasm_std::{Addr, Uint128, Uint256};
+use cosmwasm_std::{Addr, Uint128, Uint256, Uint64};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -18,6 +18,8 @@ pub enum ContractError {
     /// Hub Errors
     #[error("Hub already registered.")]
     HubAlreadyRegistered {},
+    #[error("The sum of `chain_fee_pct`, `burn_fee_pct` and `warchest_fee_pct` must be less than {0}%.", max_platform_fee.to_string())]
+    InvalidPlatformFee { max_platform_fee: Uint64 },
     /// Offer Errors
     #[error("Min amount must be greater than Max amount.")]
     InvalidMinMax { min: Uint128, max: Uint128 },

@@ -1,6 +1,9 @@
-use cosmwasm_std::{entry_point, Addr, Binary, Deps, StdResult};
+use cosmwasm_std::{entry_point, Addr, Binary, Decimal, Deps, StdResult, Storage, Uint64};
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg, WasmMsg};
 use cw2::{get_contract_version, set_contract_version};
+use localmoney_protocol::constants::{
+    MAX_PLATFORM_FEE, MAX_TRADE_DISPUTE_TIMER, MAX_TRADE_EXPIRATION_TIMER,
+};
 
 use crate::state::{ADMIN, CONFIG};
 use localmoney_protocol::errors::ContractError;
@@ -62,7 +65,8 @@ fn update_config(
             caller: info.sender.clone(),
         });
     }
-    CONFIG.save(deps.storage, &config).unwrap();
+
+    save_config(deps.storage, &config)?;
 
     let offer_register_hub = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.offer_addr.to_string(),
@@ -100,6 +104,45 @@ fn update_config(
         .add_attribute("profile_addr", config.profile_addr)
         .add_attribute("trade_addr", config.trade_addr);
     Ok(res)
+}
+
+fn save_config(storage: &mut dyn Storage, config: &HubConfig) -> Result<(), ContractError> {
+    // The total_platform_fee is the sum of the fees charged in the release_escrow
+    // and it cannot be greater than the MAX_PLATFORM_FEE (10%)
+    let total_platform_fee = config.chain_fee_pct + config.burn_fee_pct + config.warchest_fee_pct;
+    if total_platform_fee > Decimal::percent(MAX_PLATFORM_FEE) {
+        return Err(ContractError::InvalidPlatformFee {
+            max_platform_fee: Uint64::new(MAX_PLATFORM_FEE),
+        });
+    }
+
+    check_timer_parameter(
+        "trade_expiration_timer",
+        config.trade_expiration_timer,
+        MAX_TRADE_EXPIRATION_TIMER,
+    )?;
+
+    check_timer_parameter(
+        "trade_dispute_timer",
+        config.trade_dispute_timer,
+        MAX_TRADE_DISPUTE_TIMER,
+    )?;
+
+    CONFIG.save(storage, config).unwrap();
+
+    Ok(())
+}
+
+fn check_timer_parameter(param_name: &str, param: u64, max: u64) -> Result<(), ContractError> {
+    if param <= 0 || param > max {
+        let parameter = param_name.to_string();
+        let message = Some(format!(
+            "This value cannot be 0 and should be smaller than {0}.",
+            max
+        ));
+        return Err(ContractError::InvalidParameter { parameter, message });
+    }
+    Ok(())
 }
 
 fn update_admin(
