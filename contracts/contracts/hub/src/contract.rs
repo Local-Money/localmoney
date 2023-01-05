@@ -116,27 +116,32 @@ fn save_config(storage: &mut dyn Storage, config: &HubConfig) -> Result<(), Cont
         });
     }
 
-    if config.trade_expiration_timer <= 0u64
-        || config.trade_expiration_timer > MAX_TRADE_EXPIRATION_TIMER
-    {
-        let parameter = format!("trade_expiration_timer");
-        let message = Some(format!(
-            "This value cannot be 0 and should be smaller than {0}.",
-            MAX_TRADE_DISPUTE_TIMER
-        ));
-        return Err(ContractError::InvalidParameter { parameter, message });
-    }
+    check_timer_parameter(
+        "trade_expiration_timer",
+        config.trade_expiration_timer,
+        MAX_TRADE_EXPIRATION_TIMER,
+    )?;
 
-    if config.trade_dispute_timer <= 0u64 || config.trade_dispute_timer > MAX_TRADE_DISPUTE_TIMER {
-        let parameter = format!("trade_dispute_timer");
-        let message = Some(format!(
-            "This value cannot be 0 and should be smaller than {0}.",
-            MAX_TRADE_DISPUTE_TIMER
-        ));
-        return Err(ContractError::InvalidParameter { parameter, message });
-    }
+    check_timer_parameter(
+        "trade_dispute_timer",
+        config.trade_dispute_timer,
+        MAX_TRADE_DISPUTE_TIMER,
+    )?;
 
     CONFIG.save(storage, config).unwrap();
+
+    Ok(())
+}
+
+fn check_timer_parameter(param_name: &str, param: u64, max: u64) -> Result<(), ContractError> {
+    if param <= 0 || param > max {
+        let parameter = param_name.to_string();
+        let message = Some(format!(
+            "This value cannot be 0 and should be smaller than {0}.",
+            max
+        ));
+        return Err(ContractError::InvalidParameter { parameter, message });
+    }
     Ok(())
 }
 
