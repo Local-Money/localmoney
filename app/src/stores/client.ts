@@ -100,6 +100,18 @@ export const useClientStore = defineStore({
         this.myOffers = ListResult.error(e as ChainError)
       }
     },
+    async voteProposal(multisigAddr: string, proposalId: number, vote: string) {
+      this.loadingState = LoadingState.show('Voting...')
+      try {
+        await this.client.voteProposal(multisigAddr, proposalId, vote)
+      } catch (e) {
+        // TODO handle error
+        alert((e as ChainError).message)
+        console.error(e)
+      } finally {
+        this.loadingState = LoadingState.dismiss()
+      }
+    },
     async createOffer(postOffer: PostOffer) {
       this.loadingState = LoadingState.show('Creating Offer...')
       try {

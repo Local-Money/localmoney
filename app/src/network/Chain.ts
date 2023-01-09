@@ -38,6 +38,8 @@ export interface Chain {
 
   updateOffer(updateOffer: PatchOffer): Promise<void>
 
+  voteProposal(multisigAddr: string, proposalId: number, vote: string): Promise<void>
+
   openTrade(trade: NewTrade): Promise<string>
 
   fetchTrades(limit: number, last: string): Promise<TradeInfo[]>

@@ -1,10 +1,10 @@
 import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 
 export const KUJIRA_TESTNET_CONFIG: CosmosConfig = {
-  chainId: 'harpoon-4',
-  chainName: 'Kujira Testnet',
-  lcdUrl: 'https://lcd.harpoon.kujira.setten.io/',
-  rpcUrl: 'https://rpc.harpoon.kujira.setten.io/',
+  chainId: 'kayio-1',
+  chainName: 'Kujira',
+  lcdUrl: 'https://lcd.kaiyo.kujira.setten.io/',
+  rpcUrl: 'https://rpc.kaiyo.kujira.setten.io/',
   addressPrefix: 'kujira',
   coinDenom: 'KUJI',
   coinMinimalDenom: 'ukuji',

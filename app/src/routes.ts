@@ -3,6 +3,7 @@ import Offers from '~/ui/pages/Offers.vue'
 import Trades from '~/ui/pages/Trades.vue'
 import TradeDetail from '~/ui/pages/TradeDetail.vue'
 import Arbitration from '~/ui/pages/Arbitration.vue'
+import Multisig from '~/ui/pages/Multisig.vue'
 
 const routes = [
   {
@@ -34,6 +35,11 @@ const routes = [
     path: '/arbitration',
     name: 'Arbitration',
     component: Arbitration,
+  },
+  {
+    path: '/multisig',
+    name: 'Multisig',
+    component: Multisig,
   },
 ]
 

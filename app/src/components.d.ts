@@ -27,6 +27,7 @@ declare module '@vue/runtime-core' {
     Loading: typeof import('./ui/components/commons/Loading.vue')['default']
     Modal: typeof import('./ui/components/commons/Modal.vue')['default']
     ModalLoading: typeof import('./ui/components/commons/ModalLoading.vue')['default']
+    Multisig: typeof import('./ui/pages/Multisig.vue')['default']
     NavDesktop: typeof import('./ui/components/NavDesktop.vue')['default']
     NavMobile: typeof import('./ui/components/NavMobile.vue')['default']
     NotificationWidget: typeof import('./ui/components/commons/NotificationWidget.vue')['default']
@@ -42,6 +43,7 @@ declare module '@vue/runtime-core' {
     TradeHistoryItem: typeof import('./ui/components/trades/TradeHistoryItem.vue')['default']
     TradeOpenItem: typeof import('./ui/components/trades/TradeOpenItem.vue')['default']
     Trades: typeof import('./ui/pages/Trades.vue')['default']
+    'Trades copy': typeof import('./ui/pages/Trades copy.vue')['default']
     WalletButton: typeof import('./ui/components/commons/WalletButton.vue')['default']
   }
 }

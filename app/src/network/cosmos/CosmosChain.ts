@@ -85,6 +85,21 @@ export class CosmosChain implements Chain {
     }
   }
 
+  async voteProposal(multisigAddr: string, proposalId: number, vote: string) {
+    const msg = { vote: { proposal_id: proposalId, vote } }
+    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
+      try {
+        const result = await this.cwClient.execute(this.getWalletAddress(), multisigAddr, msg, 'auto')
+        console.log('Execute result >> ', result)
+      } catch (e) {
+        console.error(e)
+        throw DefaultError.fromError(e)
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
+  }
+
   // TODO encrypt the postOffer.owner_contact field
   async createOffer(postOffer: PostOffer) {
     const msg = { create: { offer: postOffer } }
