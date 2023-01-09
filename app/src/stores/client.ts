@@ -56,9 +56,9 @@ export const useClientStore = defineStore({
       try {
         await this.client.connectWallet()
         const address = this.client.getWalletAddress()
-        await this.syncSecrets(address)
+        // await this.syncSecrets(address)
         this.userWallet = { isConnected: true, address }
-        await this.fetchArbitrators()
+        // await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
         alert((e as ChainError).message)
