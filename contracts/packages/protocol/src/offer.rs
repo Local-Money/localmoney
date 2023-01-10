@@ -1,5 +1,6 @@
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
+use crate::guards::validate_min_max_items_per_page;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
@@ -182,6 +183,7 @@ impl OfferModel<'_> {
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let range_from = last.map(Bound::exclusive);
+        let limit = validate_min_max_items_per_page(limit);
 
         let result = offers()
             .idx
@@ -218,6 +220,7 @@ impl OfferModel<'_> {
         let storage = deps.storage;
         let std_order = Order::Descending;
         let range_from = last.map(Bound::exclusive);
+        let limit = validate_min_max_items_per_page(limit);
 
         let mut profiles = load_profiles(
             &deps.querier,
