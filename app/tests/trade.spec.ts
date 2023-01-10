@@ -13,6 +13,7 @@ import { decryptDataMocked, encryptDataMocked } from './helper'
 import { DefaultError } from '~/network/chain-error'
 import type { GetOffer, OfferResponse, PostOffer, TradeInfo } from '~/types/components.interface'
 import { FiatCurrency, OfferState, OfferType, TradeState } from '~/types/components.interface'
+import { denomToValue } from '~/utils/denom'
 
 dotenv.config()
 Object.assign(global, { TextEncoder, TextDecoder })
@@ -110,9 +111,9 @@ describe('trade lifecycle happy path', () => {
     let trade = tradeInfo.trade
     const decryptedMakerContact = await decryptDataMocked(takerSecrets.privateKey, trade.buyer_contact!)
     expect(decryptedMakerContact).toBe(offers[0].owner_contact)
-    const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
+    const tradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, denomToValue(trade.denom))).amount
     await takerClient.fundEscrow(tradeInfo)
-    const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, trade.denom.native)).amount
+    const newTradeBalance = (await makerClient.getCwClient().getBalance(tradeAddr, denomToValue(trade.denom))).amount
     tradeInfo = await takerClient.fetchTradeDetail(tradeId)
     trade = tradeInfo.trade
     expect(trade.state).toBe(TradeState.escrow_funded)
@@ -549,7 +550,7 @@ describe('trade limits', () => {
     // Query the balance of the Denom of the trade owned by the trade contract
     const tradeBalance = await makerClient
       .getCwClient()
-      .getBalance(hubInfo.hubConfig.trade_addr, offerResponse.offer.denom.native)
+      .getBalance(hubInfo.hubConfig.trade_addr, denomToValue(offerResponse.offer.denom))
     // Create a trade
     const tradeId = await takerClient.openTrade({
       amount: createTradeAmount,
@@ -567,7 +568,7 @@ describe('trade limits', () => {
     // Query the Updated Trade Contract balance
     const tradeBalanceAfter = await makerClient
       .getCwClient()
-      .getBalance(hubInfo.hubConfig.trade_addr, offerResponse.offer.denom.native)
+      .getBalance(hubInfo.hubConfig.trade_addr, denomToValue(offerResponse.offer.denom))
     // Calculate the difference between the balances
     console.log('tradeBalance', tradeBalance)
     console.log('tradeBalanceAfter', tradeBalanceAfter)
