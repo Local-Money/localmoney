@@ -93,7 +93,7 @@ pub fn create_offer(
         .load()
         .unwrap_or(OffersCount { count: 0 });
     offers_count.count += 1;
-    let offer_id = [msg.rate.clone().to_string(), offers_count.count.to_string()].join("_");
+    let offer_id = offers_count.count;
 
     // Update profile contact info
     let update_profile_contact_msg = update_profile_contact_msg(
@@ -155,7 +155,7 @@ pub fn update_offer(
     assert_min_g_max(msg.min_amount, msg.max_amount)?;
 
     let hub_config = get_hub_config(deps.as_ref());
-    let mut offer_model = OfferModel::may_load(deps.storage, &msg.id);
+    let mut offer_model = OfferModel::may_load(deps.storage, msg.id);
 
     assert_ownership(info.sender.clone(), offer_model.offer.owner.clone())?;
 
@@ -183,7 +183,7 @@ pub fn update_offer(
     let res = Response::new()
         .add_submessages(sub_msgs)
         .add_attribute("action", "update_offer")
-        .add_attribute("id", offer.id.clone())
+        .add_attribute("id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string());
 
     Ok(res)
@@ -198,10 +198,10 @@ fn query_state(deps: Deps) -> StdResult<OffersCount> {
     Ok(state)
 }
 
-pub fn load_offer_by_id(deps: Deps, id: String) -> StdResult<OfferResponse> {
+pub fn load_offer_by_id(deps: Deps, id: u64) -> StdResult<OfferResponse> {
     let hub_config = get_hub_config(deps);
     let offer = offers()
-        .may_load(deps.storage, id.to_string())
+        .may_load(deps.storage, id)
         .unwrap_or_default()
         .unwrap();
     let profile = load_profile(

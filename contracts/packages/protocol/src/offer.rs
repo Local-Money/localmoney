@@ -15,8 +15,8 @@ pub static CONFIG_KEY: &[u8] = b"config";
 
 pub struct OfferIndexes<'a> {
     // pk goes to second tuple element
-    pub owner: MultiIndex<'a, Addr, Offer, String>,
-    pub filter: MultiIndex<'a, String, Offer, String>,
+    pub owner: MultiIndex<'a, Addr, Offer, u64>,
+    pub filter: MultiIndex<'a, String, Offer, u64>,
 }
 
 impl<'a> IndexList<Offer> for OfferIndexes<'a> {
@@ -26,7 +26,7 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
     }
 }
 
-pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
+pub fn offers<'a>() -> IndexedMap<'a, u64, Offer, OfferIndexes<'a>> {
     let offers_pk_namespace = "offers";
     let indexes = OfferIndexes {
         owner: MultiIndex::new(|d| d.owner.clone(), offers_pk_namespace, "offers__owner"),
@@ -65,7 +65,7 @@ pub struct OfferMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferUpdateMsg {
-    pub id: String,
+    pub id: u64,
     pub owner_contact: Option<String>,
     pub owner_encryption_key: Option<String>,
     pub rate: Uint128,
@@ -89,7 +89,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     State {},
     Offer {
-        id: String,
+        id: u64,
     },
     OffersBy {
         offer_type: OfferType,
@@ -97,12 +97,12 @@ pub enum QueryMsg {
         denom: Denom,
         order: OfferOrder,
         limit: u32,
-        last: Option<String>,
+        last: Option<u64>,
     },
     OffersByOwner {
         owner: Addr,
         limit: u32,
-        last: Option<String>,
+        last: Option<u64>,
     },
 }
 
@@ -113,7 +113,7 @@ pub struct OffersCount {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Offer {
-    pub id: String,
+    pub id: u64,
     pub owner: Addr,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
@@ -139,14 +139,11 @@ pub struct OfferModel<'a> {
 
 impl OfferModel<'_> {
     pub fn store(storage: &mut dyn Storage, offer: &Offer) -> StdResult<()> {
-        offers().save(storage, offer.id.to_string(), &offer)
+        offers().save(storage, offer.id, &offer)
     }
 
-    pub fn from_store(storage: &mut dyn Storage, id: &String) -> Offer {
-        offers()
-            .may_load(storage, id.to_string())
-            .unwrap_or_default()
-            .unwrap()
+    pub fn from_store(storage: &mut dyn Storage, id: u64) -> Offer {
+        offers().may_load(storage, id).unwrap_or_default().unwrap()
     }
 
     pub fn create(storage: &mut dyn Storage, offer: Offer) -> OfferModel {
@@ -159,9 +156,9 @@ impl OfferModel<'_> {
         self.offer
     }
 
-    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &String) -> OfferModel<'a> {
+    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: u64) -> OfferModel<'a> {
         let offer_model = OfferModel {
-            offer: OfferModel::from_store(storage, &id),
+            offer: OfferModel::from_store(storage, id),
             storage,
         };
         return offer_model;
@@ -181,7 +178,7 @@ impl OfferModel<'_> {
         deps: Deps,
         owner: Addr,
         limit: u32,
-        last: Option<String>,
+        last: Option<u64>,
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let range_from = last.map(Bound::exclusive);
@@ -190,7 +187,7 @@ impl OfferModel<'_> {
             .idx
             .owner
             .prefix(owner)
-            .range(deps.storage, range_from, None, Order::Descending)
+            .range(deps.storage, None, range_from, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
@@ -215,7 +212,7 @@ impl OfferModel<'_> {
         denom: Denom,
         order: OfferOrder,
         limit: u32,
-        last: Option<String>,
+        last: Option<u64>,
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let storage = deps.storage;
@@ -344,7 +341,7 @@ pub enum OfferState {
 // Queries
 pub fn load_offer<T: CustomQuery>(
     querier: &QuerierWrapper<T>,
-    offer_id: String,
+    offer_id: u64,
     offer_contract: String,
 ) -> StdResult<OfferResponse> {
     querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })

@@ -218,7 +218,7 @@ fn create_trade(
 
     let profile = offer_result.profile;
     let trades_count = profile.requested_trades_count + 1;
-    let trade_id = [offer.id.clone(), trades_count.to_string()].join("_");
+    let trade_id = [offer.id.to_string(), trades_count.to_string()].join("_");
 
     let new_trade_state = TradeStateItem {
         actor: new_trade.taker.clone(),
@@ -285,7 +285,7 @@ fn create_trade(
         .add_submessages(sub_msgs)
         .add_attribute("action", "create_trade")
         .add_attribute("trade_id", trade_id)
-        .add_attribute("offer_id", offer.id.clone())
+        .add_attribute("offer_id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
         .add_attribute("denom", denom_str)
