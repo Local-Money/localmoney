@@ -14,19 +14,24 @@ watch(userWallet, () => {
   nextTick(async () => await client.fetchMyTrades())
 })
 
-const proposalId = ref(0)
-const vote = ref('')
-
-const voteProposal = async () => {
-  await client
-  await client.voteProposal(proposalId.value, vote.value)
-}
+const proposalId = ref('')
 </script>
 
 <template>
   <main class="page">
-    <input v-model="proposalId" type="text" />
-    <button class="btn btn-primary" @click="client.voteProposal(proposalId, 'Yes')">Yes</button>
+    <input v-model="proposalId" type="text" style="color: black" />
+    <button
+      class="btn btn-primary"
+      @click="
+        client.voteProposal(
+          'kujira15nu6cdlfvwyshj5fnwt09ppx4e6z9gddtkpxfrr83femj67dunhs84rh3j',
+          parseInt(proposalId),
+          'yes'
+        )
+      "
+    >
+      Yes
+    </button>
   </main>
 </template>
 
