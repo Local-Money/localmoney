@@ -45,7 +45,7 @@ export interface Profile {
 }
 
 export interface GetOffer {
-  id: string
+  id: number
   state: OfferState
   rate: string
   min_amount: string
@@ -59,7 +59,7 @@ export interface GetOffer {
 }
 
 export interface PatchOffer {
-  id: string
+  id: number
   state: OfferState
   rate: string
   min_amount: string
@@ -106,7 +106,7 @@ export enum OfferOrder {
 }
 
 export interface NewTrade {
-  offer_id: string
+  offer_id: number
   amount: string
   taker: string
   profile_taker_contact: string
@@ -129,7 +129,7 @@ export interface Trade {
   arbitrator_buyer_contact?: string
   arbitrator_seller_contact?: string
   offer_contract: string
-  offer_id: string
+  offer_id: number
   created_at: number
   expires_at: number
   enables_dispute_at?: number
@@ -190,13 +190,13 @@ export interface HubConfig {
 
 export type Addr = string
 
-export type Denom =
-  | {
-      native: string
-    }
-  | {
-      cw20: Addr
-    }
+export type Denom = Native | CW20
+export interface Native {
+  native: string
+}
+export interface CW20 {
+  cw20: Addr
+}
 
 export interface ConversionRoute {
   ask_asset: Denom
