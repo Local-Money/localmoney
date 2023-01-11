@@ -64,7 +64,7 @@ describe('arbitration tests', () => {
       order: OfferOrder.trades_count,
     })
     offer = offerResponse[0].offer as GetOffer
-    expect(offer.id.length).toBeGreaterThan(0)
+    expect(offer.id).not.toBeNaN()
   })
 
   it('should settle dispute for taker', async () => {
@@ -85,7 +85,7 @@ describe('arbitration tests', () => {
     let trade = tradeInfo.trade
     const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
-    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await takerClient.fundEscrow(tradeInfo)
     await makerClient.setFiatDeposited(trade.id)
     tradeInfo = await takerClient.fetchTradeDetail(trade.id)
     trade = tradeInfo.trade
@@ -126,7 +126,7 @@ describe('arbitration tests', () => {
     let trade = tradeInfo.trade
     const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
-    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await takerClient.fundEscrow(tradeInfo, trade.amount)
     await makerClient.setFiatDeposited(trade.id)
     // Wait the time to enable dispute
     await sleep((TRADE_DISPUTE_TIMER + 1) * 1000)
@@ -161,7 +161,7 @@ describe('arbitration tests', () => {
     const trade = tradeInfo.trade
     const makerContactEncrypted = await encryptDataMocked(trade.seller_encryption_key, makerContact)
     await makerClient.acceptTradeRequest(tradeId, makerContactEncrypted)
-    await takerClient.fundEscrow(trade.id, trade.amount, trade.denom)
+    await takerClient.fundEscrow(tradeInfo, trade.amount)
     await makerClient.setFiatDeposited(trade.id)
     // Tries to open dispute prematurely
     await expect(takerClient.openDispute(trade.id, 'buyer_contact', 'seller_contact')).rejects.toThrow()

@@ -13,9 +13,9 @@ import {
 import { OfferType } from '~/types/components.interface'
 import type { NewTrade, OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDenom } from '~/utils/denom'
 import { encryptData } from '~/utils/crypto'
-import { formatTimeLimit, formatTimer } from '~/utils/formatters'
+import { formatTimeLimit } from '~/utils/formatters'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
@@ -56,11 +56,11 @@ const toLabel = computed(() =>
 )
 const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currency.toUpperCase()} 0`)
 const cryptoPlaceholder = computed(
-  () => `${microDenomToDenom(props.offerResponse.offer.denom.native)} ${parseFloat('0').toFixed(2)}`
+  () => `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom))} ${parseFloat('0').toFixed(2)}`
 )
 const fiatPriceByRate = computed(() => {
   const offer = props.offerResponse.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native)
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(denomToValue(offer.denom))
   return calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
 })
 const minAmountInCrypto = computed(
@@ -91,7 +91,7 @@ const minMaxFiatStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 const minMaxCryptoStr = computed(() => {
-  const symbol = microDenomToDenom(props.offerResponse.offer.denom.native)
+  const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom))
   const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
   const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]

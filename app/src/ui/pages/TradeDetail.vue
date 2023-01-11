@@ -142,7 +142,7 @@ onUnmounted(() => {
 })
 
 watch(userWallet, async () => {
-  return fetchTrade(route.params.id as string)
+  return fetchTrade(Number(route.params.id))
 })
 </script>
 
