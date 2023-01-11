@@ -114,7 +114,7 @@ function stopTradeTimer() {
   clearInterval(tradeTimerInterval)
 }
 
-function fetchTrade(id: string) {
+function fetchTrade(id: number) {
   nextTick(async () => {
     tradeInfo.value = await client.fetchTradeDetail(id)
     refreshInterval = setInterval(async () => {
@@ -129,7 +129,7 @@ function fetchTrade(id: string) {
 }
 
 onBeforeMount(() => {
-  fetchTrade(route.params.id as string)
+  fetchTrade(Number(route.params.id))
 })
 
 onMounted(() => {

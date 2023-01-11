@@ -207,7 +207,7 @@ export class CosmosChain implements Chain {
         const trade_id = result.logs[0].events
           .find((e) => e.type === 'wasm')
           ?.attributes.find((a) => a.key === 'trade_id')?.value
-        return trade_id ?? ''
+        return Number(trade_id)
       } catch (e) {
         console.error(e)
         throw DefaultError.fromError(e)
@@ -218,7 +218,7 @@ export class CosmosChain implements Chain {
   }
 
   // TODO maybe we can do a single trades_query
-  async fetchTrades(limit = 100, last?: string) {
+  async fetchTrades(limit = 100, last?: number) {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
       // TODO fix init
@@ -243,7 +243,7 @@ export class CosmosChain implements Chain {
 
   async fetchDisputedTrades(
     limit = 100,
-    last?: string
+    last?: number
   ): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }> {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
@@ -271,7 +271,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchTradeDetail(tradeId: string) {
+  async fetchTradeDetail(tradeId: number) {
     // TODO fix init
     if (!this.cwClient) {
       await this.init()
@@ -354,13 +354,13 @@ export class CosmosChain implements Chain {
   }
 
   // TODO encrypt maker_contact field
-  async acceptTradeRequest(tradeId: string, makerContact: string) {
+  async acceptTradeRequest(tradeId: number, makerContact: string) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
       accept_request: { trade_id: tradeId, maker_contact: makerContact },
     })
   }
 
-  async cancelTradeRequest(tradeId: string) {
+  async cancelTradeRequest(tradeId: number) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
       cancel_request: { trade_id: tradeId },
     })
@@ -395,25 +395,25 @@ export class CosmosChain implements Chain {
     )
   }
 
-  async setFiatDeposited(tradeId: string) {
+  async setFiatDeposited(tradeId: number) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
       fiat_deposited: { trade_id: tradeId },
     })
   }
 
-  async releaseEscrow(tradeId: string) {
+  async releaseEscrow(tradeId: number) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
       release_escrow: { trade_id: tradeId },
     })
   }
 
-  async refundEscrow(tradeId: string) {
+  async refundEscrow(tradeId: number) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
       refund_escrow: { trade_id: tradeId },
     })
   }
 
-  async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
+  async openDispute(tradeId: number, buyerContact: string, sellerContact: string) {
     await this.changeTradeState(this.hubInfo.hubConfig.trade_addr, {
       dispute_escrow: {
         trade_id: tradeId,
@@ -423,11 +423,11 @@ export class CosmosChain implements Chain {
     })
   }
 
-  private async changeTradeState(tradeId: string, msg: Record<string, unknown>, funds?: Coin[]) {
+  private async changeTradeState(addr: string, msg: Record<string, unknown>, funds?: Coin[]) {
     console.log('Trade State >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
       try {
-        const result = await this.cwClient.execute(this.getWalletAddress(), tradeId, msg, 'auto', undefined, funds)
+        const result = await this.cwClient.execute(this.getWalletAddress(), addr, msg, 'auto', undefined, funds)
         console.log('Trade State result >> ', result)
       } catch (e) {
         console.error(e)
@@ -460,7 +460,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async settleDispute(tradeId: string, winner: string) {
+  async settleDispute(tradeId: number, winner: string) {
     const msg = { settle_dispute: { trade_id: tradeId, winner } }
     console.log('msg >> ', msg)
     if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {

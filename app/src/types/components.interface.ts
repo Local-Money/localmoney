@@ -115,7 +115,7 @@ export interface NewTrade {
 }
 
 export interface Trade {
-  id: string
+  id: number
   addr: string
   factory_addr: string
   buyer: string
