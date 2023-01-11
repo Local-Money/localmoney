@@ -216,9 +216,8 @@ fn create_trade(
         seller_contact = None // maker
     }
 
-    let profile = offer_result.profile;
-    let trades_count = profile.requested_trades_count + 1;
-    let trade_id = [offer.id.to_string(), trades_count.to_string()].join("_");
+    let trades_count = TradeModel::size(deps.storage) as u64;
+    let trade_id = trades_count + 1;
 
     let new_trade_state = TradeStateItem {
         actor: new_trade.taker.clone(),
@@ -284,7 +283,7 @@ fn create_trade(
     let res = Response::new()
         .add_submessages(sub_msgs)
         .add_attribute("action", "create_trade")
-        .add_attribute("trade_id", trade_id)
+        .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("offer_id", offer.id.to_string())
         .add_attribute("owner", offer.owner.to_string())
         .add_attribute("amount", trade.amount.to_string())
@@ -327,9 +326,9 @@ fn register_hub<T: CustomQuery>(
     register_hub_internal(info.sender, deps.storage, HubAlreadyRegistered {})
 }
 
-fn query_trade<T: CustomQuery>(env: Env, deps: Deps<T>, id: String) -> StdResult<TradeInfo> {
+fn query_trade<T: CustomQuery>(env: Env, deps: Deps<T>, id: u64) -> StdResult<TradeInfo> {
     let hub_config = get_hub_config(deps);
-    let state = TradeModel::from_store(deps.storage, &id);
+    let state = TradeModel::from_store(deps.storage, id);
 
     let buyer = load_profile(
         &deps.querier,
@@ -370,7 +369,7 @@ pub fn query_trades<T: CustomQuery>(
     user: Addr,
     role: TraderRole,
     limit: u32,
-    last: Option<String>,
+    last: Option<u64>,
 ) -> StdResult<Vec<TradeInfo>> {
     let mut trades_infos: Vec<TradeInfo> = vec![];
     let hub_config = get_hub_config(deps);
@@ -427,12 +426,12 @@ fn fund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
     maker_contact: Option<String>,
 ) -> Result<Response, ContractError> {
     // Load HubConfig, Trade & Offer
     let hub_config = get_hub_config(deps.as_ref());
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
     let offer = load_offer(
         &deps.querier.clone(),
         trade.offer_id.clone(),
@@ -506,7 +505,7 @@ fn fund_escrow(
 
     let res = Response::new()
         .add_attribute("action", "fund_escrow")
-        .add_attribute("trade_id", trade_id)
+        .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("trade.amount", trade.amount.clone().to_string())
         .add_attribute("sent_amount", balance.amount.to_string())
         .add_attribute("seller", info.sender)
@@ -518,10 +517,10 @@ fn accept_request(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
     maker_contact: String,
 ) -> Result<Response, ContractError> {
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
     // Only the buyer can accept the request
     assert_ownership(info.sender.clone(), trade.buyer.clone()).unwrap();
 
@@ -543,7 +542,7 @@ fn accept_request(
 
     let res = Response::new()
         .add_attribute("action", "accept_request")
-        .add_attribute("trade_id", trade_id)
+        .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("state", trade.get_state().to_string());
 
     Ok(res)
@@ -553,10 +552,10 @@ fn fiat_deposited(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
 ) -> Result<Response, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
     // The buyer is always the one depositing fiat
     // Only the buyer can mark the fiat as deposited
     assert_ownership(info.sender.clone(), trade.buyer.clone()).unwrap();
@@ -577,7 +576,7 @@ fn fiat_deposited(
 
     let res = Response::new()
         .add_attribute("action", "fiat_deposited")
-        .add_attribute("trade_id", trade_id)
+        .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("state", trade.get_state().to_string());
 
     Ok(res)
@@ -587,9 +586,9 @@ fn cancel_request(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
 ) -> Result<Response, ContractError> {
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
     // Only the buyer or seller can cancel the trade.
     assert_sender_is_buyer_or_seller(
         info.sender.clone(),
@@ -646,10 +645,10 @@ fn release_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
 ) -> Result<Response, ContractError> {
     // Load trade and validate that permission and state are valid.
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
     let trade_denom = denom_to_string(&trade.denom);
     if trade.seller.eq(&info.sender) {
         assert_trade_state_change_is_valid(
@@ -718,7 +717,7 @@ fn release_escrow(
     let res = Response::new()
         .add_submessages(send_msgs)
         .add_attribute("action", "release_escrow")
-        .add_attribute("trade_id", trade_id.clone())
+        .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("state", trade.get_state().clone().to_string())
         .add_attribute("trade_denom", denom_to_string(&trade.denom))
         .add_attribute("total_amount", trade.amount.u128().to_string());
@@ -729,10 +728,10 @@ fn refund_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
 ) -> Result<Response, ContractError> {
     // Refund can only happen if trade state is TradeState::EscrowFunded and FundingTimeout is expired
-    let trade = TradeModel::from_store(deps.storage, &trade_id);
+    let trade = TradeModel::from_store(deps.storage, trade_id);
 
     //
     assert_trade_state_change(
@@ -753,7 +752,7 @@ fn refund_escrow(
         });
     }
 
-    let mut trade: Trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade: Trade = TradeModel::from_store(deps.storage, trade_id);
 
     //Update trade state to TradeState::EscrowRefunded
     trade.set_state(TradeState::EscrowRefunded, &env, &info);
@@ -831,11 +830,11 @@ fn dispute_escrow(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
     buyer_contact: String,
     seller_contact: String,
 ) -> Result<Response, ContractError> {
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
     // TODO: check escrow funding timer*
     // Only the buyer or seller can start a dispute
     assert_sender_is_buyer_or_seller(
@@ -870,7 +869,7 @@ fn dispute_escrow(
 
     let res = Response::new()
         .add_attribute("action", "dispute_escrow")
-        .add_attribute("trade_id", trade.id.clone())
+        .add_attribute("trade_id", trade.id.to_string())
         .add_attribute("state", trade.get_state().to_string())
         .add_attribute("arbitrator", trade.arbitrator.to_string());
 
@@ -881,11 +880,11 @@ fn settle_dispute(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    trade_id: String,
+    trade_id: u64,
     winner: Addr,
 ) -> Result<Response, ContractError> {
     let hub_config = get_hub_config(deps.as_ref());
-    let mut trade = TradeModel::from_store(deps.storage, &trade_id);
+    let mut trade = TradeModel::from_store(deps.storage, trade_id);
 
     // Check if caller is the arbitrator of the given trade
     if trade.arbitrator.ne(&info.sender) {
