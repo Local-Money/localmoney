@@ -52,10 +52,15 @@ export async function setupProtocol() {
   takerClient.seed = process.env.TAKER_SEED!
   await takerClient.connectWallet()
 
+  const priceProviderClient = new TestCosmosChain(DEV_CONFIG, DEV_HUB_INFO)
+  priceProviderClient.seed = process.env.PRICE_PROVIDER_SEED!
+  await priceProviderClient.connectWallet()
+
   if (process.env.HUB) {
     await adminClient.updateHub(process.env.HUB)
     await makerClient.updateHub(process.env.HUB)
     await takerClient.updateHub(process.env.HUB)
+    await priceProviderClient.updateHub(process.env.HUB)
   } else {
     // Instantiate all contracts
     const admAddr = adminClient.getWalletAddress()
@@ -126,10 +131,11 @@ export async function setupProtocol() {
     console.log('Admin Wallet: ', adminClient.getWalletAddress())
     console.log('Maker Wallet: ', makerClient.getWalletAddress())
     console.log('Taker Wallet: ', takerClient.getWalletAddress())
+    console.log('Prive Provider Wallet: ', priceProviderClient.getWalletAddress())
     console.log('Hub Address:', hubInstantiateResult.contractAddress)
     fs.appendFileSync('.env', `\r\nHUB=${hubInstantiateResult.contractAddress}`)
   }
-  return { adminClient, makerClient, takerClient }
+  return { adminClient, makerClient, takerClient, priceProviderClient }
 }
 
 export function sleep(ms: number): Promise<void> {
