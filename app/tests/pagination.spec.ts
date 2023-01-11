@@ -55,12 +55,11 @@ describe('offers pagination', () => {
     expect(myOffers.length).toBe(limit)
   })
   it('maker should be able to paginate the list of offers', async () => {
-    let myOffers = await makerClient.fetchMyOffers(limit)
+    const myOffers = await makerClient.fetchMyOffers(limit)
     for (let i = 0; i < myOffers.length - 1; i++) {
-      const previousId = myOffers[myOffers.length - 2].offer.id
-      const last = myOffers[myOffers.length - 1].offer.id
-      myOffers = await makerClient.fetchMyOffers(myOffers.length, last)
-      expect(myOffers[myOffers.length - 1].offer.id).toBe(previousId)
+      const last = myOffers[i].offer.id
+      const nextPage = await makerClient.fetchMyOffers(1, last)
+      expect(nextPage[0].offer.id).toBe(myOffers[i + 1].offer.id)
     }
   })
   it(`taker should list only ${limit} offers`, async () => {

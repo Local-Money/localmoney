@@ -30,9 +30,9 @@ export interface Chain {
 
   fetchOffer(offerId: string): Promise<OfferResponse>
 
-  fetchOffers(args: FetchOffersArgs, limit: number, last: string): Promise<OfferResponse[]>
+  fetchOffers(args: FetchOffersArgs, limit: number, last?: number): Promise<OfferResponse[]>
 
-  fetchMyOffers(limit: number, last: string): Promise<OfferResponse[]>
+  fetchMyOffers(limit: number, last?: number): Promise<OfferResponse[]>
 
   createOffer(postOffer: PostOffer): Promise<void>
 
@@ -40,9 +40,9 @@ export interface Chain {
 
   openTrade(trade: NewTrade): Promise<string>
 
-  fetchTrades(limit: number, last: string): Promise<TradeInfo[]>
+  fetchTrades(limit: number, last?: string): Promise<TradeInfo[]>
 
-  fetchDisputedTrades(limit: number, last: string): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }>
+  fetchDisputedTrades(limit: number, last?: string): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }>
 
   fetchTradeDetail(tradeId: string): Promise<TradeInfo>
 

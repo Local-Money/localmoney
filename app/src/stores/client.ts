@@ -20,6 +20,7 @@ import type {
 import { LoadingState, OfferState } from '~/types/components.interface'
 import type { Secrets } from '~/utils/crypto'
 import { generateKeys } from '~/utils/crypto'
+import { denomToValue } from '~/utils/denom'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -82,19 +83,19 @@ export const useClientStore = defineStore({
       const address = this.client.getWalletAddress()
       return this.secrets.get(address)!
     },
-    async fetchOffers(offersArgs: FetchOffersArgs) {
+    async fetchOffers(offersArgs: FetchOffersArgs, limit = 30, last?: number) {
       this.offers = ListResult.loading()
       try {
-        const listOffers = await this.client.fetchOffers(offersArgs)
+        const listOffers = await this.client.fetchOffers(offersArgs, limit, last)
         this.offers = ListResult.success(listOffers)
       } catch (e) {
         this.offers = ListResult.error(e as ChainError)
       }
     },
-    async fetchMyOffers() {
+    async fetchMyOffers(limit = 30, last?: number) {
       this.myOffers = ListResult.loading()
       try {
-        const listMyOffers = await this.client.fetchMyOffers()
+        const listMyOffers = await this.client.fetchMyOffers(limit, last)
         this.myOffers = ListResult.success(listMyOffers)
       } catch (e) {
         this.myOffers = ListResult.error(e as ChainError)
@@ -156,10 +157,10 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fetchMyTrades() {
+    async fetchMyTrades(limit = 30, last?: string) {
       this.trades = ListResult.loading()
       try {
-        const tradesList = await this.client.fetchTrades()
+        const tradesList = await this.client.fetchTrades(limit, last)
         this.trades = ListResult.success(tradesList)
       } catch (e) {
         this.trades = ListResult.error(e as ChainError)
@@ -167,8 +168,7 @@ export const useClientStore = defineStore({
     },
     async fetchTradeDetail(tradeId: string) {
       // TODO the fetchTradeDetail should return a TradeInfo
-      const tradeInfo = await this.client.fetchTradeDetail(tradeId)
-      return tradeInfo
+      return await this.client.fetchTradeDetail(tradeId)
     },
     async fetchArbitrators() {
       this.arbitrators = ListResult.loading()
@@ -179,11 +179,11 @@ export const useClientStore = defineStore({
         this.arbitrators = ListResult.error(e as ChainError)
       }
     },
-    async fetchDisputedTrades() {
+    async fetchDisputedTrades(limit = 30, last?: string) {
       this.openDisputes = ListResult.loading()
       this.closedDisputes = ListResult.loading()
       try {
-        const disputedTrades = await this.client.fetchDisputedTrades()
+        const disputedTrades = await this.client.fetchDisputedTrades(limit, last)
         this.openDisputes = ListResult.success(disputedTrades.openDisputes)
         this.closedDisputes = ListResult.success(disputedTrades.closedDisputes)
       } catch (e) {
@@ -194,9 +194,9 @@ export const useClientStore = defineStore({
       try {
         const price = await this.client.fetchFiatPriceForDenom(fiat, denom)
         if (this.fiatPrices.has(fiat)) {
-          this.fiatPrices.get(fiat)?.set(denom.native, price.price)
+          this.fiatPrices.get(fiat)?.set(denomToValue(denom), price.price)
         } else {
-          const priceForDenom = new Map([[denom.native, price.price]])
+          const priceForDenom = new Map([[denomToValue(denom), price.price]])
           this.fiatPrices.set(fiat, priceForDenom)
         }
       } catch (e) {
@@ -308,7 +308,7 @@ export const useClientStore = defineStore({
       }
     },
     getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {
-      const fiatPrice = this.fiatPrices.get(fiatCurrency)?.get(denom.native) ?? 0
+      const fiatPrice = this.fiatPrices.get(fiatCurrency)?.get(denomToValue(denom)) ?? 0
       try {
         return fiatPrice / 100
       } catch (e) {

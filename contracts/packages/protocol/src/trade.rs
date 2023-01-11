@@ -148,7 +148,7 @@ pub enum TraderRole {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct NewTrade {
-    pub offer_id: String,
+    pub offer_id: u64,
     pub amount: Uint128,
     pub taker: Addr,
     pub profile_taker_contact: String,
@@ -201,7 +201,7 @@ pub struct Trade {
     pub arbitrator_buyer_contact: Option<String>,
     pub arbitrator_seller_contact: Option<String>,
     pub offer_contract: Addr,
-    pub offer_id: String,
+    pub offer_id: u64,
     pub created_at: u64,
     pub expires_at: u64,
     pub enables_dispute_at: Option<u64>,
@@ -223,7 +223,7 @@ impl Trade {
         buyer_contact: Option<String>,
         arbitrator: Addr,
         offer_contract: Addr,
-        offer_id: String,
+        offer_id: u64,
         created_at: u64,
         expires_at: u64,
         denom: Denom,
@@ -296,7 +296,7 @@ pub struct TradeResponse {
     pub arbitrator_seller_contact: Option<String>,
     pub arbitrator_buyer_contact: Option<String>,
     pub offer_contract: Addr,
-    pub offer_id: String,
+    pub offer_id: u64,
     pub created_at: u64,
     pub expires_at: u64,
     pub enables_dispute_at: Option<u64>,

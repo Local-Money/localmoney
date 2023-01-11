@@ -1,4 +1,4 @@
-use crate::constants::OFFER_DESCRIPTION_LIMIT;
+use crate::constants::{MAX_ITEMS_PER_PAGE, MIN_ITEMS_PER_PAGE, OFFER_DESCRIPTION_LIMIT};
 use crate::errors::ContractError;
 use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
@@ -175,4 +175,8 @@ pub fn assert_migration_parameters(
     }
 
     Ok(())
+}
+
+pub fn validate_min_max_items_per_page(limit: u32) -> u32 {
+    limit.max(MIN_ITEMS_PER_PAGE).min(MAX_ITEMS_PER_PAGE)
 }

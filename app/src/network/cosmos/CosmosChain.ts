@@ -21,6 +21,7 @@ import type {
   Profile,
   TradeInfo,
 } from '~/types/components.interface'
+import { denomToValue } from '~/utils/denom'
 
 export class CosmosChain implements Chain {
   protected config: CosmosConfig
@@ -128,7 +129,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchMyOffers(limit = 100, last = '') {
+  async fetchMyOffers(limit = 100, last?: number) {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       try {
         return (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
@@ -139,7 +140,7 @@ export class CosmosChain implements Chain {
           },
         })) as OfferResponse[]
       } catch (e) {
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -164,7 +165,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchOffers(args: FetchOffersArgs, limit = 100, last = '') {
+  async fetchOffers(args: FetchOffersArgs, limit = 100, last?: number) {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()
@@ -217,7 +218,7 @@ export class CosmosChain implements Chain {
   }
 
   // TODO maybe we can do a single trades_query
-  async fetchTrades(limit = 100, last = '') {
+  async fetchTrades(limit = 100, last?: string) {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
       // TODO fix init
@@ -242,7 +243,7 @@ export class CosmosChain implements Chain {
 
   async fetchDisputedTrades(
     limit = 100,
-    last = ''
+    last?: string
   ): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }> {
     if (this.cwClient instanceof SigningCosmWasmClient) {
       const userAddr = this.getWalletAddress()
@@ -383,7 +384,7 @@ export class CosmosChain implements Chain {
     const funds: Coin[] = [
       {
         amount: Math.floor(fundAmount).toFixed(0),
-        denom: tradeInfo.trade.denom.native,
+        denom: denomToValue(tradeInfo.trade.denom),
       },
     ]
     console.log('funds', funds)
@@ -431,7 +432,7 @@ export class CosmosChain implements Chain {
       } catch (e) {
         console.error(e)
         // TODO manage error
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()

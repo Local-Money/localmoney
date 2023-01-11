@@ -104,7 +104,7 @@ async function newTrade() {
   const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
 
   const newTrade: NewTrade = {
-    offer_id: `${props.offerResponse.offer.id}`,
+    offer_id: props.offerResponse.offer.id,
     amount: `${cryptoAmount.value * CRYPTO_DECIMAL_PLACES}`,
     taker: `${client.userWallet.address}`,
     profile_taker_contact,
