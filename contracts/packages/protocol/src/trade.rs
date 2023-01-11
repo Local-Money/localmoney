@@ -28,29 +28,29 @@ pub struct InstantiateMsg {}
 pub enum ExecuteMsg {
     Create(NewTrade),
     AcceptRequest {
-        trade_id: String,
+        trade_id: u64,
         maker_contact: String,
     },
     FundEscrow {
-        trade_id: String,
+        trade_id: u64,
         maker_contact: Option<String>,
     },
     RefundEscrow {
-        trade_id: String,
+        trade_id: u64,
     },
     ReleaseEscrow {
-        trade_id: String,
+        trade_id: u64,
     },
     DisputeEscrow {
-        trade_id: String,
+        trade_id: u64,
         buyer_contact: String,
         seller_contact: String,
     },
     FiatDeposited {
-        trade_id: String,
+        trade_id: u64,
     },
     CancelRequest {
-        trade_id: String,
+        trade_id: u64,
     },
     NewArbitrator {
         arbitrator: Addr,
@@ -62,7 +62,7 @@ pub enum ExecuteMsg {
         fiat: FiatCurrency,
     },
     SettleDispute {
-        trade_id: String,
+        trade_id: u64,
         winner: Addr,
     },
     RegisterHub {},
@@ -76,13 +76,13 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Trade {
-        id: String,
+        id: u64,
     },
     Trades {
         user: Addr,
         role: TraderRole,
         limit: u32,
-        last: Option<String>,
+        last: Option<u64>,
     },
     Arbitrator {
         arbitrator: Addr,
@@ -191,7 +191,7 @@ impl fmt::Display for TradeState {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Trade {
-    pub id: String,
+    pub id: u64,
     pub addr: Addr,
     pub buyer: Addr,
     pub buyer_contact: Option<String>,
@@ -215,7 +215,7 @@ pub struct Trade {
 
 impl Trade {
     pub fn new(
-        id: String,
+        id: u64,
         addr: Addr,
         buyer: Addr,
         seller: Addr,
@@ -283,7 +283,7 @@ impl Trade {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeResponse {
-    pub id: String,
+    pub id: u64,
     pub addr: Addr,
     pub buyer: Addr,
     pub buyer_contact: Option<String>,
@@ -380,15 +380,18 @@ pub struct TradeModel<'a> {
 }
 
 impl TradeModel<'_> {
-    pub fn store(storage: &mut dyn Storage, trade: &Trade) -> StdResult<()> {
-        trades().save(storage, trade.id.to_string(), trade)
+    pub fn size(storage: &mut dyn Storage) -> usize {
+        trades()
+            .range(storage, None, None, Order::Descending)
+            .count()
     }
 
-    pub fn from_store(storage: &dyn Storage, id: &String) -> Trade {
-        trades()
-            .may_load(storage, id.to_string())
-            .unwrap_or_default()
-            .unwrap()
+    pub fn store(storage: &mut dyn Storage, trade: &Trade) -> StdResult<()> {
+        trades().save(storage, trade.id, trade)
+    }
+
+    pub fn from_store(storage: &dyn Storage, id: u64) -> Trade {
+        trades().may_load(storage, id).unwrap_or_default().unwrap()
     }
 
     pub fn create(storage: &mut dyn Storage, trade: Trade) -> TradeModel {
@@ -401,9 +404,9 @@ impl TradeModel<'_> {
         self.trade
     }
 
-    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &String) -> TradeModel<'a> {
+    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: u64) -> TradeModel<'a> {
         let trade_model = TradeModel {
-            trade: TradeModel::from_store(storage, &id),
+            trade: TradeModel::from_store(storage, id),
             storage,
         };
         return trade_model;
@@ -412,15 +415,15 @@ impl TradeModel<'_> {
     pub fn trades_by_trader(
         storage: &dyn Storage,
         trader: String,
-        limit: u32,
-        last: Option<String>,
+        limit: usize,
+        last: Option<u64>,
     ) -> StdResult<Vec<Trade>> {
         let range_from = last.map(Bound::exclusive);
 
         let result = trades()
             .idx
             .collection
-            .range(storage, range_from, None, Order::Descending)
+            .range(storage, None, range_from, Order::Descending)
             .filter_map(|item| {
                 item.and_then(|(_, trade)| {
                     if trade.seller.eq(&trader) || trade.buyer.eq(&trader) {
@@ -431,7 +434,7 @@ impl TradeModel<'_> {
                 })
                 .unwrap()
             })
-            .take(limit as usize)
+            .take(limit)
             .collect();
 
         Ok(result)
@@ -440,8 +443,8 @@ impl TradeModel<'_> {
     pub fn trades_by_arbitrator(
         storage: &dyn Storage,
         arbitrator: String,
-        limit: u32,
-        last: Option<String>,
+        limit: usize,
+        last: Option<u64>,
     ) -> StdResult<Vec<Trade>> {
         let range_from = last.map(Bound::exclusive);
 
@@ -455,8 +458,8 @@ impl TradeModel<'_> {
             .idx
             .arbitrator
             .prefix(arbitrator)
-            .range(storage, range_from, None, Order::Descending)
-            .take(limit as usize)
+            .range(storage, None, range_from, Order::Descending)
+            .take(limit)
             .filter_map(|item| {
                 item.and_then(|(_, trade)| {
                     if trade_states.contains(&trade.get_state()) {
@@ -475,8 +478,8 @@ impl TradeModel<'_> {
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
-    pub collection: UniqueIndex<'a, String, Trade, String>,
-    pub arbitrator: MultiIndex<'a, String, Trade, String>,
+    pub collection: UniqueIndex<'a, u64, Trade, u64>,
+    pub arbitrator: MultiIndex<'a, String, Trade, u64>,
 }
 
 impl<'a> IndexList<Trade> for TradeIndexes<'a> {
@@ -486,10 +489,10 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
     }
 }
 
-pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
+pub fn trades<'a>() -> IndexedMap<'a, u64, Trade, TradeIndexes<'a>> {
     let pk_namespace = "trades_v0_4_2";
     let indexes = TradeIndexes {
-        collection: UniqueIndex::new(|t| t.id.to_string(), "trades__collection"),
+        collection: UniqueIndex::new(|t| t.id, "trades__collection"),
         arbitrator: MultiIndex::new(
             |t| t.arbitrator.to_string(),
             pk_namespace,

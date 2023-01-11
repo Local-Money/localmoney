@@ -1,10 +1,10 @@
 import type { GetOffer, Trade } from '~/types/components.interface'
-import { checkMicroDenomAvailable } from '~/utils/denom'
+import { checkMicroDenomAvailable, denomToValue } from '~/utils/denom'
 import { checkFiatAvailable } from '~/utils/fiat'
 import { TradeState } from '~/types/components.interface'
 
 export function checkValidOffer(offer: GetOffer): boolean {
-  return checkMicroDenomAvailable(offer.denom.native) && checkFiatAvailable(offer.fiat_currency)
+  return checkMicroDenomAvailable(denomToValue(offer.denom)) && checkFiatAvailable(offer.fiat_currency)
 }
 
 export function checkTradeNeedsRefund(trade: Trade, userAddr: string): boolean {

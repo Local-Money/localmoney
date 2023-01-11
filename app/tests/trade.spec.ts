@@ -23,7 +23,7 @@ let takerClient: TestCosmosChain
 let adminClient: TestCosmosChain
 const takerContact = 'taker001'
 const makerContact = 'maker001'
-let tradeId = '0'
+let tradeId = 0
 
 jest.setTimeout(60 * 1000)
 beforeAll(async () => {
@@ -268,7 +268,7 @@ describe('trade with invalid price', () => {
     const tradeAmount = await getValidTradeAmount(takerClient, offer)
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
-    let tradeId = '0'
+    let tradeId = 0
     await expect(async () => {
       tradeId = await takerClient.openTrade({
         amount: tradeAmount,
@@ -279,7 +279,7 @@ describe('trade with invalid price', () => {
         taker_contact: 'taker_contact',
       })
     }).rejects.toThrow()
-    expect(tradeId).toBe('0')
+    expect(tradeId).toBe(0)
     myOffers = await makerClient.fetchMyOffers()
     expect(myOffers[0].profile.requested_trades_count).toStrictEqual(requestedTradesCount)
     await takerClient.connectWallet()
@@ -304,7 +304,7 @@ describe('trade limits', () => {
     // Try to create a trade with the amount bellow the limit
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encryption_key = takerSecrets.publicKey
-    let tradeId = '0'
+    let tradeId = 0
     // Query Price for Offer denom
     const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
     const fiatPriceDecimals = 100
@@ -322,7 +322,7 @@ describe('trade limits', () => {
         taker_contact: 'taker_contact',
       })
     }).rejects.toThrow(/Invalid trade amount/)
-    expect(tradeId).toBe('0')
+    expect(tradeId).toBe(0)
   })
   it('should not allow a trade to have an amount above the trade limit max', async () => {
     offer = (await getOrCreateOffer(makerClient)).offer
@@ -331,7 +331,7 @@ describe('trade limits', () => {
     // Try to create a trade with the amount above the limit
     const profile_taker_contact = await encryptDataMocked(takerSecrets.publicKey, takerContact)
     const profile_taker_encrypt_key = takerSecrets.publicKey
-    let tradeId = '0'
+    let tradeId = 0
     // Query Price for Offer denom
     const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
     console.log('usd price for denom', usdPrice.price, offer.denom)
@@ -351,7 +351,7 @@ describe('trade limits', () => {
         taker_contact: 'taker_contact',
       })
     }).rejects.toThrow(/Invalid trade amount/)
-    expect(tradeId).toBe('0')
+    expect(tradeId).toBe(0)
   })
   it('should not allow a trader to have more active trades than the hub limit', async () => {
     // Get Hub Info
@@ -390,7 +390,7 @@ describe('trade limits', () => {
       profile_taker_encryption_key: profile_taker_encrypt_key,
       taker_contact: 'taker_contact',
     })
-    expect(tradeId).not.toHaveLength(0)
+    expect(tradeId).not.toBeNaN()
     // Try to create another trade and expect it to fail
     await expect(async () => {
       await takerClient.openTrade({
@@ -510,7 +510,7 @@ describe('trade limits', () => {
       profile_taker_encryption_key: profile_taker_encrypt_key,
       taker_contact: 'taker_contact',
     })
-    expect(tradeId).not.toHaveLength(0)
+    expect(tradeId).not.toBeNaN()
     // Cancel the trade and expect the active trades count to be decreased
     await takerClient.cancelTradeRequest(tradeId)
     const updatedTakerProfile = await takerClient.fetchProfile()
@@ -560,7 +560,7 @@ describe('trade limits', () => {
       profile_taker_encryption_key: 'profile_taker_encryption_key',
       taker_contact: 'taker_contact',
     })
-    expect(tradeId).not.toHaveLength(0)
+    expect(tradeId).not.toBeNaN()
     const tradeInfo = (await takerClient.fetchTradeDetail(tradeId)) as TradeInfo
     // Maker funds the escrow
     const encryptedMakerContact = await encryptDataMocked(makerSecrets.publicKey, makerContact)

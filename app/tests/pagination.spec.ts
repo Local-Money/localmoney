@@ -113,21 +113,19 @@ describe('trades pagination', () => {
     expect(trades.length).toBeGreaterThanOrEqual(limit)
   })
   it('maker should be able to paginate the list of trades', async () => {
-    let trades = await makerClient.fetchTrades(limit)
+    const trades = await makerClient.fetchTrades(limit)
     for (let i = 0; i < trades.length - 1; i++) {
-      const previousTradeId = trades[trades.length - 2].trade.id
-      const lastTradeId = trades[trades.length - 1].trade.id
-      trades = await makerClient.fetchTrades(limit, lastTradeId)
-      expect(trades[trades.length - 1].trade.id).toBe(previousTradeId)
+      const last = trades[i].trade.id
+      const nextPage = await makerClient.fetchMyOffers(1, last)
+      expect(nextPage[0].offer.id).toBe(trades[i + 1].trade.id)
     }
   })
   it('taker should be able to paginate the list of trades', async () => {
-    let trades = await takerClient.fetchTrades(limit)
+    const trades = await takerClient.fetchTrades(limit)
     for (let i = 0; i < trades.length - 1; i++) {
-      const previousTradeId = trades[trades.length - 2].trade.id
-      const lastTradeId = trades[trades.length - 1].trade.id
-      trades = await takerClient.fetchTrades(limit, lastTradeId)
-      expect(trades[trades.length - 1].trade.id).toBe(previousTradeId)
+      const last = trades[i].trade.id
+      const nextPage = await makerClient.fetchMyOffers(1, last)
+      expect(nextPage[0].offer.id).toBe(trades[i + 1].trade.id)
     }
   })
 })

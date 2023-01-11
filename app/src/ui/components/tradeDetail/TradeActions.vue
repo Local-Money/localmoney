@@ -44,14 +44,14 @@ function getTaker(): string {
   return props.tradeInfo.trade.buyer === maker ? props.tradeInfo.trade.seller : props.tradeInfo.trade.buyer
 }
 
-async function acceptTradeRequest(id: string) {
+async function acceptTradeRequest(id: number) {
   const takerPubKey = props.tradeInfo.trade.seller_encryption_key
   const decryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
   const ownerContact = await encryptData(takerPubKey, decryptedContact)
   await client.acceptTradeRequest(id, ownerContact)
 }
 
-async function cancelTradeRequest(id: string) {
+async function cancelTradeRequest(id: number) {
   await client.cancelTradeRequest(id)
 }
 
@@ -62,19 +62,19 @@ async function fundEscrow(tradeInfo: TradeInfo) {
   await client.fundEscrow(tradeInfo, ownerContact)
 }
 
-async function setFiatDeposited(id: string) {
+async function setFiatDeposited(id: number) {
   await client.setFiatDeposited(id)
 }
 
-async function releaseEscrow(id: string) {
+async function releaseEscrow(id: number) {
   await client.releaseEscrow(id)
 }
 
-async function refundEscrow(id: string) {
+async function refundEscrow(id: number) {
   await client.refundEscrow(id)
 }
 
-async function openDispute(id: string) {
+async function openDispute(id: number) {
   let buyerContact = ''
   let sellerContact = ''
   const userDecryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)

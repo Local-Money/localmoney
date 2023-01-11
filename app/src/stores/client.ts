@@ -147,7 +147,7 @@ export const useClientStore = defineStore({
       try {
         const trade_id = await this.client.openTrade(trade)
         await this.fetchProfile()
-        const route = trade_id === '' ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
+        const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
       } catch (e) {
         // TODO handle error
@@ -157,7 +157,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fetchMyTrades(limit = 30, last?: string) {
+    async fetchMyTrades(limit = 30, last?: number) {
       this.trades = ListResult.loading()
       try {
         const tradesList = await this.client.fetchTrades(limit, last)
@@ -166,7 +166,7 @@ export const useClientStore = defineStore({
         this.trades = ListResult.error(e as ChainError)
       }
     },
-    async fetchTradeDetail(tradeId: string) {
+    async fetchTradeDetail(tradeId: number) {
       // TODO the fetchTradeDetail should return a TradeInfo
       return await this.client.fetchTradeDetail(tradeId)
     },
@@ -179,7 +179,7 @@ export const useClientStore = defineStore({
         this.arbitrators = ListResult.error(e as ChainError)
       }
     },
-    async fetchDisputedTrades(limit = 30, last?: string) {
+    async fetchDisputedTrades(limit = 30, last?: number) {
       this.openDisputes = ListResult.loading()
       this.closedDisputes = ListResult.loading()
       try {
@@ -203,7 +203,7 @@ export const useClientStore = defineStore({
         console.error(e)
       }
     },
-    async acceptTradeRequest(tradeId: string, makerContact: string) {
+    async acceptTradeRequest(tradeId: number, makerContact: string) {
       this.loadingState = LoadingState.show('Accepting trade...')
       try {
         await this.client.acceptTradeRequest(tradeId, makerContact)
@@ -216,7 +216,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async cancelTradeRequest(tradeId: string) {
+    async cancelTradeRequest(tradeId: number) {
       this.loadingState = LoadingState.show('Canceling trade...')
       try {
         await this.client.cancelTradeRequest(tradeId)
@@ -242,7 +242,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async setFiatDeposited(tradeId: string) {
+    async setFiatDeposited(tradeId: number) {
       this.loadingState = LoadingState.show('Marking trade as paid...')
       try {
         await this.client.setFiatDeposited(tradeId)
@@ -255,7 +255,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async releaseEscrow(tradeId: string) {
+    async releaseEscrow(tradeId: number) {
       this.loadingState = LoadingState.show('Funding trade...')
       try {
         await this.client.releaseEscrow(tradeId)
@@ -268,7 +268,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async refundEscrow(tradeId: string) {
+    async refundEscrow(tradeId: number) {
       this.loadingState = LoadingState.show('Refunding trade...')
       try {
         await this.client.refundEscrow(tradeId)
@@ -281,7 +281,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
+    async openDispute(tradeId: number, buyerContact: string, sellerContact: string) {
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
@@ -294,7 +294,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async settleDispute(tradeId: string, winner: string) {
+    async settleDispute(tradeId: number, winner: string) {
       this.loadingState = LoadingState.show('Settling dispute...')
       try {
         await this.client.settleDispute(tradeId, winner)

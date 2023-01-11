@@ -14,7 +14,7 @@ export const useNotificationStore = defineStore({
     }
   },
   actions: {
-    async fetchNotifications(limit = 100, last = '') {
+    async fetchNotifications(limit = 100, last?: number) {
       let trades = await this.client.client.fetchTrades(limit, last)
       const disputes = await this.client.client.fetchDisputedTrades(limit, last)
       const openDisputes = disputes.openDisputes.length > 0 ? disputes.openDisputes : []
@@ -91,7 +91,7 @@ export const useNotificationStore = defineStore({
   },
 })
 
-function toNotification(id: string, state: TradeState, sender: string, time: number): Notification {
+function toNotification(id: number, state: TradeState, sender: string, time: number): Notification {
   const message = getMessageByState(state)
   return { state, id, message, sender, time, isAlreadyRead: false }
 }
@@ -126,7 +126,7 @@ function getMessageByState(state: TradeState): string {
 }
 
 export interface Notification {
-  id: string
+  id: number
   message: string
   sender: string
   state: TradeState
