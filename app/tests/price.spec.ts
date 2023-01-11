@@ -13,6 +13,7 @@ Object.assign(global, { TextEncoder, TextDecoder })
 
 let takerClient: TestCosmosChain
 let adminClient: TestCosmosChain
+let priceProviderClient: TestCosmosChain
 
 jest.setTimeout(60 * 1000)
 let priceAddr = ''
@@ -20,12 +21,13 @@ beforeAll(async () => {
   const result = await setupProtocol()
   takerClient = result.takerClient
   adminClient = result.adminClient
+  priceProviderClient = result.priceProviderClient
   priceAddr = takerClient.getHubInfo().hubConfig.price_addr
 })
 
 describe('price tests', () => {
   it('should register fiat prices', async () => {
-    const result = await takerClient
+    const result = await priceProviderClient
       .getCwClient()
       .execute(takerClient.getWalletAddress(), priceAddr, prices, 'auto', 'register fiat prices')
     expect(result.transactionHash).not.toBeNull()
