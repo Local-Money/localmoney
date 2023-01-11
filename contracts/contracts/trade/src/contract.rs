@@ -17,7 +17,7 @@ use localmoney_protocol::errors::ContractError::{
 use localmoney_protocol::guards::{
     assert_migration_parameters, assert_ownership, assert_sender_is_buyer_or_seller,
     assert_trade_state_and_type, assert_trade_state_change, assert_trade_state_change_is_valid,
-    assert_value_in_range,
+    assert_value_in_range, validate_min_max_items_per_page,
 };
 use localmoney_protocol::hub::HubConfig;
 use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
@@ -373,6 +373,7 @@ pub fn query_trades<T: CustomQuery>(
 ) -> StdResult<Vec<TradeInfo>> {
     let mut trades_infos: Vec<TradeInfo> = vec![];
     let hub_config = get_hub_config(deps);
+    let limit = validate_min_max_items_per_page(limit) as usize;
 
     let trade_results = match role {
         TraderRole::Arbitrator => {

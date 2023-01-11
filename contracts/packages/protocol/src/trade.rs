@@ -415,7 +415,7 @@ impl TradeModel<'_> {
     pub fn trades_by_trader(
         storage: &dyn Storage,
         trader: String,
-        limit: u32,
+        limit: usize,
         last: Option<u64>,
     ) -> StdResult<Vec<Trade>> {
         let range_from = last.map(Bound::exclusive);
@@ -434,7 +434,7 @@ impl TradeModel<'_> {
                 })
                 .unwrap()
             })
-            .take(limit as usize)
+            .take(limit)
             .collect();
 
         Ok(result)
@@ -443,7 +443,7 @@ impl TradeModel<'_> {
     pub fn trades_by_arbitrator(
         storage: &dyn Storage,
         arbitrator: String,
-        limit: u32,
+        limit: usize,
         last: Option<u64>,
     ) -> StdResult<Vec<Trade>> {
         let range_from = last.map(Bound::exclusive);
@@ -459,7 +459,7 @@ impl TradeModel<'_> {
             .arbitrator
             .prefix(arbitrator)
             .range(storage, None, range_from, Order::Descending)
-            .take(limit as usize)
+            .take(limit)
             .filter_map(|item| {
                 item.and_then(|(_, trade)| {
                     if trade_states.contains(&trade.get_state()) {
