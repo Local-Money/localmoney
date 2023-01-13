@@ -26,11 +26,6 @@ export default {
     })
   },
   methods: {
-    clearThrottleTimeout() {
-      if (this.valueThrottleTimeout) {
-        clearTimeout(this.valueThrottleTimeout)
-      }
-    },
     focus() {
       const input = this.$refs.inputRef
       input.focus()
