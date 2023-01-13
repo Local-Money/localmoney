@@ -121,48 +121,44 @@ function focus() {
 function useMinCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
-  cryptoAmountInput.value.update(minAmountInCrypto.value)
+  cryptoAmountInput.value.update(minAmountInCrypto.value, true)
+  setFiatAmount(minAmountInCrypto.value)
 }
 
 function useMaxCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
-  cryptoAmountInput.value.update(maxAmountInCrypto.value)
+  cryptoAmountInput.value.update(maxAmountInCrypto.value, true)
+  setFiatAmount(maxAmountInCrypto.value)
 }
 
 function useMinFiat() {
   watchingFiat.value = true
   watchingCrypto.value = false
-  fiatAmountInput.value.update(minAmountInFiat.value)
+  fiatAmountInput.value.update(minAmountInFiat.value, true)
+  setCryptoAmount(minAmountInFiat.value)
 }
 
 function useMaxFiat() {
   watchingFiat.value = true
   watchingCrypto.value = false
-  fiatAmountInput.value.update(maxAmountInFiat.value)
+  fiatAmountInput.value.update(maxAmountInFiat.value, true)
+  setCryptoAmount(maxAmountInFiat.value)
 }
 
-watch(fiatAmount, (newFiatAmount) => {
-  if (watchingFiat && newFiatAmount !== null) {
-    const usdRate = fiatPriceByRate.value / 100
-    const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
-    tradingFee.value = cryptoAmount * 0.01
-    nextTick(() => {
-      cryptoAmountInput.value.update(cryptoAmount)
-    })
-  }
-})
+function setCryptoAmount(newFiatAmount: number) {
+  const usdRate = fiatPriceByRate.value / 100
+  const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
+  tradingFee.value = cryptoAmount * 0.01
+  cryptoAmountInput.value.update(cryptoAmount)
+}
 
-watch(cryptoAmount, (newCryptoAmount) => {
-  if (watchingCrypto && newCryptoAmount !== null) {
-    const usdRate = fiatPriceByRate.value / 100
-    tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
-    nextTick(() => {
-      const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
-      fiatAmountInput.value.update(fiatAmount)
-    })
-  }
-})
+function setFiatAmount(newCryptoAmount: number) {
+  const usdRate = fiatPriceByRate.value / 100
+  tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
+  const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
+  fiatAmountInput.value.update(fiatAmount)
+}
 
 function refreshExchangeRate() {
   nextTick(() => {
@@ -243,6 +239,7 @@ onUnmounted(() => {
                 max: maxAmountInCrypto,
               },
             }"
+            @onUpdate="setFiatAmount"
             @focus="
               (() => {
                 watchingCrypto = true
@@ -282,6 +279,7 @@ onUnmounted(() => {
                 max: maxAmountInFiat,
               },
             }"
+            @onUpdate="setCryptoAmount"
             @focus="
               (() => {
                 watchingCrypto = false
