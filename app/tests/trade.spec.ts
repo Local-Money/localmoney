@@ -38,7 +38,7 @@ let myOffers: OfferResponse[] = []
 
 async function getValidTradeAmount(client: TestCosmosChain, offer: GetOffer): Promise<string> {
   const hubInfo = client.getHubInfo()
-  const usdPrice = await client.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+  const usdPrice = await client.updateFiatPrice(FiatCurrency.USD, offer.denom)
   const fiatPriceDecimals = 100
   const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
   const denomDecimals = 1_000_000
@@ -306,7 +306,7 @@ describe('trade limits', () => {
     const profile_taker_encryption_key = takerSecrets.publicKey
     let tradeId = 0
     // Query Price for Offer denom
-    const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+    const usdPrice = await takerClient.updateFiatPrice(FiatCurrency.USD, offer.denom)
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
     const denomDecimals = 1_000_000
@@ -333,7 +333,7 @@ describe('trade limits', () => {
     const profile_taker_encrypt_key = takerSecrets.publicKey
     let tradeId = 0
     // Query Price for Offer denom
-    const usdPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.USD, offer.denom)
+    const usdPrice = await takerClient.updateFiatPrice(FiatCurrency.USD, offer.denom)
     console.log('usd price for denom', usdPrice.price, offer.denom)
     const fiatPriceDecimals = 100
     const price = usdPrice.price * (parseInt(offer.rate) / fiatPriceDecimals)
