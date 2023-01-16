@@ -154,7 +154,7 @@ async function refreshExchangeRate() {
 }
 
 function startExchangeRateRefreshTimer() {
-  const interval = 5
+  const interval = 60
   let seconds = interval
   const countdownInterval = 1000
   refreshRateInterval = setInterval(async () => {
