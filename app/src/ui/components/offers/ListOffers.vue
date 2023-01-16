@@ -50,7 +50,6 @@ async function updateFiatPrice() {
 }
 
 onMounted(async () => {
-  console.log('ListOffers onMounted')
   await updateFiatPrice()
   await fetchOffers()
 })
@@ -62,9 +61,6 @@ watch(fiatCurrency, async () => {
 watch(selectedCrypto, async () => {
   await updateFiatPrice()
   await fetchOffers()
-})
-watch(selectedOfferItem, async () => {
-  console.log('selectedOfferItem', selectedOfferItem.value)
 })
 watch(offerType, async () => await fetchOffers())
 </script>
