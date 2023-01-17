@@ -13,7 +13,6 @@ import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
-import { encryptData } from '~/utils/crypto'
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -75,24 +74,16 @@ function calculateMarginRate() {
   rate.value = convertMarginRateToOfferRate(margin.value, marginOffsetUnmasked.value)
 }
 async function createOffer() {
-  const telegramHandle = removeTelegramURLPrefix(ownerContact.value)
-  console.log('owner_contact: ', telegramHandle)
-  // Encrypt contact to save on the profile when an offer is created
-  const owner_encryption_key = secrets.value.publicKey
-  const owner_contact = await encryptData(owner_encryption_key, telegramHandle)
-
-  const postOffer: PostOffer = {
-    owner_contact,
-    owner_encryption_key,
+  await client.createOffer({
+    telegram_handle: removeTelegramURLPrefix(ownerContact.value),
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
     denom: { native: selectedCrypto.value },
-    min_amount: `${minAmount.value * 1000000}`,
-    max_amount: `${maxAmount.value * 1000000}`,
+    min_amount: minAmount.value,
+    max_amount: maxAmount.value,
     description: description.value,
-  }
-  await client.createOffer(postOffer)
+  })
   emit('cancel')
 }
 watch(marginOffset, () => {

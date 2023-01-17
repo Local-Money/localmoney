@@ -1,3 +1,5 @@
+import { WalletNotConnected } from '~/network/chain-error'
+
 const algorithm = {
   name: 'RSA-OAEP',
   modulusLength: 2048,
@@ -16,16 +18,20 @@ export async function generateKeys(): Promise<Secrets> {
 }
 
 export async function encryptData(publicKey: string, data: string): Promise<string> {
-  const key = await importPublicKey(publicKey)
-  const encryptedData = await window.crypto.subtle.encrypt(
-    {
-      name: 'RSA-OAEP',
-      iv: vector,
-    },
-    key,
-    textToArrayBuffer(data)
-  )
-  return arrayBufferToBase64(encryptedData)
+  try {
+    const key = await importPublicKey(publicKey)
+    const encryptedData = await window.crypto.subtle.encrypt(
+      {
+        name: 'RSA-OAEP',
+        iv: vector,
+      },
+      key,
+      textToArrayBuffer(data)
+    )
+    return arrayBufferToBase64(encryptedData)
+  } catch (e) {
+    throw new WalletNotConnected()
+  }
 }
 
 export async function decryptData(privateKey: string, encryptedData: string): Promise<string> {
