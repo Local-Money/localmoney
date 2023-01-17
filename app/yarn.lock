@@ -6610,6 +6610,11 @@ vue-select@^4.0.0-beta.3:
   resolved "https://registry.npmjs.org/vue-select/-/vue-select-4.0.0-beta.3.tgz"
   integrity sha512-sXufbTDluz26a39UUZE9jeh9Hojnn8zr9qDDUlVEBc7E0F+h3+Nzy8YzyFHuVNrrYLmK0zrPkb7hWFulAEW41Q==
 
+vue-toastification@^2.0.0-rc.5:
+  version "2.0.0-rc.5"
+  resolved "https://registry.yarnpkg.com/vue-toastification/-/vue-toastification-2.0.0-rc.5.tgz#92798604d806ae473cfb76ed776fae294280f8f8"
+  integrity sha512-q73e5jy6gucEO/U+P48hqX+/qyXDozAGmaGgLFm5tXX4wJBcVsnGp4e/iJqlm9xzHETYOilUuwOUje2Qg1JdwA==
+
 vue-tsc@^0.34.12:
   version "0.34.16"
   resolved "https://registry.npmjs.org/vue-tsc/-/vue-tsc-0.34.16.tgz"

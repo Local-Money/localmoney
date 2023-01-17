@@ -5,7 +5,7 @@
 import { ChainClient } from '~/network/Chain'
 import { useClientStore } from '~/stores/client'
 import './ui/style/reset.scss'
-
+import 'vue-toastification/dist/index.css'
 const client = useClientStore()
 client.setClient(ChainClient.dev) // required to properly init chain
 const loading = computed(() => client.loadingState)
