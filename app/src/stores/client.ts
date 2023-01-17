@@ -62,7 +62,7 @@ export const useClientStore = defineStore({
         await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
       }
     },
     getHubConfig(): HubConfig {
@@ -108,8 +108,7 @@ export const useClientStore = defineStore({
         await this.fetchProfile()
         await this.fetchMyOffers()
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -121,8 +120,7 @@ export const useClientStore = defineStore({
         await this.client.updateOffer(updateOffer)
         await this.fetchMyOffers()
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -135,8 +133,7 @@ export const useClientStore = defineStore({
         await this.client.updateOffer(updateOffer)
         await this.fetchMyOffers()
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -151,7 +148,7 @@ export const useClientStore = defineStore({
         await this.router.push(route)
       } catch (e) {
         // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -209,8 +206,7 @@ export const useClientStore = defineStore({
         await this.client.acceptTradeRequest(tradeId, makerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -222,8 +218,7 @@ export const useClientStore = defineStore({
         await this.client.cancelTradeRequest(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -235,8 +230,7 @@ export const useClientStore = defineStore({
         await this.client.fundEscrow(tradeInfo, makerContact)
         await this.fetchTradeDetail(tradeInfo.trade.id)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -248,8 +242,7 @@ export const useClientStore = defineStore({
         await this.client.setFiatDeposited(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -274,8 +267,7 @@ export const useClientStore = defineStore({
         await this.client.refundEscrow(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -287,8 +279,7 @@ export const useClientStore = defineStore({
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
@@ -300,8 +291,7 @@ export const useClientStore = defineStore({
         await this.client.settleDispute(tradeId, winner)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
+        this.toast.error((e as ChainError).message)
         console.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
