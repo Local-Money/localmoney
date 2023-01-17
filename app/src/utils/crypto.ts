@@ -1,5 +1,3 @@
-import { WalletNotConnected } from '~/network/chain-error'
-
 const algorithm = {
   name: 'RSA-OAEP',
   modulusLength: 2048,
