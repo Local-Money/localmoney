@@ -62,7 +62,7 @@ export const useClientStore = defineStore({
         await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
-        this.toast.error((e as ChainError).message)
+        this.handle.error(e)
       }
     },
     getHubConfig(): HubConfig {
@@ -77,7 +77,6 @@ export const useClientStore = defineStore({
       if (!this.secrets.has(address)) {
         this.secrets.set(address, secrets)
       }
-      console.log(secrets)
     },
     getSecrets() {
       const address = this.client.getWalletAddress()
@@ -108,8 +107,7 @@ export const useClientStore = defineStore({
         await this.fetchProfile()
         await this.fetchMyOffers()
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -120,8 +118,7 @@ export const useClientStore = defineStore({
         await this.client.updateOffer(updateOffer)
         await this.fetchMyOffers()
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -133,8 +130,7 @@ export const useClientStore = defineStore({
         await this.client.updateOffer(updateOffer)
         await this.fetchMyOffers()
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -147,9 +143,7 @@ export const useClientStore = defineStore({
         const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
       } catch (e) {
-        // TODO handle error
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -164,7 +158,6 @@ export const useClientStore = defineStore({
       }
     },
     async fetchTradeDetail(tradeId: number) {
-      // TODO the fetchTradeDetail should return a TradeInfo
       return await this.client.fetchTradeDetail(tradeId)
     },
     async fetchArbitrators() {
@@ -206,8 +199,7 @@ export const useClientStore = defineStore({
         await this.client.acceptTradeRequest(tradeId, makerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -218,8 +210,7 @@ export const useClientStore = defineStore({
         await this.client.cancelTradeRequest(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -230,8 +221,7 @@ export const useClientStore = defineStore({
         await this.client.fundEscrow(tradeInfo, makerContact)
         await this.fetchTradeDetail(tradeInfo.trade.id)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -242,8 +232,7 @@ export const useClientStore = defineStore({
         await this.client.setFiatDeposited(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -254,9 +243,7 @@ export const useClientStore = defineStore({
         await this.client.releaseEscrow(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        // TODO handle error
-        alert((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -267,8 +254,7 @@ export const useClientStore = defineStore({
         await this.client.refundEscrow(tradeId)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -279,8 +265,7 @@ export const useClientStore = defineStore({
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
@@ -291,8 +276,7 @@ export const useClientStore = defineStore({
         await this.client.settleDispute(tradeId, winner)
         await this.fetchTradeDetail(tradeId)
       } catch (e) {
-        this.toast.error((e as ChainError).message)
-        console.error(e)
+        this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
       }
