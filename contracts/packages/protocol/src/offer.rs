@@ -239,7 +239,7 @@ impl OfferModel<'_> {
             .idx
             .filter
             .prefix(prefix)
-            .range(storage, range_from, None, std_order)
+            .range(storage, None, range_from, std_order)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
                     let profile_found = profiles
