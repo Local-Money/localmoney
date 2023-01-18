@@ -22,6 +22,8 @@ import type { Secrets } from '~/utils/crypto'
 import { generateKeys } from '~/utils/crypto'
 import { denomToValue } from '~/utils/denom'
 
+const LIMIT_ITEMS_PER_PAGE = 10
+
 export const useClientStore = defineStore({
   id: 'client',
   state: () => {
@@ -83,22 +85,43 @@ export const useClientStore = defineStore({
       const address = this.client.getWalletAddress()
       return this.secrets.get(address)!
     },
-    async fetchOffers(offersArgs: FetchOffersArgs, limit = 30, last?: number) {
+    async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
       try {
-        const listOffers = await this.client.fetchOffers(offersArgs, limit, last)
-        this.offers = ListResult.success(listOffers)
+        const offers = await this.client.fetchOffers(offersArgs, LIMIT_ITEMS_PER_PAGE)
+        this.offers = ListResult.success(offers, LIMIT_ITEMS_PER_PAGE)
       } catch (e) {
         this.offers = ListResult.error(e as ChainError)
       }
     },
-    async fetchMyOffers(limit = 30, last?: number) {
+
+    // We can improve this code if we return the total amount of offers from the protocol
+    async fetchMoreOffers(offersArgs: FetchOffersArgs, last?: number) {
+      this.offers.setLoadingMore()
+      try {
+        const offers = await this.client.fetchOffers(offersArgs, LIMIT_ITEMS_PER_PAGE, last)
+        this.offers.addMoreItems(offers, LIMIT_ITEMS_PER_PAGE)
+      } catch (e) {
+        console.log(e)
+      }
+    },
+    async fetchMyOffers() {
       this.myOffers = ListResult.loading()
       try {
-        const listMyOffers = await this.client.fetchMyOffers(limit, last)
-        this.myOffers = ListResult.success(listMyOffers)
+        const myOffers = await this.client.fetchMyOffers(LIMIT_ITEMS_PER_PAGE)
+        this.myOffers = ListResult.success(myOffers, LIMIT_ITEMS_PER_PAGE)
       } catch (e) {
         this.myOffers = ListResult.error(e as ChainError)
+      }
+    },
+    // We can improve this code if we return the total amount of my offers from the protocol
+    async fetchMoreMyOffers(last: number) {
+      this.myOffers.setLoadingMore()
+      try {
+        const myOffers = await this.client.fetchMyOffers(LIMIT_ITEMS_PER_PAGE, last)
+        this.myOffers.addMoreItems(myOffers, LIMIT_ITEMS_PER_PAGE)
+      } catch (e) {
+        console.log(e)
       }
     },
     async createOffer(postOffer: PostOffer) {
@@ -157,17 +180,25 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fetchMyTrades(limit = 30, last?: number) {
+    async fetchTrades() {
       this.trades = ListResult.loading()
       try {
-        const tradesList = await this.client.fetchTrades(limit, last)
+        const tradesList = await this.client.fetchTrades(LIMIT_ITEMS_PER_PAGE)
         this.trades = ListResult.success(tradesList)
       } catch (e) {
         this.trades = ListResult.error(e as ChainError)
       }
     },
+    async fetchMoreTrades(last: number) {
+      this.trades.setLoadingMore()
+      try {
+        const trades = await this.client.fetchTrades(LIMIT_ITEMS_PER_PAGE, last)
+        this.trades.addMoreItems(trades, LIMIT_ITEMS_PER_PAGE)
+      } catch (e) {
+        console.log(e)
+      }
+    },
     async fetchTradeDetail(tradeId: number) {
-      // TODO the fetchTradeDetail should return a TradeInfo
       return await this.client.fetchTradeDetail(tradeId)
     },
     async fetchArbitrators() {

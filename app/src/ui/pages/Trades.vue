@@ -50,16 +50,23 @@ const closedTrades = computed(() => {
 
 const hasOpenTrades = computed(() => openTrades.value.length > 0)
 const hasClosedTrades = computed(() => closedTrades.value.length > 0)
+const paginationLastItem = ref<number>(0)
 
 onMounted(() => {
-  nextTick(async () => await client.fetchMyTrades())
+  nextTick(async () => await client.fetchTrades())
 })
 
 onUnmounted(async () => {})
 
 watch(userWallet, () => {
-  nextTick(async () => await client.fetchMyTrades())
+  nextTick(async () => await client.fetchTrades())
 })
+
+async function loadMore() {
+  const lastIndex = trades.value.length
+  paginationLastItem.value = lastIndex > 0 ? trades.value[lastIndex - 1].trade.id : 0
+  await client.fetchMoreTrades(paginationLastItem.value)
+}
 </script>
 
 <template>
@@ -68,7 +75,7 @@ watch(userWallet, () => {
       <h3>Open Trades</h3>
     </div>
     <!-- Open Trades section -->
-    <ListContentResult :result="tradeResult" emptyStateMsg="There are no trades here yet">
+    <ListContentResult :result="tradeResult" emptyStateMsg="There are no trades here yet" @loadMore="loadMore()">
       <section v-if="hasOpenTrades">
         <TradeOpenItem v-for="tradeInfo in openTrades" :key="tradeInfo.trade.addr" :tradeInfo="tradeInfo" />
       </section>
