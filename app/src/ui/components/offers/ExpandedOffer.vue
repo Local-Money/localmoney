@@ -11,11 +11,11 @@ import {
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
-import type { NewTrade, OfferResponse } from '~/types/components.interface'
+import type { OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { denomToValue, microDenomToDenom } from '~/utils/denom'
-import { encryptData } from '~/utils/crypto'
 import { formatTimeLimit } from '~/utils/formatters'
+import { CRYPTO_DECIMAL_PLACES, FIAT_DECIMAL_PLACES } from '~/utils/constants'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
@@ -39,8 +39,6 @@ const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
-const FIAT_DECIMAL_PLACES = 100000000
-const CRYPTO_DECIMAL_PLACES = 1000000
 
 const tradeTimeLimit = computed(() => {
   const expirationTime = client.getHubConfig().trade_expiration_timer * 1000
@@ -99,19 +97,7 @@ const minMaxCryptoStr = computed(() => {
 
 async function newTrade() {
   const telegramHandle = removeTelegramURLPrefix(telegram.value) as string
-  const profile_taker_encryption_key = secrets.value.publicKey
-  const taker_contact = await encryptData(props.offerResponse.profile.encryption_key!, telegramHandle)
-  const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
-
-  const newTrade: NewTrade = {
-    offer_id: props.offerResponse.offer.id,
-    amount: `${cryptoAmount.value * CRYPTO_DECIMAL_PLACES}`,
-    taker: `${client.userWallet.address}`,
-    profile_taker_contact,
-    taker_contact,
-    profile_taker_encryption_key,
-  }
-  await client.openTrade(newTrade)
+  await client.openTrade(props.offerResponse, telegramHandle, cryptoAmount.value)
 }
 
 function focus() {

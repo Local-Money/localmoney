@@ -7,9 +7,11 @@ export class DefaultError extends ChainError {
     Object.setPrototypeOf(this, DefaultError.prototype)
   }
 
-  static fromError(e) {
+  static fromError(e: any) {
     if (Object.hasOwn(e, 'message')) {
-      return new DefaultError(e.message)
+      const regex = /(; message index: 0: dispatch: submessages:|; message index: 0:) (.*): execute/g.exec(e.message)
+      const message = regex?.at(regex?.length - 1) ?? e.message
+      return new DefaultError(message)
     }
   }
 }

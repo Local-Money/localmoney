@@ -79,7 +79,7 @@ export class CosmosChain implements Chain {
         console.log('Profile result >> ', result)
         return result
       } catch (e) {
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -100,7 +100,6 @@ export class CosmosChain implements Chain {
         )
         console.log('Create offer result >> ', result)
       } catch (e) {
-        console.error(e)
         throw DefaultError.fromError(e)
       }
     } else {
@@ -122,7 +121,7 @@ export class CosmosChain implements Chain {
         )
         console.log('Update offer result >> ', result)
       } catch (e) {
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -161,7 +160,7 @@ export class CosmosChain implements Chain {
       console.log('response >>> ', response)
       return response
     } catch (e) {
-      throw new DefaultError()
+      throw DefaultError.fromError(e)
     }
   }
 
@@ -188,7 +187,7 @@ export class CosmosChain implements Chain {
       console.log('response >>> ', response)
       return response
     } catch (e) {
-      throw new DefaultError()
+      throw DefaultError.fromError(e)
     }
   }
 
@@ -209,7 +208,6 @@ export class CosmosChain implements Chain {
           ?.attributes.find((a) => a.key === 'trade_id')?.value
         return Number(trade_id)
       } catch (e) {
-        console.error(e)
         throw DefaultError.fromError(e)
       }
     } else {
@@ -233,8 +231,7 @@ export class CosmosChain implements Chain {
         console.log('response >>> ', response)
         return response
       } catch (e) {
-        console.error(e)
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -264,7 +261,7 @@ export class CosmosChain implements Chain {
         console.log('response >>> ', response)
         return response
       } catch (e) {
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -282,8 +279,7 @@ export class CosmosChain implements Chain {
       })) as TradeInfo
       return response
     } catch (e) {
-      // TODO error state
-      throw new DefaultError()
+      throw DefaultError.fromError(e)
     }
   }
 
@@ -305,7 +301,7 @@ export class CosmosChain implements Chain {
       console.log('response >>> ', response)
       return response
     } catch (e) {
-      throw new DefaultError()
+      throw DefaultError.fromError(e)
     }
   }
 
@@ -329,8 +325,7 @@ export class CosmosChain implements Chain {
       console.log('response >>> ', response)
       return response
     } catch (e) {
-      console.error(e)
-      throw new DefaultError()
+      throw DefaultError.fromError(e)
     }
   }
 
@@ -348,8 +343,7 @@ export class CosmosChain implements Chain {
       console.log('response >>> ', response)
       return response
     } catch (e) {
-      console.error(e)
-      throw new DefaultError()
+      throw DefaultError.fromError(e)
     }
   }
 
@@ -430,8 +424,6 @@ export class CosmosChain implements Chain {
         const result = await this.cwClient.execute(this.getWalletAddress(), addr, msg, 'auto', undefined, funds)
         console.log('Trade State result >> ', result)
       } catch (e) {
-        console.error(e)
-        // TODO manage error
         throw DefaultError.fromError(e)
       }
     } else {
@@ -452,8 +444,7 @@ export class CosmosChain implements Chain {
         )
         console.log('New arbitrator result >> ', result)
       } catch (e) {
-        console.error(e)
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
@@ -473,8 +464,7 @@ export class CosmosChain implements Chain {
         )
         console.log('result >> ', result)
       } catch (e) {
-        console.error(e)
-        throw new DefaultError()
+        throw DefaultError.fromError(e)
       }
     } else {
       throw new WalletNotConnected()
