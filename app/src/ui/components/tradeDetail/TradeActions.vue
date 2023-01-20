@@ -44,37 +44,37 @@ function getTaker(): string {
   return props.tradeInfo.trade.buyer === maker ? props.tradeInfo.trade.seller : props.tradeInfo.trade.buyer
 }
 
-async function acceptTradeRequest(id: string) {
+async function acceptTradeRequest(id: number) {
   const takerPubKey = props.tradeInfo.trade.seller_encryption_key
   const decryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
   const ownerContact = await encryptData(takerPubKey, decryptedContact)
   await client.acceptTradeRequest(id, ownerContact)
 }
 
-async function cancelTradeRequest(id: string) {
+async function cancelTradeRequest(id: number) {
   await client.cancelTradeRequest(id)
 }
 
-async function fundEscrow(id: string) {
+async function fundEscrow(tradeInfo: TradeInfo) {
   const buyerPubKey = props.tradeInfo.trade.buyer_encryption_key!
   const decryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
   const ownerContact = await encryptData(buyerPubKey, decryptedContact)
-  await client.fundEscrow(id, props.tradeInfo.trade.amount, props.tradeInfo.trade.denom, ownerContact)
+  await client.fundEscrow(tradeInfo, ownerContact)
 }
 
-async function setFiatDeposited(id: string) {
+async function setFiatDeposited(id: number) {
   await client.setFiatDeposited(id)
 }
 
-async function releaseEscrow(id: string) {
+async function releaseEscrow(id: number) {
   await client.releaseEscrow(id)
 }
 
-async function refundEscrow(id: string) {
+async function refundEscrow(id: number) {
   await client.refundEscrow(id)
 }
 
-async function openDispute(id: string) {
+async function openDispute(id: number) {
   let buyerContact = ''
   let sellerContact = ''
   const userDecryptedContact = await decryptData(secrets.value.privateKey, profile.value.contact!)
@@ -177,7 +177,7 @@ async function settleDispute(winner: string) {
           {
             label: 'fund trade',
             action: () => {
-              fundEscrow(tradeInfo.trade.id)
+              fundEscrow(tradeInfo)
             },
           },
         ]"

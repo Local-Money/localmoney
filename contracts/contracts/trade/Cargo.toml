@@ -1,7 +1,7 @@
 [package]
 name = "trade"
 version = "0.0.0"
-authors = ["Samuel Barbosa <sambarbosaa@gmail.com>"]
+authors = ["localmoney devs"]
 edition = "2018"
 
 exclude = [
@@ -27,6 +27,7 @@ schemars = "0.8.10"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
 localmoney-protocol = { path = "../../packages/protocol" }
+cw2 = { version = "0.13.1" }
 cw20 = { version = "0.13.1" }
 cw20-base = { version = "0.13.1" }
 cw-storage-plus = { version = "0.13.1", features = ["iterator"] }

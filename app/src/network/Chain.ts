@@ -30,41 +30,41 @@ export interface Chain {
 
   fetchOffer(offerId: string): Promise<OfferResponse>
 
-  fetchOffers(args: FetchOffersArgs): Promise<OfferResponse[]>
+  fetchOffers(args: FetchOffersArgs, limit: number, last?: number): Promise<OfferResponse[]>
 
-  fetchMyOffers(): Promise<OfferResponse[]>
+  fetchMyOffers(limit: number, last?: number): Promise<OfferResponse[]>
 
   createOffer(postOffer: PostOffer): Promise<void>
 
   updateOffer(updateOffer: PatchOffer): Promise<void>
 
-  openTrade(trade: NewTrade): Promise<string>
+  openTrade(trade: NewTrade): Promise<number>
 
-  fetchTrades(): Promise<TradeInfo[]>
+  fetchTrades(limit: number, last?: number): Promise<TradeInfo[]>
 
-  fetchDisputedTrades(): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }>
+  fetchDisputedTrades(limit: number, last?: number): Promise<{ openDisputes: TradeInfo[]; closedDisputes: TradeInfo[] }>
 
-  fetchTradeDetail(tradeId: string): Promise<TradeInfo>
+  fetchTradeDetail(tradeId: number): Promise<TradeInfo>
 
   fetchArbitrators(): Promise<Arbitrator[]>
 
   fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice>
 
-  acceptTradeRequest(tradeId: string, makerContact: string): Promise<void>
+  acceptTradeRequest(tradeId: number, makerContact: string): Promise<void>
 
-  cancelTradeRequest(tradeId: string): Promise<void>
+  cancelTradeRequest(tradeId: number): Promise<void>
 
-  fundEscrow(tradeId: string, amount: string, denom: Denom, maker_contact?: string): Promise<void>
+  fundEscrow(tradeInfo: TradeInfo, maker_contact?: string): Promise<void>
 
-  setFiatDeposited(tradeId: string): Promise<void>
+  setFiatDeposited(tradeId: number): Promise<void>
 
-  releaseEscrow(tradeId: string): Promise<void>
+  releaseEscrow(tradeId: number): Promise<void>
 
-  refundEscrow(tradeId: string): Promise<void>
+  refundEscrow(tradeId: number): Promise<void>
 
-  openDispute(tradeId: string, buyerContact: string, sellerContact: string): Promise<void>
+  openDispute(tradeId: number, buyerContact: string, sellerContact: string): Promise<void>
 
-  settleDispute(tradeId: string, winner: string): Promise<void>
+  settleDispute(tradeId: number, winner: string): Promise<void>
 
   newArbitrator(arbitrator: Arbitrator): Promise<void>
 }

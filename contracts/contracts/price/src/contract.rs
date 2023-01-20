@@ -5,13 +5,14 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, Uint256,
 };
+use cw2::{get_contract_version, set_contract_version};
 use cw20::Denom;
 use localmoney_protocol::constants::BASE_ORACLE_DENOM;
 use localmoney_protocol::currencies::FiatCurrency;
 use localmoney_protocol::denom_utils::denom_to_string;
 use localmoney_protocol::errors::ContractError;
 use localmoney_protocol::errors::ContractError::HubAlreadyRegistered;
-use localmoney_protocol::guards::assert_ownership;
+use localmoney_protocol::guards::{assert_migration_parameters, assert_ownership};
 use localmoney_protocol::hub_utils::{get_hub_admin, get_hub_config, register_hub_internal};
 use localmoney_protocol::kujira::asset::{Asset, AssetInfo};
 use localmoney_protocol::kujira::denom::Denom as KujiraDenom;
@@ -26,16 +27,17 @@ use localmoney_protocol::price::{
 use localmoney_protocol::profile::{InstantiateMsg, MigrateMsg};
 
 // version info for migration info
-pub const CONTRACT_NAME: &str = "localmoney.io:price";
+pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut<KujiraQuery>,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response<KujiraMsg>, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
     let res = Response::new().add_attribute("action", "instantiate_price");
     Ok(res)
 }
@@ -129,7 +131,6 @@ pub fn query_fiat_price_for_denom(
     fiat: FiatCurrency,
     denom: Denom,
 ) -> StdResult<DenomFiatPrice> {
-    let fiat_price = &FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?;
     let kq = KujiraQuerier::new(&deps.querier);
     let atom_usd_price = kq.query_exchange_rate(BASE_ORACLE_DENOM).unwrap();
     let amount = Uint128::new(1_000_000u128);
@@ -137,6 +138,8 @@ pub fn query_fiat_price_for_denom(
     let denom_price_route = &DENOM_PRICE_ROUTE
         .load(deps.storage, denom_str.as_str())
         .unwrap();
+
+    // Query the price of the denom in ATOM
     let denom_atom = denom_price_route
         .iter()
         .fold(Uint256::from(1u128), |price, route| {
@@ -156,8 +159,20 @@ pub fn query_fiat_price_for_denom(
                 .unwrap();
             price * denom_price_result.return_amount
         });
-    let fiat_usd = Uint256::from(fiat_price.usd_price);
     let atom_usd = Uint256::from(Uint128::new(1_000_000u128).mul(atom_usd_price.rate));
+
+    // If fiat is USD, we don't need to query the price
+    let fiat_price = match fiat {
+        FiatCurrency::USD => CurrencyPrice {
+            currency: FiatCurrency::USD,
+            usd_price: Uint128::new(100u128),
+            updated_at: 0,
+        },
+        _ => FIAT_PRICE.load(deps.storage, fiat.to_string().as_str())?,
+    };
+
+    // Calculate the price of the denom in fiat
+    let fiat_usd = Uint256::from(fiat_price.usd_price);
     let decimal_places = 1_000_000_000_000u128;
     let denom_fiat_price = fiat_usd
         .mul(&atom_usd)
@@ -172,11 +187,24 @@ pub fn query_fiat_price_for_denom(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(
-    _deps: DepsMut<KujiraQuery>,
+    deps: DepsMut<KujiraQuery>,
     _env: Env,
     _msg: MigrateMsg,
 ) -> Result<Response<KujiraMsg>, ContractError> {
+    let previous_contract_version = get_contract_version(deps.storage).unwrap();
+
+    assert_migration_parameters(
+        previous_contract_version.clone(),
+        CONTRACT_NAME.to_string(),
+        CONTRACT_VERSION,
+    )
+    .unwrap();
+
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION).unwrap();
+    // If the structure of the data in storage changes, we must treat it here
+
     Ok(Response::default()
-        .add_attribute("version", CONTRACT_VERSION)
+        .add_attribute("previous_version", previous_contract_version.version)
+        .add_attribute("new_version", CONTRACT_VERSION)
         .add_attribute("name", CONTRACT_NAME))
 }

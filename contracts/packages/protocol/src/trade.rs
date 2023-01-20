@@ -1,12 +1,12 @@
-use std::fmt::{self};
-use std::ops::Mul;
+use std::fmt::{self, Display};
+use std::ops::{Add, Mul};
 
 use cosmwasm_std::{
-    Addr, BlockInfo, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
+    Addr, BlockInfo, Coin, CustomQuery, Decimal, Deps, Env, MessageInfo, Order, StdResult, Storage,
     Uint128, Uint256,
 };
 use cw20::Denom;
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,6 +16,10 @@ use crate::guards::assert_range_0_to_99;
 use crate::offer::Arbitrator;
 use crate::profile::Profile;
 
+pub const DENOM_CONVERSION_ROUTE: Map<&str, Vec<ConversionRoute>> =
+    Map::new("denom_conversion_route");
+pub const DENOM_CONVERSION_STEP: Item<ConversionStep> = Item::new("denom_conversion_step");
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {}
 
@@ -24,31 +28,30 @@ pub struct InstantiateMsg {}
 pub enum ExecuteMsg {
     Create(NewTrade),
     AcceptRequest {
-        trade_id: String,
+        trade_id: u64,
         maker_contact: String,
     },
     FundEscrow {
-        trade_id: String,
+        trade_id: u64,
         maker_contact: Option<String>,
     },
     RefundEscrow {
-        trade_id: String,
+        trade_id: u64,
     },
     ReleaseEscrow {
-        trade_id: String,
+        trade_id: u64,
     },
     DisputeEscrow {
-        trade_id: String,
+        trade_id: u64,
         buyer_contact: String,
         seller_contact: String,
     },
     FiatDeposited {
-        trade_id: String,
+        trade_id: u64,
     },
     CancelRequest {
-        trade_id: String,
+        trade_id: u64,
     },
-    RegisterHub {},
     NewArbitrator {
         arbitrator: Addr,
         fiat: FiatCurrency,
@@ -59,8 +62,13 @@ pub enum ExecuteMsg {
         fiat: FiatCurrency,
     },
     SettleDispute {
-        trade_id: String,
+        trade_id: u64,
         winner: Addr,
+    },
+    RegisterHub {},
+    RegisterConversionRouteForDenom {
+        denom: Denom,
+        route: Vec<ConversionRoute>,
     },
 }
 
@@ -68,14 +76,13 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Trade {
-        id: String,
+        id: u64,
     },
     Trades {
         user: Addr,
-        state: Option<TradeState>,
         role: TraderRole,
-        last_value: Option<String>,
         limit: u32,
+        last: Option<u64>,
     },
     Arbitrator {
         arbitrator: Addr,
@@ -84,6 +91,48 @@ pub enum QueryMsg {
     ArbitratorsFiat {
         fiat: FiatCurrency,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct FeeInfo {
+    pub burn_amount: Uint128,
+    pub chain_amount: Uint128,
+    pub warchest_amount: Uint128,
+}
+
+impl Display for FeeInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "burn_amount: {}, chain_amount: {}, warchest_amount: {}",
+            self.burn_amount, self.chain_amount, self.warchest_amount
+        )
+    }
+}
+
+impl FeeInfo {
+    pub fn total_fees(&self) -> Uint128 {
+        self.burn_amount
+            .add(self.chain_amount)
+            .add(self.warchest_amount)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct ConversionRoute {
+    pub pool: Addr,
+    pub ask_asset: Denom,
+    pub offer_asset: Denom,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct ConversionStep {
+    pub trade_denom: Denom,
+    pub step_previous_balance: Coin,
+    pub step: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -99,7 +148,7 @@ pub enum TraderRole {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct NewTrade {
-    pub offer_id: String,
+    pub offer_id: u64,
     pub amount: Uint128,
     pub taker: Addr,
     pub profile_taker_contact: String,
@@ -142,7 +191,7 @@ impl fmt::Display for TradeState {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Trade {
-    pub id: String,
+    pub id: u64,
     pub addr: Addr,
     pub buyer: Addr,
     pub buyer_contact: Option<String>,
@@ -152,7 +201,7 @@ pub struct Trade {
     pub arbitrator_buyer_contact: Option<String>,
     pub arbitrator_seller_contact: Option<String>,
     pub offer_contract: Addr,
-    pub offer_id: String,
+    pub offer_id: u64,
     pub created_at: u64,
     pub expires_at: u64,
     pub enables_dispute_at: Option<u64>,
@@ -166,7 +215,7 @@ pub struct Trade {
 
 impl Trade {
     pub fn new(
-        id: String,
+        id: u64,
         addr: Addr,
         buyer: Addr,
         seller: Addr,
@@ -174,7 +223,7 @@ impl Trade {
         buyer_contact: Option<String>,
         arbitrator: Addr,
         offer_contract: Addr,
-        offer_id: String,
+        offer_id: u64,
         created_at: u64,
         expires_at: u64,
         denom: Denom,
@@ -234,7 +283,7 @@ impl Trade {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TradeResponse {
-    pub id: String,
+    pub id: u64,
     pub addr: Addr,
     pub buyer: Addr,
     pub buyer_contact: Option<String>,
@@ -247,7 +296,7 @@ pub struct TradeResponse {
     pub arbitrator_seller_contact: Option<String>,
     pub arbitrator_buyer_contact: Option<String>,
     pub offer_contract: Addr,
-    pub offer_id: String,
+    pub offer_id: u64,
     pub created_at: u64,
     pub expires_at: u64,
     pub enables_dispute_at: Option<u64>,
@@ -331,15 +380,18 @@ pub struct TradeModel<'a> {
 }
 
 impl TradeModel<'_> {
-    pub fn store(storage: &mut dyn Storage, trade: &Trade) -> StdResult<()> {
-        trades().save(storage, trade.id.to_string(), trade)
+    pub fn size(storage: &mut dyn Storage) -> usize {
+        trades()
+            .range(storage, None, None, Order::Descending)
+            .count()
     }
 
-    pub fn from_store(storage: &dyn Storage, id: &String) -> Trade {
-        trades()
-            .may_load(storage, id.to_string())
-            .unwrap_or_default()
-            .unwrap()
+    pub fn store(storage: &mut dyn Storage, trade: &Trade) -> StdResult<()> {
+        trades().save(storage, trade.id, trade)
+    }
+
+    pub fn from_store(storage: &dyn Storage, id: u64) -> Trade {
+        trades().may_load(storage, id).unwrap_or_default().unwrap()
     }
 
     pub fn create(storage: &mut dyn Storage, trade: Trade) -> TradeModel {
@@ -352,9 +404,9 @@ impl TradeModel<'_> {
         self.trade
     }
 
-    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &String) -> TradeModel<'a> {
+    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: u64) -> TradeModel<'a> {
         let trade_model = TradeModel {
-            trade: TradeModel::from_store(storage, &id),
+            trade: TradeModel::from_store(storage, id),
             storage,
         };
         return trade_model;
@@ -363,18 +415,15 @@ impl TradeModel<'_> {
     pub fn trades_by_trader(
         storage: &dyn Storage,
         trader: String,
-        last_value: Option<String>,
-        limit: u32,
+        limit: usize,
+        last: Option<u64>,
     ) -> StdResult<Vec<Trade>> {
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
+        let range_from = last.map(Bound::exclusive);
 
         let result = trades()
             .idx
             .collection
-            .range(storage, range_from, None, Order::Descending)
+            .range(storage, None, range_from, Order::Descending)
             .filter_map(|item| {
                 item.and_then(|(_, trade)| {
                     if trade.seller.eq(&trader) || trade.buyer.eq(&trader) {
@@ -385,7 +434,7 @@ impl TradeModel<'_> {
                 })
                 .unwrap()
             })
-            .take(limit as usize)
+            .take(limit)
             .collect();
 
         Ok(result)
@@ -394,13 +443,10 @@ impl TradeModel<'_> {
     pub fn trades_by_arbitrator(
         storage: &dyn Storage,
         arbitrator: String,
-        last_value: Option<String>,
-        limit: u32,
+        limit: usize,
+        last: Option<u64>,
     ) -> StdResult<Vec<Trade>> {
-        let range_from = match last_value {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
+        let range_from = last.map(Bound::exclusive);
 
         let trade_states = vec![
             TradeState::EscrowDisputed,
@@ -412,8 +458,8 @@ impl TradeModel<'_> {
             .idx
             .arbitrator
             .prefix(arbitrator)
-            .range(storage, range_from, None, Order::Descending)
-            .take(limit as usize)
+            .range(storage, None, range_from, Order::Descending)
+            .take(limit)
             .filter_map(|item| {
                 item.and_then(|(_, trade)| {
                     if trade_states.contains(&trade.get_state()) {
@@ -432,8 +478,8 @@ impl TradeModel<'_> {
 
 pub struct TradeIndexes<'a> {
     // pk goes to second tuple element
-    pub collection: UniqueIndex<'a, String, Trade, String>,
-    pub arbitrator: MultiIndex<'a, String, Trade, String>,
+    pub collection: UniqueIndex<'a, u64, Trade, u64>,
+    pub arbitrator: MultiIndex<'a, String, Trade, u64>,
 }
 
 impl<'a> IndexList<Trade> for TradeIndexes<'a> {
@@ -443,10 +489,10 @@ impl<'a> IndexList<Trade> for TradeIndexes<'a> {
     }
 }
 
-pub fn trades<'a>() -> IndexedMap<'a, String, Trade, TradeIndexes<'a>> {
+pub fn trades<'a>() -> IndexedMap<'a, u64, Trade, TradeIndexes<'a>> {
     let pk_namespace = "trades_v0_4_2";
     let indexes = TradeIndexes {
-        collection: UniqueIndex::new(|t| t.id.to_string(), "trades__collection"),
+        collection: UniqueIndex::new(|t| t.id, "trades__collection"),
         arbitrator: MultiIndex::new(
             |t| t.arbitrator.to_string(),
             pk_namespace,

@@ -40,10 +40,12 @@ export interface Profile {
   last_trade: Date
   contact?: string
   encryption_key?: string
+  active_offers_count: number
+  active_trades_count: number
 }
 
 export interface GetOffer {
-  id: string
+  id: number
   state: OfferState
   rate: string
   min_amount: string
@@ -57,7 +59,7 @@ export interface GetOffer {
 }
 
 export interface PatchOffer {
-  id: string
+  id: number
   state: OfferState
   rate: string
   min_amount: string
@@ -83,6 +85,7 @@ export enum FiatCurrency {
   BRL = 'BRL',
   ARS = 'ARS',
   COP = 'COP',
+  USD = 'USD',
 }
 
 export enum OfferState {
@@ -103,7 +106,7 @@ export enum OfferOrder {
 }
 
 export interface NewTrade {
-  offer_id: string
+  offer_id: number
   amount: string
   taker: string
   profile_taker_contact: string
@@ -112,7 +115,7 @@ export interface NewTrade {
 }
 
 export interface Trade {
-  id: string
+  id: number
   addr: string
   factory_addr: string
   buyer: string
@@ -126,7 +129,7 @@ export interface Trade {
   arbitrator_buyer_contact?: string
   arbitrator_seller_contact?: string
   offer_contract: string
-  offer_id: string
+  offer_id: number
   created_at: number
   expires_at: number
   enables_dispute_at?: number
@@ -166,18 +169,39 @@ export interface TradeInfo {
 }
 
 export interface HubConfig {
-  local_denom: Denom
   offer_addr: string
   trade_addr: string
   profile_addr: string
   price_addr: string
-  trading_incentives_addr: string
+  price_provider_addr: string
   local_market_addr: string
+  chain_fee_collector_addr: string
+  warchest_addr: string
+  local_denom: Denom
+  burn_fee_pct: number
+  chain_fee_pct: number
+  warchest_fee_pct: number
+  active_offers_limit: number
+  active_trades_limit: number
   trade_expiration_timer: number
+  trade_limit_min: number
+  trade_limit_max: number
 }
 
-export interface Denom {
+export type Addr = string
+
+export type Denom = Native | CW20
+export interface Native {
   native: string
+}
+export interface CW20 {
+  cw20: Addr
+}
+
+export interface ConversionRoute {
+  ask_asset: Denom
+  offer_asset: Denom
+  pool: Addr
 }
 
 export interface UserWallet {

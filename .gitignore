@@ -8,3 +8,4 @@ artifacts/
 .DS_Store
 .env
 codeIds.json
+/contracts/schema/

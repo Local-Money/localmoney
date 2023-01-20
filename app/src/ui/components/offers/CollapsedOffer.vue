@@ -9,7 +9,7 @@ import {
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
 import type { OfferResponse, OfferTypeLabel } from '~/types/components.interface'
-import { microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDenom } from '~/utils/denom'
 import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
@@ -21,14 +21,14 @@ const offerTypeLabels: OfferTypeLabel = { [OfferType.buy]: t('label.sell'), [Off
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 const offerPrice = computed(() => {
   const offer = props.offerResponse.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native)
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(denomToValue(offer.denom))
   const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate) / 100
   return `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
 })
 </script>
 
 <template>
-  <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed">
+  <div :key="`${offerResponse.offer.id}-collapsed`" class="offer collapsed card" @click="emit('select')">
     <div class="owner">
       <p class="wallet-addr">
         {{ formatAddress(offerResponse.offer.owner) }}
@@ -71,6 +71,7 @@ const offerPrice = computed(() => {
 @import '../../style/tokens.scss';
 
 .collapsed {
+  cursor: pointer;
   .owner {
     width: 20%;
     display: flex;
@@ -90,7 +91,7 @@ const offerPrice = computed(() => {
     }
 
     .n-trades {
-      font-size: 14px;
+      font-size: 12px;
       color: $gray700;
       margin-top: 4px;
     }

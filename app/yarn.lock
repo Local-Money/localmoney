@@ -6565,7 +6565,7 @@ vite@^2.9.8:
 
 vue-currency-input@^2.0.0:
   version "2.5.1"
-  resolved "https://registry.npmjs.org/vue-currency-input/-/vue-currency-input-2.5.1.tgz"
+  resolved "https://registry.yarnpkg.com/vue-currency-input/-/vue-currency-input-2.5.1.tgz#5349b94df8c9e99102a8960772748f477dfd5b95"
   integrity sha512-H3n+dJPuVC3xsZMCKLk6S7BrmhC1l1UFOnCwHuvprpI2xoYS7mN5FVZQY7REqX4Ct9KdzIz5RAfNOwEIp0cniA==
   dependencies:
     vue-demi "^0.12.1"

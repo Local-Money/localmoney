@@ -95,6 +95,12 @@ nav {
       font-size: 14px;
       color: $base-text;
 
+      &.router-link-active {
+        .icon-24 {
+          stroke: $primary;
+        }
+      }
+
       &:hover {
         color: $gray900;
         .icon-24 {
@@ -115,7 +121,7 @@ nav {
       p {
         display: inline-block;
         vertical-align: middle;
-        line-height: 40px;
+        line-height: 35px;
         margin-left: 16px;
       }
     }

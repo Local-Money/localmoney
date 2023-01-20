@@ -1,5 +1,6 @@
 use crate::currencies::FiatCurrency;
 use crate::denom_utils::denom_to_string;
+use crate::guards::validate_min_max_items_per_page;
 use crate::hub_utils::get_hub_config;
 use crate::profile::{load_profile, load_profiles, Profile};
 use crate::trade::{TradeResponse, TradeState};
@@ -15,8 +16,8 @@ pub static CONFIG_KEY: &[u8] = b"config";
 
 pub struct OfferIndexes<'a> {
     // pk goes to second tuple element
-    pub owner: MultiIndex<'a, String, Offer, String>,
-    pub filter: MultiIndex<'a, String, Offer, String>,
+    pub owner: MultiIndex<'a, Addr, Offer, u64>,
+    pub filter: MultiIndex<'a, String, Offer, u64>,
 }
 
 impl<'a> IndexList<Offer> for OfferIndexes<'a> {
@@ -26,14 +27,10 @@ impl<'a> IndexList<Offer> for OfferIndexes<'a> {
     }
 }
 
-pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
-    let offers_pk_namespace = "offers_v0_4_1";
+pub fn offers<'a>() -> IndexedMap<'a, u64, Offer, OfferIndexes<'a>> {
+    let offers_pk_namespace = "offers";
     let indexes = OfferIndexes {
-        owner: MultiIndex::new(
-            |d| d.owner.clone().to_string(),
-            offers_pk_namespace,
-            "offers__owner",
-        ),
+        owner: MultiIndex::new(|d| d.owner.clone(), offers_pk_namespace, "offers__owner"),
         filter: MultiIndex::new(
             |offer: &Offer| {
                 offer
@@ -49,8 +46,6 @@ pub fn offers<'a>() -> IndexedMap<'a, String, Offer, OfferIndexes<'a>> {
     };
     IndexedMap::new(offers_pk_namespace, indexes)
 }
-
-// pub const OFFERS : IndexedMap<&str, Offer, OfferIndexes> = create_offers_indexedmap();
 
 ///Messages
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -71,7 +66,7 @@ pub struct OfferMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OfferUpdateMsg {
-    pub id: String,
+    pub id: u64,
     pub owner_contact: Option<String>,
     pub owner_encryption_key: Option<String>,
     pub rate: Uint128,
@@ -95,20 +90,20 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     State {},
     Offer {
-        id: String,
+        id: u64,
     },
     OffersBy {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
-        min: Option<String>,
-        max: Option<String>,
         order: OfferOrder,
         limit: u32,
+        last: Option<u64>,
     },
     OffersByOwner {
         owner: Addr,
         limit: u32,
+        last: Option<u64>,
     },
 }
 
@@ -119,7 +114,7 @@ pub struct OffersCount {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Offer {
-    pub id: String,
+    pub id: u64,
     pub owner: Addr,
     pub offer_type: OfferType,
     pub fiat_currency: FiatCurrency,
@@ -145,14 +140,11 @@ pub struct OfferModel<'a> {
 
 impl OfferModel<'_> {
     pub fn store(storage: &mut dyn Storage, offer: &Offer) -> StdResult<()> {
-        offers().save(storage, offer.id.to_string(), &offer)
+        offers().save(storage, offer.id, &offer)
     }
 
-    pub fn from_store(storage: &mut dyn Storage, id: &String) -> Offer {
-        offers()
-            .may_load(storage, id.to_string())
-            .unwrap_or_default()
-            .unwrap()
+    pub fn from_store(storage: &mut dyn Storage, id: u64) -> Offer {
+        offers().may_load(storage, id).unwrap_or_default().unwrap()
     }
 
     pub fn create(storage: &mut dyn Storage, offer: Offer) -> OfferModel {
@@ -165,9 +157,9 @@ impl OfferModel<'_> {
         self.offer
     }
 
-    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: &String) -> OfferModel<'a> {
+    pub fn may_load<'a>(storage: &'a mut dyn Storage, id: u64) -> OfferModel<'a> {
         let offer_model = OfferModel {
-            offer: OfferModel::from_store(storage, &id),
+            offer: OfferModel::from_store(storage, id),
             storage,
         };
         return offer_model;
@@ -183,16 +175,21 @@ impl OfferModel<'_> {
         &self.offer
     }
 
-    pub fn query_by_owner(deps: Deps, owner: Addr, limit: u32) -> StdResult<Vec<OfferResponse>> {
+    pub fn query_by_owner(
+        deps: Deps,
+        owner: Addr,
+        limit: u32,
+        last: Option<u64>,
+    ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
-        let range = offers().idx.owner.prefix(owner.into_string()).range(
-            deps.storage,
-            None,
-            None,
-            Order::Descending,
-        );
+        let range_from = last.map(Bound::exclusive);
+        let limit = validate_min_max_items_per_page(limit);
 
-        let result = range
+        let result = offers()
+            .idx
+            .owner
+            .prefix(owner)
+            .range(deps.storage, None, range_from, Order::Descending)
             .take(limit as usize)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
@@ -215,23 +212,15 @@ impl OfferModel<'_> {
         offer_type: OfferType,
         fiat_currency: FiatCurrency,
         denom: Denom,
-        min: Option<String>,
-        max: Option<String>,
-        limit: u32,
         order: OfferOrder,
+        limit: u32,
+        last: Option<u64>,
     ) -> StdResult<Vec<OfferResponse>> {
         let hub_config = get_hub_config(deps);
         let storage = deps.storage;
         let std_order = Order::Descending;
-        let range_min = match min {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
-
-        let range_max = match max {
-            Some(thing) => Some(Bound::exclusive(thing)),
-            None => None,
-        };
+        let range_from = last.map(Bound::exclusive);
+        let limit = validate_min_max_items_per_page(limit);
 
         let mut profiles = load_profiles(
             &deps.querier,
@@ -241,17 +230,16 @@ impl OfferModel<'_> {
         )
         .unwrap();
 
+        let prefix = fiat_currency.to_string()
+            + &offer_type.to_string()
+            + &denom_to_string(&denom)
+            + &*OfferState::Active.to_string();
+
         let mut result: Vec<OfferResponse> = offers()
             .idx
             .filter
-            .prefix(
-                fiat_currency.to_string()
-                    + &offer_type.to_string()
-                    + &denom_to_string(&denom)
-                    + &*OfferState::Active.to_string(),
-            )
-            .range(storage, range_min, range_max, std_order)
-            .take(limit as usize)
+            .prefix(prefix)
+            .range(storage, None, range_from, std_order)
             .flat_map(|item| {
                 item.and_then(|(_, offer)| {
                     let profile_found = profiles
@@ -275,6 +263,7 @@ impl OfferModel<'_> {
                     Ok(OfferResponse { offer, profile })
                 })
             })
+            .take(limit as usize)
             .collect();
 
         match order {
@@ -355,7 +344,7 @@ pub enum OfferState {
 // Queries
 pub fn load_offer<T: CustomQuery>(
     querier: &QuerierWrapper<T>,
-    offer_id: String,
+    offer_id: u64,
     offer_contract: String,
 ) -> StdResult<OfferResponse> {
     querier.query_wasm_smart(offer_contract, &QueryMsg::Offer { id: offer_id })

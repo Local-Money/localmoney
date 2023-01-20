@@ -13,9 +13,9 @@ import {
 import { OfferType } from '~/types/components.interface'
 import type { NewTrade, OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDenom } from '~/utils/denom'
 import { encryptData } from '~/utils/crypto'
-import { formatTimeLimit, formatTimer } from '~/utils/formatters'
+import { formatTimeLimit } from '~/utils/formatters'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
 const emit = defineEmits<{ (e: 'cancel'): void }>()
@@ -56,11 +56,11 @@ const toLabel = computed(() =>
 )
 const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currency.toUpperCase()} 0`)
 const cryptoPlaceholder = computed(
-  () => `${microDenomToDenom(props.offerResponse.offer.denom.native)} ${parseFloat('0').toFixed(2)}`
+  () => `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom))} ${parseFloat('0').toFixed(2)}`
 )
 const fiatPriceByRate = computed(() => {
   const offer = props.offerResponse.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(offer.denom.native)
+  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(denomToValue(offer.denom))
   return calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
 })
 const minAmountInCrypto = computed(
@@ -91,7 +91,7 @@ const minMaxFiatStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 const minMaxCryptoStr = computed(() => {
-  const symbol = microDenomToDenom(props.offerResponse.offer.denom.native)
+  const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom))
   const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
   const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
   return [`${symbol} ${min}`, `${symbol} ${max}`]
@@ -104,7 +104,7 @@ async function newTrade() {
   const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
 
   const newTrade: NewTrade = {
-    offer_id: `${props.offerResponse.offer.id}`,
+    offer_id: props.offerResponse.offer.id,
     amount: `${cryptoAmount.value * CRYPTO_DECIMAL_PLACES}`,
     taker: `${client.userWallet.address}`,
     profile_taker_contact,
@@ -121,48 +121,44 @@ function focus() {
 function useMinCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
-  cryptoAmountInput.value.update(minAmountInCrypto.value)
+  cryptoAmountInput.value.update(minAmountInCrypto.value, true)
+  setFiatAmount(minAmountInCrypto.value)
 }
 
 function useMaxCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
-  cryptoAmountInput.value.update(maxAmountInCrypto.value)
+  cryptoAmountInput.value.update(maxAmountInCrypto.value, true)
+  setFiatAmount(maxAmountInCrypto.value)
 }
 
 function useMinFiat() {
   watchingFiat.value = true
   watchingCrypto.value = false
-  fiatAmountInput.value.update(minAmountInFiat.value)
+  fiatAmountInput.value.update(minAmountInFiat.value, true)
+  setCryptoAmount(minAmountInFiat.value)
 }
 
 function useMaxFiat() {
   watchingFiat.value = true
   watchingCrypto.value = false
-  fiatAmountInput.value.update(maxAmountInFiat.value)
+  fiatAmountInput.value.update(maxAmountInFiat.value, true)
+  setCryptoAmount(maxAmountInFiat.value)
 }
 
-watch(fiatAmount, (newFiatAmount) => {
-  if (watchingFiat && newFiatAmount !== null) {
-    const usdRate = fiatPriceByRate.value / 100
-    const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
-    tradingFee.value = cryptoAmount * 0.01
-    nextTick(() => {
-      cryptoAmountInput.value.update(cryptoAmount)
-    })
-  }
-})
+function setCryptoAmount(newFiatAmount: number) {
+  const usdRate = fiatPriceByRate.value / 100
+  const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
+  tradingFee.value = cryptoAmount * 0.01
+  cryptoAmountInput.value.update(cryptoAmount)
+}
 
-watch(cryptoAmount, (newCryptoAmount) => {
-  if (watchingCrypto && newCryptoAmount !== null) {
-    const usdRate = fiatPriceByRate.value / 100
-    tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
-    nextTick(() => {
-      const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
-      fiatAmountInput.value.update(fiatAmount)
-    })
-  }
-})
+function setFiatAmount(newCryptoAmount: number) {
+  const usdRate = fiatPriceByRate.value / 100
+  tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
+  const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
+  fiatAmountInput.value.update(fiatAmount)
+}
 
 function refreshExchangeRate() {
   nextTick(() => {
@@ -197,7 +193,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded">
+  <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded card">
     <div class="top">
       <div class="owner">
         <p class="wallet-addr">
@@ -243,6 +239,7 @@ onUnmounted(() => {
                 max: maxAmountInCrypto,
               },
             }"
+            @onUpdate="setFiatAmount"
             @focus="
               (() => {
                 watchingCrypto = true
@@ -282,6 +279,7 @@ onUnmounted(() => {
                 max: maxAmountInFiat,
               },
             }"
+            @onUpdate="setCryptoAmount"
             @focus="
               (() => {
                 watchingCrypto = false
@@ -358,7 +356,7 @@ onUnmounted(() => {
       }
 
       .n-trades {
-        font-size: 14px;
+        font-size: 12px;
         color: $gray700;
         margin-top: 4px;
       }

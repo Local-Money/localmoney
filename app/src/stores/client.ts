@@ -20,6 +20,7 @@ import type {
 import { LoadingState, OfferState } from '~/types/components.interface'
 import type { Secrets } from '~/utils/crypto'
 import { generateKeys } from '~/utils/crypto'
+import { denomToValue } from '~/utils/denom'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -82,19 +83,19 @@ export const useClientStore = defineStore({
       const address = this.client.getWalletAddress()
       return this.secrets.get(address)!
     },
-    async fetchOffers(offersArgs: FetchOffersArgs) {
+    async fetchOffers(offersArgs: FetchOffersArgs, limit = 30, last?: number) {
       this.offers = ListResult.loading()
       try {
-        const listOffers = await this.client.fetchOffers(offersArgs)
+        const listOffers = await this.client.fetchOffers(offersArgs, limit, last)
         this.offers = ListResult.success(listOffers)
       } catch (e) {
         this.offers = ListResult.error(e as ChainError)
       }
     },
-    async fetchMyOffers() {
+    async fetchMyOffers(limit = 30, last?: number) {
       this.myOffers = ListResult.loading()
       try {
-        const listMyOffers = await this.client.fetchMyOffers()
+        const listMyOffers = await this.client.fetchMyOffers(limit, last)
         this.myOffers = ListResult.success(listMyOffers)
       } catch (e) {
         this.myOffers = ListResult.error(e as ChainError)
@@ -146,7 +147,7 @@ export const useClientStore = defineStore({
       try {
         const trade_id = await this.client.openTrade(trade)
         await this.fetchProfile()
-        const route = trade_id === '' ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
+        const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
       } catch (e) {
         // TODO handle error
@@ -156,19 +157,18 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fetchMyTrades() {
+    async fetchMyTrades(limit = 30, last?: number) {
       this.trades = ListResult.loading()
       try {
-        const tradesList = await this.client.fetchTrades()
+        const tradesList = await this.client.fetchTrades(limit, last)
         this.trades = ListResult.success(tradesList)
       } catch (e) {
         this.trades = ListResult.error(e as ChainError)
       }
     },
-    async fetchTradeDetail(tradeId: string) {
+    async fetchTradeDetail(tradeId: number) {
       // TODO the fetchTradeDetail should return a TradeInfo
-      const tradeInfo = await this.client.fetchTradeDetail(tradeId)
-      return tradeInfo
+      return await this.client.fetchTradeDetail(tradeId)
     },
     async fetchArbitrators() {
       this.arbitrators = ListResult.loading()
@@ -179,11 +179,11 @@ export const useClientStore = defineStore({
         this.arbitrators = ListResult.error(e as ChainError)
       }
     },
-    async fetchDisputedTrades() {
+    async fetchDisputedTrades(limit = 30, last?: number) {
       this.openDisputes = ListResult.loading()
       this.closedDisputes = ListResult.loading()
       try {
-        const disputedTrades = await this.client.fetchDisputedTrades()
+        const disputedTrades = await this.client.fetchDisputedTrades(limit, last)
         this.openDisputes = ListResult.success(disputedTrades.openDisputes)
         this.closedDisputes = ListResult.success(disputedTrades.closedDisputes)
       } catch (e) {
@@ -194,16 +194,16 @@ export const useClientStore = defineStore({
       try {
         const price = await this.client.fetchFiatPriceForDenom(fiat, denom)
         if (this.fiatPrices.has(fiat)) {
-          this.fiatPrices.get(fiat)?.set(denom.native, price.price)
+          this.fiatPrices.get(fiat)?.set(denomToValue(denom), price.price)
         } else {
-          const priceForDenom = new Map([[denom.native, price.price]])
+          const priceForDenom = new Map([[denomToValue(denom), price.price]])
           this.fiatPrices.set(fiat, priceForDenom)
         }
       } catch (e) {
         console.error(e)
       }
     },
-    async acceptTradeRequest(tradeId: string, makerContact: string) {
+    async acceptTradeRequest(tradeId: number, makerContact: string) {
       this.loadingState = LoadingState.show('Accepting trade...')
       try {
         await this.client.acceptTradeRequest(tradeId, makerContact)
@@ -216,7 +216,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async cancelTradeRequest(tradeId: string) {
+    async cancelTradeRequest(tradeId: number) {
       this.loadingState = LoadingState.show('Canceling trade...')
       try {
         await this.client.cancelTradeRequest(tradeId)
@@ -229,11 +229,11 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async fundEscrow(tradeId: string, amount: string, denom: Denom, makerContact?: string) {
+    async fundEscrow(tradeInfo: TradeInfo, makerContact?: string) {
       this.loadingState = LoadingState.show('Funding trade...')
       try {
-        await this.client.fundEscrow(tradeId, amount, denom, makerContact)
-        await this.fetchTradeDetail(tradeId)
+        await this.client.fundEscrow(tradeInfo, makerContact)
+        await this.fetchTradeDetail(tradeInfo.trade.id)
       } catch (e) {
         // TODO handle error
         alert((e as ChainError).message)
@@ -242,7 +242,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async setFiatDeposited(tradeId: string) {
+    async setFiatDeposited(tradeId: number) {
       this.loadingState = LoadingState.show('Marking trade as paid...')
       try {
         await this.client.setFiatDeposited(tradeId)
@@ -255,7 +255,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async releaseEscrow(tradeId: string) {
+    async releaseEscrow(tradeId: number) {
       this.loadingState = LoadingState.show('Funding trade...')
       try {
         await this.client.releaseEscrow(tradeId)
@@ -268,7 +268,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async refundEscrow(tradeId: string) {
+    async refundEscrow(tradeId: number) {
       this.loadingState = LoadingState.show('Refunding trade...')
       try {
         await this.client.refundEscrow(tradeId)
@@ -281,7 +281,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async openDispute(tradeId: string, buyerContact: string, sellerContact: string) {
+    async openDispute(tradeId: number, buyerContact: string, sellerContact: string) {
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
@@ -294,7 +294,7 @@ export const useClientStore = defineStore({
         this.loadingState = LoadingState.dismiss()
       }
     },
-    async settleDispute(tradeId: string, winner: string) {
+    async settleDispute(tradeId: number, winner: string) {
       this.loadingState = LoadingState.show('Settling dispute...')
       try {
         await this.client.settleDispute(tradeId, winner)
@@ -308,7 +308,7 @@ export const useClientStore = defineStore({
       }
     },
     getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {
-      const fiatPrice = this.fiatPrices.get(fiatCurrency)?.get(denom.native) ?? 0
+      const fiatPrice = this.fiatPrices.get(fiatCurrency)?.get(denomToValue(denom)) ?? 0
       try {
         return fiatPrice / 100
       } catch (e) {

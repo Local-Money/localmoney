@@ -1,9 +1,9 @@
-use crate::constants::OFFER_DESCRIPTION_LIMIT;
+use crate::constants::{MAX_ITEMS_PER_PAGE, MIN_ITEMS_PER_PAGE, OFFER_DESCRIPTION_LIMIT};
 use crate::errors::ContractError;
-use crate::errors::ContractError::InvalidParameter;
 use crate::offer::OfferType;
 use crate::trade::{Trade, TradeState};
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Uint128, Uint256};
+use cw2::ContractVersion;
 
 pub fn assert_multiple_ownership(caller: Addr, owners: Vec<Addr>) -> Result<(), ContractError> {
     if owners.contains(&caller) {
@@ -61,9 +61,24 @@ pub fn assert_trade_state_change(
     }
 }
 
+// Asserts that min value is lower than max value
 pub fn assert_min_g_max(min: Uint128, max: Uint128) -> Result<(), ContractError> {
     if min >= max {
         Err(ContractError::InvalidMinMax { min, max })
+    } else {
+        Ok(())
+    }
+}
+
+pub fn assert_offer_max_inside_trading_limit(
+    max_amount: Uint256,
+    trading_limit: Uint256,
+) -> Result<(), ContractError> {
+    if max_amount > trading_limit {
+        Err(ContractError::OfferMaxAboveTradingLimit {
+            max_amount,
+            trading_limit,
+        })
     } else {
         Ok(())
     }
@@ -125,11 +140,43 @@ pub fn assert_offer_description_valid(description: Option<String>) -> Result<(),
         message.push_str(OFFER_DESCRIPTION_LIMIT.to_string().as_str());
         message.push_str(" characters.");
 
-        Err(InvalidParameter {
+        Err(ContractError::InvalidParameter {
             parameter: "description".to_string(),
             message: Some(message),
         })
     } else {
         Ok(())
     };
+}
+
+pub fn assert_migration_parameters(
+    previous_contract_version: ContractVersion,
+    contract_name: String,
+    contract_version: &str,
+) -> Result<(), ContractError> {
+    let previous_version = previous_contract_version.version.as_str();
+
+    if previous_contract_version.contract != contract_name {
+        return Err(ContractError::InvalidParameter {
+            parameter: "CONTRACT_NAME".to_string(),
+            message: Some("Can only upgrade from same type.".to_string()),
+        });
+    }
+
+    if previous_version >= contract_version {
+        let message = format!(
+            "The new version of the contract ({}) must be greater than the previous one ({}).",
+            contract_version, previous_version
+        );
+        return Err(ContractError::InvalidParameter {
+            parameter: "CONTRACT_VERSION".to_string(),
+            message: Some(message),
+        });
+    }
+
+    Ok(())
+}
+
+pub fn validate_min_max_items_per_page(limit: u32) -> u32 {
+    limit.max(MIN_ITEMS_PER_PAGE).min(MAX_ITEMS_PER_PAGE)
 }
