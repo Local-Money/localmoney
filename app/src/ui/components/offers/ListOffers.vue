@@ -22,6 +22,7 @@ const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const offerType = ref<OfferType>(OfferType.sell)
 const selectedOfferItem = ref<ExpandableItem<OfferResponse> | null>(null)
+const paginationLastItem = ref<number>(0)
 
 function selectOffer(offerItem: ExpandableItem<OfferResponse>) {
   if (selectedOfferItem.value !== null) {
@@ -42,6 +43,20 @@ async function fetchOffers() {
     denom: { native: selectedCrypto.value },
     order: OfferOrder.trades_count,
   })
+}
+
+async function fetchMoreOffers() {
+  const lastIndex = offersResult.value.data.length
+  paginationLastItem.value = lastIndex > 0 ? offersResult.value.data[lastIndex - 1].offer.id : 0
+  await client.fetchMoreOffers(
+    {
+      fiatCurrency: fiatCurrency.value,
+      offerType: offerType.value,
+      denom: { native: selectedCrypto.value },
+      order: OfferOrder.trades_count,
+    },
+    paginationLastItem.value
+  )
 }
 
 async function fetchFiatPriceForDenom() {
@@ -91,7 +106,11 @@ watch(offerType, async () => await fetchOffers())
       <h3 v-if="offerType === OfferType.sell">Buy from these sellers</h3>
       <h3 v-if="offerType === OfferType.buy">Sell to these buyers</h3>
       <!-- Offers for -->
-      <ListContentResult :result="offersResult" emptyStateMsg="There are no offers available yet">
+      <ListContentResult
+        :result="offersResult"
+        emptyStateMsg="There are no offers available yet"
+        @loadMore="fetchMoreOffers()"
+      >
         <ul>
           <li v-for="offer in page.offers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
             <!-- Collapsed Offer -->

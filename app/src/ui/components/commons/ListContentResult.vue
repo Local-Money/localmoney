@@ -6,10 +6,19 @@ const props = defineProps<{
   emptyStateMsg?: String
   errorStateMsg?: String
 }>()
+const emit = defineEmits<{
+  (e: 'loadMore'): void
+}>()
 </script>
 
 <template>
-  <slot v-if="result.isSuccess()" />
+  <div v-if="result.isSuccess()" class="success-state">
+    <slot />
+    <div v-if="result.showLoadMore()" class="load-more">
+      <Loading v-if="result.isLoadingMore()" />
+      <button v-else @click="emit('loadMore')">Load more</button>
+    </div>
+  </div>
   <div v-if="result.isEmpty()" class="empty-state card">
     <p>{{ emptyStateMsg }}</p>
   </div>
@@ -40,5 +49,15 @@ const props = defineProps<{
   display: flex;
   justify-content: center;
   margin-top: 32px;
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+
+  button {
+    padding: 0 48px;
+  }
 }
 </style>
