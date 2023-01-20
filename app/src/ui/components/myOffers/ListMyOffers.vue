@@ -13,6 +13,7 @@ import { checkValidOffer } from '~/utils/validations'
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
 const myOffersResult = computed<ListResult<OfferResponse>>(() => client.myOffers)
+const paginationLastItem = ref<number>(0)
 const page = reactive({
   myOffers: [] as ExpandableItem<OfferResponse>[],
   archiveOffers: [] as OfferResponse[],
@@ -57,7 +58,9 @@ function collapseOfferItem(offerItem: ExpandableItem<OfferResponse>) {
 }
 
 async function loadMore() {
-  await client.fetchMyOffers()
+  const lastIndex = myOffersResult.value.data.length
+  paginationLastItem.value = lastIndex > 0 ? myOffersResult.value.data[lastIndex - 1].offer.id : 0
+  await client.fetchMoreMyOffers(paginationLastItem.value)
 }
 
 onMounted(async () => {
@@ -71,7 +74,11 @@ watch(userWallet, async () => {
 
 <template>
   <section>
-    <ListContentResult :result="myOffersResult" emptyStateMsg="There are no offers available yet">
+    <ListContentResult
+      :result="myOffersResult"
+      emptyStateMsg="There are no offers available yet"
+      @loadMore="loadMore()"
+    >
       <!-- My Offers section -->
       <section v-if="hasOffers()" class="offers-list">
         <!-- Offers for -->
