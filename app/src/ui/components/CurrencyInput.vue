@@ -9,7 +9,7 @@ export default {
     placeholder: String,
     onUpdate: Function,
   },
-  emits: ['onUpdate'],
+  emits: ['update'],
   setup(props) {
     const { formattedValue, inputRef, setValue, numberValue } = useCurrencyInput(props.options)
 
@@ -17,12 +17,10 @@ export default {
   },
   mounted() {
     this.$refs.inputRef.addEventListener('blur', () => {
-      this.$emit('onUpdate', this.numberValue)
+      this.$emit('update', this.numberValue)
     })
     this.$refs.inputRef.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') {
-        this.$emit('onUpdate', this.numberValue)
-      }
+      this.$emit('update', this.numberValue)
     })
   },
   methods: {

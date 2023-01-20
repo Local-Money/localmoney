@@ -231,7 +231,7 @@ onUnmounted(() => {
                 max: maxAmountInCrypto,
               },
             }"
-            @onUpdate="setFiatAmount"
+            @update="setFiatAmount"
             @focus="
               (() => {
                 watchingCrypto = true
@@ -271,7 +271,7 @@ onUnmounted(() => {
                 max: maxAmountInFiat,
               },
             }"
-            @onUpdate="setCryptoAmount"
+            @update="setCryptoAmount"
             @focus="
               (() => {
                 watchingCrypto = false
