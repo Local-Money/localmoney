@@ -184,7 +184,7 @@ export const useClientStore = defineStore({
       this.trades = ListResult.loading()
       try {
         const tradesList = await this.client.fetchTrades(LIMIT_ITEMS_PER_PAGE)
-        this.trades = ListResult.success(tradesList)
+        this.trades = ListResult.success(tradesList, LIMIT_ITEMS_PER_PAGE)
       } catch (e) {
         this.trades = ListResult.error(e as ChainError)
       }
