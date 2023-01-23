@@ -87,6 +87,8 @@ const maker = computed(() => {
   return tradeInfo.value.offer.offer.owner
 })
 
+const isMaker = computed(() => tradeInfo.value.offer.offer.owner === walletAddress.value)
+
 const taker = computed(() => {
   return tradeInfo.value.trade.buyer === maker ? tradeInfo.value.trade.seller : tradeInfo.value.trade.buyer
 })
@@ -396,7 +398,7 @@ watch(userWallet, async () => {
                 </div>
 
                 <!-- TO-DO - This list-item should only appear for the Maker -->
-                <div class="list-item">
+                <div v-show="isMaker" class="list-item">
                   <p>Platform fee</p>
                   <p class="value">???????</p>
                 </div>
