@@ -34,14 +34,15 @@ async function defaultUserContact() {
 let refreshRateInterval: NodeJS.Timer | undefined
 const telegram = ref<string>('')
 const secondsUntilRateRefresh = ref(0)
-const cryptoAmount = ref(0)
-const fiatAmount = ref(0)
+const cryptoAmount = ref(0.0)
+const fiatAmount = ref(0.0)
 const tradingFee = ref(0.0)
 const fiatPriceByRate = ref(0.0)
 const watchingCrypto = ref(true)
 const watchingFiat = ref(false)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
+const cryptoAmountInput2 = ref()
 const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 
@@ -107,27 +108,27 @@ function focus() {
 function useMinCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
-  cryptoAmountInput.value.update(minAmountInCrypto.value)
+  cryptoAmount.value = minAmountInCrypto.value
 }
 
 function useMaxCrypto() {
   watchingFiat.value = false
   watchingCrypto.value = true
-  cryptoAmountInput.value.update(maxAmountInCrypto.value)
+  cryptoAmount.value = maxAmountInCrypto.value
 }
 
 function useMinFiat() {
   watchingFiat.value = true
   watchingCrypto.value = false
-  fiatAmountInput.value.update(minAmountInFiat.value)
+  fiatAmount.value = minAmountInFiat.value
 }
 
 function useMaxFiat() {
   watchingFiat.value = true
   watchingCrypto.value = false
-  fiatAmountInput.value.update(maxAmountInFiat.value)
+  fiatAmount.value = maxAmountInFiat.value
 }
-
+/*
 watch(fiatAmount, (newFiatAmount) => {
   if (watchingFiat && newFiatAmount !== null) {
     const usdRate = fiatPriceByRate.value / 100
@@ -149,6 +150,7 @@ watch(cryptoAmount, (newCryptoAmount) => {
     })
   }
 })
+*/
 
 async function refreshExchangeRate() {
   const offer = props.offerResponse.offer
@@ -158,7 +160,7 @@ async function refreshExchangeRate() {
 }
 
 function startExchangeRateRefreshTimer() {
-  const interval = 5
+  const interval = 60
   let seconds = interval
   const countdownInterval = 1000
   refreshRateInterval = setInterval(async () => {
@@ -221,26 +223,10 @@ onUnmounted(() => {
             {{ fromLabel }}
           </p>
           <CurrencyInput
-            ref="cryptoAmountInput"
+            :ref="cryptoAmountInput"
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-              valueRange: {
-                min: minAmountInCrypto,
-                max: maxAmountInCrypto,
-              },
-            }"
-            @focus="
-              (() => {
-                watchingCrypto = true
-                watchingFiat = false
-              })()
-            "
+            :prefix="microDenomToDenom(offerResponse.offer.denom.native)"
           />
           <div class="wrap-limit">
             <div class="limit-btn">
@@ -260,28 +246,11 @@ onUnmounted(() => {
             {{ toLabel }}
           </p>
           <CurrencyInput
-            ref="fiatAmountInput"
+            :ref="fiatAmountInput"
             v-model="fiatAmount"
             :placeholder="fiatPlaceholder"
-            :options="{
-              currency: offerResponse.offer.fiat_currency.toUpperCase(),
-              currencyDisplay: 'code',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-              valueRange: {
-                min: minAmountInFiat,
-                max: maxAmountInFiat,
-              },
-            }"
-            @focus="
-              (() => {
-                watchingCrypto = false
-                watchingFiat = true
-              })()
-            "
+            :prefix="offerResponse.offer.fiat_currency"
           />
-
           <div class="wrap-limit">
             <div class="limit-btn">
               <p class="btn" @click="useMinFiat()">
