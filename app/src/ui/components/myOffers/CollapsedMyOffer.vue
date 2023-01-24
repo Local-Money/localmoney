@@ -20,7 +20,7 @@ const offerPrice = computed(() => {
 })
 
 onBeforeMount(async () => {
-  await client.fetchFiatPriceForDenom(props.offer.fiat_currency, props.offer.denom)
+  await client.updateFiatPrice(props.offer.fiat_currency, props.offer.denom)
 })
 </script>
 

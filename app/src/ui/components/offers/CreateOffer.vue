@@ -59,7 +59,7 @@ onMounted(() => {
 })
 onBeforeMount(async () => {
   const denom: Denom = { native: selectedCrypto.value }
-  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+  await client.updateFiatPrice(fiatCurrency.value, denom)
 })
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
@@ -92,15 +92,15 @@ watch(marginOffset, () => {
 watch(margin, () => {
   calculateMarginRate()
 })
-async function fetchFiatPriceForDenom() {
+async function updateFiatPrice() {
   const denom: Denom = { native: selectedCrypto.value }
-  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+  await client.updateFiatPrice(fiatCurrency.value, denom)
 }
 watch(selectedCrypto, async () => {
-  await fetchFiatPriceForDenom()
+  await updateFiatPrice()
 })
 watch(fiatCurrency, async () => {
-  await fetchFiatPriceForDenom()
+  await updateFiatPrice()
 })
 </script>
 

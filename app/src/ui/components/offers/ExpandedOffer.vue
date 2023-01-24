@@ -24,7 +24,11 @@ const secrets = computed(() => client.getSecrets())
 
 async function defaultUserContact() {
   const contact = client.profile?.contact
-  return formatEncryptedUserContact(secrets.value.privateKey, contact)
+  if (secrets.value) {
+    return formatEncryptedUserContact(secrets.value.privateKey, contact)
+  } else {
+    return ''
+  }
 }
 
 let refreshRateInterval: NodeJS.Timer | undefined
@@ -33,6 +37,7 @@ const secondsUntilRateRefresh = ref(0)
 const cryptoAmount = ref(0)
 const fiatAmount = ref(0)
 const tradingFee = ref(0.0)
+const fiatPriceByRate = ref(0.0)
 const watchingCrypto = ref(true)
 const watchingFiat = ref(false)
 const expandedCard = ref()
@@ -56,11 +61,6 @@ const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currenc
 const cryptoPlaceholder = computed(
   () => `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom))} ${parseFloat('0').toFixed(2)}`
 )
-const fiatPriceByRate = computed(() => {
-  const offer = props.offerResponse.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(denomToValue(offer.denom))
-  return calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
-})
 const minAmountInCrypto = computed(
   () => parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES
 )
@@ -146,29 +146,35 @@ function setFiatAmount(newCryptoAmount: number) {
   fiatAmountInput.value.update(fiatAmount)
 }
 
-function refreshExchangeRate() {
-  nextTick(() => {
-    const offer = props.offerResponse.offer
-    client.fetchFiatPriceForDenom(offer.fiat_currency, offer.denom)
-  })
+async function refreshExchangeRate() {
+  const offer = props.offerResponse.offer
+  const denomFiatPrice = await client.fetchFiatPriceForDenom(offer.fiat_currency, offer.denom)
+  const price = calculateFiatPriceByRate(denomFiatPrice.price, props.offerResponse.offer.rate)
+  fiatPriceByRate.value = price
 }
 
 function startExchangeRateRefreshTimer() {
-  let seconds = 60
+  const interval = 5
+  let seconds = interval
   const countdownInterval = 1000
-  refreshRateInterval = setInterval(() => {
+  refreshRateInterval = setInterval(async () => {
     secondsUntilRateRefresh.value = --seconds
     if (seconds === 0) {
-      refreshExchangeRate()
-      seconds = 60
+      await refreshExchangeRate()
+      seconds = interval
     }
   }, countdownInterval)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  const denomFiatPrice = client.fiatPrices
+    .get(props.offerResponse.offer.fiat_currency)
+    ?.get(denomToValue(props.offerResponse.offer.denom))
+  const price = calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
+  fiatPriceByRate.value = price
   startExchangeRateRefreshTimer()
+  telegram.value = await defaultUserContact()
   nextTick(async () => {
-    telegram.value = await defaultUserContact()
     focus()
   })
 })

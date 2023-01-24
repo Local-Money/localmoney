@@ -329,7 +329,7 @@ export class CosmosChain implements Chain {
     }
   }
 
-  async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice> {
+  async updateFiatPrice(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice> {
     // TODO: fix init
     if (!this.cwClient) {
       await this.init()

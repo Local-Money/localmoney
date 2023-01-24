@@ -59,23 +59,27 @@ async function fetchMoreOffers() {
   )
 }
 
-async function fetchFiatPriceForDenom() {
+async function updateFiatPrice() {
   const denom: Denom = { native: selectedCrypto.value }
-  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+  await client.updateFiatPrice(fiatCurrency.value, denom)
 }
 
 onMounted(async () => {
-  await fetchFiatPriceForDenom()
+  console.log('ListOffers onMounted')
+  await updateFiatPrice()
   await fetchOffers()
 })
 
 watch(fiatCurrency, async () => {
-  await fetchFiatPriceForDenom()
+  await updateFiatPrice()
   await fetchOffers()
 })
 watch(selectedCrypto, async () => {
-  await fetchFiatPriceForDenom()
+  await updateFiatPrice()
   await fetchOffers()
+})
+watch(selectedOfferItem, async () => {
+  console.log('selectedOfferItem', selectedOfferItem.value)
 })
 watch(offerType, async () => await fetchOffers())
 </script>
