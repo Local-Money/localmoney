@@ -101,6 +101,15 @@ const contactsForArbitrator = computed(() => {
   }
 })
 
+const platformFee = computed(() => {
+  const total = tradeInfo.value.trade.amount
+  const { warchest_fee_pct, burn_fee_pct, chain_fee_pct } = client.getHubConfig()
+  const totalFee = Number(warchest_fee_pct) + Number(burn_fee_pct) + Number(chain_fee_pct)
+  const fee = total * totalFee
+  console.log('fee', warchest_fee_pct, burn_fee_pct, chain_fee_pct, total, totalFee, fee)
+  return fee
+})
+
 function startTradeTimer() {
   tradeTimerInterval = setInterval(tradeTimerTick, 10)
 }
@@ -399,8 +408,10 @@ watch(userWallet, async () => {
 
                 <!-- TO-DO - This list-item should only appear for the Maker -->
                 <div v-show="isMaker" class="list-item">
-                  <p>Platform fee</p>
-                  <p class="value">???????</p>
+                  <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
+                  <p class="value">
+                    {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
                 </div>
 
                 <div class="list-item">
