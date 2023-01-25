@@ -1,6 +1,7 @@
 <script setup>
 import { formatAmount } from '~/shared'
 const props = defineProps(['modelValue', 'options', 'placeholder', 'prefix'])
+const emit = defineEmits(['update:modelValue'])
 // create a data object with the data object with value as property.
 const value = ref(props.modelValue)
 const placeholder = ref(props.placeholder)
@@ -23,12 +24,11 @@ function focus() {
 
 function onChange(e) {
   const newValue = e.target.value.replace(/[^0-9.]/g, '')
-  if (watching.value) {
-    formattedValue.value = formattedValue.value.replace(/[^0-9.]/g, '')
-  } else {
-    formattedValue.value = `${props.prefix} ${formatAmount(newValue)}`
-  }
   value.value = newValue
+  if (watching.value) {
+    formattedValue.value = value.value
+  }
+  emit('update:modelValue', newValue)
 }
 
 function onBlur() {
