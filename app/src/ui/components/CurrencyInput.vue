@@ -1,6 +1,16 @@
 <script setup>
 import { formatAmount } from '~/shared'
-const props = defineProps(['modelValue', 'options', 'placeholder', 'prefix', 'isCrypto', 'decimals'])
+const props = defineProps([
+  'modelValue',
+  'options',
+  'placeholder',
+  'prefix',
+  'isCrypto',
+  'decimals',
+  'min',
+  'max',
+  'errorMsg',
+])
 const emit = defineEmits(['update:modelValue'])
 // create a data object with the data object with value as property.
 const value = ref(props.modelValue)
@@ -10,6 +20,7 @@ const decimals = ref(props.decimals)
 const formattedValue = ref(formatAmount(props.modelValue, isCrypto.value, decimals.value))
 const watching = ref(false)
 const inputRef = ref('')
+const error = ref(false)
 
 watch(
   () => props.modelValue,
@@ -17,6 +28,8 @@ watch(
     if (!watching.value) {
       format(Number(newValue))
     }
+    value.value = newValue
+    error.value = (props.min && newValue < props.min) || (props.max && newValue > props.max)
   }
 )
 
@@ -65,10 +78,13 @@ onMounted(() => {
     :value="formattedValue"
     :placeholder="placeholder"
     type="text"
+    :class="{ error }"
     @input="onChange"
     @focus="onFocus"
     @blur="onBlur"
   />
+  <!-- Uncomment to show label -->
+  <!-- <label v-if="errorMsg && error" class="error-msg">{{ errorMsg }}</label> -->
 </template>
 
 <style lang="scss">
@@ -82,5 +98,10 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type='number'] {
   -moz-appearance: textfield;
+}
+
+.error {
+  border: 1px solid red;
+  background-color: aqua;
 }
 </style>

@@ -213,6 +213,9 @@ onUnmounted(() => {
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
             :prefix="microDenomToDenom(offerResponse.offer.denom.native)"
+            :min="minAmountInCrypto"
+            :max="maxAmountInCrypto"
+            :errorMsg="`The value should be between ${minMaxCryptoStr[0]} and ${minMaxCryptoStr[1]}`"
             :isCrypto="true"
             :decimals="6"
           />
@@ -238,6 +241,9 @@ onUnmounted(() => {
             v-model="fiatAmount"
             :placeholder="fiatPlaceholder"
             :prefix="offerResponse.offer.fiat_currency"
+            :min="minAmountInFiat"
+            :max="maxAmountInFiat"
+            :errorMsg="`The value should be between ${minMaxFiatStr[0]} and ${minMaxFiatStr[1]}`"
             :isCrypto="false"
             :decimals="2"
           />
