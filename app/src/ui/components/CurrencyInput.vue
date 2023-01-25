@@ -55,7 +55,6 @@ function onBlur() {
 }
 
 onMounted(() => {
-  inputRef.value.focus()
   format(Number(value.value))
 })
 </script>
