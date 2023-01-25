@@ -227,6 +227,8 @@ onUnmounted(() => {
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
             :prefix="microDenomToDenom(offerResponse.offer.denom.native)"
+            :isCrypto="true"
+            :decimals="6"
           />
           <div class="wrap-limit">
             <div class="limit-btn">
@@ -250,6 +252,8 @@ onUnmounted(() => {
             v-model="fiatAmount"
             :placeholder="fiatPlaceholder"
             :prefix="offerResponse.offer.fiat_currency"
+            :isCrypto="false"
+            :decimals="2"
           />
           <div class="wrap-limit">
             <div class="limit-btn">

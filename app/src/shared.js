@@ -8,11 +8,11 @@ export function formatAddress(address) {
   return `${start}...${end}`
 }
 
-export function formatAmount(amount, ustAmount = true) {
-  if (ustAmount) {
+export function formatAmount(amount, isCrypto = true, decimals = 2) {
+  if (isCrypto) {
     amount = amount / 1000000
   }
-  return amount.toFixed(2)
+  return amount.toFixed(decimals)
 }
 
 export function formatFiatAmount(amount) {

@@ -1,25 +1,43 @@
 <script setup>
 import { formatAmount } from '~/shared'
-const props = defineProps(['modelValue', 'options', 'placeholder', 'prefix'])
+const props = defineProps(['modelValue', 'options', 'placeholder', 'prefix', 'isCrypto', 'decimals'])
 const emit = defineEmits(['update:modelValue'])
 // create a data object with the data object with value as property.
 const value = ref(props.modelValue)
 const placeholder = ref(props.placeholder)
-const formattedValue = ref(formatAmount(props.modelValue))
+const isCrypto = ref(props.isCrypto)
+const decimals = ref(props.decimals)
+const formattedValue = ref(formatAmount(props.modelValue, isCrypto.value, decimals.value))
 const watching = ref(false)
+const inputRef = ref('')
 
 watch(
   () => props.modelValue,
   (newValue) => {
     if (!watching.value) {
-      formattedValue.value = `${props.prefix} ${formatAmount(newValue * 1000000)}`
+      format(Number(newValue))
     }
   }
 )
 
-function focus() {
+function format(newValue) {
+  if (isCrypto.value) {
+    formattedValue.value = `${props.prefix} ${parseFloat(
+      formatAmount(newValue * 1000000, isCrypto.value, decimals.value),
+      decimals.value
+    )}`
+  } else {
+    formattedValue.value = `${props.prefix} ${parseFloat(
+      formatAmount(newValue, isCrypto.value, decimals.value),
+      decimals.value
+    )}`
+  }
+}
+
+function onFocus() {
   watching.value = true
   formattedValue.value = formattedValue.value.replace(/[^0-9.]/g, '')
+  value.value = formattedValue.value
 }
 
 function onChange(e) {
@@ -33,7 +51,7 @@ function onChange(e) {
 
 function onBlur() {
   watching.value = false
-  formattedValue.value = `${props.prefix} ${formatAmount(value.value * 1000000)}`
+  format(Number(value.value))
 }
 </script>
 
@@ -44,8 +62,8 @@ function onBlur() {
     :placeholder="placeholder"
     type="text"
     @input="onChange"
-    @focus="focus"
-    @blur="onBlur()"
+    @focus="onFocus"
+    @blur="onBlur"
   />
 </template>
 
