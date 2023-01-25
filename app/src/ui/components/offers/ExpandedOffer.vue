@@ -36,13 +36,11 @@ const telegram = ref<string>('')
 const secondsUntilRateRefresh = ref(0)
 const cryptoAmount = ref(0.0)
 const fiatAmount = ref(0.0)
-const tradingFee = ref(0.0)
 const fiatPriceByRate = ref(0.0)
 const watchingCrypto = ref(true)
 const watchingFiat = ref(false)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
-const cryptoAmountInput2 = ref()
 const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
 
@@ -128,29 +126,16 @@ function useMaxFiat() {
   watchingCrypto.value = false
   fiatAmount.value = maxAmountInFiat.value
 }
-/*
+
 watch(fiatAmount, (newFiatAmount) => {
-  if (watchingFiat && newFiatAmount !== null) {
-    const usdRate = fiatPriceByRate.value / 100
-    const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
-    tradingFee.value = cryptoAmount * 0.01
-    nextTick(() => {
-      cryptoAmountInput.value.update(cryptoAmount)
-    })
-  }
+  const usdRate = fiatPriceByRate.value / 100
+  cryptoAmount.value = parseFloat(newFiatAmount.toString()) / usdRate
 })
 
 watch(cryptoAmount, (newCryptoAmount) => {
-  if (watchingCrypto && newCryptoAmount !== null) {
-    const usdRate = fiatPriceByRate.value / 100
-    tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
-    nextTick(() => {
-      const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
-      fiatAmountInput.value.update(fiatAmount)
-    })
-  }
+  const usdRate = fiatPriceByRate.value / 100
+  fiatAmount.value = parseFloat(newCryptoAmount.toString()) * usdRate
 })
-*/
 
 async function refreshExchangeRate() {
   const offer = props.offerResponse.offer
@@ -182,6 +167,7 @@ onMounted(async () => {
   telegram.value = await defaultUserContact()
   nextTick(async () => {
     focus()
+    useMinCrypto()
   })
 })
 

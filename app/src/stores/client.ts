@@ -191,7 +191,7 @@ export const useClientStore = defineStore({
         const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
         const newTrade: NewTrade = {
           offer_id: offerResponse.offer.id,
-          amount: `${amount * CRYPTO_DECIMAL_PLACES}`,
+          amount: `${Number(amount * CRYPTO_DECIMAL_PLACES).toFixed(0)}`,
           taker: `${this.userWallet.address}`,
           profile_taker_contact,
           taker_contact,
