@@ -108,6 +108,13 @@ const platformFee = computed(() => {
   return total * totalFee
 })
 
+const disputeFee = computed(() => {
+  const total = tradeInfo.value.trade.amount
+  const { arbitration_fee_pct } = client.getHubConfig()
+  const totalDisputeFee = Number(arbitration_fee_pct)
+  return total * totalDisputeFee
+})
+
 function startTradeTimer() {
   tradeTimerInterval = setInterval(tradeTimerTick, 10)
 }
@@ -355,24 +362,35 @@ watch(userWallet, async () => {
               <p class="label">Transaction summary</p>
               <div class="transaction">
                 <div class="list-item">
-                  <p v-if="isBuyer" class="list-item-label">You will receive</p>
-                  <p v-else class="list-item-label">You will sell</p>
+                  <p v-if="isBuyer" class="list-item-label">Buying</p>
+                  <p v-else class="list-item-label">Selling</p>
                   <p class="value">
                     {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
-                <!-- TO-DO - This list-item should only appear for the Maker -->
+                <!-- Platform Fee -->
                 <div class="list-item">
-                  <p>Platform fee</p>
-                  <p class="value">???????</p>
+                  <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
+                  <p class="value">
+                    {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
                 </div>
 
+                <!-- Dispute Fee -->
                 <div class="list-item">
-                  <p v-if="isBuyer" class="list-item-label">You will pay</p>
-                  <p v-else class="list-item-label">You will receive</p>
-                  <p class="value fiat">
-                    {{ fiatAmountStr }}
+                  <p>Dispute fee ( {{ formatAmount(Number(disputeFee)) * 100 }}% )</p>
+                  <p class="value">
+                    {{ formatAmount(disputeFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <!-- Total to be released -->
+                <div class="list-item">
+                  <p>Total in dispute</p>
+                  <p class="value total">
+                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee) - Number(disputeFee)) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
               </div>
@@ -404,7 +422,7 @@ watch(userWallet, async () => {
                   </p>
                 </div>
 
-                <!-- TO-DO - This list-item should only appear for the Maker -->
+                <!-- Platform Fee -->
                 <div v-if="isMaker" class="list-item">
                   <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
                   <p class="value">
@@ -824,7 +842,7 @@ h3 {
           font-weight: $semi-bold;
         }
 
-        .fiat {
+        .total {
           color: $primary;
         }
 
