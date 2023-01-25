@@ -8,7 +8,7 @@ import {
   isTelegramHandleValid,
   removeTelegramURLPrefix,
 } from '~/shared'
-import type { Denom, PostOffer } from '~/types/components.interface'
+import type { Denom } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
@@ -139,13 +139,9 @@ watch(fiatCurrency, async () => {
           <CurrencyInput
             v-model="minAmount"
             :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
+            :prefix="microDenomToDenom(selectedCrypto)"
+            :isCrypto="true"
+            :decimals="6"
           />
         </div>
         <div class="wrap">
@@ -153,13 +149,9 @@ watch(fiatCurrency, async () => {
           <CurrencyInput
             v-model="maxAmount"
             :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
+            :prefix="microDenomToDenom(selectedCrypto)"
+            :isCrypto="true"
+            :decimals="6"
           />
         </div>
       </div>

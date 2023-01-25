@@ -7,6 +7,7 @@ import {
   convertOfferRateToMarginRate,
   formatAmount,
 } from '~/shared'
+import { microDenomToDenom } from '~/utils/denom'
 import type { GetOffer } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 
@@ -18,42 +19,43 @@ const updatedOffer = ref<GetOffer>({
   min_amount: `${formatAmount(props.offer.min_amount)}`,
   max_amount: `${formatAmount(props.offer.max_amount)}`,
 })
+
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 const margin = ref(marginRate.value.margin)
 const marginOffset = ref(marginRate.value.marginOffset)
-const rate = ref(0)
+const minAmount = ref(Number(props.offer.min_amount))
+const maxAmount = ref(Number(props.offer.max_amount))
+const description = ref(updatedOffer.value.description)
+const rate = ref(props.offer.rate)
+const valid = ref(true)
+
+// watch min amount and max amount and update their respective values in the props.offer
+watch(minAmount, (val) => {
+  updatedOffer.value.min_amount = `${val}`
+  valid.value = Number(updatedOffer.value.min_amount) < Number(updatedOffer.value.max_amount)
+})
+watch(maxAmount, (val) => {
+  updatedOffer.value.max_amount = `${val}`
+  valid.value = Number(updatedOffer.value.min_amount) < Number(updatedOffer.value.max_amount)
+})
+
 const fiatPriceByRate = computed(() => {
   const denomFiatPrice = client.getFiatPrice(props.offer.fiat_currency, props.offer.denom)
   return calculateFiatPriceByRate(denomFiatPrice, rate.value)
 })
 const offerPrice = computed(() => `${props.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value, false)}`)
-const valid = computed(() => updatedOffer.value.max_amount > updatedOffer.value.min_amount)
-const description = ref(updatedOffer.value.description)
-
-function calculateMarginRate() {
-  rate.value = convertMarginRateToOfferRate(marginRate.value.margin, marginRate.value.marginOffset)
-}
 
 function update() {
   const offer = updatedOffer.value
   client.updateOffer({
     id: offer.id,
     state: offer.state,
-    rate: `${rate.value}`,
-    min_amount: `${formatAmount(offer.min_amount, false) * 1000000}`,
-    max_amount: `${formatAmount(offer.max_amount, false) * 1000000}`,
+    rate: `${convertMarginRateToOfferRate(marginRate.value.margin, marginRate.value.marginOffset)}`,
+    min_amount: `${(Number(offer.min_amount) * 1000000).toFixed(0)}`,
+    max_amount: `${(Number(offer.max_amount) * 1000000).toFixed(0)}`,
     description: description.value,
   })
 }
-
-watch(margin, (val) => {
-  marginRate.value.margin = val
-  calculateMarginRate()
-})
-
-watch(marginOffset, () => {
-  calculateMarginRate()
-})
 </script>
 
 <template>
@@ -82,30 +84,22 @@ watch(marginOffset, () => {
           <div class="input-wrap">
             <p class="label">Min amount</p>
             <CurrencyInput
-              v-model="updatedOffer.min_amount"
+              v-model="minAmount"
               :placeholder="0"
-              :options="{
-                currency: 'USD',
-                currencyDisplay: 'hidden',
-                hideCurrencySymbolOnFocus: false,
-                hideGroupingSeparatorOnFocus: false,
-                precision: 2,
-              }"
+              :decimals="6"
+              :isCrypto="true"
+              :prefix="microDenomToDenom(offer.denom.native)"
             />
           </div>
 
           <div class="input-wrap">
             <p class="label">Max amount</p>
             <CurrencyInput
-              v-model="updatedOffer.max_amount"
+              v-model="maxAmount"
               :placeholder="0"
-              :options="{
-                currency: 'USD',
-                currencyDisplay: 'hidden',
-                hideCurrencySymbolOnFocus: false,
-                hideGroupingSeparatorOnFocus: false,
-                precision: 2,
-              }"
+              :decimals="6"
+              :isCrypto="true"
+              :prefix="microDenomToDenom(offer.denom.native)"
             />
           </div>
         </div>

@@ -53,6 +53,11 @@ function onBlur() {
   watching.value = false
   format(Number(value.value))
 }
+
+onMounted(() => {
+  inputRef.value.focus()
+  format(Number(value.value))
+})
 </script>
 
 <template>
