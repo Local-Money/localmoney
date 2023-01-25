@@ -105,9 +105,7 @@ const platformFee = computed(() => {
   const total = tradeInfo.value.trade.amount
   const { warchest_fee_pct, burn_fee_pct, chain_fee_pct } = client.getHubConfig()
   const totalFee = Number(warchest_fee_pct) + Number(burn_fee_pct) + Number(chain_fee_pct)
-  const fee = total * totalFee
-  console.log('fee', warchest_fee_pct, burn_fee_pct, chain_fee_pct, total, totalFee, fee)
-  return fee
+  return total * totalFee
 })
 
 function startTradeTimer() {
@@ -399,18 +397,30 @@ watch(userWallet, async () => {
               <p class="label">Transaction summary</p>
               <div class="transaction">
                 <div class="list-item">
-                  <p v-if="isBuyer" class="list-item-label">You will receive</p>
-                  <p v-else class="list-item-label">You will sell</p>
+                  <p v-if="isBuyer" class="list-item-label">Buying</p>
+                  <p v-else class="list-item-label">Selling</p>
                   <p class="value">
                     {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
                 <!-- TO-DO - This list-item should only appear for the Maker -->
-                <div v-show="isMaker" class="list-item">
+                <div v-if="isMaker" class="list-item">
                   <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
                   <p class="value">
                     {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <div v-if="isMaker" class="list-item">
+                  <p>Total</p>
+                  <p v-if="isBuyer" class="value">
+                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee)) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                  <p v-else class="value">
+                    {{ formatAmount(Number(platformFee) + Number(tradeInfo.trade.amount)) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
@@ -816,6 +826,12 @@ h3 {
 
         .fiat {
           color: $primary;
+        }
+
+        &:last-child {
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid $border;
         }
       }
     }
