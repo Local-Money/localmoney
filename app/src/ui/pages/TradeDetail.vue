@@ -742,35 +742,7 @@ h3 {
   flex: 2.5;
 }
 
-.dispute-summary {
-  .dispute-wrap {
-    flex: 2.5;
-  }
-  .traders-info {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    margin-bottom: 40px;
-
-    .peer-wrap {
-      text-align: center;
-
-      .peer {
-        font-size: 20px;
-        font-weight: $semi-bold;
-        margin-bottom: 8px;
-      }
-      .address {
-        font-size: 14px;
-        background-color: $gray300;
-        border-radius: 8px;
-        padding: 4px 16px;
-      }
-    }
-    .separator svg {
-      stroke: $primary;
-    }
-  }
+.arbitrator-dispute-summary {
 }
 
 .trade-summary,
@@ -851,6 +823,35 @@ h3 {
           padding-top: 16px;
           border-top: 1px solid $border;
         }
+      }
+    }
+  }
+
+  .dispute-wrap {
+    flex: 2.5;
+    .traders-info {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-bottom: 40px;
+
+      .peer-wrap {
+        text-align: center;
+
+        .peer {
+          font-size: 20px;
+          font-weight: $semi-bold;
+          margin-bottom: 8px;
+        }
+        .address {
+          font-size: 14px;
+          background-color: $gray300;
+          border-radius: 8px;
+          padding: 4px 16px;
+        }
+      }
+      .separator svg {
+        stroke: $primary;
       }
     }
   }
