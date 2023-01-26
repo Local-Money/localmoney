@@ -34,6 +34,9 @@ watch(
 )
 
 function format(newValue) {
+  if (newValue === undefined || newValue === null || isNaN(newValue)) {
+    newValue = '0'
+  }
   if (isCrypto.value) {
     formattedValue.value = `${props.prefix} ${parseFloat(
       formatAmount(newValue * 1000000, isCrypto.value, decimals.value),
@@ -64,6 +67,9 @@ function onChange(e) {
 
 function onBlur() {
   watching.value = false
+  if (value.value === '') {
+    value.value = '0'
+  }
   format(Number(value.value))
 }
 
