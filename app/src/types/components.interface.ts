@@ -178,6 +178,7 @@ export interface HubConfig {
   chain_fee_collector_addr: string
   warchest_addr: string
   local_denom: Denom
+  arbitration_fee_pct: number
   burn_fee_pct: number
   chain_fee_pct: number
   warchest_fee_pct: number

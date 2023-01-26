@@ -87,6 +87,8 @@ const maker = computed(() => {
   return tradeInfo.value.offer.offer.owner
 })
 
+const isMaker = computed(() => tradeInfo.value.offer.offer.owner === walletAddress.value)
+
 const taker = computed(() => {
   return tradeInfo.value.trade.buyer === maker ? tradeInfo.value.trade.seller : tradeInfo.value.trade.buyer
 })
@@ -97,6 +99,20 @@ const contactsForArbitrator = computed(() => {
     makerContact,
     takerContact,
   }
+})
+
+const platformFee = computed(() => {
+  const total = tradeInfo.value.trade.amount
+  const { warchest_fee_pct, burn_fee_pct, chain_fee_pct } = client.getHubConfig()
+  const totalFee = Number(warchest_fee_pct) + Number(burn_fee_pct) + Number(chain_fee_pct)
+  return total * totalFee
+})
+
+const disputeFee = computed(() => {
+  const total = tradeInfo.value.trade.amount
+  const { arbitration_fee_pct } = client.getHubConfig()
+  const totalDisputeFee = Number(arbitration_fee_pct)
+  return total * totalDisputeFee
 })
 
 function startTradeTimer() {
@@ -329,45 +345,121 @@ watch(userWallet, async () => {
 
       <div class="summary">
         <!-- Trade Summary -->
-        <div v-if="!isArbitrator" class="trade-summary card">
-          <div class="description">
-            <p class="label">Offer description</p>
-            <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
-          </div>
-          <div class="trade-info">
-            <p class="label">Price</p>
-            <div class="current-price">
-              <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
-              <p class="price">
-                {{ offerPrice }}
-              </p>
+        <div v-if="!isArbitrator" class="card">
+          <div v-if="tradeInfo.trade.state === 'escrow_disputed'" class="trade-summary">
+            <div class="description">
+              <p class="label">Offer description</p>
+              <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
             </div>
-            <p class="label">Transaction summary</p>
-            <div class="transaction">
-              <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will get</p>
-                <p v-else class="list-item-label">You will send</p>
-                <p class="value">
-                  {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+            <div class="trade-info">
+              <p class="label">Price</p>
+              <div class="current-price">
+                <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+                <p class="price">
+                  {{ offerPrice }}
                 </p>
               </div>
-              <div class="list-item">
-                <p v-if="isBuyer" class="list-item-label">You will send</p>
-                <p v-else class="list-item-label">You will get</p>
-                <p class="value fiat">
-                  {{ fiatAmountStr }}
+              <p class="label">Transaction summary</p>
+              <div class="transaction">
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">Buying</p>
+                  <p v-else class="list-item-label">Selling</p>
+                  <p class="value">
+                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <!-- Platform Fee -->
+                <div class="list-item">
+                  <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
+                  <p class="value">
+                    {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <!-- Dispute Fee -->
+                <div class="list-item">
+                  <p>Dispute fee ( {{ formatAmount(Number(disputeFee)) * 100 }}% )</p>
+                  <p class="value">
+                    {{ formatAmount(disputeFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <!-- Total to be released -->
+                <div class="list-item">
+                  <p>Total in dispute</p>
+                  <p class="value total">
+                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee) - Number(disputeFee)) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- End Trade Summary -->
+
+          <!-- Trade Dispute Summary -->
+          <div v-else class="dispute-summary">
+            <div class="description">
+              <p class="label">Offer description</p>
+              <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
+            </div>
+            <div class="trade-info">
+              <p class="label">Price</p>
+              <div class="current-price">
+                <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+                <p class="price">
+                  {{ offerPrice }}
                 </p>
+              </div>
+              <p class="label">Transaction summary</p>
+              <div class="transaction">
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">Buying</p>
+                  <p v-else class="list-item-label">Selling</p>
+                  <p class="value">
+                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <!-- Platform Fee -->
+                <div v-if="isMaker" class="list-item">
+                  <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
+                  <p class="value">
+                    {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <div v-if="isMaker" class="list-item">
+                  <p>Total</p>
+                  <p v-if="isBuyer" class="value">
+                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee)) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                  <p v-else class="value">
+                    {{ formatAmount(Number(platformFee) + Number(tradeInfo.trade.amount)) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                  </p>
+                </div>
+
+                <div class="list-item">
+                  <p v-if="isBuyer" class="list-item-label">You will pay</p>
+                  <p v-else class="list-item-label">You will receive</p>
+                  <p class="value fiat">
+                    {{ fiatAmountStr }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <!-- End Trade Summary -->
+        <!-- End Trade Dispute Summary -->
 
-        <!-- Trade Dispute Summary -->
-        <div v-else class="dispute-summary card">
+        <!-- Arbitrator view - Trade Dispute Summary -->
+        <div v-else class="arbitrator-dispute-summary card">
           <div class="description">
             <p class="label">Offer description</p>
-            <p class="content">Lemon Cash, Bank Transfer (Argentina), Mercado Pago, RebaBanco, Brubank</p>
+            <p class="content">{{ tradeInfo.offer.offer.description ?? 'No Description' }}</p>
           </div>
           <div class="dispute-wrap">
             <div class="traders-info">
@@ -650,39 +742,12 @@ h3 {
   flex: 2.5;
 }
 
-.dispute-summary {
-  .dispute-wrap {
-    flex: 2.5;
-  }
-  .traders-info {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    margin-bottom: 40px;
-
-    .peer-wrap {
-      text-align: center;
-
-      .peer {
-        font-size: 20px;
-        font-weight: $semi-bold;
-        margin-bottom: 8px;
-      }
-      .address {
-        font-size: 14px;
-        background-color: $gray300;
-        border-radius: 8px;
-        padding: 4px 16px;
-      }
-    }
-    .separator svg {
-      stroke: $primary;
-    }
-  }
+.arbitrator-dispute-summary {
 }
 
 .trade-summary,
-.dispute-summary {
+.dispute-summary,
+.arbitrator-dispute-summary {
   display: flex;
   gap: 32px;
 
@@ -739,10 +804,7 @@ h3 {
         display: flex;
         justify-content: space-between;
         align-items: center;
-
-        &:first-child {
-          margin-bottom: 8px;
-        }
+        margin-bottom: 4px;
 
         p {
           font-size: 16px;
@@ -752,9 +814,44 @@ h3 {
           font-weight: $semi-bold;
         }
 
-        .fiat {
+        .total {
           color: $primary;
         }
+
+        &:last-child {
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid $border;
+        }
+      }
+    }
+  }
+
+  .dispute-wrap {
+    flex: 2.5;
+    .traders-info {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-bottom: 40px;
+
+      .peer-wrap {
+        text-align: center;
+
+        .peer {
+          font-size: 20px;
+          font-weight: $semi-bold;
+          margin-bottom: 8px;
+        }
+        .address {
+          font-size: 14px;
+          background-color: $gray300;
+          border-radius: 8px;
+          padding: 4px 16px;
+        }
+      }
+      .separator svg {
+        stroke: $primary;
       }
     }
   }
