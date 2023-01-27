@@ -71,6 +71,7 @@ export interface Chain {
 
 export enum ChainClient {
   kujiraTestnet = 'KUJIRA_TESTNET',
+  kujiraMainnet = 'KUJIRA_MAINNET',
   juno = 'JUNO',
   dev = 'DEV',
 }
@@ -79,6 +80,8 @@ export enum ChainClient {
 export function chainFactory(client: ChainClient): Chain {
   switch (client) {
     case ChainClient.kujiraTestnet:
+      return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
+    case ChainClient.kujiraMainnet:
       return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
     case ChainClient.juno:
       return new CosmosChain(JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO)
