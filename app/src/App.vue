@@ -27,7 +27,7 @@ useHead({
   <RouterView />
   <!-- Loading Modal -->
   <ModalLoading :loading="loading" />
-  <BetaPopUp :loading="true" />
+  <BetaPopUp :loading="false" />
 </template>
 
 <style lang="scss">

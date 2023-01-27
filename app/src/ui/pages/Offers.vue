@@ -3,15 +3,6 @@ const modalActive = ref(false)
 function toggleModal() {
   modalActive.value = !modalActive.value
 }
-
-const modalActive2 = ref(false)
-
-function toggleModal2() {
-  modalActive2.value = !modalActive2.value
-}
-onMounted(() => {
-  toggleModal2()
-})
 </script>
 
 <template>
@@ -33,9 +24,6 @@ onMounted(() => {
     </div>
     <ListMyOffers />
   </section>
-  <Modal :modalActive="modalActive2" @close="toggleModal2()">
-    <PopUpModal @cancel="toggleModal2()" />
-  </Modal>
 </template>
 
 <style lang="scss" scoped>
