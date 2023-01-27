@@ -391,6 +391,16 @@ describe('trade limits', () => {
       taker_contact: 'taker_contact',
     })
     expect(tradeId).not.toBeNaN()
+
+    console.log(`>>>>>>>>>>>>>>>> offer type: ${offer.offer_type}`)
+    // Accept the trade to start to count as active trade
+    if (offer.offer_type === OfferType.sell) {
+      const trade = await makerClient.fetchTradeDetail(tradeId)
+      await makerClient.fundEscrow(trade, 'maker_contract')
+    } else {
+      await makerClient.acceptTradeRequest(tradeId, 'maker_contact')
+    }
+
     // Try to create another trade and expect it to fail
     await expect(async () => {
       await takerClient.openTrade({
