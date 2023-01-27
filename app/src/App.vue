@@ -2,14 +2,16 @@
 // https://github.com/vueuse/head
 // you can use this to manipulate the document head in any components,
 // they will be rendered correctly in the html results with vite-ssg
+import BetaPopUp from './ui/components/commons/BetaPopUp.vue'
 import { ChainClient } from '~/network/Chain'
 import { useClientStore } from '~/stores/client'
 import './ui/style/reset.scss'
 import 'vue-toastification/dist/index.css'
-import BetaPopUp from './ui/components/commons/BetaPopUp.vue'
+
 const client = useClientStore()
 client.setClient(ChainClient.dev) // required to properly init chain
 const loading = computed(() => client.loadingState)
+const showWelcome = ref(true)
 
 useHead({
   title: 'Local Money - TESTNET',
@@ -27,7 +29,7 @@ useHead({
   <RouterView />
   <!-- Loading Modal -->
   <ModalLoading :loading="loading" />
-  <BetaPopUp :loading="false" />
+  <BetaPopUp :show="showWelcome" @accept="showWelcome = false" />
 </template>
 
 <style lang="scss">
