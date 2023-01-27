@@ -24,3 +24,28 @@ export const KUJIRA_TESTNET_HUB_INFO: HubInfo = {
     },
   },
 }
+
+export const KUJIRA_MAINNET_CONFIG: CosmosConfig = {
+  chainId: 'kaiyo-1',
+  chainName: 'Kujira',
+  lcdUrl: 'https://lcd.kaiyo.kujira.setten.io/',
+  rpcUrl: 'https://rpc.kaiyo.kujira.setten.io/',
+  addressPrefix: 'kujira',
+  coinDenom: 'KUJI',
+  coinMinimalDenom: 'ukuji',
+  coinDecimals: 6,
+}
+
+export const KUJIRA_MAINNET_HUB_INFO: HubInfo = {
+  hubAddress: 'kujira1392dk7n69wj2gvz25ygtyz48w0lgtkrgay72c60vszhrrkkrtw9qzced2h',
+  hubConfig: {
+    offer_addr: 'kujira1hpmasdua44u83h497p6wpu84dmmvafj82xd4jfky7z55vpf8a4rqd7qeat',
+    trade_addr: 'kujira1hdydzhe7dfhw2vmfsrzu6dcw2aeuff4ja8wr5puqhsg8rlf44gvq6car5s',
+    price_addr: 'kujira189qa4s2c8kyhcrf5e75fhmaa6g8ux2h76p06qx32cxgasy07mtqq9mudvh',
+    profile_addr: 'kujira1tyqttr06k5hgrz95a508mu5euvjadtfyfaf4yu2hnh6tueswkvwsjy7290',
+    local_market_addr: 'kujira1sse6a00arh9dalzsyrd3q825dsn2zmrag0u4qx8q0dyks4ftnxyqrj0xds',
+    local_denom: {
+      native: 'ukuji',
+    },
+  },
+}
