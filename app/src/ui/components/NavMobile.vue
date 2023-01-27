@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import useNotificationSystem from '~/notification/Notification'
 import { useClientStore } from '~/stores/client'
+import { enableDisputes, enableMyOffers } from '~/config/featureToggle'
 
 const notification = useNotificationSystem()
 const client = useClientStore()
+const { userWallet } = storeToRefs(client)
+const isConnected = computed(() => userWallet.value.isConnected)
+const enableMyOffersNav = computed(() => enableMyOffers(userWallet.value, client.chainClient))
+const enableDisputesNav = computed(() => enableDisputes(userWallet.value, client.arbitrators.data))
 
-const isConnected = computed(() => client.userWallet.isConnected)
 const widgetActive = ref(false)
-
 function toggleWidget() {
   widgetActive.value = !widgetActive.value
   const noScroll = document.body
@@ -32,7 +36,7 @@ function toggleWidget() {
         </router-link>
       </li>
 
-      <li class="item">
+      <li v-show="enableMyOffersNav" class="item">
         <router-link to="/offers">
           <svg class="icon-24" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -61,7 +65,7 @@ function toggleWidget() {
         </router-link>
       </li>
 
-      <li class="item">
+      <li v-if="enableDisputesNav" class="item">
         <router-link to="/arbitration">
           <svg
             class="icon-24"

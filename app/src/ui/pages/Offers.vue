@@ -1,8 +1,24 @@
 <script setup type="ts">
+import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
+import { useClientStore } from '~/stores/client'
+import { enableMyOffers } from '~/config/featureToggle'
+
+const client = useClientStore()
+const router = useRouter()
+const { userWallet } = storeToRefs(client)
+const enableMyOffersPage = computed(() => enableMyOffers(userWallet.value, client.chainClient))
+
 const modalActive = ref(false)
 function toggleModal() {
   modalActive.value = !modalActive.value
 }
+
+onBeforeMount(() => {
+  if (!enableMyOffersPage.value) {
+    router.push('/')
+  }
+})
 </script>
 
 <template>

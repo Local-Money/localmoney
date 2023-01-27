@@ -1,5 +1,10 @@
 import { JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO } from './cosmos/config/juno'
-import { KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO } from './cosmos/config/kujira'
+import {
+  KUJIRA_MAINNET_CONFIG,
+  KUJIRA_MAINNET_HUB_INFO,
+  KUJIRA_TESTNET_CONFIG,
+  KUJIRA_TESTNET_HUB_INFO,
+} from './cosmos/config/kujira'
 import { DEV_CONFIG, DEV_HUB_INFO } from './cosmos/config/dev'
 import type {
   Arbitrator,
@@ -82,7 +87,7 @@ export function chainFactory(client: ChainClient): Chain {
     case ChainClient.kujiraTestnet:
       return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
     case ChainClient.kujiraMainnet:
-      return new CosmosChain(KUJIRA_TESTNET_CONFIG, KUJIRA_TESTNET_HUB_INFO)
+      return new CosmosChain(KUJIRA_MAINNET_CONFIG, KUJIRA_MAINNET_HUB_INFO)
     case ChainClient.juno:
       return new CosmosChain(JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO)
     case ChainClient.dev:
