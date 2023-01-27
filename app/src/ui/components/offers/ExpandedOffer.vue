@@ -128,13 +128,21 @@ function useMaxFiat() {
 }
 
 watch(fiatAmount, (newFiatAmount) => {
-  const usdRate = fiatPriceByRate.value / 100
-  cryptoAmount.value = parseFloat(newFiatAmount.toString()) / usdRate
+  if (newFiatAmount === 0 || isNaN(newFiatAmount)) {
+    cryptoAmount.value = 0.0
+  } else {
+    const usdRate = fiatPriceByRate.value / 100
+    cryptoAmount.value = parseFloat(newFiatAmount.toString()) / usdRate
+  }
 })
 
 watch(cryptoAmount, (newCryptoAmount) => {
-  const usdRate = fiatPriceByRate.value / 100
-  fiatAmount.value = parseFloat(newCryptoAmount.toString()) * usdRate
+  if (newCryptoAmount === 0 || isNaN(newCryptoAmount)) {
+    fiatAmount.value = 0.0
+  } else {
+    const usdRate = fiatPriceByRate.value / 100
+    fiatAmount.value = parseFloat(newCryptoAmount.toString()) * usdRate
+  }
 })
 
 async function refreshExchangeRate() {
