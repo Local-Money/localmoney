@@ -38,7 +38,6 @@ const emit = defineEmits<{
 
 <style lang="scss" scoped>
 @import '../../style/tokens.scss';
-@import '../../style/tokens.scss';
 @import '../../style/elements.scss';
 
 .wrap {
