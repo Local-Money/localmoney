@@ -504,7 +504,25 @@ fn fund_escrow(
     trade.set_state(TradeState::EscrowFunded, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
+    let mut sub_msgs: Vec<SubMsg> = vec![];
+
+    if info.sender.eq(&offer.owner) {
+        // Increase maker's (seller) active trades count when trade is accepted
+        sub_msgs.push(update_profile_trades_count_msg(
+            hub_config.profile_addr.to_string(),
+            trade.seller.clone(),
+            TradeState::EscrowFunded,
+        ));
+        // Increase taker's (buyer) active trades count when trade is accepted
+        sub_msgs.push(update_profile_trades_count_msg(
+            hub_config.profile_addr.to_string(),
+            trade.buyer.clone(),
+            TradeState::EscrowFunded,
+        ));
+    }
+
     let res = Response::new()
+        .add_submessages(sub_msgs)
         .add_attribute("action", "fund_escrow")
         .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("trade.amount", trade.amount.clone().to_string())
@@ -514,6 +532,7 @@ fn fund_escrow(
     Ok(res)
 }
 
+// Only makers can use this action
 fn accept_request(
     deps: DepsMut,
     env: Env,
@@ -541,7 +560,25 @@ fn accept_request(
 
     TradeModel::store(deps.storage, &trade).unwrap();
 
+    // Load Hub Cfg
+    let hub_config = get_hub_config(deps.as_ref());
+
+    let mut sub_msgs: Vec<SubMsg> = vec![];
+    // Increase maker's (buyer) active trades count when trade is accepted
+    sub_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.buyer.clone(),
+        TradeState::RequestAccepted,
+    ));
+    // Increase taker's (seller) active trades count when trade is accepted
+    sub_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.seller.clone(),
+        TradeState::RequestAccepted,
+    ));
+
     let res = Response::new()
+        .add_submessages(sub_msgs)
         .add_attribute("action", "accept_request")
         .add_attribute("trade_id", trade_id.to_string())
         .add_attribute("state", trade.get_state().to_string());
@@ -613,6 +650,24 @@ fn cancel_request(
     )
     .unwrap();
 
+    let mut sub_msgs: Vec<SubMsg> = vec![];
+    // Should not be called when the current state is TradeState::RequestCreated
+    if vec![TradeState::EscrowFunded, TradeState::RequestAccepted].contains(&trade.get_state()) {
+        // Load hub config
+        let hub_config = get_hub_config(deps.as_ref());
+        // Decrease active trades count
+        sub_msgs.push(update_profile_trades_count_msg(
+            hub_config.profile_addr.to_string(),
+            trade.buyer.clone(),
+            TradeState::EscrowCanceled,
+        ));
+        sub_msgs.push(update_profile_trades_count_msg(
+            hub_config.profile_addr.to_string(),
+            trade.seller.clone(),
+            TradeState::EscrowCanceled,
+        ));
+    }
+
     if trade.get_state().eq(&TradeState::EscrowFunded) {
         // Update trade State to TradeState::EscrowCanceled
         trade.set_state(TradeState::EscrowCanceled, &env, &info);
@@ -621,24 +676,10 @@ fn cancel_request(
         trade.set_state(TradeState::RequestCanceled, &env, &info);
     }
     TradeModel::store(deps.storage, &trade).unwrap();
-    let hub_config = get_hub_config(deps.as_ref());
-    let update_buyer_profile_trades_count_msg = update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
-        trade.buyer.clone(),
-        trade.get_state(),
-    );
-    let update_seller_profile_trades_count_msg = update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
-        trade.seller.clone(),
-        trade.get_state(),
-    );
-    let msgs = vec![
-        update_buyer_profile_trades_count_msg,
-        update_seller_profile_trades_count_msg,
-    ];
+
     let res = Response::new()
         .add_attribute("action", "cancel_request")
-        .add_submessages(msgs);
+        .add_submessages(sub_msgs);
     Ok(res)
 }
 
@@ -700,13 +741,13 @@ fn release_escrow(
     send_msgs.push(update_profile_trades_count_msg(
         hub_config.profile_addr.to_string(),
         trade.buyer.clone(),
-        trade.get_state(),
+        TradeState::EscrowReleased,
     ));
     // Update seller profile released_trades_count
     send_msgs.push(update_profile_trades_count_msg(
         hub_config.profile_addr.to_string(),
         trade.seller.clone(),
-        trade.get_state(),
+        TradeState::EscrowReleased,
     ));
 
     // Send tokens to buyer
@@ -759,13 +800,29 @@ fn refund_escrow(
     trade.set_state(TradeState::EscrowRefunded, &env, &info);
     TradeModel::store(deps.storage, &trade).unwrap();
 
+    let hub_config = get_hub_config(deps.as_ref());
+
+    let mut sub_msgs: Vec<SubMsg> = vec![];
+    // Decrease active trades count
+    sub_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.buyer.clone(),
+        TradeState::EscrowRefunded,
+    ));
+    // Decrease active trades count
+    sub_msgs.push(update_profile_trades_count_msg(
+        hub_config.profile_addr.to_string(),
+        trade.seller.clone(),
+        TradeState::EscrowRefunded,
+    ));
+
     let amount = trade.amount.clone();
     let denom = denom_to_string(&trade.denom);
     let refund_amount = vec![Coin::new(amount.u128(), denom.clone())];
-    let send_msg = create_send_msg(trade.seller, refund_amount);
+    sub_msgs.push(SubMsg::new(create_send_msg(trade.seller, refund_amount)));
     let res = Response::new()
         .add_attribute("action", "refund_escrow")
-        .add_submessage(SubMsg::new(send_msg));
+        .add_submessages(sub_msgs);
     Ok(res)
 }
 

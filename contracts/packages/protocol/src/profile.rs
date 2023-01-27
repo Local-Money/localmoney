@@ -121,12 +121,12 @@ pub struct Profile {
     pub addr: Addr,
     pub created_at: u64,
     pub requested_trades_count: u64,
+    pub active_trades_count: u8,
     pub released_trades_count: u64,
     pub last_trade: u64,
     pub contact: Option<String>,
     pub encryption_key: Option<String>,
     pub active_offers_count: u8,
-    pub active_trades_count: u8,
 }
 
 impl Profile {

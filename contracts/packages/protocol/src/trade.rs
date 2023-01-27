@@ -170,9 +170,9 @@ pub struct Swap {}
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {
     RequestCreated,
-    RequestAccepted,
     RequestCanceled,
     RequestExpired,
+    RequestAccepted,
     EscrowFunded,
     EscrowCanceled,
     EscrowRefunded,
