@@ -1,16 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { formatAmount } from '~/shared'
-const props = defineProps([
-  'modelValue',
-  'options',
-  'placeholder',
-  'prefix',
-  'isCrypto',
-  'decimals',
-  'min',
-  'max',
-  'errorMsg',
-])
+const props = defineProps<{
+  modelValue: number
+  placeholder: string
+  isCrypto: boolean
+  decimals: number
+  prefix?: string
+  min?: number
+  max?: number
+  errorMsg?: string
+}>()
+
 const emit = defineEmits(['update:modelValue'])
 // create a data object with the data object with value as property.
 const value = ref(props.modelValue)

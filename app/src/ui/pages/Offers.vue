@@ -1,4 +1,4 @@
-<script setup type="ts">
+<script setup lang="ts">
 const modalActive = ref(false)
 function toggleModal() {
   modalActive.value = !modalActive.value
