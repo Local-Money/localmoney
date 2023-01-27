@@ -43,6 +43,7 @@ const emit = defineEmits<{
 .wrap {
   width: 60%;
   min-width: 700px;
+  max-width: 1000px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -51,6 +52,10 @@ const emit = defineEmits<{
   @include responsive(mobile) {
     width: 100%;
     min-width: auto;
+  }
+
+  @media only screen and (max-height: 700px) {
+    overflow-y: scroll;
   }
 
   .wrap-img {
@@ -118,6 +123,10 @@ const emit = defineEmits<{
   top: 0;
   z-index: $z-modal-loading;
   backdrop-filter: blur(10px);
+
+  @media only screen and (max-height: 800px) {
+    align-items: unset;
+  }
 }
 
 .loading {
