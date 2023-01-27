@@ -42,9 +42,9 @@ describe('fees tests', () => {
       'auto'
     )
   })
-  it.only('should register conversion route for USK', async () => {
-    const usk = { native: 'factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk' }
-    const local = { native: 'factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local' }
+  it('should register conversion route for USK', async () => {
+    const usk = { native: 'factory/kujira1r85reqy6h0lu02vyz0hnzhv5whsns55gdt4w0d7ft87utzk7u0wqr4ssll/uusk' }
+    const ukuji = { native: 'ukuji' }
     await adminClient.getCwClient().execute(
       adminClient.getWalletAddress(),
       tradeAddr,
@@ -53,9 +53,16 @@ describe('fees tests', () => {
           denom: usk,
           route: [
             {
-              ask_asset: local,
+              ask_asset: ukuji,
               offer_asset: usk,
-              pool: 'kujira1sse6a00arh9dalzsyrd3q825dsn2zmrag0u4qx8q0dyks4ftnxyqrj0xds',
+              pool: 'kujira1wl003xxwqltxpg5pkre0rl605e406ktmq5gnv0ngyjamq69mc2kqm06ey6',
+            },
+            {
+              ask_asset: {
+                native: process.env.LOCAL_DENOM,
+              },
+              offer_asset: ukuji,
+              pool: process.env.LOCAL_MARKET,
             },
           ],
         },

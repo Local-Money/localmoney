@@ -1,11 +1,11 @@
 [
   {
     "register_price_route_for_denom": {
-      "denom": { "native": "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk" },
+      "denom": { "native": "factory/kujira1r85reqy6h0lu02vyz0hnzhv5whsns55gdt4w0d7ft87utzk7u0wqr4ssll/uusk" },
       "route": [
         {
-          "pool": "kujira1yum4v0v5l92jkxn8xpn9mjg7wuldk784ctg424ue8gqvdp88qzlqr2qp2j",
-          "offer_asset": { "native": "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk" }
+          "pool": "kujira14sa4u42n2a8kmlvj3qcergjhy6g9ps06rzeth94f2y6grlat6u6ssqzgtg",
+          "offer_asset": { "native": "factory/kujira1r85reqy6h0lu02vyz0hnzhv5whsns55gdt4w0d7ft87utzk7u0wqr4ssll/uusk" }
         }
       ]
     }
@@ -15,7 +15,7 @@
       "denom": { "native": "ukuji" },
       "route": [
         {
-          "pool": "kujira18v47nqmhvejx3vc498pantg8vr435xa0rt6x0m6kzhp6yuqmcp8s4x8j2c",
+          "pool": "kujira1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsqq4jjh",
           "offer_asset": { "native": "ukuji" }
         }
       ]
@@ -23,15 +23,15 @@
   },
   {
     "register_price_route_for_denom": {
-      "denom": { "native": "factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local" },
+      "denom": { "native": "factory/kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w/local" },
       "route": [
         {
-          "pool": "kujira1sse6a00arh9dalzsyrd3q825dsn2zmrag0u4qx8q0dyks4ftnxyqrj0xds",
-          "offer_asset": { "native": "factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local" }
+          "pool": "kujira1chejx4qqtvwxy6684yrsmf6pylancxqhk3vsmtleg5ta3zrffljq4xf685",
+          "offer_asset": { "native": "factory/kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w/local" }
         },
         {
-          "pool": "kujira1yum4v0v5l92jkxn8xpn9mjg7wuldk784ctg424ue8gqvdp88qzlqr2qp2j",
-          "offer_asset": { "native": "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk" }
+          "pool": "kujira1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsqq4jjh",
+          "offer_asset": { "native": "ukuji" }
         }
       ]
     }
