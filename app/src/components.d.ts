@@ -34,7 +34,6 @@ declare module '@vue/runtime-core' {
     NotificationWidgetMobile: typeof import('./ui/components/commons/NotificationWidgetMobile.vue')['default']
     Offers: typeof import('./ui/pages/Offers.vue')['default']
     OpenDisputeItem: typeof import('./ui/components/arbitration/OpenDisputeItem.vue')['default']
-    PopUpModal: typeof import('./ui/components/commons/PopUpModal.vue')['default']
     RightArrow: typeof import('./ui/components/commons/RightArrow.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
