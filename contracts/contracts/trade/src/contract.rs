@@ -266,18 +266,13 @@ fn create_trade(
     )
     .trade;
 
-    // increment buyer profile trades count
-    sub_msgs.push(update_profile_trades_count_msg(
+    let mut profile_submsgs = create_update_trades_count_msgs(
         hub_cfg.profile_addr.to_string(),
-        buyer.clone(),
+        trade.buyer.clone(),
+        trade.seller.clone(),
         TradeState::RequestCreated,
-    ));
-    // increment seller profile trades count
-    sub_msgs.push(update_profile_trades_count_msg(
-        hub_cfg.profile_addr.to_string(),
-        seller.clone(),
-        TradeState::RequestCreated,
-    ));
+    );
+    sub_msgs.append(&mut profile_submsgs);
 
     let denom_str = denom_to_string(&trade.denom);
     let res = Response::new()
@@ -507,18 +502,13 @@ fn fund_escrow(
     let mut sub_msgs: Vec<SubMsg> = vec![];
 
     if info.sender.eq(&offer.owner) {
-        // Increase maker's (seller) active trades count when trade is accepted
-        sub_msgs.push(update_profile_trades_count_msg(
-            hub_config.profile_addr.to_string(),
-            trade.seller.clone(),
-            TradeState::EscrowFunded,
-        ));
-        // Increase taker's (buyer) active trades count when trade is accepted
-        sub_msgs.push(update_profile_trades_count_msg(
+        let mut profile_submsgs = create_update_trades_count_msgs(
             hub_config.profile_addr.to_string(),
             trade.buyer.clone(),
+            trade.seller.clone(),
             TradeState::EscrowFunded,
-        ));
+        );
+        sub_msgs.append(&mut profile_submsgs);
     }
 
     let res = Response::new()
@@ -563,19 +553,12 @@ fn accept_request(
     // Load Hub Cfg
     let hub_config = get_hub_config(deps.as_ref());
 
-    let mut sub_msgs: Vec<SubMsg> = vec![];
-    // Increase maker's (buyer) active trades count when trade is accepted
-    sub_msgs.push(update_profile_trades_count_msg(
+    let sub_msgs = create_update_trades_count_msgs(
         hub_config.profile_addr.to_string(),
         trade.buyer.clone(),
-        TradeState::RequestAccepted,
-    ));
-    // Increase taker's (seller) active trades count when trade is accepted
-    sub_msgs.push(update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
         trade.seller.clone(),
         TradeState::RequestAccepted,
-    ));
+    );
 
     let res = Response::new()
         .add_submessages(sub_msgs)
@@ -655,17 +638,13 @@ fn cancel_request(
     if vec![TradeState::EscrowFunded, TradeState::RequestAccepted].contains(&trade.get_state()) {
         // Load hub config
         let hub_config = get_hub_config(deps.as_ref());
-        // Decrease active trades count
-        sub_msgs.push(update_profile_trades_count_msg(
+        let mut profile_submsgs = create_update_trades_count_msgs(
             hub_config.profile_addr.to_string(),
             trade.buyer.clone(),
-            TradeState::EscrowCanceled,
-        ));
-        sub_msgs.push(update_profile_trades_count_msg(
-            hub_config.profile_addr.to_string(),
             trade.seller.clone(),
             TradeState::EscrowCanceled,
-        ));
+        );
+        sub_msgs.append(&mut profile_submsgs)
     }
 
     if trade.get_state().eq(&TradeState::EscrowFunded) {
@@ -737,18 +716,13 @@ fn release_escrow(
         release_amount = release_amount.sub(fee_info.total_fees());
     }
 
-    // Update buyer profile released_trades_count
-    send_msgs.push(update_profile_trades_count_msg(
+    let mut profile_submsgs = create_update_trades_count_msgs(
         hub_config.profile_addr.to_string(),
         trade.buyer.clone(),
-        TradeState::EscrowReleased,
-    ));
-    // Update seller profile released_trades_count
-    send_msgs.push(update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
         trade.seller.clone(),
         TradeState::EscrowReleased,
-    ));
+    );
+    send_msgs.append(&mut profile_submsgs);
 
     // Send tokens to buyer
     send_msgs.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
@@ -802,19 +776,12 @@ fn refund_escrow(
 
     let hub_config = get_hub_config(deps.as_ref());
 
-    let mut sub_msgs: Vec<SubMsg> = vec![];
-    // Decrease active trades count
-    sub_msgs.push(update_profile_trades_count_msg(
+    let mut sub_msgs: Vec<SubMsg> = create_update_trades_count_msgs(
         hub_config.profile_addr.to_string(),
         trade.buyer.clone(),
-        TradeState::EscrowRefunded,
-    ));
-    // Decrease active trades count
-    sub_msgs.push(update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
         trade.seller.clone(),
         TradeState::EscrowRefunded,
-    ));
+    );
 
     let amount = trade.amount.clone();
     let denom = denom_to_string(&trade.denom);
@@ -1022,20 +989,12 @@ fn settle_dispute(
     )));
 
     // Create Update Profile SubMsgs
-    let update_buyer_profile_trades_count = update_profile_trades_count_msg(
+    let profile_submsgs = create_update_trades_count_msgs(
         hub_config.profile_addr.to_string(),
         trade.buyer.clone(),
-        trade.get_state(),
-    );
-    let update_seller_profile_trades_count = update_profile_trades_count_msg(
-        hub_config.profile_addr.to_string(),
         trade.seller.clone(),
         trade.get_state(),
     );
-    let profile_submsgs = vec![
-        update_buyer_profile_trades_count,
-        update_seller_profile_trades_count,
-    ];
 
     let res = Response::new()
         .add_attribute("arbitrator", trade.arbitrator.to_string())
@@ -1187,6 +1146,20 @@ fn handle_swap_reply(deps: DepsMut, _msg: Reply) -> Result<Response, ContractErr
             expected_denom: received_denom,
         })
     };
+}
+
+// Create sub messages for updating trades count fields on maker and taker profiles
+fn create_update_trades_count_msgs(
+    profile_addr: String,
+    buyer: Addr,
+    seller: Addr,
+    trade_state: TradeState,
+) -> Vec<SubMsg> {
+    let update_buyer =
+        update_profile_trades_count_msg(profile_addr.clone(), buyer, trade_state.clone());
+    let update_seller =
+        update_profile_trades_count_msg(profile_addr.clone(), seller, trade_state.clone());
+    vec![update_buyer, update_seller]
 }
 
 // region utils
