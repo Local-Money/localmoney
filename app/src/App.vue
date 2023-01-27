@@ -6,6 +6,7 @@ import { ChainClient } from '~/network/Chain'
 import { useClientStore } from '~/stores/client'
 import './ui/style/reset.scss'
 import 'vue-toastification/dist/index.css'
+import BetaPopUp from './ui/components/commons/BetaPopUp.vue'
 const client = useClientStore()
 client.setClient(ChainClient.dev) // required to properly init chain
 const loading = computed(() => client.loadingState)
@@ -26,10 +27,12 @@ useHead({
   <RouterView />
   <!-- Loading Modal -->
   <ModalLoading :loading="loading" />
+  <BetaPopUp :loading="true" />
 </template>
 
 <style lang="scss">
 @import './ui/style/tokens.scss';
+@import './ui/style/pages.scss';
 
 /* Main Style */
 body {
