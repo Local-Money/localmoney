@@ -142,6 +142,7 @@ async function refreshExchangeRate() {
   const denomFiatPrice = await client.fetchFiatPriceForDenom(offer.fiat_currency, offer.denom)
   const price = calculateFiatPriceByRate(denomFiatPrice.price, props.offerResponse.offer.rate)
   fiatPriceByRate.value = price
+  fiatAmount.value = parseFloat(cryptoAmount.value.toString()) * (fiatPriceByRate.value / 100)
 }
 
 function startExchangeRateRefreshTimer() {
