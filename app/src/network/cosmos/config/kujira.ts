@@ -45,7 +45,7 @@ export const KUJIRA_MAINNET_HUB_INFO: HubInfo = {
     profile_addr: 'kujira1tyqttr06k5hgrz95a508mu5euvjadtfyfaf4yu2hnh6tueswkvwsjy7290',
     local_market_addr: 'kujira1sse6a00arh9dalzsyrd3q825dsn2zmrag0u4qx8q0dyks4ftnxyqrj0xds',
     local_denom: {
-      native: 'ukuji',
+      native: 'factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local',
     },
   },
 }
