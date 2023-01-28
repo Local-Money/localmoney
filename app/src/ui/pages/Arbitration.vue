@@ -1,4 +1,20 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
+import { useClientStore } from '~/stores/client'
+import { enableDisputes } from '~/config/featureToggle'
+
+const client = useClientStore()
+const router = useRouter()
+const { userWallet } = storeToRefs(client)
+const enableDisputesPage = computed(() => enableDisputes(userWallet.value, client.arbitrators.data))
+
+onBeforeMount(() => {
+  if (!enableDisputesPage.value) {
+    router.push('/')
+  }
+})
+</script>
 
 <template>
   <main class="page">

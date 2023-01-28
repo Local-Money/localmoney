@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
+import { enableDisputes, enableMyOffers } from '~/config/featureToggle'
 
 const client = useClientStore()
-const isArbitrator = computed(() => {
-  return client.arbitrators.data.filter((a) => client.userWallet.address === a.arbitrator).length > 0
-})
+const { userWallet } = storeToRefs(client)
+const enableMyOffersNav = computed(() => enableMyOffers(userWallet.value, client.chainClient))
+const enableDisputesNav = computed(() => enableDisputes(userWallet.value, client.arbitrators.data))
 </script>
 
 <template>
   <nav>
     <ul>
-      <li class="item">
+      <li v-if="enableMyOffersNav" class="item">
         <router-link to="/offers">
           <svg class="icon-24" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -41,7 +43,7 @@ const isArbitrator = computed(() => {
         </router-link>
       </li>
 
-      <li v-if="isArbitrator" class="item">
+      <li v-if="enableDisputesNav" class="item">
         <router-link to="/arbitration">
           <svg
             class="icon-24"

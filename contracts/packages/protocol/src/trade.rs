@@ -170,9 +170,9 @@ pub struct Swap {}
 #[serde(rename_all = "snake_case")]
 pub enum TradeState {
     RequestCreated,
-    RequestAccepted,
     RequestCanceled,
     RequestExpired,
+    RequestAccepted,
     EscrowFunded,
     EscrowCanceled,
     EscrowRefunded,
@@ -266,7 +266,13 @@ impl Trade {
 
     pub fn set_state(&mut self, new_state: TradeState, env: &Env, info: &MessageInfo) {
         // if the escrow is canceled or fiat is already deposited, the trade can no longer expire
-        if vec![TradeState::FiatDeposited, TradeState::EscrowCanceled].contains(&new_state) {
+        if vec![
+            TradeState::RequestCanceled,
+            TradeState::EscrowCanceled,
+            TradeState::FiatDeposited,
+        ]
+        .contains(&new_state)
+        {
             self.expires_at = 0;
         }
 

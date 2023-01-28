@@ -107,6 +107,13 @@ pub fn update_trades_count(
     match trade_state {
         TradeState::RequestCreated => {
             profile.requested_trades_count += 1;
+            if profile.active_trades_count >= hub_config.active_trades_limit {
+                return Err(ContractError::ActiveTradesLimitReached {
+                    limit: hub_config.active_trades_limit,
+                });
+            }
+        }
+        TradeState::RequestAccepted | TradeState::EscrowFunded => {
             if profile.active_trades_count < hub_config.active_trades_limit {
                 profile.active_trades_count += 1;
             } else {
@@ -115,18 +122,18 @@ pub fn update_trades_count(
                 });
             }
         }
-        TradeState::RequestCanceled => {
+        TradeState::EscrowCanceled
+        | TradeState::EscrowRefunded
+        | TradeState::SettledForMaker
+        | TradeState::SettledForTaker => {
+            // decrease active trades when finished
             if profile.active_trades_count > 0 {
                 profile.active_trades_count -= 1;
             }
         }
         TradeState::EscrowReleased => {
             profile.released_trades_count += 1;
-            if profile.active_trades_count > 0 {
-                profile.active_trades_count -= 1;
-            }
-        }
-        TradeState::SettledForMaker | TradeState::SettledForTaker => {
+            // decrease active trades when finished
             if profile.active_trades_count > 0 {
                 profile.active_trades_count -= 1;
             }
