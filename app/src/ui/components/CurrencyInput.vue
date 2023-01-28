@@ -33,20 +33,16 @@ watch(
   }
 )
 
-function format(newValue) {
+function format(newValue: any) {
   if (newValue === undefined || newValue === null || isNaN(newValue)) {
     newValue = '0'
   }
   if (isCrypto.value) {
     formattedValue.value = `${props.prefix} ${parseFloat(
-      formatAmount(newValue * 1000000, isCrypto.value, decimals.value),
-      decimals.value
+      formatAmount(newValue * 1000000, isCrypto.value, decimals.value)
     )}`
   } else {
-    formattedValue.value = `${props.prefix} ${parseFloat(
-      formatAmount(newValue, isCrypto.value, decimals.value),
-      decimals.value
-    )}`
+    formattedValue.value = `${props.prefix} ${parseFloat(formatAmount(newValue, isCrypto.value, decimals.value))}`
   }
 }
 
@@ -56,7 +52,7 @@ function onFocus() {
   value.value = formattedValue.value
 }
 
-function onChange(e) {
+function onChange(e: { target: { value: string } }) {
   const newValue = e.target.value.replace(/[^0-9.]/g, '')
   value.value = newValue
   if (watching.value) {

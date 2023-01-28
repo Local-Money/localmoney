@@ -16,15 +16,15 @@ const emit = defineEmits<{ (e: 'cancel'): void }>()
 const client = useClientStore()
 const updatedOffer = ref<GetOffer>({
   ...props.offer,
-  min_amount: `${formatAmount(props.offer.min_amount)}`,
-  max_amount: `${formatAmount(props.offer.max_amount)}`,
+  min_amount: `${formatAmount(props.offer.min_amount, true, 6)}`,
+  max_amount: `${formatAmount(props.offer.max_amount, true, 6)}`,
 })
 
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offer.rate))
 const margin = ref(marginRate.value.margin)
 const marginOffset = ref(marginRate.value.marginOffset)
-const minAmount = ref(Number(props.offer.min_amount))
-const maxAmount = ref(Number(props.offer.max_amount))
+const minAmount = ref(Number(props.offer.min_amount) / 1000000)
+const maxAmount = ref(Number(props.offer.max_amount) / 1000000)
 const description = ref(updatedOffer.value.description)
 const rate = ref(props.offer.rate)
 const valid = ref(true)
@@ -85,7 +85,7 @@ function update() {
             <p class="label">Min amount</p>
             <CurrencyInput
               v-model="minAmount"
-              :placeholder="0"
+              placeholder="Offer min amount"
               :decimals="6"
               :isCrypto="true"
               :prefix="microDenomToDenom(offer.denom.native)"
@@ -96,7 +96,7 @@ function update() {
             <p class="label">Max amount</p>
             <CurrencyInput
               v-model="maxAmount"
-              :placeholder="0"
+              placeholder="Offer max amount"
               :decimals="6"
               :isCrypto="true"
               :prefix="microDenomToDenom(offer.denom.native)"

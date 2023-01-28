@@ -61,7 +61,7 @@ const fiatCurrency = computed(() => tradeInfo.value.offer.offer.fiat_currency)
 const denomFiatPrice = computed(() => tradeInfo.value.trade.denom_fiat_price / 100)
 const offerPrice = computed(() => `${fiatCurrency.value} ${formatAmount(denomFiatPrice.value, false)}`)
 const fiatAmountStr = computed(() => {
-  const fiatAmount = formatAmount((parseInt(tradeInfo.value.trade.amount) / 1000000) * denomFiatPrice.value, false)
+  const fiatAmount = formatAmount((parseInt(tradeInfo.value.trade.amount), true, 6) * denomFiatPrice.value, false)
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.offer.rate))
@@ -365,7 +365,8 @@ watch(userWallet, async () => {
                   <p v-if="isBuyer" class="list-item-label">Buying</p>
                   <p v-else class="list-item-label">Selling</p>
                   <p class="value">
-                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                    {{ formatAmount(tradeInfo.trade.amount, true, 6) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
@@ -373,7 +374,7 @@ watch(userWallet, async () => {
                 <div class="list-item">
                   <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
                   <p class="value">
-                    {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                    {{ formatAmount(platformFee, true, 6) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
@@ -381,7 +382,7 @@ watch(userWallet, async () => {
                 <div class="list-item">
                   <p>Dispute fee ( {{ formatAmount(Number(disputeFee)) * 100 }}% )</p>
                   <p class="value">
-                    {{ formatAmount(disputeFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                    {{ formatAmount(disputeFee, true, 6) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
@@ -389,7 +390,9 @@ watch(userWallet, async () => {
                 <div class="list-item">
                   <p>Total in dispute</p>
                   <p class="value total">
-                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee) - Number(disputeFee)) }}
+                    {{
+                      formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee) - Number(disputeFee), true, 6)
+                    }}
                     {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
@@ -418,7 +421,8 @@ watch(userWallet, async () => {
                   <p v-if="isBuyer" class="list-item-label">Buying</p>
                   <p v-else class="list-item-label">Selling</p>
                   <p class="value">
-                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                    {{ formatAmount(tradeInfo.trade.amount, true, 6) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
@@ -426,18 +430,18 @@ watch(userWallet, async () => {
                 <div v-if="isMaker" class="list-item">
                   <p>Platform fee ( {{ (platformFee / tradeInfo.trade.amount) * 100 }}% )</p>
                   <p class="value">
-                    {{ formatAmount(platformFee) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                    {{ formatAmount(platformFee, true, 6) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
 
                 <div v-if="isMaker" class="list-item">
                   <p>Total</p>
                   <p v-if="isBuyer" class="value">
-                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee)) }}
+                    {{ formatAmount(Number(tradeInfo.trade.amount) - Number(platformFee), true, 6) }}
                     {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                   <p v-else class="value">
-                    {{ formatAmount(Number(platformFee) + Number(tradeInfo.trade.amount)) }}
+                    {{ formatAmount(Number(platformFee) + Number(tradeInfo.trade.amount), true, 6) }}
                     {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
@@ -491,7 +495,8 @@ watch(userWallet, async () => {
                   <p v-if="tradeInfo.offer.offer_type === 'sell'" class="list-item-label">Maker is selling</p>
                   <p v-else class="list-item-label">Maker is buying</p>
                   <p class="value">
-                    {{ formatAmount(tradeInfo.trade.amount) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
+                    {{ formatAmount(tradeInfo.trade.amount, true, 6) }}
+                    {{ microDenomToDenom(tradeInfo.trade.denom.native) }}
                   </p>
                 </div>
                 <div class="list-item">

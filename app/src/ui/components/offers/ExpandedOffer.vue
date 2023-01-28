@@ -37,8 +37,6 @@ const secondsUntilRateRefresh = ref(0)
 const cryptoAmount = ref(0.0)
 const fiatAmount = ref(0.0)
 const fiatPriceByRate = ref(0.0)
-const watchingCrypto = ref(true)
-const watchingFiat = ref(false)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
@@ -66,11 +64,19 @@ const minAmountInCrypto = computed(
 const maxAmountInCrypto = computed(
   () => parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES
 )
-const maxAmountInFiat = computed(
-  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / FIAT_DECIMAL_PLACES)
+const maxAmountInFiat = computed(() =>
+  parseFloat(
+    (fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / FIAT_DECIMAL_PLACES)).toFixed(
+      2
+    )
+  )
 )
-const minAmountInFiat = computed(
-  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / FIAT_DECIMAL_PLACES)
+const minAmountInFiat = computed(() =>
+  parseFloat(
+    (fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / FIAT_DECIMAL_PLACES)).toFixed(
+      2
+    )
+  )
 )
 const offerPrice = computed(
   () => `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value / 100, false)}`
@@ -89,9 +95,9 @@ const minMaxFiatStr = computed(() => {
 })
 const minMaxCryptoStr = computed(() => {
   const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom))
-  const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
-  const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
-  return [`${symbol} ${min}`, `${symbol} ${max}`]
+  const min = formatAmount(parseInt(props.offerResponse.offer.min_amount), true, 6)
+  const max = formatAmount(parseInt(props.offerResponse.offer.max_amount), true, 6)
+  return [`${symbol} ${parseFloat(min)}`, `${symbol} ${parseFloat(max)}`]
 })
 
 async function newTrade() {
@@ -104,35 +110,25 @@ function focus() {
 }
 
 function useMinCrypto() {
-  watchingFiat.value = false
-  watchingCrypto.value = true
   cryptoAmount.value = minAmountInCrypto.value
 }
 
 function useMaxCrypto() {
-  watchingFiat.value = false
-  watchingCrypto.value = true
   cryptoAmount.value = maxAmountInCrypto.value
 }
 
-function useMinFiat() {
-  watchingFiat.value = true
-  watchingCrypto.value = false
-  fiatAmount.value = minAmountInFiat.value
-}
-
-function useMaxFiat() {
-  watchingFiat.value = true
-  watchingCrypto.value = false
-  fiatAmount.value = maxAmountInFiat.value
-}
-
 watch(fiatAmount, (newFiatAmount) => {
-  if (newFiatAmount === 0 || isNaN(newFiatAmount)) {
-    cryptoAmount.value = 0.0
+  if (newFiatAmount === maxAmountInFiat.value) {
+    useMaxCrypto()
+  } else if (newFiatAmount === minAmountInFiat.value) {
+    useMinCrypto()
   } else {
-    const usdRate = fiatPriceByRate.value / 100
-    cryptoAmount.value = parseFloat(newFiatAmount.toString()) / usdRate
+    if (newFiatAmount === 0 || isNaN(newFiatAmount)) {
+      cryptoAmount.value = 0.0
+    } else {
+      const usdRate = fiatPriceByRate.value / 100
+      cryptoAmount.value = parseFloat((newFiatAmount / usdRate).toFixed(6))
+    }
   }
 })
 
@@ -141,7 +137,7 @@ watch(cryptoAmount, (newCryptoAmount) => {
     fiatAmount.value = 0.0
   } else {
     const usdRate = fiatPriceByRate.value / 100
-    fiatAmount.value = parseFloat(newCryptoAmount.toString()) * usdRate
+    fiatAmount.value = parseFloat((newCryptoAmount * usdRate).toFixed(2))
   }
 })
 
@@ -176,7 +172,6 @@ onMounted(async () => {
   telegram.value = await defaultUserContact()
   nextTick(async () => {
     focus()
-    useMinCrypto()
   })
 })
 
@@ -258,11 +253,11 @@ onUnmounted(() => {
           />
           <div class="wrap-limit">
             <div class="limit-btn">
-              <p class="btn" @click="useMinFiat()">
+              <p class="btn" @click="useMinCrypto()">
                 {{ minMaxFiatStr[0] }}
               </p>
               <p>-</p>
-              <p class="btn" @click="useMaxFiat()">
+              <p class="btn" @click="useMaxCrypto()">
                 {{ minMaxFiatStr[1] }}
               </p>
             </div>

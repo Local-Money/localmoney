@@ -12,7 +12,7 @@ export function formatAmount(amount, isCrypto = true, decimals = 2) {
   if (isCrypto) {
     amount = amount / 1000000
   }
-  return amount.toFixed(decimals)
+  return parseFloat(amount.toFixed(decimals))
 }
 
 export function formatFiatAmount(amount) {

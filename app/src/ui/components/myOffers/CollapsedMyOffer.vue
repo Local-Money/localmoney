@@ -40,7 +40,8 @@ onBeforeMount(async () => {
         <div class="wrap">
           <p class="label">Limits</p>
           <p class="limit">
-            {{ formatAmount(offer.min_amount) }} - {{ formatAmount(offer.max_amount) }}
+            {{ formatAmount(offer.min_amount, true, 6) }} -
+            {{ formatAmount(offer.max_amount, true, 6) }}
             {{ microDenomToDenom(offer.denom.native) }}
           </p>
         </div>

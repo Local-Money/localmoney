@@ -41,8 +41,8 @@ const offerPrice = computed(() => {
         <div class="wrap">
           <p class="label">Trade limit</p>
           <p class="limit">
-            {{ formatAmount(offerResponse.offer.min_amount) }} -
-            {{ formatAmount(offerResponse.offer.max_amount) }}
+            {{ formatAmount(offerResponse.offer.min_amount, true, 6) }} -
+            {{ formatAmount(offerResponse.offer.max_amount, true, 6) }}
             {{ microDenomToDenom(offerResponse.offer.denom.native) }}
           </p>
         </div>
