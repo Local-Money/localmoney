@@ -25,7 +25,7 @@ const isMobile = computed(() => width.value <= 550)
         </router-link>
 
         <div class="badge-testnet">
-          <p>Testnet</p>
+          <p>Beta</p>
         </div>
       </div>
 
