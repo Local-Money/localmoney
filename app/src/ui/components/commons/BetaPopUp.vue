@@ -18,13 +18,10 @@ const emit = defineEmits<{
         <div class="wrap-content">
           <div class="wrap-inner">
             <h2>Welcome to our beta test!</h2>
-            <h3>
-              We are thrilled to have you join us on this exciting journey of perfecting Local Money before release.
-            </h3>
+            <h3></h3>
             <p>
-              Just a friendly reminder that as a beta version some features may not work as expected. Your feedback will
-              be crucial in shaping the final experience to be exactly what you need. Reach out to us if you have any
-              questions or run into any issues. Thank you for participating!
+              We appreciate you joining us for this test. Your input will be crucial in making the final product even
+              better. If you encounter any issues or have any questions, please don't hesitate to contact us.
             </p>
           </div>
           <div class="wrap-cta">
