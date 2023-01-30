@@ -18,8 +18,12 @@ const price = computed(() => {
   )}`
 })
 const limit = computed(() => {
-  const min = formatAmount(props.offer.min_amount)
-  const max = formatAmount(props.offer.max_amount)
+  // log props offer min and max
+  console.log(props.offer.min_amount)
+  console.log(props.offer.max_amount)
+
+  const min = formatAmount(Number(props.offer.min_amount), true, 6)
+  const max = formatAmount(Number(props.offer.max_amount), true, 6)
   const denom = microDenomToDenom(denomToValue(props.offer.denom))
   return `${min} - ${max} ${denom}`
 })
@@ -30,7 +34,7 @@ function unarchive() {
 }
 
 onBeforeMount(async () => {
-  await client.fetchFiatPriceForDenom(props.offer.fiat_currency, props.offer.denom)
+  await client.updateFiatPrice(props.offer.fiat_currency, props.offer.denom)
 })
 </script>
 

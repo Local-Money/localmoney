@@ -49,9 +49,9 @@ describe('price tests', () => {
     for (const i in priceRoutes) {
       const priceRoute = priceRoutes[i]
       const denom = priceRoute.register_price_route_for_denom.denom
-      const arsPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.ARS, denom)
-      const brlPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.BRL, denom)
-      const copPrice = await takerClient.fetchFiatPriceForDenom(FiatCurrency.COP, denom)
+      const arsPrice = await takerClient.updateFiatPrice(FiatCurrency.ARS, denom)
+      const brlPrice = await takerClient.updateFiatPrice(FiatCurrency.BRL, denom)
+      const copPrice = await takerClient.updateFiatPrice(FiatCurrency.COP, denom)
       console.log('ars Price for denom', denom, arsPrice)
       console.log('brl Price for denom', denom, brlPrice)
       console.log('cop Price for denom', denom, copPrice)

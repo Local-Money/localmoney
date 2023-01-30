@@ -8,7 +8,7 @@ import {
   isTelegramHandleValid,
   removeTelegramURLPrefix,
 } from '~/shared'
-import type { Denom, PostOffer } from '~/types/components.interface'
+import type { Denom } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
@@ -59,7 +59,7 @@ onMounted(() => {
 })
 onBeforeMount(async () => {
   const denom: Denom = { native: selectedCrypto.value }
-  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+  await client.updateFiatPrice(fiatCurrency.value, denom)
 })
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
@@ -92,15 +92,15 @@ watch(marginOffset, () => {
 watch(margin, () => {
   calculateMarginRate()
 })
-async function fetchFiatPriceForDenom() {
+async function updateFiatPrice() {
   const denom: Denom = { native: selectedCrypto.value }
-  await client.fetchFiatPriceForDenom(fiatCurrency.value, denom)
+  await client.updateFiatPrice(fiatCurrency.value, denom)
 }
 watch(selectedCrypto, async () => {
-  await fetchFiatPriceForDenom()
+  await updateFiatPrice()
 })
 watch(fiatCurrency, async () => {
-  await fetchFiatPriceForDenom()
+  await updateFiatPrice()
 })
 </script>
 
@@ -139,13 +139,9 @@ watch(fiatCurrency, async () => {
           <CurrencyInput
             v-model="minAmount"
             :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
+            :prefix="microDenomToDenom(selectedCrypto)"
+            :isCrypto="true"
+            :decimals="6"
           />
         </div>
         <div class="wrap">
@@ -153,13 +149,9 @@ watch(fiatCurrency, async () => {
           <CurrencyInput
             v-model="maxAmount"
             :placeholder="0"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-            }"
+            :prefix="microDenomToDenom(selectedCrypto)"
+            :isCrypto="true"
+            :decimals="6"
           />
         </div>
       </div>

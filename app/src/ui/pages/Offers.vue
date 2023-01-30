@@ -1,4 +1,4 @@
-<script setup type="ts">
+<script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '~/stores/client'

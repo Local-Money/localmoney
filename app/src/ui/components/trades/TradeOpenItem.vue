@@ -8,6 +8,7 @@ import { checkTradeNeedsRefund } from '~/utils/validations'
 import { TradeState } from '~/types/components.interface'
 
 const props = defineProps<{ tradeInfo: TradeInfo }>()
+const trade = ref()
 const client = useClientStore()
 let refreshTradeDetailInterval: NodeJS.Timer | undefined
 const secondsUntilTradeDetailRefresh = ref(0)
@@ -171,7 +172,7 @@ onUnmounted(() => {
         <div class="wrap">
           <p class="label">Amount</p>
           <p class="content">
-            {{ formatAmount(trade.amount) }}
+            {{ formatAmount(trade.amount, true, 6) }}
             {{ microDenomToDenom(trade.denom.native) }}
           </p>
         </div>

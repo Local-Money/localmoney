@@ -191,7 +191,7 @@ export const useClientStore = defineStore({
         const profile_taker_contact = await encryptData(profile_taker_encryption_key, telegramHandle)
         const newTrade: NewTrade = {
           offer_id: offerResponse.offer.id,
-          amount: `${amount * CRYPTO_DECIMAL_PLACES}`,
+          amount: `${Number(amount * CRYPTO_DECIMAL_PLACES).toFixed(0)}`,
           taker: `${this.userWallet.address}`,
           profile_taker_contact,
           taker_contact,
@@ -248,9 +248,9 @@ export const useClientStore = defineStore({
         console.error(e)
       }
     },
-    async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom) {
+    async updateFiatPrice(fiat: FiatCurrency, denom: Denom) {
       try {
-        const price = await this.client.fetchFiatPriceForDenom(fiat, denom)
+        const price = await this.client.updateFiatPrice(fiat, denom)
         if (this.fiatPrices.has(fiat)) {
           this.fiatPrices.get(fiat)?.set(denomToValue(denom), price.price)
         } else {
@@ -260,6 +260,9 @@ export const useClientStore = defineStore({
       } catch (e) {
         console.error(e)
       }
+    },
+    async fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom) {
+      return await this.client.updateFiatPrice(fiat, denom)
     },
     async acceptTradeRequest(tradeId: number, makerContact: string) {
       this.loadingState = LoadingState.show('Accepting trade...')

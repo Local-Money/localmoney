@@ -24,17 +24,19 @@ const secrets = computed(() => client.getSecrets())
 
 async function defaultUserContact() {
   const contact = client.profile?.contact
-  return formatEncryptedUserContact(secrets.value.privateKey, contact)
+  if (secrets.value) {
+    return formatEncryptedUserContact(secrets.value.privateKey, contact)
+  } else {
+    return ''
+  }
 }
 
 let refreshRateInterval: NodeJS.Timer | undefined
 const telegram = ref<string>('')
 const secondsUntilRateRefresh = ref(0)
-const cryptoAmount = ref(0)
-const fiatAmount = ref(0)
-const tradingFee = ref(0.0)
-const watchingCrypto = ref(true)
-const watchingFiat = ref(false)
+const cryptoAmount = ref(0.0)
+const fiatAmount = ref(0.0)
+const fiatPriceByRate = ref(0.0)
 const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
@@ -56,22 +58,25 @@ const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currenc
 const cryptoPlaceholder = computed(
   () => `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom))} ${parseFloat('0').toFixed(2)}`
 )
-const fiatPriceByRate = computed(() => {
-  const offer = props.offerResponse.offer
-  const denomFiatPrice = client.fiatPrices.get(offer.fiat_currency)?.get(denomToValue(offer.denom))
-  return calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
-})
 const minAmountInCrypto = computed(
   () => parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES
 )
 const maxAmountInCrypto = computed(
   () => parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES
 )
-const maxAmountInFiat = computed(
-  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / FIAT_DECIMAL_PLACES)
+const maxAmountInFiat = computed(() =>
+  parseFloat(
+    (fiatPriceByRate.value * (parseInt(props.offerResponse.offer.max_amount.toString()) / FIAT_DECIMAL_PLACES)).toFixed(
+      2
+    )
+  )
 )
-const minAmountInFiat = computed(
-  () => fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / FIAT_DECIMAL_PLACES)
+const minAmountInFiat = computed(() =>
+  parseFloat(
+    (fiatPriceByRate.value * (parseInt(props.offerResponse.offer.min_amount.toString()) / FIAT_DECIMAL_PLACES)).toFixed(
+      2
+    )
+  )
 )
 const offerPrice = computed(
   () => `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPriceByRate.value / 100, false)}`
@@ -90,9 +95,9 @@ const minMaxFiatStr = computed(() => {
 })
 const minMaxCryptoStr = computed(() => {
   const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom))
-  const min = (parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
-  const max = (parseInt(props.offerResponse.offer.max_amount.toString()) / CRYPTO_DECIMAL_PLACES).toFixed(2)
-  return [`${symbol} ${min}`, `${symbol} ${max}`]
+  const min = formatAmount(parseInt(props.offerResponse.offer.min_amount), true, 6)
+  const max = formatAmount(parseInt(props.offerResponse.offer.max_amount), true, 6)
+  return [`${symbol} ${parseFloat(min)}`, `${symbol} ${parseFloat(max)}`]
 })
 
 async function newTrade() {
@@ -105,70 +110,67 @@ function focus() {
 }
 
 function useMinCrypto() {
-  watchingFiat.value = false
-  watchingCrypto.value = true
-  cryptoAmountInput.value.update(minAmountInCrypto.value, true)
-  setFiatAmount(minAmountInCrypto.value)
+  cryptoAmount.value = minAmountInCrypto.value
 }
 
 function useMaxCrypto() {
-  watchingFiat.value = false
-  watchingCrypto.value = true
-  cryptoAmountInput.value.update(maxAmountInCrypto.value, true)
-  setFiatAmount(maxAmountInCrypto.value)
+  cryptoAmount.value = maxAmountInCrypto.value
 }
 
-function useMinFiat() {
-  watchingFiat.value = true
-  watchingCrypto.value = false
-  fiatAmountInput.value.update(minAmountInFiat.value, true)
-  setCryptoAmount(minAmountInFiat.value)
-}
+watch(fiatAmount, (newFiatAmount) => {
+  if (newFiatAmount === maxAmountInFiat.value) {
+    useMaxCrypto()
+  } else if (newFiatAmount === minAmountInFiat.value) {
+    useMinCrypto()
+  } else {
+    if (newFiatAmount === 0 || isNaN(newFiatAmount)) {
+      cryptoAmount.value = 0.0
+    } else {
+      const usdRate = fiatPriceByRate.value / 100
+      cryptoAmount.value = parseFloat((newFiatAmount / usdRate).toFixed(6))
+    }
+  }
+})
 
-function useMaxFiat() {
-  watchingFiat.value = true
-  watchingCrypto.value = false
-  fiatAmountInput.value.update(maxAmountInFiat.value, true)
-  setCryptoAmount(maxAmountInFiat.value)
-}
+watch(cryptoAmount, (newCryptoAmount) => {
+  if (newCryptoAmount === 0 || isNaN(newCryptoAmount)) {
+    fiatAmount.value = 0.0
+  } else {
+    const usdRate = fiatPriceByRate.value / 100
+    fiatAmount.value = parseFloat((newCryptoAmount * usdRate).toFixed(2))
+  }
+})
 
-function setCryptoAmount(newFiatAmount: number) {
-  const usdRate = fiatPriceByRate.value / 100
-  const cryptoAmount = parseFloat(newFiatAmount.toString()) / usdRate
-  tradingFee.value = cryptoAmount * 0.01
-  cryptoAmountInput.value.update(cryptoAmount)
-}
-
-function setFiatAmount(newCryptoAmount: number) {
-  const usdRate = fiatPriceByRate.value / 100
-  tradingFee.value = parseFloat(newCryptoAmount.toString()) * 0.01
-  const fiatAmount = parseFloat(newCryptoAmount.toString()) * usdRate
-  fiatAmountInput.value.update(fiatAmount)
-}
-
-function refreshExchangeRate() {
-  nextTick(() => {
-    const offer = props.offerResponse.offer
-    client.fetchFiatPriceForDenom(offer.fiat_currency, offer.denom)
-  })
+async function refreshExchangeRate() {
+  const offer = props.offerResponse.offer
+  const denomFiatPrice = await client.fetchFiatPriceForDenom(offer.fiat_currency, offer.denom)
+  const price = calculateFiatPriceByRate(denomFiatPrice.price, props.offerResponse.offer.rate)
+  fiatPriceByRate.value = price
+  fiatAmount.value = parseFloat(cryptoAmount.value.toString()) * (fiatPriceByRate.value / 100)
 }
 
 function startExchangeRateRefreshTimer() {
-  let seconds = 60
+  const interval = 60
+  let seconds = interval
   const countdownInterval = 1000
-  refreshRateInterval = setInterval(() => {
+  refreshRateInterval = setInterval(async () => {
     secondsUntilRateRefresh.value = --seconds
     if (seconds === 0) {
-      refreshExchangeRate()
-      seconds = 60
+      await refreshExchangeRate()
+      seconds = interval
     }
   }, countdownInterval)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  const denomFiatPrice = client.fiatPrices
+    .get(props.offerResponse.offer.fiat_currency)
+    ?.get(denomToValue(props.offerResponse.offer.denom))
+  const price = calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate)
+  fiatPriceByRate.value = price
   startExchangeRateRefreshTimer()
+  telegram.value = await defaultUserContact()
   nextTick(async () => {
-    telegram.value = await defaultUserContact()
     focus()
   })
 })
@@ -211,27 +213,15 @@ onUnmounted(() => {
             {{ fromLabel }}
           </p>
           <CurrencyInput
-            ref="cryptoAmountInput"
+            :ref="cryptoAmountInput"
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
-            :options="{
-              currency: 'USD',
-              currencyDisplay: 'hidden',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-              valueRange: {
-                min: minAmountInCrypto,
-                max: maxAmountInCrypto,
-              },
-            }"
-            @onUpdate="setFiatAmount"
-            @focus="
-              (() => {
-                watchingCrypto = true
-                watchingFiat = false
-              })()
-            "
+            :prefix="microDenomToDenom(offerResponse.offer.denom.native)"
+            :min="minAmountInCrypto"
+            :max="maxAmountInCrypto"
+            :errorMsg="`The value should be between ${minMaxCryptoStr[0]} and ${minMaxCryptoStr[1]}`"
+            :isCrypto="true"
+            :decimals="6"
           />
           <div class="wrap-limit">
             <div class="limit-btn">
@@ -251,36 +241,23 @@ onUnmounted(() => {
             {{ toLabel }}
           </p>
           <CurrencyInput
-            ref="fiatAmountInput"
+            :ref="fiatAmountInput"
             v-model="fiatAmount"
             :placeholder="fiatPlaceholder"
-            :options="{
-              currency: offerResponse.offer.fiat_currency.toUpperCase(),
-              currencyDisplay: 'code',
-              hideCurrencySymbolOnFocus: false,
-              hideGroupingSeparatorOnFocus: false,
-              precision: 2,
-              valueRange: {
-                min: minAmountInFiat,
-                max: maxAmountInFiat,
-              },
-            }"
-            @onUpdate="setCryptoAmount"
-            @focus="
-              (() => {
-                watchingCrypto = false
-                watchingFiat = true
-              })()
-            "
+            :prefix="offerResponse.offer.fiat_currency"
+            :min="minAmountInFiat"
+            :max="maxAmountInFiat"
+            :errorMsg="`The value should be between ${minMaxFiatStr[0]} and ${minMaxFiatStr[1]}`"
+            :isCrypto="false"
+            :decimals="2"
           />
-
           <div class="wrap-limit">
             <div class="limit-btn">
-              <p class="btn" @click="useMinFiat()">
+              <p class="btn" @click="useMinCrypto()">
                 {{ minMaxFiatStr[0] }}
               </p>
               <p>-</p>
-              <p class="btn" @click="useMaxFiat()">
+              <p class="btn" @click="useMaxCrypto()">
                 {{ minMaxFiatStr[1] }}
               </p>
             </div>
