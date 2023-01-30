@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import NavDesktop from './NavDesktop.vue'
 import NavMobile from './NavMobile.vue'
+import { useClientStore } from '~/stores/client'
+import { ChainClient } from '~/network/Chain'
 
+const client = useClientStore()
+const badge = computed(() => (client.chainClient === ChainClient.kujiraMainnet ? 'Beta' : 'Testnet'))
 // TODO - Make isMobile global
 const width = ref(window.innerWidth)
 const listener = () => {
@@ -25,7 +29,7 @@ const isMobile = computed(() => width.value <= 550)
         </router-link>
 
         <div class="badge-testnet">
-          <p>Beta</p>
+          <p>{{ badge }}</p>
         </div>
       </div>
 
