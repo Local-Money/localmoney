@@ -11,11 +11,11 @@ import 'vue-toastification/dist/index.css'
 
 const client = useClientStore()
 const betaAccepted = useLocalStorage('beta-accept', false)
-client.setClient(ChainClient.dev) // required to properly init chain
+client.setClient(ChainClient.kujiraMainnet) // required to properly init chain
 const loading = computed(() => client.loadingState)
 
 useHead({
-  title: 'Local Money - TESTNET',
+  title: client.chainClient === ChainClient.kujiraMainnet ? 'Local Money - BETA' : 'Local Money - TESTNET',
   meta: [
     {
       name: 'description',
