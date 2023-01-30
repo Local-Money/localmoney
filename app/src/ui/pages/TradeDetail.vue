@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
-import { addTelegramURLPrefix, convertOfferRateToMarginRate, formatAddress, formatAmount } from '~/shared'
+import {
+  addTelegramURLPrefix,
+  convertOfferRateToMarginRate,
+  formatAddress,
+  formatAmount,
+  formatFiatAmount,
+} from '~/shared'
 import { useClientStore } from '~/stores/client'
 import { microDenomToDenom } from '~/utils/denom'
 import { decryptData } from '~/utils/crypto'
@@ -61,7 +67,9 @@ const fiatCurrency = computed(() => tradeInfo.value.offer.offer.fiat_currency)
 const denomFiatPrice = computed(() => tradeInfo.value.trade.denom_fiat_price / 100)
 const offerPrice = computed(() => `${fiatCurrency.value} ${formatAmount(denomFiatPrice.value, false)}`)
 const fiatAmountStr = computed(() => {
-  const fiatAmount = formatAmount((parseInt(tradeInfo.value.trade.amount), true, 6) * denomFiatPrice.value, false)
+  const fiatAmount = formatFiatAmount(
+    (parseInt(tradeInfo.value.trade.amount) / 1000000) * (tradeInfo.value.trade.denom_fiat_price / 100)
+  )
   return `${fiatCurrency.value} ${fiatAmount}`
 })
 const marginRate = computed(() => convertOfferRateToMarginRate(tradeInfo.value.offer.offer.rate))
@@ -105,7 +113,7 @@ const platformFee = computed(() => {
   const total = tradeInfo.value.trade.amount
   const { warchest_fee_pct, burn_fee_pct, chain_fee_pct } = client.getHubConfig()
   const totalFee = Number(warchest_fee_pct) + Number(burn_fee_pct) + Number(chain_fee_pct)
-  return total * totalFee
+  return (total * totalFee).toFixed(2)
 })
 
 const disputeFee = computed(() => {
