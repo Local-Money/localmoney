@@ -26,7 +26,6 @@ const limit = computed(() => {
   const max = formatAmount(Number(props.offer.max_amount), true, 6)
   const denom = microDenomToDenom(denomToValue(props.offer.denom))
   return `${min} - ${max} ${denom}`
-  return 'hehe'
 })
 const type = computed(() => (props.offer.offer_type === OfferType.buy ? 'Buying' : 'Selling'))
 
