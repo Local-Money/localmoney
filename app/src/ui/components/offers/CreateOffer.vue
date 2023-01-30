@@ -208,7 +208,8 @@ watch(fiatCurrency, async () => {
       </div>
       <div class="btns">
         <button class="secondary" @click="$emit('cancel')">Cancel</button>
-        <button class="primary" :disabled="!valid" @click="createOffer()">Create</button>
+        <!-- <button class="primary" :disabled="!valid" @click="createOffer()">Create</button> -->
+        <button class="primary" @click="createOffer()">Create</button>
       </div>
     </div>
   </div>
