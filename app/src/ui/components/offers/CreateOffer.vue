@@ -125,7 +125,7 @@ watch(fiatCurrency, async () => {
       <div class="currency">
         <div class="wrap">
           <label for="crypto">I want to {{ offerType }}</label>
-          <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
+          <CustomSelect v-model="selectedCrypto" :options="denomsAvailable()" />
         </div>
         <div class="wrap">
           <label for="currency">and {{ fiatLabel }} in</label>

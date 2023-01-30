@@ -11,7 +11,7 @@ import 'vue-toastification/dist/index.css'
 
 const client = useClientStore()
 const betaAccepted = useLocalStorage('beta-accept', false)
-client.setClient(ChainClient.kujiraMainnet) // required to properly init chain
+client.setClient(ChainClient.dev) // required to properly init chain
 const loading = computed(() => client.loadingState)
 
 useHead({
