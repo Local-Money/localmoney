@@ -157,14 +157,20 @@ watch(fiatCurrency, async () => {
       </div>
       <div class="market-price">
         <div class="wrap">
-          <label for="">Market price</label>
+          <div class="wrap-label">
+            <label for="">Market price</label>
+            <IconTooltip content="Select if you want to charge above or below the market price." />
+          </div>
           <select v-model="margin" class="bg-surface">
             <option value="above">Above</option>
             <option value="below">Below</option>
           </select>
         </div>
         <div class="wrap">
-          <label for="currency">Margin Offset</label>
+          <div class="wrap-label">
+            <label for="">Margin</label>
+            <IconTooltip content="Select by how much you would like your price to be adjusted." />
+          </div>
           <input
             v-model="marginOffset"
             v-maska="['##%', '#%']"
