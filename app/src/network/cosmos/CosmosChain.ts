@@ -363,16 +363,17 @@ export class CosmosChain implements Chain {
   async fundEscrow(tradeInfo: TradeInfo, makerContact?: string) {
     const hubConfig = this.hubInfo.hubConfig
     let fundAmount = Number(tradeInfo.trade.amount)
-    console.log('fund amount before fees', fundAmount)
+    console.log('amount: ', fundAmount)
 
     // If current user is the maker, add the fee to the amount to fund
     if (tradeInfo.offer.offer.owner === this.getWalletAddress()) {
-      const burnAmount = Number(hubConfig.burn_fee_pct) * fundAmount
-      const chainAmount = Number(hubConfig.chain_fee_pct) * fundAmount
-      const warchestAmount = Number(hubConfig.warchest_fee_pct) * fundAmount
+      const burnAmount = Math.floor(hubConfig.burn_fee_pct * fundAmount)
+      const chainAmount = Math.floor(hubConfig.chain_fee_pct * fundAmount)
+      const warchestAmount = Math.floor(hubConfig.warchest_fee_pct * fundAmount)
       const totalFee = burnAmount + chainAmount + warchestAmount
+      console.log('total fee:', totalFee)
       fundAmount += totalFee
-      console.log('fund amount after fees', fundAmount)
+      console.log('amount + fees: ', fundAmount)
     }
 
     const funds: Coin[] = [
