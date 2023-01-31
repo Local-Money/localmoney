@@ -277,11 +277,11 @@ onUnmounted(() => {
           />
           <div class="wrap-limit">
             <div class="limit-btn">
-              <p class="btn" @click="useMinCrypto(true)">
+              <p class="btn" @click="useMinCrypto()">
                 {{ minMaxFiatStr[0] }}
               </p>
               <p>-</p>
-              <p class="btn" @click="useMaxCrypto(true)">
+              <p class="btn" @click="useMaxCrypto()">
                 {{ minMaxFiatStr[1] }}
               </p>
             </div>
