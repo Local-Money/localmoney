@@ -117,13 +117,17 @@ export function isTelegramHandleValid(telegram) {
 }
 
 export function removeTelegramURLPrefix(telegram) {
-  const search = 't.me/'
-  const start = telegram.indexOf(search) + search.length
-  return telegram.includes(search) ? telegram.substring(start) : telegram
+  const search = ['t.me/', '@']
+  const index = search.findIndex((s) => telegram.includes(s))
+  if (index === -1) {
+    return telegram
+  }
+  const start = telegram.indexOf(search[index]) + search[index].length
+  return telegram.includes(search[index]) ? telegram.substring(start) : telegram
 }
 
 export function addTelegramURLPrefix(telegram) {
-  return `https://t.me/${telegram}`
+  return `@${telegram}`
 }
 
 export async function formatEncryptedUserContact(privateKey, profileContact) {
