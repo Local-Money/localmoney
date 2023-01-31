@@ -18,10 +18,6 @@ const price = computed(() => {
   )}`
 })
 const limit = computed(() => {
-  // log props offer min and max
-  console.log(props.offer.min_amount)
-  console.log(props.offer.max_amount)
-
   const min = formatAmount(Number(props.offer.min_amount), true, 6)
   const max = formatAmount(Number(props.offer.max_amount), true, 6)
   const denom = microDenomToDenom(denomToValue(props.offer.denom))
