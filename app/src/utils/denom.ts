@@ -1,19 +1,32 @@
 import denomList from './denoms-config.json'
 import type { SelectInfo } from '~/utils/select-utils'
 import type { CW20, Denom, Native } from '~/types/components.interface'
+import { useClientStore } from '~/stores/client'
+import { ChainClient } from '~/network/Chain'
 
-export const denomsAvailable = new Map<string, MicronDenom>(Object.entries(denomList))
+export function denomsAvailable(): Map<string, MicronDenom> {
+  const chainClient = useClientStore().chainClient
+  switch (chainClient) {
+    case ChainClient.kujiraMainnet:
+      return new Map<string, MicronDenom>(Object.entries(denomList.kujira_mainnet))
+    default:
+      return new Map<string, MicronDenom>(Object.entries(denomList.kujira_testnet))
+  }
+}
 
 export function defaultMicroDenomAvailable(): string {
-  return denomsAvailable.keys().next().value
+  const denoms = denomsAvailable()
+  return denoms.keys().next().value
 }
 
 export function checkMicroDenomAvailable(microDenom: string): boolean {
-  return denomsAvailable.has(microDenom)
+  const denoms = denomsAvailable()
+  return denoms.has(microDenom)
 }
 
 export function microDenomToDenom(microDenom: string): string {
-  return denomsAvailable.has(microDenom) ? denomsAvailable.get(microDenom)!.display : microDenom
+  const denoms = denomsAvailable()
+  return denoms.has(microDenom) ? denoms.get(microDenom)!.display : microDenom
 }
 
 export function denomToValue(denom: Denom): string {

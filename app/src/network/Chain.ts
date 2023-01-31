@@ -55,8 +55,6 @@ export interface Chain {
 
   updateFiatPrice(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice>
 
-  fetchFiatPriceForDenom(fiat: FiatCurrency, denom: Denom): Promise<DenomFiatPrice>
-
   acceptTradeRequest(tradeId: number, makerContact: string): Promise<void>
 
   cancelTradeRequest(tradeId: number): Promise<void>

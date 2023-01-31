@@ -98,7 +98,7 @@ watch(offerType, async () => await fetchOffers())
       </div>
       <div class="filter">
         <label for="crypto">Crypto</label>
-        <CustomSelect v-model="selectedCrypto" :options="denomsAvailable" />
+        <CustomSelect v-model="selectedCrypto" :options="denomsAvailable()" />
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
