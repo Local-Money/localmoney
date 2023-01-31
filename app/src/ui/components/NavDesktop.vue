@@ -14,7 +14,6 @@ onMounted(async () => {
   enableDisputesNav.value = enableDisputes(userWallet.value, client.arbitrators.data)
 })
 
-// watch userwallet value and enable my offers nav if user is logged in
 watch(userWallet, async () => {
   enableMyOffersNav.value = await enableMyOffers(userWallet.value, client.chainClient)
   enableDisputesNav.value = enableDisputes(userWallet.value, client.arbitrators.data)
