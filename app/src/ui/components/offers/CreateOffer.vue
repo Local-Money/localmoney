@@ -191,7 +191,7 @@ watch(fiatCurrency, async () => {
               content="Share your contact to be able to communicate with the other trader. This information will be encrypted and only visible inside the trade."
             />
           </div>
-          <input v-model="ownerContact" type="text" placeholder="t.me/your-user-name" />
+          <input v-model="ownerContact" type="text" placeholder="@" />
         </div>
       </div>
 
