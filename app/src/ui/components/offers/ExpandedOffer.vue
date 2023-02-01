@@ -7,7 +7,7 @@ import {
   formatEncryptedUserContact,
   formatTradesCountInfo,
   isTelegramHandleValid,
-  removeTelegramURLPrefix,
+  removeTelegramHandlePrefix,
   scrollToElement,
 } from '~/shared'
 import { OfferType } from '~/types/components.interface'
@@ -101,7 +101,7 @@ const minMaxCryptoStr = computed(() => {
 })
 
 async function newTrade() {
-  const telegramHandle = removeTelegramURLPrefix(telegram.value) as string
+  const telegramHandle = removeTelegramHandlePrefix(telegram.value) as string
   await client.openTrade(props.offerResponse, telegramHandle, cryptoAmount.value)
 }
 

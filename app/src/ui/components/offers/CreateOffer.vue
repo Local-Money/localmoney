@@ -6,7 +6,7 @@ import {
   formatAmount,
   formatEncryptedUserContact,
   isTelegramHandleValid,
-  removeTelegramURLPrefix,
+  removeTelegramHandlePrefix,
 } from '~/shared'
 import type { Denom } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
@@ -75,7 +75,7 @@ function calculateMarginRate() {
 }
 async function createOffer() {
   await client.createOffer({
-    telegram_handle: removeTelegramURLPrefix(ownerContact.value),
+    telegram_handle: removeTelegramHandlePrefix(ownerContact.value),
     offer_type: offerType.value,
     fiat_currency: fiatCurrency.value,
     rate: `${rate.value}`,
