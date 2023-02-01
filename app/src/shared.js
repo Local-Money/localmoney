@@ -112,11 +112,15 @@ export function formatDate(date, showTime = true) {
  * @returns {boolean}
  */
 export function isTelegramHandleValid(telegram) {
-  const handle = removeTelegramURLPrefix(telegram)
+  const handle = removeTelegramHandlePrefix(telegram)
   return handle.length >= 5
 }
 
-export function removeTelegramURLPrefix(telegram) {
+export function addTelegramHandlePrefix(telegram) {
+  return `@${telegram}`
+}
+
+export function removeTelegramHandlePrefix(telegram) {
   const search = ['t.me/', '@']
   const index = search.findIndex((s) => telegram.includes(s))
   if (index === -1) {
@@ -127,13 +131,13 @@ export function removeTelegramURLPrefix(telegram) {
 }
 
 export function addTelegramURLPrefix(telegram) {
-  return `@${telegram}`
+  return `https://t.me/${telegram}`
 }
 
 export async function formatEncryptedUserContact(privateKey, profileContact) {
   if (profileContact !== undefined) {
     const decryptedContact = await decryptData(privateKey, profileContact)
-    return decryptedContact !== '' ? addTelegramURLPrefix(decryptedContact) : decryptedContact
+    return decryptedContact !== '' ? addTelegramHandlePrefix(decryptedContact) : decryptedContact
   } else {
     return ''
   }
