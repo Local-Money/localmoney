@@ -7,16 +7,14 @@ const client = useClientStore()
 
 const { userWallet } = storeToRefs(client)
 const enableMyOffersNav = ref(false)
-const enableDisputesNav = ref(false)
+const enableDisputesNav = computed(() => enableDisputes(userWallet.value, client.arbitrators.data))
 
 onMounted(async () => {
   enableMyOffersNav.value = await enableMyOffers(userWallet.value, client.chainClient)
-  enableDisputesNav.value = enableDisputes(userWallet.value, client.arbitrators.data)
 })
 
 watch(userWallet, async () => {
   enableMyOffersNav.value = await enableMyOffers(userWallet.value, client.chainClient)
-  enableDisputesNav.value = enableDisputes(userWallet.value, client.arbitrators.data)
 })
 </script>
 
