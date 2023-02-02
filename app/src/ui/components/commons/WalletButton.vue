@@ -10,8 +10,13 @@ const userWallet = computed(() => client.userWallet)
 
 function connectWallet() {
   nextTick(async () => {
-    await client.connectWallet()
-    await notification.register()
+    if (!client.applicationConnected) {
+      await client.connectWallet()
+      await notification.register()
+    } else {
+      await client.disconnectWallet()
+      await notification.unregister()
+    }
   })
 }
 
