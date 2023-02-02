@@ -2,6 +2,7 @@ import { ViteSSG } from 'vite-ssg'
 import { createWebHistory } from 'vue-router'
 import App from './App.vue'
 import routes from '~/routes'
+import { initAnalytics } from '~/analytics/analytics'
 
 // https://github.com/antfu/vite-ssg
 export const createApp = ViteSSG(
@@ -14,5 +15,6 @@ export const createApp = ViteSSG(
   (ctx) => {
     // install all modules under `modules/`
     Object.values(import.meta.globEager('./modules/*.ts')).forEach((i) => i.install?.(ctx))
+    initAnalytics()
   }
 )

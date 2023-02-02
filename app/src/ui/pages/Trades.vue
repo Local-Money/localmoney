@@ -5,6 +5,7 @@ import TradeHistoryItem from '../components/trades/TradeHistoryItem.vue'
 import { useClientStore } from '~/stores/client'
 import { TradeState } from '~/types/components.interface'
 import { checkTradeNeedsRefund, checkValidOffer } from '~/utils/validations'
+import { Page, trackPage } from '~/analytics/analytics'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -54,6 +55,7 @@ const paginationLastItem = ref<number>(0)
 
 onMounted(() => {
   nextTick(async () => await client.fetchTrades())
+  trackPage(Page.my_trades)
 })
 
 onUnmounted(async () => {})

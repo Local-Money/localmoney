@@ -13,6 +13,7 @@ import { denomToValue, microDenomToDenom } from '~/utils/denom'
 import { decryptData } from '~/utils/crypto'
 import { formatTimer } from '~/utils/formatters'
 import { TradeState } from '~/types/components.interface'
+import { Page, trackPage } from '~/analytics/analytics'
 
 const client = useClientStore()
 const { userWallet } = storeToRefs(client)
@@ -168,6 +169,7 @@ onBeforeMount(() => {
 
 onMounted(() => {
   startTradeTimer()
+  trackPage(Page.trade_detail)
 })
 
 onUnmounted(() => {
