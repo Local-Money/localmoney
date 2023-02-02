@@ -187,7 +187,18 @@ onUnmounted(() => {
         <p class="wallet-addr">
           {{ formatAddress(offerResponse.offer.owner) }}
         </p>
-        <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
+        <div class="n-trades">
+          <svg class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M20 6L9 17L4 12"
+              stroke="inherit"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <p>{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
+        </div>
       </div>
 
       <div class="inner-wrap">
@@ -307,10 +318,13 @@ onUnmounted(() => {
 
     .owner {
       width: 20%;
+      display: flex;
+      flex-direction: column;
 
       @include responsive(mobile) {
         width: 100%;
         margin-bottom: 24px;
+        flex-direction: row;
       }
       .wallet-addr {
         font-size: 16px;
@@ -319,9 +333,31 @@ onUnmounted(() => {
       }
 
       .n-trades {
-        font-size: 12px;
-        color: $gray700;
-        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        align-self: flex-start;
+        gap: 6px;
+        margin-top: 8px;
+
+        background-color: $border;
+        padding: 4px 8px;
+        border-radius: 8px;
+
+        @include responsive(mobile) {
+          margin-top: 0;
+        }
+
+        svg {
+          width: 16px;
+          height: 16px;
+          stroke: $primary;
+        }
+
+        p {
+          font-size: 12px;
+          color: $gray700;
+          padding-right: 4px;
+        }
       }
 
       @media only screen and (max-width: $mobile) {

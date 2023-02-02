@@ -25,6 +25,10 @@ const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate) / 100
   return `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
 })
+const tradeCountIcon = computed(() => {
+  const showIcon = props.offerResponse.profile.released_trades_count > 0
+  return showIcon
+})
 </script>
 
 <template>
@@ -33,7 +37,12 @@ const offerPrice = computed(() => {
       <p class="wallet-addr">
         {{ formatAddress(offerResponse.offer.owner) }}
       </p>
-      <p class="n-trades">{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
+      <div class="n-trades">
+        <svg v-show="tradeCountIcon" class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M20 6L9 17L4 12" stroke="inherit" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <p>{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
+      </div>
     </div>
 
     <div class="inner-wrap">
@@ -91,9 +100,31 @@ const offerPrice = computed(() => {
     }
 
     .n-trades {
-      font-size: 12px;
-      color: $gray700;
-      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      align-self: flex-start;
+      gap: 6px;
+      margin-top: 8px;
+
+      @include responsive(mobile) {
+        margin-top: 0;
+      }
+
+      background-color: $border;
+      padding: 4px 8px;
+      border-radius: 8px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        stroke: $primary;
+      }
+
+      p {
+        font-size: 12px;
+        color: $gray700;
+        padding-right: 4px;
+      }
     }
   }
 }
