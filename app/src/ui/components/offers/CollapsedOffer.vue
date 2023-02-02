@@ -7,8 +7,8 @@ import {
   formatAmount,
   formatTradesCountInfo,
 } from '~/shared'
-import { OfferType } from '~/types/components.interface'
 import type { OfferResponse, OfferTypeLabel } from '~/types/components.interface'
+import { OfferType } from '~/types/components.interface'
 import { denomToValue, microDenomToDenom } from '~/utils/denom'
 import { useClientStore } from '~/stores/client'
 
@@ -25,10 +25,7 @@ const offerPrice = computed(() => {
   const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, props.offerResponse.offer.rate) / 100
   return `${props.offerResponse.offer.fiat_currency} ${formatAmount(fiatPrice, false)}`
 })
-const tradeCountIcon = computed(() => {
-  const showIcon = props.offerResponse.profile.released_trades_count > 0
-  return showIcon
-})
+const tradeCountIcon = computed(() => props.offerResponse.profile.released_trades_count > 0)
 </script>
 
 <template>
