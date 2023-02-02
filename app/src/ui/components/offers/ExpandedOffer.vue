@@ -41,6 +41,8 @@ const expandedCard = ref()
 const cryptoAmountInput = ref()
 const fiatAmountInput = ref()
 const marginRate = computed(() => convertOfferRateToMarginRate(props.offerResponse.offer.rate))
+const watchingFiat = ref(false)
+const watchingCrypto = ref(false)
 
 const tradeTimeLimit = computed(() => {
   const expirationTime = client.getHubConfig().trade_expiration_timer * 1000
@@ -111,13 +113,20 @@ function focus() {
 
 function useMinCrypto() {
   cryptoAmount.value = minAmountInCrypto.value
+  const usdRate = fiatPriceByRate.value / 100
+  fiatAmount.value = parseFloat((cryptoAmount.value * usdRate).toFixed(2))
 }
 
-function useMaxCrypto() {
+function useMaxCrypto(fromFiat = false) {
   cryptoAmount.value = maxAmountInCrypto.value
+  const usdRate = fiatPriceByRate.value / 100
+  fiatAmount.value = parseFloat((cryptoAmount.value * usdRate).toFixed(2))
 }
 
 watch(fiatAmount, (newFiatAmount) => {
+  if (watchingCrypto.value) {
+    return
+  }
   if (newFiatAmount === maxAmountInFiat.value) {
     useMaxCrypto()
   } else if (newFiatAmount === minAmountInFiat.value) {
@@ -133,6 +142,9 @@ watch(fiatAmount, (newFiatAmount) => {
 })
 
 watch(cryptoAmount, (newCryptoAmount) => {
+  if (watchingFiat.value) {
+    return
+  }
   if (newCryptoAmount === 0 || isNaN(newCryptoAmount)) {
     fiatAmount.value = 0.0
   } else {
@@ -160,6 +172,16 @@ function startExchangeRateRefreshTimer() {
       seconds = interval
     }
   }, countdownInterval)
+}
+
+function focusFiat() {
+  watchingFiat.value = true
+  watchingCrypto.value = false
+}
+
+function focusCrypto() {
+  watchingFiat.value = false
+  watchingCrypto.value = true
 }
 
 onMounted(async () => {
@@ -213,7 +235,7 @@ onUnmounted(() => {
             {{ fromLabel }}
           </p>
           <CurrencyInput
-            :ref="cryptoAmountInput"
+            ref="cryptoAmountInput"
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
             :prefix="microDenomToDenom(offerResponse.offer.denom.native)"
@@ -222,6 +244,7 @@ onUnmounted(() => {
             :errorMsg="`The value should be between ${minMaxCryptoStr[0]} and ${minMaxCryptoStr[1]}`"
             :isCrypto="true"
             :decimals="6"
+            @focus="focusCrypto"
           />
           <div class="wrap-limit">
             <div class="limit-btn">
@@ -241,7 +264,7 @@ onUnmounted(() => {
             {{ toLabel }}
           </p>
           <CurrencyInput
-            :ref="fiatAmountInput"
+            ref="fiatAmountInput"
             v-model="fiatAmount"
             :placeholder="fiatPlaceholder"
             :prefix="offerResponse.offer.fiat_currency"
@@ -250,6 +273,7 @@ onUnmounted(() => {
             :errorMsg="`The value should be between ${minMaxFiatStr[0]} and ${minMaxFiatStr[1]}`"
             :isCrypto="false"
             :decimals="2"
+            @focus="focusFiat"
           />
           <div class="wrap-limit">
             <div class="limit-btn">

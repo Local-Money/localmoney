@@ -54,18 +54,19 @@ function onFocus() {
 
 function onChange(e: { target: { value: string } }) {
   const newValue = e.target.value.replace(/[^0-9.]/g, '')
-  value.value = newValue
+  if (newValue === '') {
+    value.value = 0
+    return
+  }
+  value.value = parseFloat(newValue)
   if (watching.value) {
     formattedValue.value = value.value
   }
-  emit('update:modelValue', newValue)
+  emit('update:modelValue', value.value)
 }
 
 function onBlur() {
   watching.value = false
-  if (value.value === '') {
-    value.value = '0'
-  }
   format(Number(value.value))
 }
 
