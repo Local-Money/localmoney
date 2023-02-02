@@ -27,6 +27,8 @@ export interface Chain {
 
   connectWallet(): Promise<void>
 
+  disconnectWallet(): Promise<void>
+
   getHubConfig(): HubConfig
 
   getWalletAddress(): string

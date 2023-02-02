@@ -62,6 +62,12 @@ export class CosmosChain implements Chain {
     }
   }
 
+  async disconnectWallet() {
+    this.cwClient?.disconnect()
+    this.account = undefined
+    this.signer = undefined
+  }
+
   getHubConfig(): HubConfig {
     return this.hubInfo.hubConfig
   }
