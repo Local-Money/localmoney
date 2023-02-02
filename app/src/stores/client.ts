@@ -33,6 +33,7 @@ export const useClientStore = defineStore({
     return {
       chainClient: <ChainClient>ChainClient.kujiraTestnet, // TODO call setClient in the App.vue setup function to properly init a chain adapter
       client: chainFactory(ChainClient.kujiraTestnet),
+      applicationConnected: useLocalStorage('walletAlreadyConnected', false),
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
       profile: <Profile>{},
@@ -57,6 +58,9 @@ export const useClientStore = defineStore({
       this.chainClient = chainClient
       this.client = chainFactory(this.chainClient)
       await this.client.init()
+      if (this.applicationConnected) {
+        await this.connectWallet()
+      }
     },
     async connectWallet() {
       try {
@@ -64,11 +68,17 @@ export const useClientStore = defineStore({
         const address = this.client.getWalletAddress()
         await this.syncSecrets(address)
         this.userWallet = { isConnected: true, address }
+        this.applicationConnected = true
         await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
         this.handle.error(e)
       }
+    },
+    async disconnectWallet() {
+      await this.client.disconnectWallet()
+      this.userWallet = { isConnected: false, address: 'undefined' }
+      this.applicationConnected = false
     },
     getHubConfig(): HubConfig {
       return this.client.getHubConfig()
@@ -85,7 +95,7 @@ export const useClientStore = defineStore({
       }
     },
     getSecrets() {
-      const address = this.client.getWalletAddress()
+      const address = this.userWallet.address
       const userSecrets = this.secrets.get(address)
       if (userSecrets === undefined) {
         throw new WalletNotConnected()
