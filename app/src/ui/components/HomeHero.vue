@@ -95,7 +95,7 @@ onUnmounted(() => {
               </svg>
             </a>
 
-            <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
+            <a href="https://localmoney.gitbook.io/docs/local/tokenomics" target="_blank">
               <svg
                 class="social-icon"
                 width="30"
