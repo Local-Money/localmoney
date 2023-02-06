@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ClickLinkEvents, trackSocialLinks } from '~/analytics/analytics'
+
 const { t } = useI18n()
 
 // TODO - Make isMobile global
@@ -29,7 +31,11 @@ onUnmounted(() => {
             <!-- <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
               <button class="primary">Litepaper</button>
             </a> -->
-            <a href="https://twitter.com/TeamLocalMoney" target="_blank">
+            <a
+              href="https://twitter.com/TeamLocalMoney"
+              target="_blank"
+              @click="trackSocialLinks(ClickLinkEvents.twitter)"
+            >
               <svg
                 class="social-icon"
                 width="24"
@@ -47,7 +53,7 @@ onUnmounted(() => {
               </svg>
             </a>
 
-            <a href="https://t.co/P16BhQpcyc" target="_blank">
+            <a href="https://t.co/P16BhQpcyc" target="_blank" @click="trackSocialLinks(ClickLinkEvents.discord)">
               <svg
                 class="social-icon"
                 width="32"
@@ -63,7 +69,7 @@ onUnmounted(() => {
               </svg>
             </a>
 
-            <a href="https://github.com/Local-Money" target="_blank">
+            <a href="https://github.com/Local-Money" target="_blank" @click="trackSocialLinks(ClickLinkEvents.github)">
               <svg
                 class="social-icon"
                 width="32"
@@ -79,7 +85,7 @@ onUnmounted(() => {
               </svg>
             </a>
 
-            <a href="https://local-money.medium.com/" target="_blank">
+            <a href="https://local-money.medium.com/" target="_blank" @click="trackSocialLinks(ClickLinkEvents.medium)">
               <svg
                 class="social-icon"
                 width="32"
@@ -95,7 +101,11 @@ onUnmounted(() => {
               </svg>
             </a>
 
-            <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
+            <a
+              href="https://localmoney.io/local-litepaper.pdf"
+              target="_blank"
+              @click="trackSocialLinks(ClickLinkEvents.litepaper)"
+            >
               <svg
                 class="social-icon"
                 width="30"
