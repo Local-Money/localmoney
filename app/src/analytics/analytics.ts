@@ -9,22 +9,70 @@ export function trackPage(page: Page) {
   mixpanel.track(page)
 }
 
-export function trackWalletConnection(state: WalletState, address: string | undefined = undefined) {
+export function trackWalletConnection(state: WalletEvents, address: string | undefined = undefined) {
   mixpanel.identify(address)
   mixpanel.track(state)
 }
 
-export enum Page {
-  home = 'home',
-  my_offers = 'my offers',
-  my_trades = 'my trades',
-  disputes = 'disputes',
-  trade_detail = 'trade detail',
+export function trackOffer(event: OfferEvents, offer: OfferData) {
+  mixpanel.track(event, offer)
 }
 
-export enum Events {}
+export function trackTrade(event: TradeEvents, offer: TradeData) {
+  mixpanel.track(event, offer)
+}
 
-export enum WalletState {
+export function trackSocialLinks(event: ClickLinkEvents) {
+  mixpanel.track(event)
+}
+
+export enum ClickLinkEvents {
+  discord = 'link_discord',
+  twitter = 'link_twitter',
+  github = 'link_github',
+  litepaper = 'link_litepaper',
+  medium = 'link_medium',
+}
+export enum Page {
+  home = 'page_home',
+  my_offers = 'page_my_offers',
+  my_trades = 'page_my_trades',
+  disputes = 'page_disputes',
+  trade_detail = 'page_trade_detail',
+}
+
+export enum TradeEvents {
+  create = 'open_trade',
+}
+
+export interface TradeData {
+  trade_id: string
+  offer_id: string
+  trade_amount: string
+  trade_denom: string
+  trade_type: string
+  trade_usd_value: string
+}
+
+export enum OfferEvents {
+  create = 'create_offer',
+  pause = 'pause_offer',
+  archive = 'archive_offer',
+  unarchive = 'unarchive_offer',
+}
+
+export interface OfferData {
+  offer_id: string
+  offer_min: string
+  offer_max: string
+  offer_state: string
+  offer_type: string
+  offer_fiat: string
+  offer_denom: string
+  offer_rate: string
+}
+
+export enum WalletEvents {
   connected = 'wallet connected',
   disconnected = 'wallet disconnected',
 }
