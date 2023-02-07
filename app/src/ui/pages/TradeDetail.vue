@@ -119,7 +119,8 @@ const summary = computed(() => {
   const burn_fee_value = Math.floor(burn_fee_pct * trade_amount)
   const chain_fee_value = Math.floor(chain_fee_pct * trade_amount)
 
-  const platform_fee_pct = Number(warchest_fee_pct) + Number(burn_fee_pct) + Number(chain_fee_pct)
+  let platform_fee_pct = Number(warchest_fee_pct) + Number(burn_fee_pct) + Number(chain_fee_pct)
+  platform_fee_pct = Number(platform_fee_pct.toFixed(5))
   const platform_fee_value = warchest_fee_value + burn_fee_value + chain_fee_value
 
   const arbitration_fee_value = Math.floor(arbitration_fee_pct * trade_amount)
