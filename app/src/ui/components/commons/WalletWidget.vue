@@ -1,11 +1,33 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+// import { useClientStore } from '~/stores/client'
+// import { microDenomToDenom } from '~/utils/denom'
+// import { formatAmount } from '~/shared'
+// const client = useClientStore()
+// const acceptedBalance = computed(() => client.acceptedTokenBalance)
+// const receivedBalance = computed(() => client.receivedTokenBalance)
+
+// function formatDenom(denom: string): string {
+//   return microDenomToDenom(denom)
+// }
+</script>
 
 <template>
   <div class="widget">
     <div class="wrap card">
       <p class="title">My Wallet</p>
-      <p class="temp-balance">$12,000 LOCAL</p>
-      <button @click="$emit('disconnect')">disconnect</button>
+      <!-- <div class="balance">
+        <p class="label">{{ formatDenom(receivedBalance.denom) }}</p>
+        <p class="balance">{{ formatAmount(receivedBalance.amount) }}</p>
+      </div> -->
+      <div class="balance">
+        <div class="token">
+          <img src="../../assets/logo-icon-dark.svg" alt="" />
+          <p class="label">LOCAL</p>
+        </div>
+
+        <p class="balance">$34,000.854</p>
+      </div>
+      <button class="secondary bg-gray300 center-text" @click="$emit('disconnect')">disconnect</button>
     </div>
   </div>
 </template>
@@ -17,5 +39,32 @@
   position: absolute;
   right: 0;
   top: 64px;
+
+  .wrap {
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    .title {
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid $border;
+    }
+
+    .balance {
+      display: flex;
+      justify-content: space-between;
+
+      .token {
+        display: flex;
+        gap: 8px;
+      }
+    }
+
+    button {
+      width: 100%;
+    }
+  }
 }
 </style>
