@@ -26,17 +26,24 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <button class="wallet" @click="connectWallet()">
-    <p v-if="userWallet.isConnected">
-      {{ formatAddress(userWallet.address) }}
-    </p>
-    <p v-else>connect</p>
-    <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
-  </button>
+  <div class="wrap-wallet">
+    <button class="wallet" @click="connectWallet()">
+      <p v-if="userWallet.isConnected">
+        {{ formatAddress(userWallet.address) }}
+      </p>
+      <p v-else>connect</p>
+      <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
+    </button>
+    <WalletWidget @disconnect="connectWallet" />
+  </div>
 </template>
 
 <style lang="scss" scoped>
 @import '../../style/tokens.scss';
+
+.wrap-wallet {
+  position: relative;
+}
 
 button {
   @media only screen and (max-width: $mobile) {
