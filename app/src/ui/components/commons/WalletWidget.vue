@@ -40,7 +40,7 @@ defineExpose({ toggleWidget })
           <p class="address">{{ formatAddress(userWallet.address) }}</p>
         </div>
         <div class="actions">
-          <a :href="`https://finder.kujira.app/${finder}`" target="_blank">
+          <a :href="`https://finder.kujira.app/${finder}`" target="_blank" alt="Finder link">
             <svg
               class="icon-24"
               width="24"

@@ -55,6 +55,9 @@ onUnmounted(() => {
 }
 
 button {
+  &:hover {
+    color: $primary;
+  }
   @media only screen and (max-width: $mobile) {
     margin: 16px 16px 0 0;
   }
