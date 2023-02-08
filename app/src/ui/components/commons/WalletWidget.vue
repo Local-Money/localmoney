@@ -36,6 +36,8 @@ defineExpose({ toggleWidget })
       <button class="secondary bg-gray300 center-text" @click="$emit('connectWidget')">disconnect</button>
     </div>
   </div>
+
+  <div v-if="widgetActive" class="widget-close" @click="toggleWidget" />
 </template>
 
 <style lang="scss" scoped>
@@ -72,5 +74,13 @@ defineExpose({ toggleWidget })
       width: 100%;
     }
   }
+}
+.widget-close {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 99;
 }
 </style>
