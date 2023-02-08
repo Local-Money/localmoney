@@ -9,10 +9,16 @@
 // function formatDenom(denom: string): string {
 //   return microDenomToDenom(denom)
 // }
+
+const widgetActive = ref(false)
+function toggleWidget() {
+  widgetActive.value = !widgetActive.value
+}
+defineExpose({ toggleWidget })
 </script>
 
 <template>
-  <div class="widget">
+  <div v-if="widgetActive" class="widget">
     <div class="wrap card">
       <p class="title">My Wallet</p>
       <!-- <div class="balance">
@@ -27,7 +33,7 @@
 
         <p class="balance">$34,000.854</p>
       </div>
-      <button class="secondary bg-gray300 center-text" @click="$emit('disconnect')">disconnect</button>
+      <button class="secondary bg-gray300 center-text" @click="$emit('connectWidget')">disconnect</button>
     </div>
   </div>
 </template>

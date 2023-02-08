@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted } from 'vue-demi'
+import WalletWidget from './WalletWidget.vue'
 import { useClientStore } from '~/stores/client'
 import { formatAddress } from '~/shared'
 import useNotificationSystem from '~/notification/Notification'
@@ -20,6 +21,11 @@ function connectWallet() {
   })
 }
 
+const walletWidget = ref()
+function toggleWalletWidget() {
+  walletWidget.value.toggleWidget()
+}
+
 onUnmounted(() => {
   notification.unregister()
 })
@@ -27,14 +33,17 @@ onUnmounted(() => {
 
 <template>
   <div class="wrap-wallet">
-    <button class="wallet" @click="connectWallet()">
-      <p v-if="userWallet.isConnected">
+    <button v-if="userWallet.isConnected" class="wallet" @click="toggleWalletWidget()">
+      <p>
         {{ formatAddress(userWallet.address) }}
       </p>
-      <p v-else>connect</p>
       <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
     </button>
-    <WalletWidget @disconnect="connectWallet" />
+    <button v-else class="wallet" @click="connectWallet()">
+      <p>connect</p>
+      <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
+    </button>
+    <WalletWidget v-if="userWallet.isConnected" ref="walletWidget" @connectWidget="connectWallet" />
   </div>
 </template>
 
