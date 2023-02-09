@@ -215,7 +215,7 @@ export const useClientStore = defineStore({
         }
         const trade_id = await this.client.openTrade(newTrade)
         const tradeInfo = await this.fetchTradeDetail(trade_id)
-        trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
         await this.fetchProfile()
         const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
@@ -287,7 +287,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.acceptTradeRequest(tradeId, makerContact)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.accepted, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.accepted, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -299,7 +299,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.cancelTradeRequest(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.canceled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.canceled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -311,7 +311,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.fundEscrow(tradeInfo, makerContact)
         const trade = await this.fetchTradeDetail(tradeInfo.trade.id)
-        trackTrade(TradeEvents.funded, toTradeData(trade.trade, trade.offer.offer.offer_type))
+        trackTrade(TradeEvents.funded, toTradeData(trade.trade, trade.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -323,7 +323,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.setFiatDeposited(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.paid, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.paid, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -335,7 +335,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.releaseEscrow(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.released, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.released, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -347,7 +347,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.refundEscrow(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.refunded, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.refunded, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -360,7 +360,7 @@ export const useClientStore = defineStore({
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
 
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.disputed, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.disputed, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -372,7 +372,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.settleDispute(tradeId, winner)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.dispute_settled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer.offer_type))
+        trackTrade(TradeEvents.dispute_settled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {

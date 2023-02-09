@@ -1,7 +1,8 @@
 import type { Config } from 'mixpanel-browser'
 import mixpanel from 'mixpanel-browser'
-import type { OfferType, PatchOffer, PostOffer, Trade } from '~/types/components.interface'
+import type { GetOffer, PatchOffer, PostOffer, Trade } from '~/types/components.interface'
 import { denomToValue, microDenomToDenom } from '~/utils/denom'
+import { CRYPTO_DECIMAL_PLACES } from '~/utils/constants'
 
 const TRADE = 'trade'
 
@@ -33,13 +34,10 @@ export function trackSocialLinks(event: ClickLinkEvents) {
   mixpanel.track(event)
 }
 
-export enum ClickLinkEvents {
-  discord = 'link_discord',
-  twitter = 'link_twitter',
-  github = 'link_github',
-  gitbook = 'link_gitbook',
-  medium = 'link_medium',
+export function trackAppEvents(event: AppEvents, data?: AppData) {
+  mixpanel.track(event, data)
 }
+
 export enum Page {
   home = 'page_home',
   my_offers = 'page_my_offers',
@@ -63,20 +61,35 @@ export enum TradeEvents {
 export interface TradeData {
   trade_id: number
   offer_id: number
-  trade_amount: string
+  trade_amount: number
   trade_denom: string
   trade_type: string
   trade_state: string
+  trade_maker: string
+  trade_taker: string
 }
 
-export function toTradeData(trade: Trade, offerType: OfferType): TradeData {
+export function toTradeData(trade: Trade, offer: GetOffer): TradeData {
+  let trade_maker: string
+  let trade_taker: string
+
+  if (trade.buyer === offer.owner) {
+    trade_maker = trade.buyer
+    trade_taker = trade.seller
+  } else {
+    trade_maker = trade.seller
+    trade_taker = trade.buyer
+  }
+
   return {
     trade_id: trade.id,
     offer_id: trade.offer_id,
-    trade_amount: trade.amount,
+    trade_amount: Number(trade.amount) / CRYPTO_DECIMAL_PLACES,
     trade_denom: microDenomToDenom(denomToValue(trade.denom)),
-    trade_type: offerType,
+    trade_type: offer.offer_type,
     trade_state: trade.state,
+    trade_maker,
+    trade_taker,
   }
 }
 
@@ -101,8 +114,8 @@ export function toOfferData(offerId: number, offer: PostOffer | PatchOffer): Off
   const offer_denom = 'denom' in offer ? microDenomToDenom(denomToValue(offer.denom)) : undefined
   return {
     offer_id: offerId,
-    offer_max: Number(offer.max_amount),
-    offer_min: Number(offer.min_amount),
+    offer_max: Number(offer.max_amount) / CRYPTO_DECIMAL_PLACES,
+    offer_min: Number(offer.min_amount) / CRYPTO_DECIMAL_PLACES,
     offer_rate: offer.rate,
     offer_state: (offer as PatchOffer).state ?? null,
     offer_type: (offer as PostOffer).offer_type ?? null,
@@ -115,3 +128,21 @@ export enum WalletEvents {
   connected = 'wallet_connected',
   disconnected = 'wallet_disconnected',
 }
+
+export enum ClickLinkEvents {
+  discord = 'link_discord',
+  twitter = 'link_twitter',
+  github = 'link_github',
+  gitbook = 'link_gitbook',
+  medium = 'link_medium',
+}
+
+export enum AppEvents {
+  list_offers = 'list_offers_filter',
+  open_notifications = 'click_open_notifications',
+  close_notifications = 'click_close_notifications',
+  click_notification = 'click_notification',
+  clear_all_notifications = 'click_clear_all_notifications',
+}
+
+export type AppData = Record<string, any>
