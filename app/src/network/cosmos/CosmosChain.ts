@@ -92,6 +92,20 @@ export class CosmosChain implements Chain {
     }
   }
 
+  async fetchTokenBalance(denom: Denom) {
+    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
+      try {
+        const balance = await this.cwClient.getBalance(this.getWalletAddress(), denomToValue(denom))
+        console.log(`balance: `, balance)
+        return balance
+      } catch (e) {
+        throw DefaultError.fromError(e)
+      }
+    } else {
+      throw new WalletNotConnected()
+    }
+  }
+
   // TODO encrypt the postOffer.owner_contact field
   async createOffer(postOffer: PostOffer) {
     const msg = { create: { offer: postOffer } }

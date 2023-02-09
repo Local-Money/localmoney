@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import { useClientStore } from '~/stores/client'
-import { formatAddress } from '~/shared'
+import { formatAddress, formatAmount } from '~/shared'
 import { ChainClient } from '~/network/Chain'
-// import { useClientStore } from '~/stores/client'
-// import { microDenomToDenom } from '~/utils/denom'
-// import { formatAmount } from '~/shared'
-// const client = useClientStore()
-// const acceptedBalance = computed(() => client.acceptedTokenBalance)
-// const receivedBalance = computed(() => client.receivedTokenBalance)
-
-// function formatDenom(denom: string): string {
-//   return microDenomToDenom(denom)
-// }
 
 const client = useClientStore()
 const userWallet = computed(() => client.userWallet)
+const localBalance = computed(() => {
+  return {
+    amount: formatAmount(client.localBalance.amount),
+    denom: 'LOCAL',
+  }
+})
 
 const finder = computed(() => {
   if (client.chainClient === ChainClient.kujiraMainnet) {
@@ -63,10 +59,6 @@ defineExpose({ toggleWidget })
         </div>
       </div>
       <div class="separator"></div>
-      <!-- <div class="balance">
-        <p class="label">{{ formatDenom(receivedBalance.denom) }}</p>
-        <p class="balance">{{ formatAmount(receivedBalance.amount) }}</p>
-      </div> -->
       <div class="token-list">
         <div class="wrap-token">
           <div class="token">
@@ -132,10 +124,10 @@ defineExpose({ toggleWidget })
               </defs>
             </svg>
 
-            <p class="denom">LOCAL</p>
+            <p class="denom">{{ localBalance.denom }}</p>
           </div>
 
-          <p class="amount">$34,000.854</p>
+          <p class="amount">{{ localBalance.amount }}</p>
         </div>
       </div>
       <div class="wrap-btn">
