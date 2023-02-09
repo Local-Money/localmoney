@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '~/stores/client'
 import { enableMyOffers } from '~/config/featureToggle'
+import { Page, trackPage } from '~/analytics/analytics'
 
 const client = useClientStore()
 const router = useRouter()
@@ -18,6 +19,10 @@ onBeforeMount(() => {
   if (!enableMyOffersPage.value) {
     router.push('/')
   }
+})
+
+onMounted(() => {
+  trackPage(Page.my_offers)
 })
 </script>
 

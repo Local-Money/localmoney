@@ -4,10 +4,19 @@ import WalletWidget from './WalletWidget.vue'
 import { useClientStore } from '~/stores/client'
 import { formatAddress } from '~/shared'
 import useNotificationSystem from '~/notification/Notification'
-const notification = useNotificationSystem()
+import { WalletEvents, trackWalletConnection } from '~/analytics/analytics'
 
+const notification = useNotificationSystem()
 const client = useClientStore()
 const userWallet = computed(() => client.userWallet)
+
+watch(userWallet, (wallet) => {
+  if (wallet.isConnected) {
+    trackWalletConnection(WalletEvents.connected, wallet.address)
+  } else {
+    trackWalletConnection(WalletEvents.disconnected)
+  }
+})
 
 function connectWallet() {
   nextTick(async () => {

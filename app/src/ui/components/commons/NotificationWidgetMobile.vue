@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import useNotificationSystem from '~/notification/Notification'
 import type { Notification } from '~/stores/notification'
 import { formatAddress, timeSince } from '~/shared'
+import { AppEvents, trackAppEvents } from '~/analytics/analytics'
 
 const emit = defineEmits<{
   (e: 'toggleWidget'): void
@@ -18,10 +19,12 @@ async function showTrade(n: Notification) {
     params: { id: n.id },
   })
   emit('toggleWidget')
+  trackAppEvents(AppEvents.click_notification, { trade_id: n.id })
 }
 
 async function readAll() {
   await notification.readAllNotification()
+  trackAppEvents(AppEvents.clear_all_notifications)
 }
 </script>
 

@@ -3,6 +3,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
+import { WalletNotConnected } from '~/network/chain-error'
 import type {
   Arbitrator,
   Denom,
@@ -22,8 +23,8 @@ import { LoadingState, OfferState } from '~/types/components.interface'
 import type { Secrets } from '~/utils/crypto'
 import { encryptData, generateKeys } from '~/utils/crypto'
 import { denomToValue } from '~/utils/denom'
-import { WalletNotConnected } from '~/network/chain-error'
 import { CRYPTO_DECIMAL_PLACES } from '~/utils/constants'
+import { OfferEvents, TradeEvents, toOfferData, toTradeData, trackOffer, trackTrade } from '~/analytics/analytics'
 
 const LIMIT_ITEMS_PER_PAGE = 10
 
@@ -156,13 +157,15 @@ export const useClientStore = defineStore({
         // Encrypt contact to save on the profile when an offer is created
         const owner_encryption_key = this.getSecrets().publicKey
         const owner_contact = await encryptData(owner_encryption_key, param.telegram_handle)
-        await this.client.createOffer({
+        const postOffer = {
           ...param,
           min_amount: `${param.min_amount * CRYPTO_DECIMAL_PLACES}`,
           max_amount: `${param.max_amount * CRYPTO_DECIMAL_PLACES}`,
           owner_contact,
           owner_encryption_key,
-        } as PostOffer)
+        } as PostOffer
+        const offerId = await this.client.createOffer(postOffer)
+        trackOffer(OfferEvents.created, toOfferData(offerId, postOffer))
         await this.fetchProfile()
         await this.fetchMyOffers()
       } catch (e) {
@@ -175,6 +178,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Updating Offer...')
       try {
         await this.client.updateOffer(updateOffer)
+        trackOffer(OfferEvents.updated, toOfferData(updateOffer.id, updateOffer))
         await this.fetchMyOffers()
       } catch (e) {
         this.handle.error(e)
@@ -187,6 +191,7 @@ export const useClientStore = defineStore({
       try {
         updateOffer.state = OfferState.paused
         await this.client.updateOffer(updateOffer)
+        trackOffer(OfferEvents.unarchived, toOfferData(updateOffer.id, updateOffer))
         await this.fetchMyOffers()
       } catch (e) {
         this.handle.error(e)
@@ -209,6 +214,8 @@ export const useClientStore = defineStore({
           profile_taker_encryption_key,
         }
         const trade_id = await this.client.openTrade(newTrade)
+        const tradeInfo = await this.fetchTradeDetail(trade_id)
+        trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
         await this.fetchProfile()
         const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
@@ -279,7 +286,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Accepting trade...')
       try {
         await this.client.acceptTradeRequest(tradeId, makerContact)
-        await this.fetchTradeDetail(tradeId)
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.accepted, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -290,7 +298,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Canceling trade...')
       try {
         await this.client.cancelTradeRequest(tradeId)
-        await this.fetchTradeDetail(tradeId)
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.canceled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -301,7 +310,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Funding trade...')
       try {
         await this.client.fundEscrow(tradeInfo, makerContact)
-        await this.fetchTradeDetail(tradeInfo.trade.id)
+        const trade = await this.fetchTradeDetail(tradeInfo.trade.id)
+        trackTrade(TradeEvents.funded, toTradeData(trade.trade, trade.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -312,7 +322,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Marking trade as paid...')
       try {
         await this.client.setFiatDeposited(tradeId)
-        await this.fetchTradeDetail(tradeId)
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.paid, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -323,7 +334,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Funding trade...')
       try {
         await this.client.releaseEscrow(tradeId)
-        await this.fetchTradeDetail(tradeId)
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.released, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -334,7 +346,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Refunding trade...')
       try {
         await this.client.refundEscrow(tradeId)
-        await this.fetchTradeDetail(tradeId)
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.refunded, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -345,7 +358,9 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
-        await this.fetchTradeDetail(tradeId)
+
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.disputed, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -356,7 +371,8 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Settling dispute...')
       try {
         await this.client.settleDispute(tradeId, winner)
-        await this.fetchTradeDetail(tradeId)
+        const tradeInfo = await this.fetchTradeDetail(tradeId)
+        trackTrade(TradeEvents.dispute_settled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
       } catch (e) {
         this.handle.error(e)
       } finally {

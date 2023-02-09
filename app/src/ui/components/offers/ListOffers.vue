@@ -6,6 +6,7 @@ import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { defaultMicroDenomAvailable, denomsAvailable } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
 import { checkValidOffer } from '~/utils/validations'
+import { AppEvents, trackAppEvents } from '~/analytics/analytics'
 
 const client = useClientStore()
 const offersResult = computed(() => client.offers)
@@ -37,12 +38,14 @@ function unselectOffer(offerItem: ExpandableItem<OfferResponse>) {
 }
 
 async function fetchOffers() {
-  await client.fetchOffers({
+  const filterArgs = {
     fiatCurrency: fiatCurrency.value,
     offerType: offerType.value,
     denom: { native: selectedCrypto.value },
     order: OfferOrder.trades_count,
-  })
+  }
+  await client.fetchOffers(filterArgs)
+  trackAppEvents(AppEvents.list_offers, filterArgs)
 }
 
 async function fetchMoreOffers() {
