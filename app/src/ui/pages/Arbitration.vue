@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '~/stores/client'
 import { enableDisputes } from '~/config/featureToggle'
+import { Page, trackPage } from '~/analytics/analytics'
 
 const client = useClientStore()
 const router = useRouter()
@@ -13,6 +14,10 @@ onBeforeMount(() => {
   if (!enableDisputesPage.value) {
     router.push('/')
   }
+})
+
+onMounted(() => {
+  trackPage(Page.disputes)
 })
 </script>
 

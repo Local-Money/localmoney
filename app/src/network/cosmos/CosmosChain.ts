@@ -105,6 +105,10 @@ export class CosmosChain implements Chain {
           'auto'
         )
         console.log('Create offer result >> ', result)
+        const offer_id = result.logs[0].events
+          .find((e) => e.type === 'wasm')
+          ?.attributes.find((a) => a.key === 'id')?.value
+        return Number(offer_id)
       } catch (e) {
         throw DefaultError.fromError(e)
       }

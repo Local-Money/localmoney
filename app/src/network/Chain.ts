@@ -41,7 +41,7 @@ export interface Chain {
 
   fetchMyOffers(limit: number, last?: number): Promise<OfferResponse[]>
 
-  createOffer(postOffer: PostOffer): Promise<void>
+  createOffer(postOffer: PostOffer): Promise<number>
 
   updateOffer(updateOffer: PatchOffer): Promise<void>
 
