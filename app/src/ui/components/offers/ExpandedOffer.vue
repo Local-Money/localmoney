@@ -197,6 +197,8 @@ onMounted(async () => {
   })
 })
 
+const tradeCountIcon = computed(() => props.offerResponse.profile.released_trades_count > 0)
+
 onUnmounted(() => {
   clearInterval(refreshRateInterval)
 })
@@ -210,7 +212,7 @@ onUnmounted(() => {
           {{ formatAddress(offerResponse.offer.owner) }}
         </p>
         <div class="n-trades">
-          <svg class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <svg v-show="tradeCountIcon" class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
               d="M20 6L9 17L4 12"
               stroke="inherit"
