@@ -84,10 +84,13 @@ export const useClientStore = defineStore({
     },
     async fetchLocalBalance() {
       // Todo we should change this to get the LOCAL denom from some config
-      const localDenom: Denom =
-        this.chainClient === ChainClient.kujiraMainnet
-          ? { native: 'factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local' }
-          : { native: 'factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local' }
+      let localDenom: Denom
+      if (this.chainClient === ChainClient.kujiraMainnet) {
+        localDenom = { native: 'factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local' }
+      } else {
+        localDenom = { native: 'factory/kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w/local' }
+      }
+
       this.localBalance = await this.client.fetchTokenBalance(localDenom)
     },
     async disconnectWallet() {
