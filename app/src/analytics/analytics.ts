@@ -14,11 +14,11 @@ export function trackPage(page: Page) {
   mixpanel.track(page)
 }
 
-export function trackWalletConnection(state: WalletEvents, address: string | undefined = undefined) {
+export function trackWalletConnection(events: WalletEvents, address?: string) {
   if (address) {
     mixpanel.identify(address)
   }
-  mixpanel.track(state)
+  mixpanel.track(events)
 }
 
 export function trackOffer(event: OfferEvents, offer: OfferData) {
@@ -96,7 +96,7 @@ export function toTradeData(trade: Trade, offer: GetOffer): TradeData {
 export enum OfferEvents {
   created = 'offer_created',
   updated = 'offer_updated',
-  unarchived = 'unarchive_offer',
+  unarchived = 'offer_unarchived',
 }
 
 export interface OfferData {
@@ -133,7 +133,7 @@ export enum ClickLinkEvents {
   discord = 'link_discord',
   twitter = 'link_twitter',
   github = 'link_github',
-  gitbook = 'link_gitbook',
+  litepaper = 'link_litepaper',
   medium = 'link_medium',
 }
 
