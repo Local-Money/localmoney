@@ -1,4 +1,10 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { Page, trackPage } from '~/analytics/analytics'
+
+onMounted(() => {
+  trackPage(Page.home)
+})
+</script>
 
 <template>
   <main>

@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import useNotificationSystem from '~/notification/Notification'
 import { useClientStore } from '~/stores/client'
 import { enableDisputes, enableMyOffers } from '~/config/featureToggle'
+import { AppEvents, trackAppEvents } from '~/analytics/analytics'
 
 const notification = useNotificationSystem()
 const client = useClientStore()
@@ -14,6 +15,8 @@ const enableDisputesNav = computed(() => enableDisputes(userWallet.value, client
 const widgetActive = ref(false)
 function toggleWidget() {
   widgetActive.value = !widgetActive.value
+  const event = widgetActive.value ? AppEvents.open_notifications : AppEvents.close_notifications
+  trackAppEvents(event)
   const noScroll = document.body
   noScroll.classList.toggle('body-no-scroll')
 }
