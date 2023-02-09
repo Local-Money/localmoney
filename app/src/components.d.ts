@@ -44,6 +44,7 @@ declare module '@vue/runtime-core' {
     TradeOpenItem: typeof import('./ui/components/trades/TradeOpenItem.vue')['default']
     Trades: typeof import('./ui/pages/Trades.vue')['default']
     WalletButton: typeof import('./ui/components/commons/WalletButton.vue')['default']
+    WalletWidget: typeof import('./ui/components/commons/WalletWidget.vue')['default']
   }
 }
 

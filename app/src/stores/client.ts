@@ -1,5 +1,6 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
+import type { Coin } from '@cosmjs/stargate'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
@@ -38,6 +39,7 @@ export const useClientStore = defineStore({
       userWallet: <UserWallet>{ isConnected: false, address: 'undefined' },
       secrets: useLocalStorage('secrets', new Map<string, Secrets>()),
       profile: <Profile>{},
+      localBalance: <Coin>{},
       fiatPrices: new Map<String, Map<String, number>>(),
       offers: <ListResult<OfferResponse>>ListResult.loading(),
       myOffers: <ListResult<OfferResponse>>ListResult.loading(),
@@ -69,12 +71,27 @@ export const useClientStore = defineStore({
         const address = this.client.getWalletAddress()
         await this.syncSecrets(address)
         this.userWallet = { isConnected: true, address }
+        await this.fetchBalances()
         this.applicationConnected = true
         await this.fetchArbitrators()
       } catch (e) {
         this.userWallet = { isConnected: false, address: 'undefined' }
         this.handle.error(e)
       }
+    },
+    async fetchBalances() {
+      await this.fetchLocalBalance()
+    },
+    async fetchLocalBalance() {
+      // Todo we should change this to get the LOCAL denom from some config
+      let localDenom: Denom
+      if (this.chainClient === ChainClient.kujiraMainnet) {
+        localDenom = { native: 'factory/kujira1swkuyt08z74n5jl7zr6hx0ru5sa2yev5v896p6/local' }
+      } else {
+        localDenom = { native: 'factory/kujira12w0ua4eqnkk0aahtnjlt6h3dhxael6x25s507w/local' }
+      }
+
+      this.localBalance = await this.client.fetchTokenBalance(localDenom)
     },
     async disconnectWallet() {
       await this.client.disconnectWallet()

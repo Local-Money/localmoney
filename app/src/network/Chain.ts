@@ -1,3 +1,4 @@
+import type { Coin } from '@cosmjs/stargate'
 import { JUNO_TESTNET_CONFIG, JUNO_TESTNET_HUB_INFO } from './cosmos/config/juno'
 import {
   KUJIRA_MAINNET_CONFIG,
@@ -34,6 +35,8 @@ export interface Chain {
   getWalletAddress(): string
 
   fetchProfile(): Promise<Profile>
+
+  fetchTokenBalance(denom: Denom): Promise<Coin>
 
   fetchOffer(offerId: string): Promise<OfferResponse>
 

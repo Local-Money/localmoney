@@ -318,6 +318,12 @@ button {
     }
   }
 
+  // Text Position
+  &.center-text {
+    display: flex;
+    justify-content: center;
+  }
+
   // Background Color
   &.bg-gray300 {
     background-color: $gray300;
