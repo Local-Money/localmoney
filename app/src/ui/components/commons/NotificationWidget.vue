@@ -4,6 +4,7 @@ import useNotificationSystem from '~/notification/Notification'
 import { useClientStore } from '~/stores/client'
 import { formatAddress, timeSince } from '~/shared'
 import type { Notification } from '~/stores/notification'
+import { AppEvents, trackAppEvents } from '~/analytics/analytics'
 
 const notification = useNotificationSystem()
 const client = useClientStore()
@@ -13,6 +14,8 @@ const isConnected = computed(() => client.userWallet.isConnected)
 const widgetActive = ref(false)
 function toggleWidget() {
   widgetActive.value = !widgetActive.value
+  const event = widgetActive.value ? AppEvents.open_notifications : AppEvents.close_notifications
+  trackAppEvents(event)
 }
 
 async function showTrade(n: Notification) {
@@ -21,11 +24,13 @@ async function showTrade(n: Notification) {
     name: 'TradeDetail',
     params: { id: n.id },
   })
+  trackAppEvents(AppEvents.click_notification, { trade_id: n.id })
   toggleWidget()
 }
 
 async function readAll() {
   await notification.readAllNotification()
+  trackAppEvents(AppEvents.clear_all_notifications)
 }
 </script>
 
