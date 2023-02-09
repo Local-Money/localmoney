@@ -103,7 +103,7 @@ onUnmounted(() => {
             <a
               href="https://localmoney.gitbook.io/docs/local/tokenomics"
               target="_blank"
-              @click="trackSocialLinks(ClickLinkEvents.litepaper)"
+              @click="trackSocialLinks(ClickLinkEvents.gitbook)"
             >
               <svg
                 class="social-icon"
