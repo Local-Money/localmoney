@@ -9,6 +9,7 @@ onMounted(() => {
 <template>
   <main>
     <HomeHero />
+    <HowToUse />
     <ListOffers />
   </main>
 </template>

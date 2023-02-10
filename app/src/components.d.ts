@@ -19,6 +19,7 @@ declare module '@vue/runtime-core' {
     Header: typeof import('./ui/components/Header.vue')['default']
     Home: typeof import('./ui/pages/Home.vue')['default']
     HomeHero: typeof import('./ui/components/HomeHero.vue')['default']
+    HowToUse: typeof import('./ui/components/HowToUse.vue')['default']
     IconDone: typeof import('./ui/components/commons/IconDone.vue')['default']
     IconTooltip: typeof import('./ui/components/commons/IconTooltip.vue')['default']
     ListContentResult: typeof import('./ui/components/commons/ListContentResult.vue')['default']
