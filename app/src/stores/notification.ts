@@ -15,6 +15,7 @@ export const useNotificationStore = defineStore({
   },
   actions: {
     async fetchNotifications(limit = 100, last?: number) {
+      await this.cleanNotification()
       let trades = await this.client.client.fetchTrades(limit, last)
       const disputes = await this.client.client.fetchDisputedTrades(limit, last)
       const openDisputes = disputes.openDisputes.length > 0 ? disputes.openDisputes : []

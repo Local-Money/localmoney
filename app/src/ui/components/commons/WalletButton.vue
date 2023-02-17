@@ -10,10 +10,12 @@ const notification = useNotificationSystem()
 const client = useClientStore()
 const userWallet = computed(() => client.userWallet)
 
-watch(userWallet, (wallet) => {
+watch(userWallet, async (wallet) => {
   if (wallet.isConnected) {
+    await notification.register()
     trackWalletConnection(WalletEvents.connected, wallet.address)
   } else {
+    await notification.unregister()
     trackWalletConnection(WalletEvents.disconnected)
   }
 })
@@ -22,10 +24,8 @@ function connectWallet() {
   nextTick(async () => {
     if (!client.applicationConnected) {
       await client.connectWallet()
-      await notification.register()
     } else {
       await client.disconnectWallet()
-      await notification.unregister()
     }
   })
 }
