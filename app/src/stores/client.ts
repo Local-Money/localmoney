@@ -48,6 +48,7 @@ export const useClientStore = defineStore({
       openDisputes: <ListResult<TradeInfo>>ListResult.loading(),
       closedDisputes: <ListResult<TradeInfo>>ListResult.loading(),
       loadingState: <LoadingState>LoadingState.dismiss(),
+      betaMakersList: <String[]>[],
     }
   },
   actions: {
@@ -57,6 +58,8 @@ export const useClientStore = defineStore({
      */
     async setClient(chainClient: ChainClient) {
       this.$reset()
+      // load list of beta makers
+      this.betaMakersList = await fetch('data/makers.json').then((res) => res.json())
       // TODO disconnect old chain adapter
       this.chainClient = chainClient
       this.client = chainFactory(this.chainClient)
