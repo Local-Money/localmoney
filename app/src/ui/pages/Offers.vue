@@ -7,8 +7,8 @@ import { Page, trackPage } from '~/analytics/analytics'
 
 const client = useClientStore()
 const router = useRouter()
-const { userWallet } = storeToRefs(client)
-const enableMyOffersPage = computed(() => enableMyOffers(userWallet.value, client.chainClient))
+const { userWallet, betaMakersList } = storeToRefs(client)
+const enableMyOffersPage = computed(() => enableMyOffers(userWallet.value, client.chainClient, betaMakersList.value))
 
 const modalActive = ref(false)
 function toggleModal() {
