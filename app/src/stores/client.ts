@@ -58,12 +58,12 @@ export const useClientStore = defineStore({
      */
     async setClient(chainClient: ChainClient) {
       this.$reset()
-      // load list of beta makers
-      this.betaMakersList = await fetch('data/makers.json').then((res) => res.json())
       // TODO disconnect old chain adapter
       this.chainClient = chainClient
       this.client = chainFactory(this.chainClient)
       await this.client.init()
+      // load list of beta makers
+      this.betaMakersList = await fetch('data/makers.json').then((res) => res.json())
       if (this.applicationConnected) {
         await this.connectWallet()
       }
