@@ -3,8 +3,8 @@ import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 export const KUJIRA_TESTNET_CONFIG: CosmosConfig = {
   chainId: 'harpoon-4',
   chainName: 'Kujira Testnet',
-  lcdUrl: 'https://lcd.harpoon.kujira.setten.io/',
-  rpcUrl: 'https://rpc.harpoon.kujira.setten.io/',
+  lcdUrl: 'https://test-lcd-kujira.mintthemoon.xyz/',
+  rpcUrl: 'https://test-rpc-kujira.mintthemoon.xyz/',
   addressPrefix: 'kujira',
   coinDenom: 'KUJI',
   coinMinimalDenom: 'ukuji',

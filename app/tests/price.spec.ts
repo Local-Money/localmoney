@@ -27,6 +27,7 @@ beforeAll(async () => {
 
 describe('price tests', () => {
   it('should register fiat prices', async () => {
+    console.log(`price routes >>> ${priceAddr} ${JSON.stringify(prices)}`)
     const result = await priceProviderClient
       .getCwClient()
       .execute(takerClient.getWalletAddress(), priceAddr, prices, 'auto', 'register fiat prices')
@@ -41,6 +42,7 @@ describe('price tests', () => {
         .getCwClient()
         .execute(adminClient.getWalletAddress(), priceAddr, msg, 'auto', 'register price route')
       expect(result.transactionHash).not.toBeNull()
+      console.log(`price routes >>> ${priceAddr} ${JSON.stringify(msg)}`)
     }
   })
   it('should query fiat prices for denoms', async () => {
