@@ -235,7 +235,8 @@ export const useClientStore = defineStore({
           taker_contact,
           profile_taker_encryption_key,
         }
-        const trade_id = await this.client.openTrade(newTrade)
+        const trade_id = 140
+        // const trade_id = await this.client.openTrade(newTrade)
         const tradeInfo = await this.fetchTradeDetail(trade_id)
         trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
         await this.notifyOnBot(tradeInfo.trade)
