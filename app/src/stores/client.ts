@@ -29,7 +29,7 @@ import { CRYPTO_DECIMAL_PLACES } from '~/utils/constants'
 import { OfferEvents, TradeEvents, toOfferData, toTradeData, trackOffer, trackTrade } from '~/analytics/analytics'
 
 const LIMIT_ITEMS_PER_PAGE = 10
-const NOTIFICATION_API = 'http://127.0.0.1:5000/notification'
+const NOTIFICATION_API = '/api/notification'
 
 export const useClientStore = defineStore({
   id: 'client',
