@@ -419,7 +419,7 @@ export const useClientStore = defineStore({
           counterparty,
         }
         try {
-          await axios.post('http://localhost:8000/api/notification', JSON.stringify(notification), {
+          await axios.post('/api/notification', JSON.stringify(notification), {
             headers: {
               'Content-Type': 'application/json',
             },
