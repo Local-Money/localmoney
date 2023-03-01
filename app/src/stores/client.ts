@@ -419,7 +419,7 @@ export const useClientStore = defineStore({
           trade_state: trade.state,
           counterparty,
         }
-        const api = axios.create({ baseURL: 'http://localhost:8000/api' })
+        const api = axios.create({ baseURL: 'https://testnet.localmoney.io/api' })
         const response = await api.post('/notification', JSON.stringify(notification), {
           headers: {
             'Content-Type': 'application/json',
