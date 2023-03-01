@@ -357,6 +357,13 @@ watch(userWallet, async () => {
             </a>
           </div>
         </div>
+        <div class="wrap-notify">
+          <div class="wrap-content">
+            <div class="pill">new!</div>
+            <p class="content">Get notifications on Telegram.</p>
+          </div>
+          <a class="btn" href="#">register localbot</a>
+        </div>
       </div>
       <!-- End ChatboxStates -->
 
@@ -694,6 +701,9 @@ h3 {
 }
 
 .chat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   flex: 1;
   margin-right: 24px;
   margin-bottom: 64px;
@@ -759,6 +769,48 @@ h3 {
         height: 16px;
         fill: $base-text;
       }
+    }
+  }
+  .wrap-notify {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    bottom: 0;
+    border-top: 1px solid $border;
+    padding-top: 16px;
+
+    .wrap-content {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+
+      .pill {
+        padding: 4px 10px;
+        background-color: $border;
+        border-radius: 56px;
+        color: $primary;
+        font-size: 12px;
+      }
+      .content {
+        font-size: 14px;
+        color: $gray900;
+      }
+    }
+    .btn {
+      width: 100%;
+      text-align: center;
+      background-color: $border;
+      color: $base-text;
+      font-weight: $semi-bold;
+      text-decoration: none;
+      padding: 8px 16px;
+      margin-top: 8px;
+      border-radius: 8px;
     }
   }
 }
