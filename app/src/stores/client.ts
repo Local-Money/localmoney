@@ -1,6 +1,7 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
 import type { Coin } from '@cosmjs/stargate'
+import axios from 'axios'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
@@ -29,7 +30,6 @@ import { CRYPTO_DECIMAL_PLACES } from '~/utils/constants'
 import { OfferEvents, TradeEvents, toOfferData, toTradeData, trackOffer, trackTrade } from '~/analytics/analytics'
 
 const LIMIT_ITEMS_PER_PAGE = 10
-const NOTIFICATION_API = 'http://127.0.0.1:5000/api/notification'
 
 export const useClientStore = defineStore({
   id: 'client',
@@ -419,13 +419,13 @@ export const useClientStore = defineStore({
           trade_state: trade.state,
           counterparty,
         }
-        const headers = new Headers()
-        headers.append('Content-Type', 'application/json')
-        await fetch(NOTIFICATION_API, {
-          method: 'POST',
-          body: JSON.stringify(notification),
-          headers,
+        const api = axios.create({ baseURL: 'http://localhost:8000/api' })
+        const response = await api.post('/notification', JSON.stringify(notification), {
+          headers: {
+            'Content-Type': 'application/json',
+          },
         })
+        console.log('notification: ', response)
       }
     },
     getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {
