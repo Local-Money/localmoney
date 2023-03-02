@@ -35,4 +35,5 @@ export function denomToValue(denom: Denom): string {
 
 interface MicronDenom extends SelectInfo {
   display: string
+  icon: string
 }

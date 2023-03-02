@@ -1,9 +1,11 @@
 {
   "kujira_mainnet": {
     "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk": {
+      "icon": "/tokens/ic_usk.svg",
       "display": "USK"
     },
     "ukuji": {
+      "icon": "/tokens/ic_kuji.svg",
       "display": "KUJI"
     }
   },
