@@ -4,9 +4,9 @@ import { useClientStore } from '~/stores/client'
 import { enableDisputes, enableMyOffers } from '~/config/featureToggle'
 
 const client = useClientStore()
-const { userWallet, betaMakersList } = storeToRefs(client)
+const { userWallet } = storeToRefs(client)
 const enableDisputesNav = computed(() => enableDisputes(userWallet.value, client.arbitrators.data))
-const enableMyOffersNav = computed(() => enableMyOffers(userWallet.value, client.chainClient, betaMakersList.value))
+const enableMyOffersNav = computed(() => enableMyOffers(userWallet.value))
 </script>
 
 <template>
