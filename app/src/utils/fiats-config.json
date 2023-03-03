@@ -1,17 +1,42 @@
 {
+  "USD": {
+    "icon": "/flags/usd.png",
+    "display": "USD",
+    "code": "USD"
+  },
   "ARS": {
     "icon": "/flags/ars.png",
-    "display": "PESOS ARS",
+    "display": "ARS",
     "code": "ARS"
   },
   "BRL": {
     "icon": "/flags/brl.png",
-    "display": "REAL BRL",
+    "display": "BRL",
     "code": "BRL"
+  },
+  "CLP": {
+    "icon": "/flags/clp.png",
+    "display": "CLP",
+    "code": "CLP"
   },
   "COP": {
     "icon": "/flags/cop.png",
-    "display": "PESOS COP",
+    "display": "COP",
     "code": "COP"
+  },
+  "EUR": {
+    "icon": "/flags/eur.png",
+    "display": "EUR",
+    "code": "EUR"
+  },
+  "GBP": {
+    "icon": "/flags/gbp.png",
+    "display": "GBP",
+    "code": "GBP"
+  },
+  "MXN": {
+    "icon": "/flags/mxn.png",
+    "display": "MXN",
+    "code": "MXN"
   }
 }
