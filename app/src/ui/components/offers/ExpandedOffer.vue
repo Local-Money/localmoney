@@ -232,7 +232,6 @@ onUnmounted(() => {
         <div class="price">
           <div class="wrap">
             <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
-            <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
           </div>
           <p class="ticker">refresh in {{ secondsUntilRateRefresh }}s</p>
         </div>
