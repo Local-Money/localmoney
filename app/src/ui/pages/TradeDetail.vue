@@ -431,7 +431,7 @@ watch(userWallet, async () => {
             <div class="trade-info">
               <p class="label">Price</p>
               <div class="current-price">
-                <p class="mkt-rate">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
+                <p class="mkt-rate">1 {{ summary.trade_denom }}</p>
                 <p class="price">
                   {{ offerPrice }}
                 </p>
