@@ -30,7 +30,6 @@ useHead({
   <RouterView />
   <!-- Loading Modal -->
   <ModalLoading :loading="loading" />
-  <BetaPopUp :show="!betaAccepted" @accept="betaAccepted = true" />
 </template>
 
 <style lang="scss">
