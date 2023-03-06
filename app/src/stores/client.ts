@@ -1,6 +1,7 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
 import type { Coin } from '@cosmjs/stargate'
+import type { AxiosResponse } from 'axios'
 import axios from 'axios'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
@@ -408,19 +409,23 @@ export const useClientStore = defineStore({
       }
     },
     notifyOnBot(trade: { id: number; state: TradeState; buyer: string; seller: string }) {
+      const seaShantyApi = axios.create({
+        baseURL: 'http://44.197.44.221:5123/api/local',
+        headers: { 'Content-Type': 'application/json' },
+      })
       // only on mainnet it will trigger the bot
       if (this.chainClient === ChainClient.kujiraMainnet) {
-        const counterparty = this.userWallet.address === trade.seller ? trade.buyer : trade.seller
-        const config = { headers: { 'Content-Type': 'application/json' } }
-        const notification = {
-          trade_id: trade.id,
-          trade_state: trade.state,
-          counterparty,
-        }
-        axios
-          .post('/api/notification', JSON.stringify(notification), config)
-          .then((result) => console.log(result.data))
-          .catch((e) => console.error(e))
+        const userAddress = this.userWallet.address
+        seaShantyApi
+          .get<string[]>('/alert/address')
+          .then((response: AxiosResponse<String[]>) => {
+            if (response.data.includes(userAddress)) {
+              const address = userAddress === trade.seller ? trade.buyer : trade.seller
+              const notification = JSON.stringify({ data: [{ trade_id: trade.id, trade_state: trade.state, address }] })
+              seaShantyApi.post('/action/notify', notification).catch((e) => console.log(e))
+            }
+          })
+          .catch((e) => console.log(e))
       }
     },
     getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {
