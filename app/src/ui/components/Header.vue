@@ -5,7 +5,7 @@ import { useClientStore } from '~/stores/client'
 import { ChainClient } from '~/network/Chain'
 
 const client = useClientStore()
-const badge = computed(() => (client.chainClient === ChainClient.kujiraMainnet ? 'Beta' : 'Testnet'))
+const badge = computed(() => (client.chainClient === ChainClient.kujiraMainnet ? 'Mainnet' : 'Testnet'))
 // TODO - Make isMobile global
 const width = ref(window.innerWidth)
 const listener = () => {
