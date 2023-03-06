@@ -28,9 +28,6 @@ onUnmounted(() => {
         </p>
         <div class="wrap-cta">
           <div class="wrap-btns">
-            <!-- <a href="https://localmoney.io/local-litepaper.pdf" target="_blank">
-              <button class="primary">Litepaper</button>
-            </a> -->
             <a
               href="https://twitter.com/TeamLocalMoney"
               target="_blank"
