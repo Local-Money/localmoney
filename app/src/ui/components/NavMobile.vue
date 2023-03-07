@@ -7,9 +7,9 @@ import { AppEvents, trackAppEvents } from '~/analytics/analytics'
 
 const notification = useNotificationSystem()
 const client = useClientStore()
-const { userWallet, betaMakersList } = storeToRefs(client)
+const { userWallet } = storeToRefs(client)
 const isConnected = computed(() => userWallet.value.isConnected)
-const enableMyOffersNav = computed(() => enableMyOffers(userWallet.value, client.chainClient, betaMakersList.value))
+const enableMyOffersNav = computed(() => enableMyOffers(userWallet.value))
 const enableDisputesNav = computed(() => enableDisputes(userWallet.value, client.arbitrators.data))
 
 const widgetActive = ref(false)

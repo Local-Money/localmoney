@@ -50,7 +50,6 @@ export const useClientStore = defineStore({
       openDisputes: <ListResult<TradeInfo>>ListResult.loading(),
       closedDisputes: <ListResult<TradeInfo>>ListResult.loading(),
       loadingState: <LoadingState>LoadingState.dismiss(),
-      betaMakersList: <String[]>[],
     }
   },
   actions: {
@@ -64,8 +63,6 @@ export const useClientStore = defineStore({
       this.chainClient = chainClient
       this.client = chainFactory(this.chainClient)
       await this.client.init()
-      // load list of beta makers
-      this.betaMakersList = await fetch('data/makers.json').then((res) => res.json())
       if (this.applicationConnected) {
         await this.connectWallet()
       }

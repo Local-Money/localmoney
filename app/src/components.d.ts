@@ -8,7 +8,6 @@ declare module '@vue/runtime-core' {
     Arbitration: typeof import('./ui/pages/Arbitration.vue')['default']
     ArchivedOfferItem: typeof import('./ui/components/myOffers/ArchivedOfferItem.vue')['default']
     BaseIcon: typeof import('./ui/components/commons/BaseIcon.vue')['default']
-    BetaPopUp: typeof import('./ui/components/commons/BetaPopUp.vue')['default']
     CollapsedMyOffer: typeof import('./ui/components/myOffers/CollapsedMyOffer.vue')['default']
     CollapsedOffer: typeof import('./ui/components/offers/CollapsedOffer.vue')['default']
     CreateOffer: typeof import('./ui/components/offers/CreateOffer.vue')['default']

@@ -63,7 +63,6 @@ const tradeCountIcon = computed(() => props.offerResponse.profile.released_trade
           <p class="value">
             {{ offerPrice }}
           </p>
-          <p class="margin">{{ marginRate.marginOffset }}% {{ marginRate.margin }} market</p>
         </div>
         <button class="primary bg-gray300" type="button" @click="emit('select')">
           {{ offerTypeLabels[offerResponse.offer.offer_type] }}
