@@ -1,6 +1,8 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
 import type { Coin } from '@cosmjs/stargate'
+import type { AxiosResponse } from 'axios'
+import axios from 'axios'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
@@ -20,7 +22,7 @@ import type {
   TradeInfo,
   UserWallet,
 } from '~/types/components.interface'
-import { LoadingState, OfferState } from '~/types/components.interface'
+import { LoadingState, OfferState, TradeState } from '~/types/components.interface'
 import type { Secrets } from '~/utils/crypto'
 import { encryptData, generateKeys } from '~/utils/crypto'
 import { denomToValue } from '~/utils/denom'
@@ -233,6 +235,7 @@ export const useClientStore = defineStore({
         const trade_id = await this.client.openTrade(newTrade)
         const tradeInfo = await this.fetchTradeDetail(trade_id)
         trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.request_created })
         await this.fetchProfile()
         const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
         await this.router.push(route)
@@ -305,6 +308,7 @@ export const useClientStore = defineStore({
         await this.client.acceptTradeRequest(tradeId, makerContact)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
         trackTrade(TradeEvents.accepted, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.request_accepted })
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -317,6 +321,7 @@ export const useClientStore = defineStore({
         await this.client.cancelTradeRequest(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
         trackTrade(TradeEvents.canceled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.request_canceled })
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -329,6 +334,7 @@ export const useClientStore = defineStore({
         await this.client.fundEscrow(tradeInfo, makerContact)
         const trade = await this.fetchTradeDetail(tradeInfo.trade.id)
         trackTrade(TradeEvents.funded, toTradeData(trade.trade, trade.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.escrow_funded })
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -341,6 +347,7 @@ export const useClientStore = defineStore({
         await this.client.setFiatDeposited(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
         trackTrade(TradeEvents.paid, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.fiat_deposited })
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -353,6 +360,7 @@ export const useClientStore = defineStore({
         await this.client.releaseEscrow(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
         trackTrade(TradeEvents.released, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.escrow_released })
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -375,9 +383,9 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Opening dispute...')
       try {
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
-
         const tradeInfo = await this.fetchTradeDetail(tradeId)
         trackTrade(TradeEvents.disputed, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.escrow_disputed })
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -390,10 +398,31 @@ export const useClientStore = defineStore({
         await this.client.settleDispute(tradeId, winner)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
         trackTrade(TradeEvents.dispute_settled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.settled_for_maker })
       } catch (e) {
         this.handle.error(e)
       } finally {
         this.loadingState = LoadingState.dismiss()
+      }
+    },
+    notifyOnBot(trade: { id: number; state: TradeState; buyer: string; seller: string }) {
+      const seaShantyApi = axios.create({
+        baseURL: 'http://44.197.44.221:5123/api/local',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      // only on mainnet it will trigger the bot
+      if (this.chainClient === ChainClient.kujiraMainnet) {
+        const userAddress = this.userWallet.address
+        seaShantyApi
+          .get<string[]>('/alert/address')
+          .then((response: AxiosResponse<String[]>) => {
+            if (response.data.includes(userAddress)) {
+              const address = userAddress === trade.seller ? trade.buyer : trade.seller
+              const notification = JSON.stringify({ data: [{ trade_id: trade.id, trade_state: trade.state, address }] })
+              seaShantyApi.post('/action/notify', notification).catch((e) => console.log(e))
+            }
+          })
+          .catch((e) => console.log(e))
       }
     },
     getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {

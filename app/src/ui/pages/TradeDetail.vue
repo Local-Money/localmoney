@@ -296,10 +296,7 @@ watch(userWallet, async () => {
             <!-- Contact available -->
             <div v-if="isCounterpartyContactAvailable" class="contact-available">
               <div class="trader-info">
-                <p><small>You're trading with</small></p>
-                <p class="trader">
-                  {{ formatAddress(counterparty) }}
-                </p>
+                <p>Contact information</p>
               </div>
               <p class="guide-content">
                 Open a chat with the other trader so you can exchange information about payment.
@@ -356,6 +353,14 @@ watch(userWallet, async () => {
               <p>chat with taker</p>
             </a>
           </div>
+        </div>
+        <div class="wrap-notify">
+          <div class="wrap-content">
+            <div class="pill">new!</div>
+            <p class="content">Get notifications on Telegram.</p>
+          </div>
+          <a class="btn" href="https://t.me/KujiraNotification_bot" target="_blank">register</a>
+          <p class="footer">powered by <a href="https://twitter.com/Capybara_Labs" target="_blank">Capybara Labs</a></p>
         </div>
       </div>
       <!-- End ChatboxStates -->
@@ -694,18 +699,21 @@ h3 {
 }
 
 .chat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   flex: 1;
   margin-right: 24px;
   margin-bottom: 64px;
 
   .trader-info,
   .title {
-    padding-bottom: 24px;
-    margin-bottom: 24px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
     border-bottom: 1px solid $border;
     .trader,
     p {
-      font-size: 18px;
+      font-size: 14px;
       font-weight: $semi-bold;
     }
 
@@ -718,7 +726,7 @@ h3 {
 
   .trader-info p {
     &:first-child {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: $regular;
       color: $gray900;
     }
@@ -758,6 +766,58 @@ h3 {
         width: 16px;
         height: 16px;
         fill: $base-text;
+      }
+    }
+  }
+  .wrap-notify {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    bottom: 0;
+    border-top: 1px solid $border;
+    padding-top: 16px;
+
+    .wrap-content {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+
+      .pill {
+        padding: 4px 10px;
+        background-color: $border;
+        border-radius: 56px;
+        color: $primary;
+        font-size: 12px;
+      }
+      .content {
+        font-size: 14px;
+        color: $gray900;
+      }
+    }
+    .btn {
+      width: 100%;
+      text-align: center;
+      background-color: $border;
+      color: $base-text;
+      font-weight: $semi-bold;
+      text-decoration: none;
+      padding: 8px 16px;
+      margin-top: 8px;
+      border-radius: 8px;
+    }
+    .footer {
+      font-size: 12px;
+      color: $gray600;
+      margin-top: 4px;
+
+      a {
+        color: $gray600;
+        text-decoration: underline;
       }
     }
   }
