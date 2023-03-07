@@ -359,7 +359,7 @@ watch(userWallet, async () => {
             <div class="pill">new!</div>
             <p class="content">Get notifications on Telegram.</p>
           </div>
-          <a class="btn" href="#">register</a>
+          <a class="btn" href="https://t.me/KujiraNotification_bot" target="_blank">register</a>
           <p class="footer">powered by <a href="https://twitter.com/Capybara_Labs" target="_blank">Capybara Labs</a></p>
         </div>
       </div>
