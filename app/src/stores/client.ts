@@ -406,22 +406,14 @@ export const useClientStore = defineStore({
       }
     },
     notifyOnBot(trade: { id: number; state: TradeState; buyer: string; seller: string }) {
-      const seaShantyApi = axios.create({
-        baseURL: '/api/local',
-        headers: { 'Content-Type': 'application/json' },
-      })
       // only on mainnet it will trigger the bot
       if (this.chainClient === ChainClient.kujiraMainnet) {
-        seaShantyApi
-          .get<string[]>('/alert/address')
-          .then((response: AxiosResponse<String[]>) => {
-            const address = this.userWallet.address === trade.seller ? trade.buyer : trade.seller
-            if (response.data.includes(address)) {
-              const notification = JSON.stringify({ data: [{ trade_id: trade.id, trade_state: trade.state, address }] })
-              seaShantyApi.post('/action/notify', notification).catch((e) => console.log(e))
-            }
-          })
-          .catch((e) => console.log(e))
+        const address = this.userWallet.address === trade.seller ? trade.buyer : trade.seller
+        const notification = JSON.stringify({ data: [{ trade_id: trade.id, trade_state: trade.state, address }] })
+        axios
+          .post('/notify', notification)
+          .then((result) => console.log('result: ', result.data))
+          .catch((e) => console.error(e))
       }
     },
     getFiatPrice(fiatCurrency: FiatCurrency, denom: Denom): number {
