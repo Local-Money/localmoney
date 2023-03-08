@@ -407,7 +407,7 @@ export const useClientStore = defineStore({
     },
     notifyOnBot(trade: { id: number; state: TradeState; buyer: string; seller: string }) {
       const seaShantyApi = axios.create({
-        baseURL: 'http://44.197.44.221:5123/api/local',
+        baseURL: '/api/local',
         headers: { 'Content-Type': 'application/json' },
       })
       // only on mainnet it will trigger the bot
