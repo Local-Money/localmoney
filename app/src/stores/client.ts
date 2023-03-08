@@ -412,12 +412,11 @@ export const useClientStore = defineStore({
       })
       // only on mainnet it will trigger the bot
       if (this.chainClient === ChainClient.kujiraMainnet) {
-        const userAddress = this.userWallet.address
         seaShantyApi
           .get<string[]>('/alert/address')
           .then((response: AxiosResponse<String[]>) => {
-            if (response.data.includes(userAddress)) {
-              const address = userAddress === trade.seller ? trade.buyer : trade.seller
+            const address = this.userWallet.address === trade.seller ? trade.buyer : trade.seller
+            if (response.data.includes(address)) {
               const notification = JSON.stringify({ data: [{ trade_id: trade.id, trade_state: trade.state, address }] })
               seaShantyApi.post('/action/notify', notification).catch((e) => console.log(e))
             }
