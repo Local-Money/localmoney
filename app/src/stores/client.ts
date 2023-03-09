@@ -410,7 +410,11 @@ export const useClientStore = defineStore({
         const address = this.userWallet.address === trade.seller ? trade.buyer : trade.seller
         const notification = JSON.stringify({ data: [{ trade_id: trade.id, trade_state: trade.state, address }] })
         axios
-          .post('/notify', notification)
+          .post('/notify', notification, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
           .then((result) => console.log('result: ', result.data))
           .catch((e) => console.error(e))
       }
