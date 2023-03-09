@@ -770,7 +770,6 @@ h3 {
     }
   }
   .wrap-notify {
-    visibility: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
