@@ -1,7 +1,6 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { useLocalStorage } from '@vueuse/core'
 import type { Coin } from '@cosmjs/stargate'
-import type { AxiosResponse } from 'axios'
 import axios from 'axios'
 import { ListResult } from './ListResult'
 import { ChainClient, chainFactory } from '~/network/Chain'
