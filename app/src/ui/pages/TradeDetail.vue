@@ -357,9 +357,9 @@ watch(userWallet, async () => {
         <div class="wrap-notify">
           <div class="wrap-content">
             <div class="pill">new!</div>
-            <p class="content">Get notifications on Telegram.</p>
+            <p class="content">Get notifications on Telegram using SeaShanty bot.</p>
           </div>
-          <a class="btn" href="https://t.me/KujiraNotification_bot" target="_blank">register</a>
+          <a class="btn" href="https://t.me/KujiraNotification_bot" target="_blank">register new alert</a>
           <p class="footer">powered by <a href="https://twitter.com/Capybara_Labs" target="_blank">Capybara Labs</a></p>
         </div>
       </div>
@@ -785,7 +785,7 @@ h3 {
       flex-direction: row;
       align-items: center;
       justify-content: flex-start;
-      gap: 8px;
+      gap: 16px;
 
       .pill {
         padding: 4px 10px;
@@ -796,7 +796,8 @@ h3 {
       }
       .content {
         font-size: 14px;
-        color: $gray900;
+        color: $gray700;
+        padding-right: 24px;
       }
     }
     .btn {
