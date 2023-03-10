@@ -39,6 +39,16 @@
     "display": "MXN",
     "code": "MXN"
   },
+  "NGN": {
+    "icon": "/flags/ngn.png",
+    "display": "NGN",
+    "code": "NGN"
+  },
+  "THB": {
+    "icon": "/flags/thb.png",
+    "display": "THB",
+    "code": "THB"
+  },
   "VES": {
     "icon": "/flags/ves.png",
     "display": "VES",
