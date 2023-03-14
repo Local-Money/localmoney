@@ -24,7 +24,7 @@ async function defaultUserContact() {
   const contact = client.profile?.contact
   return formatEncryptedUserContact(secrets.value.privateKey, contact)
 }
-const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
+const selectedCrypto = ref<string>(defaultMicroDenomAvailable(client.chainClient))
 const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
@@ -125,7 +125,7 @@ watch(fiatCurrency, async () => {
       <div class="currency">
         <div class="wrap">
           <label for="crypto">I want to {{ offerType }}</label>
-          <CustomSelect v-model="selectedCrypto" :options="denomsAvailable()" />
+          <CustomSelect v-model="selectedCrypto" :options="denomsAvailable(client.chainClient)" />
         </div>
         <div class="wrap">
           <label for="currency">and {{ fiatLabel }} in</label>
@@ -135,21 +135,21 @@ watch(fiatCurrency, async () => {
       <div class="divider" />
       <div class="min-max">
         <div class="wrap">
-          <label>Min amount of {{ microDenomToDenom(selectedCrypto) }}</label>
+          <label>Min amount of {{ microDenomToDenom(selectedCrypto, client.chainClient) }}</label>
           <CurrencyInput
             v-model="minAmount"
             :placeholder="0"
-            :prefix="microDenomToDenom(selectedCrypto)"
+            :prefix="microDenomToDenom(selectedCrypto, client.chainClient)"
             :isCrypto="true"
             :decimals="6"
           />
         </div>
         <div class="wrap">
-          <label>Max amount of {{ microDenomToDenom(selectedCrypto) }}</label>
+          <label>Max amount of {{ microDenomToDenom(selectedCrypto, client.chainClient) }}</label>
           <CurrencyInput
             v-model="maxAmount"
             :placeholder="0"
-            :prefix="microDenomToDenom(selectedCrypto)"
+            :prefix="microDenomToDenom(selectedCrypto, client.chainClient)"
             :isCrypto="true"
             :decimals="6"
           />
@@ -210,7 +210,7 @@ watch(fiatCurrency, async () => {
 
     <div class="wrap-footer">
       <div class="fiat-price">
-        <p class="value">1 {{ microDenomToDenom(selectedCrypto) }} = {{ offerPrice }}</p>
+        <p class="value">1 {{ microDenomToDenom(selectedCrypto, client.chainClient) }} = {{ offerPrice }}</p>
       </div>
       <div class="btns">
         <button class="secondary" @click="$emit('cancel')">Cancel</button>

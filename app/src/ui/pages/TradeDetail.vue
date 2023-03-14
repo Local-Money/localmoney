@@ -112,7 +112,7 @@ const contactsForArbitrator = computed(() => {
 
 const summary = computed(() => {
   const trade_amount: number = tradeInfo.value.trade.amount
-  const trade_denom = microDenomToDenom(denomToValue(tradeInfo.value.trade.denom))
+  const trade_denom = microDenomToDenom(denomToValue(tradeInfo.value.trade.denom), client.chainClient)
 
   const { warchest_fee_pct, burn_fee_pct, chain_fee_pct, arbitration_fee_pct } = client.getHubConfig()
   const warchest_fee_value = Math.floor(warchest_fee_pct * trade_amount)

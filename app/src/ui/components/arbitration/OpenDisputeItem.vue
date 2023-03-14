@@ -2,9 +2,10 @@
 import { formatAddress } from '~/shared'
 import type { TradeInfo } from '~/types/components.interface'
 import { microDenomToDenom } from '~/utils/denom'
+import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ dispute: TradeInfo }>()
-
+const client = useClientStore()
 const taker = computed(() => {
   const maker = props.dispute.offer.offer.owner
   const buyer = props.dispute.trade.buyer
@@ -53,10 +54,10 @@ const taker = computed(() => {
             </svg>
           </div>
           <p v-if="props.dispute.offer.offer.offer_type === 'buy'" class="offer-type">
-            buying <strong>{{ microDenomToDenom(dispute.offer.offer.denom.native) }}</strong> from
+            buying <strong>{{ microDenomToDenom(dispute.offer.offer.denom.native, client.chainClient) }}</strong> from
           </p>
           <p v-else class="offer-type">
-            selling <strong>{{ microDenomToDenom(dispute.offer.offer.denom.native) }}</strong> to
+            selling <strong>{{ microDenomToDenom(dispute.offer.offer.denom.native, client.chainClient) }}</strong> to
           </p>
         </div>
         <div class="wrap-peer">
@@ -72,7 +73,7 @@ const taker = computed(() => {
       <div class="reward">
         <p class="label">Estimated rewards</p>
         <!-- TO-DO Get Trade Rate -->
-        <p class="rate">$??? {{ microDenomToDenom(dispute.offer.offer.denom.native) }}</p>
+        <p class="rate">$??? {{ microDenomToDenom(dispute.offer.offer.denom.native, client.chainClient) }}</p>
       </div>
       <router-link :to="`/trade/${dispute.trade.id}`">
         <button class="primary bg-gray300" type="button">view</button>

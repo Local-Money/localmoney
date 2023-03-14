@@ -14,12 +14,12 @@ const page = reactive({ offers: [] as ExpandableItem<OfferResponse>[] })
 client.$subscribe((mutation, state) => {
   if (state.offers.isSuccess()) {
     page.offers = state.offers.data
-      .filter((offerResponse) => checkValidOffer(offerResponse.offer))
+      .filter((offerResponse) => checkValidOffer(offerResponse.offer, client.chainClient))
       .flatMap((offerResponse) => new ExpandableItem(offerResponse))
   }
 })
 
-const selectedCrypto = ref<string>(defaultMicroDenomAvailable())
+const selectedCrypto = ref<string>(defaultMicroDenomAvailable(client.chainClient))
 const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
 const offerType = ref<OfferType>(OfferType.sell)
 const selectedOfferItem = ref<ExpandableItem<OfferResponse> | null>(null)
@@ -101,7 +101,7 @@ watch(offerType, async () => await fetchOffers())
       </div>
       <div class="filter">
         <label for="crypto">Crypto</label>
-        <CustomSelect v-model="selectedCrypto" :options="denomsAvailable()" />
+        <CustomSelect v-model="selectedCrypto" :options="denomsAvailable(client.chainClient)" />
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>

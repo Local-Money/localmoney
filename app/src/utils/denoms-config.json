@@ -15,7 +15,8 @@
       "display": "KUJI"
     },
     "factory/kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5/demo": {
-      "display": "DEMO"
+      "display": "DEMO",
+      "icon": "/tokens/kuji.png"
     }
   }
 }

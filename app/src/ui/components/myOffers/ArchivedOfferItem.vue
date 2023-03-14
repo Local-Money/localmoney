@@ -20,7 +20,7 @@ const price = computed(() => {
 const limit = computed(() => {
   const min = formatAmount(Number(props.offer.min_amount), true, 6)
   const max = formatAmount(Number(props.offer.max_amount), true, 6)
-  const denom = microDenomToDenom(denomToValue(props.offer.denom))
+  const denom = microDenomToDenom(denomToValue(props.offer.denom), client.chainClient)
   return `${min} - ${max} ${denom}`
 })
 const type = computed(() => (props.offer.offer_type === OfferType.buy ? 'Buying' : 'Selling'))

@@ -49,7 +49,7 @@ const tradeCountIcon = computed(() => props.offerResponse.profile.released_trade
           <p class="limit">
             {{ formatAmount(offerResponse.offer.min_amount, true, 6) }} -
             {{ formatAmount(offerResponse.offer.max_amount, true, 6) }}
-            {{ microDenomToDenom(offerResponse.offer.denom.native) }}
+            {{ microDenomToDenom(offerResponse.offer.denom.native, client.chainClient) }}
           </p>
         </div>
         <div class="divider"></div>

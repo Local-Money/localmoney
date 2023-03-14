@@ -49,7 +49,10 @@ const counterparty = computed(() => {
       <p>{{ tradeType }}</p>
     </div>
     <div class="col-4">
-      <p>{{ formatAmount(tradeInfo.trade.amount, true, 6) }} {{ microDenomToDenom(tradeInfo.trade.denom.native) }}</p>
+      <p>
+        {{ formatAmount(tradeInfo.trade.amount, true, 6) }}
+        {{ microDenomToDenom(tradeInfo.trade.denom.native, client.chainClient) }}
+      </p>
     </div>
     <div class="col-5">
       <p>{{ fiatAmountStr }}</p>

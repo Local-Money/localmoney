@@ -42,7 +42,7 @@ onBeforeMount(async () => {
           <p class="limit">
             {{ formatAmount(offer.min_amount, true, 6) }} -
             {{ formatAmount(offer.max_amount, true, 6) }}
-            {{ microDenomToDenom(offer.denom.native) }}
+            {{ microDenomToDenom(offer.denom.native, client.chainClient) }}
           </p>
         </div>
         <div class="divider" />

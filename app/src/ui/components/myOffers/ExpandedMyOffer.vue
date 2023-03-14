@@ -88,7 +88,7 @@ function update() {
               placeholder="Offer min amount"
               :decimals="6"
               :isCrypto="true"
-              :prefix="microDenomToDenom(offer.denom.native)"
+              :prefix="microDenomToDenom(offer.denom.native, client.chainClient)"
             />
           </div>
 
@@ -99,7 +99,7 @@ function update() {
               placeholder="Offer max amount"
               :decimals="6"
               :isCrypto="true"
-              :prefix="microDenomToDenom(offer.denom.native)"
+              :prefix="microDenomToDenom(offer.denom.native, client.chainClient)"
             />
           </div>
         </div>

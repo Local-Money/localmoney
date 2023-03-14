@@ -163,7 +163,7 @@ onUnmounted(() => {
 <template>
   <div class="card offer collapsed" v-bind="(trade = tradeInfo.trade)">
     <div class="trade-type">
-      <p class="type">{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native) }}</p>
+      <p class="type">{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native, client.chainClient) }}</p>
       <p class="wallet-addr">{{ fromTo }} {{ formatAddress(counterparty) }}</p>
     </div>
 
@@ -173,7 +173,7 @@ onUnmounted(() => {
           <p class="label">Amount</p>
           <p class="content">
             {{ formatAmount(trade.amount, true, 6) }}
-            {{ microDenomToDenom(trade.denom.native) }}
+            {{ microDenomToDenom(trade.denom.native, client.chainClient) }}
           </p>
         </div>
 

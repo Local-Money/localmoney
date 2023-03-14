@@ -58,7 +58,10 @@ const toLabel = computed(() =>
 )
 const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currency.toUpperCase()} 0`)
 const cryptoPlaceholder = computed(
-  () => `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom))} ${parseFloat('0').toFixed(2)}`
+  () =>
+    `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom), client.chainClient)} ${parseFloat('0').toFixed(
+      2
+    )}`
 )
 const minAmountInCrypto = computed(
   () => parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES
@@ -96,7 +99,7 @@ const minMaxFiatStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 const minMaxCryptoStr = computed(() => {
-  const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom))
+  const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom), client.chainClient)
   const min = formatAmount(parseInt(props.offerResponse.offer.min_amount), true, 6)
   const max = formatAmount(parseInt(props.offerResponse.offer.max_amount), true, 6)
   return [`${symbol} ${parseFloat(min)}`, `${symbol} ${parseFloat(max)}`]
@@ -231,7 +234,9 @@ onUnmounted(() => {
         </div>
         <div class="price">
           <div class="wrap">
-            <p class="value">1 {{ microDenomToDenom(offerResponse.offer.denom.native) }} = {{ offerPrice }}</p>
+            <p class="value">
+              1 {{ microDenomToDenom(offerResponse.offer.denom.native, client.chainClient) }} = {{ offerPrice }}
+            </p>
           </div>
           <p class="ticker">refresh in {{ secondsUntilRateRefresh }}s</p>
         </div>
@@ -250,7 +255,7 @@ onUnmounted(() => {
             ref="cryptoAmountInput"
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
-            :prefix="microDenomToDenom(offerResponse.offer.denom.native)"
+            :prefix="microDenomToDenom(offerResponse.offer.denom.native, client.chainClient)"
             :min="minAmountInCrypto"
             :max="maxAmountInCrypto"
             :errorMsg="`The value should be between ${minMaxCryptoStr[0]} and ${minMaxCryptoStr[1]}`"
