@@ -22,7 +22,7 @@ export function checkMicroDenomAvailable(microDenom: string, chainClient: ChainC
   return denoms.has(microDenom)
 }
 
-export function microDenomToDenom(microDenom: string, chainClient: ChainClient): string {
+export function microDenomToDisplay(microDenom: string, chainClient: ChainClient): string {
   const denoms = denomsAvailable(chainClient)
   return denoms.has(microDenom) ? denoms.get(microDenom)!.display : microDenom
 }

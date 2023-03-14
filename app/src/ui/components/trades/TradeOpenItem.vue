@@ -2,7 +2,7 @@
 import { formatAddress, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import type { TradeInfo } from '~/types/components.interface'
-import { microDenomToDenom } from '~/utils/denom'
+import { microDenomToDisplay } from '~/utils/denom'
 import { formatTimer } from '~/utils/formatters'
 import { checkTradeNeedsRefund } from '~/utils/validations'
 import { TradeState } from '~/types/components.interface'
@@ -163,7 +163,7 @@ onUnmounted(() => {
 <template>
   <div class="card offer collapsed" v-bind="(trade = tradeInfo.trade)">
     <div class="trade-type">
-      <p class="type">{{ buyOrSell }}ing {{ microDenomToDenom(trade.denom.native, client.chainClient) }}</p>
+      <p class="type">{{ buyOrSell }}ing {{ microDenomToDisplay(trade.denom.native, client.chainClient) }}</p>
       <p class="wallet-addr">{{ fromTo }} {{ formatAddress(counterparty) }}</p>
     </div>
 
@@ -173,7 +173,7 @@ onUnmounted(() => {
           <p class="label">Amount</p>
           <p class="content">
             {{ formatAmount(trade.amount, true, 6) }}
-            {{ microDenomToDenom(trade.denom.native, client.chainClient) }}
+            {{ microDenomToDisplay(trade.denom.native, client.chainClient) }}
           </p>
         </div>
 

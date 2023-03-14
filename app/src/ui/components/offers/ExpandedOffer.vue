@@ -13,7 +13,7 @@ import {
 import { OfferType } from '~/types/components.interface'
 import type { OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { denomToValue, microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDisplay } from '~/utils/denom'
 import { formatTimeLimit } from '~/utils/formatters'
 import { CRYPTO_DECIMAL_PLACES, FIAT_DECIMAL_PLACES } from '~/utils/constants'
 
@@ -59,7 +59,7 @@ const toLabel = computed(() =>
 const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currency.toUpperCase()} 0`)
 const cryptoPlaceholder = computed(
   () =>
-    `${microDenomToDenom(denomToValue(props.offerResponse.offer.denom), client.chainClient)} ${parseFloat('0').toFixed(
+    `${microDenomToDisplay(denomToValue(props.offerResponse.offer.denom), client.chainClient)} ${parseFloat('0').toFixed(
       2
     )}`
 )
@@ -99,7 +99,7 @@ const minMaxFiatStr = computed(() => {
   return [`${symbol} ${min}`, `${symbol} ${max}`]
 })
 const minMaxCryptoStr = computed(() => {
-  const symbol = microDenomToDenom(denomToValue(props.offerResponse.offer.denom), client.chainClient)
+  const symbol = microDenomToDisplay(denomToValue(props.offerResponse.offer.denom), client.chainClient)
   const min = formatAmount(parseInt(props.offerResponse.offer.min_amount), true, 6)
   const max = formatAmount(parseInt(props.offerResponse.offer.max_amount), true, 6)
   return [`${symbol} ${parseFloat(min)}`, `${symbol} ${parseFloat(max)}`]
@@ -235,7 +235,7 @@ onUnmounted(() => {
         <div class="price">
           <div class="wrap">
             <p class="value">
-              1 {{ microDenomToDenom(offerResponse.offer.denom.native, client.chainClient) }} = {{ offerPrice }}
+              1 {{ microDenomToDisplay(offerResponse.offer.denom.native, client.chainClient) }} = {{ offerPrice }}
             </p>
           </div>
           <p class="ticker">refresh in {{ secondsUntilRateRefresh }}s</p>
@@ -255,7 +255,7 @@ onUnmounted(() => {
             ref="cryptoAmountInput"
             v-model="cryptoAmount"
             :placeholder="cryptoPlaceholder"
-            :prefix="microDenomToDenom(offerResponse.offer.denom.native, client.chainClient)"
+            :prefix="microDenomToDisplay(offerResponse.offer.denom.native, client.chainClient)"
             :min="minAmountInCrypto"
             :max="maxAmountInCrypto"
             :errorMsg="`The value should be between ${minMaxCryptoStr[0]} and ${minMaxCryptoStr[1]}`"

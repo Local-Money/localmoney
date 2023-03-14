@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useClientStore } from '~/stores/client'
-import { microDenomToDenom } from '~/utils/denom'
+import { microDenomToDisplay } from '~/utils/denom'
 import { formatTradeState } from '~/shared'
 
 const client = useClientStore()
@@ -64,7 +64,7 @@ watch(userWallet, async () => {
           <p>?????</p>
         </div>
         <div class="col-3">
-          <p>{{ microDenomToDenom(dispute.offer.offer.denom.native, client.chainClient) }}</p>
+          <p>{{ microDenomToDisplay(dispute.offer.offer.denom.native, client.chainClient) }}</p>
         </div>
         <div class="col-4">
           <p>?????</p>

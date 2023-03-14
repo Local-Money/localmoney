@@ -1,7 +1,7 @@
 import type { Config } from 'mixpanel-browser'
 import mixpanel from 'mixpanel-browser'
 import type { GetOffer, PatchOffer, PostOffer, Trade } from '~/types/components.interface'
-import { denomToValue, microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDisplay } from '~/utils/denom'
 import { CRYPTO_DECIMAL_PLACES } from '~/utils/constants'
 
 const TRADE = 'trade'
@@ -85,7 +85,7 @@ export function toTradeData(trade: Trade, offer: GetOffer): TradeData {
     trade_id: trade.id,
     offer_id: trade.offer_id,
     trade_amount: Number(trade.amount) / CRYPTO_DECIMAL_PLACES,
-    trade_denom: microDenomToDenom(denomToValue(trade.denom)),
+    trade_denom: microDenomToDisplay(denomToValue(trade.denom)),
     trade_type: offer.offer_type,
     trade_state: trade.state,
     trade_maker,
@@ -111,7 +111,7 @@ export interface OfferData {
 }
 
 export function toOfferData(offerId: number, offer: PostOffer | PatchOffer): OfferData {
-  const offer_denom = 'denom' in offer ? microDenomToDenom(denomToValue(offer.denom)) : undefined
+  const offer_denom = 'denom' in offer ? microDenomToDisplay(denomToValue(offer.denom)) : undefined
   return {
     offer_id: offerId,
     offer_max: Number(offer.max_amount) / CRYPTO_DECIMAL_PLACES,

@@ -11,7 +11,7 @@ import {
 import type { Denom } from '~/types/components.interface'
 import { FiatCurrency, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDenom } from '~/utils/denom'
+import { defaultMicroDenomAvailable, denomsAvailable, microDenomToDisplay } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
 
 const emit = defineEmits<{
@@ -135,21 +135,21 @@ watch(fiatCurrency, async () => {
       <div class="divider" />
       <div class="min-max">
         <div class="wrap">
-          <label>Min amount of {{ microDenomToDenom(selectedCrypto, client.chainClient) }}</label>
+          <label>Min amount of {{ microDenomToDisplay(selectedCrypto, client.chainClient) }}</label>
           <CurrencyInput
             v-model="minAmount"
             :placeholder="0"
-            :prefix="microDenomToDenom(selectedCrypto, client.chainClient)"
+            :prefix="microDenomToDisplay(selectedCrypto, client.chainClient)"
             :isCrypto="true"
             :decimals="6"
           />
         </div>
         <div class="wrap">
-          <label>Max amount of {{ microDenomToDenom(selectedCrypto, client.chainClient) }}</label>
+          <label>Max amount of {{ microDenomToDisplay(selectedCrypto, client.chainClient) }}</label>
           <CurrencyInput
             v-model="maxAmount"
             :placeholder="0"
-            :prefix="microDenomToDenom(selectedCrypto, client.chainClient)"
+            :prefix="microDenomToDisplay(selectedCrypto, client.chainClient)"
             :isCrypto="true"
             :decimals="6"
           />
@@ -210,7 +210,7 @@ watch(fiatCurrency, async () => {
 
     <div class="wrap-footer">
       <div class="fiat-price">
-        <p class="value">1 {{ microDenomToDenom(selectedCrypto, client.chainClient) }} = {{ offerPrice }}</p>
+        <p class="value">1 {{ microDenomToDisplay(selectedCrypto, client.chainClient) }} = {{ offerPrice }}</p>
       </div>
       <div class="btns">
         <button class="secondary" @click="$emit('cancel')">Cancel</button>
