@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
 import CurrencyInput from '../CurrencyInput.vue'
 import {
   calculateFiatPriceByRate,
@@ -24,7 +25,6 @@ async function defaultUserContact() {
   const contact = client.profile?.contact
   return formatEncryptedUserContact(secrets.value.privateKey, contact)
 }
-const selectedCrypto = ref<string>(defaultMicroDenomAvailable(client.chainClient))
 const minAmount = ref(0)
 const maxAmount = ref(0)
 const margin = ref('above')
@@ -33,18 +33,20 @@ const ownerContact = ref('')
 const description = ref('')
 const marginOffsetUnmasked = ref(0)
 const rate = ref(100)
-const offerType = ref<OfferType>(OfferType.buy)
-const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
+const selectedDenom = useLocalStorage<string>('selected_offer_denom', defaultMicroDenomAvailable(client.chainClient))
+const selectedFiat = useLocalStorage<FiatCurrency>('selected_offer_fiat', FiatCurrency.ARS)
+const selectedType = useLocalStorage<OfferType>('selected_offer_type', OfferType.sell)
+
 const valid = computed(() => maxAmount.value > minAmount.value && isTelegramHandleValid(ownerContact.value))
 const offerPrice = computed(() => {
-  const denomFiatPrice = client.getFiatPrice(fiatCurrency.value, { native: selectedCrypto.value })
+  const denomFiatPrice = client.getFiatPrice(selectedFiat.value, { native: selectedDenom.value })
   if (denomFiatPrice === 0) {
     return ''
   }
   const fiatPrice = calculateFiatPriceByRate(denomFiatPrice, rate.value)
-  return `${fiatCurrency.value} ${formatAmount(fiatPrice, false)}`
+  return `${selectedFiat.value} ${formatAmount(fiatPrice, false)}`
 })
-const fiatLabel = computed(() => (offerType.value === 'sell' ? 'receive' : 'pay'))
+const fiatLabel = computed(() => (selectedType.value === 'sell' ? 'receive' : 'pay'))
 
 // TODO - Make isMobile global
 const width = ref(window.innerWidth)
@@ -58,8 +60,8 @@ onMounted(() => {
   })
 })
 onBeforeMount(async () => {
-  const denom: Denom = { native: selectedCrypto.value }
-  await client.updateFiatPrice(fiatCurrency.value, denom)
+  const denom: Denom = { native: selectedDenom.value }
+  await client.updateFiatPrice(selectedFiat.value, denom)
 })
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
@@ -76,10 +78,10 @@ function calculateMarginRate() {
 async function createOffer() {
   await client.createOffer({
     telegram_handle: removeTelegramHandlePrefix(ownerContact.value),
-    offer_type: offerType.value,
-    fiat_currency: fiatCurrency.value,
+    offer_type: selectedType.value,
+    fiat_currency: selectedFiat.value,
     rate: `${rate.value}`,
-    denom: { native: selectedCrypto.value },
+    denom: { native: selectedDenom.value },
     min_amount: minAmount.value,
     max_amount: maxAmount.value,
     description: description.value,
@@ -93,13 +95,13 @@ watch(margin, () => {
   calculateMarginRate()
 })
 async function updateFiatPrice() {
-  const denom: Denom = { native: selectedCrypto.value }
-  await client.updateFiatPrice(fiatCurrency.value, denom)
+  const denom: Denom = { native: selectedDenom.value }
+  await client.updateFiatPrice(selectedFiat.value, denom)
 }
-watch(selectedCrypto, async () => {
+watch(selectedDenom, async () => {
   await updateFiatPrice()
 })
-watch(fiatCurrency, async () => {
+watch(selectedFiat, async () => {
   await updateFiatPrice()
 })
 </script>
@@ -116,40 +118,40 @@ watch(fiatCurrency, async () => {
       </div>
     </div>
     <div class="buy-sell">
-      <button :class="{ focus: offerType === 'buy' }" @click="offerType = 'buy'">Buy</button>
+      <button :class="{ focus: selectedType === 'buy' }" @click="selectedType = 'buy'">Buy</button>
       <div class="separator" />
-      <button :class="{ focus: offerType === 'sell' }" @click="offerType = 'sell'">Sell</button>
+      <button :class="{ focus: selectedType === 'sell' }" @click="selectedType = 'sell'">Sell</button>
     </div>
 
     <div class="inner-content">
       <div class="currency">
         <div class="wrap">
-          <label for="crypto">I want to {{ offerType }}</label>
-          <CustomSelect v-model="selectedCrypto" :options="denomsAvailable(client.chainClient)" />
+          <label for="crypto">I want to {{ selectedType }}</label>
+          <CustomSelect v-model="selectedDenom" :options="denomsAvailable(client.chainClient)" />
         </div>
         <div class="wrap">
           <label for="currency">and {{ fiatLabel }} in</label>
-          <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
+          <CustomSelect v-model="selectedFiat" :options="fiatsAvailable" />
         </div>
       </div>
       <div class="divider" />
       <div class="min-max">
         <div class="wrap">
-          <label>Min amount of {{ microDenomToDisplay(selectedCrypto, client.chainClient) }}</label>
+          <label>Min amount of {{ microDenomToDisplay(selectedDenom, client.chainClient) }}</label>
           <CurrencyInput
             v-model="minAmount"
             :placeholder="0"
-            :prefix="microDenomToDisplay(selectedCrypto, client.chainClient)"
+            :prefix="microDenomToDisplay(selectedDenom, client.chainClient)"
             :isCrypto="true"
             :decimals="6"
           />
         </div>
         <div class="wrap">
-          <label>Max amount of {{ microDenomToDisplay(selectedCrypto, client.chainClient) }}</label>
+          <label>Max amount of {{ microDenomToDisplay(selectedDenom, client.chainClient) }}</label>
           <CurrencyInput
             v-model="maxAmount"
             :placeholder="0"
-            :prefix="microDenomToDisplay(selectedCrypto, client.chainClient)"
+            :prefix="microDenomToDisplay(selectedDenom, client.chainClient)"
             :isCrypto="true"
             :decimals="6"
           />
@@ -210,7 +212,7 @@ watch(fiatCurrency, async () => {
 
     <div class="wrap-footer">
       <div class="fiat-price">
-        <p class="value">1 {{ microDenomToDisplay(selectedCrypto, client.chainClient) }} = {{ offerPrice }}</p>
+        <p class="value">1 {{ microDenomToDisplay(selectedDenom, client.chainClient) }} = {{ offerPrice }}</p>
       </div>
       <div class="btns">
         <button class="secondary" @click="$emit('cancel')">Cancel</button>
