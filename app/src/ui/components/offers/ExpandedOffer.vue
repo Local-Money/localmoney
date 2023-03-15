@@ -59,9 +59,9 @@ const toLabel = computed(() =>
 const fiatPlaceholder = computed(() => `${props.offerResponse.offer.fiat_currency.toUpperCase()} 0`)
 const cryptoPlaceholder = computed(
   () =>
-    `${microDenomToDisplay(denomToValue(props.offerResponse.offer.denom), client.chainClient)} ${parseFloat('0').toFixed(
-      2
-    )}`
+    `${microDenomToDisplay(denomToValue(props.offerResponse.offer.denom), client.chainClient)} ${parseFloat(
+      '0'
+    ).toFixed(2)}`
 )
 const minAmountInCrypto = computed(
   () => parseInt(props.offerResponse.offer.min_amount.toString()) / CRYPTO_DECIMAL_PLACES
