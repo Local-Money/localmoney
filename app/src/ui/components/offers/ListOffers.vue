@@ -3,12 +3,13 @@ import type { Denom, OfferResponse } from '~/types/components.interface'
 import { FiatCurrency, OfferOrder, OfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
-import { defaultMicroDenomAvailable, denomsAvailable } from '~/utils/denom'
+import { defaultMicroDenomAvailable, denomsAvailable, displayToDenom } from '~/utils/denom'
 import { fiatsAvailable } from '~/utils/fiat'
 import { checkValidOffer } from '~/utils/validations'
 import { AppEvents, trackAppEvents } from '~/analytics/analytics'
 
 const client = useClientStore()
+const route = useRoute()
 const offersResult = computed(() => client.offers)
 const page = reactive({ offers: [] as ExpandableItem<OfferResponse>[] })
 client.$subscribe((mutation, state) => {
@@ -67,8 +68,19 @@ async function updateFiatPrice() {
   await client.updateFiatPrice(fiatCurrency.value, denom)
 }
 
+onBeforeMount(() => {
+  const denomDisplayName = (route.params.token as string) ?? ''
+  const fiat = route.params.fiat as FiatCurrency | undefined
+  const type = route.params.type as OfferType | undefined
+  const denom = displayToDenom(denomDisplayName, client.chainClient)
+  if (denom && fiat && type) {
+    selectedCrypto.value = denom
+    fiatCurrency.value = fiat
+    offerType.value = type === OfferType.buy ? OfferType.sell : OfferType.buy
+  }
+})
+
 onMounted(async () => {
-  console.log('ListOffers onMounted')
   await updateFiatPrice()
   await fetchOffers()
 })
