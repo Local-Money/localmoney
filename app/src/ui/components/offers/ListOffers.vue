@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
 import type { Denom, OfferResponse } from '~/types/components.interface'
-import { FiatCurrency, OfferOrder, OfferType } from '~/types/components.interface'
+import { FiatCurrency, OfferOrder, OfferType, isFiatCurrency, isOfferType } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { defaultMicroDenomAvailable, denomsAvailable, displayToDenom } from '~/utils/denom'
@@ -20,9 +21,10 @@ client.$subscribe((mutation, state) => {
   }
 })
 
-const selectedCrypto = ref<string>(defaultMicroDenomAvailable(client.chainClient))
-const fiatCurrency = ref<FiatCurrency>(FiatCurrency.ARS)
-const offerType = ref<OfferType>(OfferType.sell)
+const selectedDenom = useLocalStorage<string>('selected_offer_denom', defaultMicroDenomAvailable(client.chainClient))
+const selectedFiat = useLocalStorage<FiatCurrency>('selected_offer_fiat', FiatCurrency.ARS)
+const selectedType = useLocalStorage<OfferType>('selected_offer_type', OfferType.sell)
+
 const selectedOfferItem = ref<ExpandableItem<OfferResponse> | null>(null)
 const paginationLastItem = ref<number>(0)
 
@@ -40,9 +42,9 @@ function unselectOffer(offerItem: ExpandableItem<OfferResponse>) {
 
 async function fetchOffers() {
   const filterArgs = {
-    fiatCurrency: fiatCurrency.value,
-    offerType: offerType.value,
-    denom: { native: selectedCrypto.value },
+    fiatCurrency: selectedFiat.value,
+    offerType: selectedType.value,
+    denom: { native: selectedDenom.value },
     order: OfferOrder.trades_count,
   }
   await client.fetchOffers(filterArgs)
@@ -54,9 +56,9 @@ async function fetchMoreOffers() {
   paginationLastItem.value = lastIndex > 0 ? offersResult.value.data[lastIndex - 1].offer.id : 0
   await client.fetchMoreOffers(
     {
-      fiatCurrency: fiatCurrency.value,
-      offerType: offerType.value,
-      denom: { native: selectedCrypto.value },
+      fiatCurrency: selectedFiat.value,
+      offerType: selectedType.value,
+      denom: { native: selectedDenom.value },
       order: OfferOrder.trades_count,
     },
     paginationLastItem.value
@@ -64,19 +66,19 @@ async function fetchMoreOffers() {
 }
 
 async function updateFiatPrice() {
-  const denom: Denom = { native: selectedCrypto.value }
-  await client.updateFiatPrice(fiatCurrency.value, denom)
+  const denom: Denom = { native: selectedDenom.value }
+  await client.updateFiatPrice(selectedFiat.value, denom)
 }
 
 onBeforeMount(() => {
   const denomDisplayName = (route.params.token as string) ?? ''
-  const fiat = route.params.fiat as FiatCurrency | undefined
-  const type = route.params.type as OfferType | undefined
+  const fiat = (route.params.fiat as string) ?? ''
+  const type = (route.params.type as string) ?? ''
   const denom = displayToDenom(denomDisplayName, client.chainClient)
-  if (denom && fiat && type) {
-    selectedCrypto.value = denom
-    fiatCurrency.value = fiat
-    offerType.value = type === OfferType.buy ? OfferType.sell : OfferType.buy
+  if (denom && isFiatCurrency(fiat) && isOfferType(type)) {
+    selectedDenom.value = denom
+    selectedFiat.value = fiat as FiatCurrency
+    selectedType.value = type === OfferType.buy ? OfferType.sell : OfferType.buy
   }
 })
 
@@ -85,18 +87,18 @@ onMounted(async () => {
   await fetchOffers()
 })
 
-watch(fiatCurrency, async () => {
+watch(selectedFiat, async () => {
   await updateFiatPrice()
   await fetchOffers()
 })
-watch(selectedCrypto, async () => {
+watch(selectedDenom, async () => {
   await updateFiatPrice()
   await fetchOffers()
 })
 watch(selectedOfferItem, async () => {
   console.log('selectedOfferItem', selectedOfferItem.value)
 })
-watch(offerType, async () => await fetchOffers())
+watch(selectedType, async () => await fetchOffers())
 </script>
 
 <template>
@@ -104,26 +106,26 @@ watch(offerType, async () => await fetchOffers())
     <p class="offers-section-title">Top offers from the community</p>
     <section class="offers-filter">
       <div class="buy-sell">
-        <button class="buy" :class="{ focus: offerType === OfferType.sell }" @click="offerType = OfferType.sell">
+        <button class="buy" :class="{ focus: selectedType === OfferType.sell }" @click="selectedType = OfferType.sell">
           buy
         </button>
-        <button class="sell" :class="{ focus: offerType === OfferType.buy }" @click="offerType = OfferType.buy">
+        <button class="sell" :class="{ focus: selectedType === OfferType.buy }" @click="selectedType = OfferType.buy">
           sell
         </button>
       </div>
       <div class="filter">
         <label for="crypto">Crypto</label>
-        <CustomSelect v-model="selectedCrypto" :options="denomsAvailable(client.chainClient)" />
+        <CustomSelect v-model="selectedDenom" :options="denomsAvailable(client.chainClient)" />
       </div>
       <div class="filter">
         <label for="currency">Currency (FIAT)</label>
-        <CustomSelect v-model="fiatCurrency" :options="fiatsAvailable" />
+        <CustomSelect v-model="selectedFiat" :options="fiatsAvailable" />
       </div>
     </section>
 
     <section class="offers-list">
-      <h3 v-if="offerType === OfferType.sell">Buy from these sellers</h3>
-      <h3 v-if="offerType === OfferType.buy">Sell to these buyers</h3>
+      <h3 v-if="selectedType === OfferType.sell">Buy from these sellers</h3>
+      <h3 v-if="selectedType === OfferType.buy">Sell to these buyers</h3>
       <!-- Offers for -->
       <ListContentResult
         :result="offersResult"
