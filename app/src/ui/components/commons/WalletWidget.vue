@@ -3,6 +3,8 @@ import { useClientStore } from '~/stores/client'
 import { formatAddress, formatAmount } from '~/shared'
 import { ChainClient } from '~/network/Chain'
 
+const emit = defineEmits<{ (e: 'disconnect'): void }>()
+
 const client = useClientStore()
 const userWallet = computed(() => client.userWallet)
 const localBalance = computed(() => {
@@ -131,7 +133,7 @@ defineExpose({ toggleWidget })
         </div>
       </div>
       <div class="wrap-btn">
-        <button class="secondary bg-gray300 center-text" @click="$emit('connectWidget')">disconnect</button>
+        <button class="secondary bg-gray300 center-text" @click="emit('disconnect')">disconnect</button>
       </div>
     </div>
   </div>
