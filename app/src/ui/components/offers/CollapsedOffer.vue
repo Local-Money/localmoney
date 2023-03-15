@@ -9,7 +9,7 @@ import {
 } from '~/shared'
 import type { OfferResponse, OfferTypeLabel } from '~/types/components.interface'
 import { OfferType } from '~/types/components.interface'
-import { denomToValue, microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDisplay } from '~/utils/denom'
 import { useClientStore } from '~/stores/client'
 
 const props = defineProps<{ offerResponse: OfferResponse }>()
@@ -49,7 +49,7 @@ const tradeCountIcon = computed(() => props.offerResponse.profile.released_trade
           <p class="limit">
             {{ formatAmount(offerResponse.offer.min_amount, true, 6) }} -
             {{ formatAmount(offerResponse.offer.max_amount, true, 6) }}
-            {{ microDenomToDenom(offerResponse.offer.denom.native) }}
+            {{ microDenomToDisplay(offerResponse.offer.denom.native, client.chainClient) }}
           </p>
         </div>
         <div class="divider"></div>

@@ -9,7 +9,7 @@ import {
   formatFiatAmount,
 } from '~/shared'
 import { useClientStore } from '~/stores/client'
-import { denomToValue, microDenomToDenom } from '~/utils/denom'
+import { denomToValue, microDenomToDisplay } from '~/utils/denom'
 import { decryptData } from '~/utils/crypto'
 import { formatTimer } from '~/utils/formatters'
 import { TradeState } from '~/types/components.interface'
@@ -112,7 +112,7 @@ const contactsForArbitrator = computed(() => {
 
 const summary = computed(() => {
   const trade_amount: number = tradeInfo.value.trade.amount
-  const trade_denom = microDenomToDenom(denomToValue(tradeInfo.value.trade.denom))
+  const trade_denom = microDenomToDisplay(denomToValue(tradeInfo.value.trade.denom), client.chainClient)
 
   const { warchest_fee_pct, burn_fee_pct, chain_fee_pct, arbitration_fee_pct } = client.getHubConfig()
   const warchest_fee_value = Math.floor(warchest_fee_pct * trade_amount)

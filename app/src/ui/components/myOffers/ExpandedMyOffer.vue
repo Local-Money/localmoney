@@ -7,7 +7,7 @@ import {
   convertOfferRateToMarginRate,
   formatAmount,
 } from '~/shared'
-import { microDenomToDenom } from '~/utils/denom'
+import { microDenomToDisplay } from '~/utils/denom'
 import type { GetOffer } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 
@@ -88,7 +88,7 @@ function update() {
               placeholder="Offer min amount"
               :decimals="6"
               :isCrypto="true"
-              :prefix="microDenomToDenom(offer.denom.native)"
+              :prefix="microDenomToDisplay(offer.denom.native, client.chainClient)"
             />
           </div>
 
@@ -99,7 +99,7 @@ function update() {
               placeholder="Offer max amount"
               :decimals="6"
               :isCrypto="true"
-              :prefix="microDenomToDenom(offer.denom.native)"
+              :prefix="microDenomToDisplay(offer.denom.native, client.chainClient)"
             />
           </div>
         </div>

@@ -6,7 +6,7 @@ import Arbitration from '~/ui/pages/Arbitration.vue'
 
 const routes = [
   {
-    path: '/',
+    path: '/:type?/:token?/:fiat?',
     name: 'Home',
     component: Home,
   },

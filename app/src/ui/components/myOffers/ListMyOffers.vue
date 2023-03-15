@@ -22,12 +22,14 @@ client.$subscribe((mutation, state) => {
   if (state.myOffers.isSuccess()) {
     page.myOffers = state.myOffers.data
       .filter(
-        (offerResponse) => checkValidOffer(offerResponse.offer) && offerResponse.offer.state !== OfferState.archived
+        (offerResponse) =>
+          checkValidOffer(offerResponse.offer, client.chainClient) && offerResponse.offer.state !== OfferState.archived
       )
       .flatMap((offerResponse) => new ExpandableItem(offerResponse))
 
     page.archiveOffers = state.myOffers.data.filter(
-      (offerResponse) => checkValidOffer(offerResponse.offer) && offerResponse.offer.state === OfferState.archived
+      (offerResponse) =>
+        checkValidOffer(offerResponse.offer, client.chainClient) && offerResponse.offer.state === OfferState.archived
     )
   }
 })

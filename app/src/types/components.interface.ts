@@ -22,6 +22,10 @@ export enum OfferType {
   sell = 'sell',
 }
 
+export function isOfferType(offerType: string): boolean {
+  return Object.values(OfferType).includes(offerType as OfferType)
+}
+
 export interface OfferTypeLabel {
   [OfferType.buy]: string
   [OfferType.sell]: string
@@ -82,10 +86,19 @@ export interface PostOffer {
 }
 
 export enum FiatCurrency {
-  BRL = 'BRL',
-  ARS = 'ARS',
-  COP = 'COP',
   USD = 'USD',
+  ARS = 'ARS',
+  BRL = 'BRL',
+  CLP = 'CLP',
+  COP = 'COP',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  MXN = 'MXN',
+  VES = 'VES',
+}
+
+export function isFiatCurrency(fiat: string): boolean {
+  return Object.values(FiatCurrency).includes(fiat as FiatCurrency)
 }
 
 export enum OfferState {

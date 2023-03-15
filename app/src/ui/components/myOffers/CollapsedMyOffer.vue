@@ -2,7 +2,7 @@
 import { calculateFiatPriceByRate, convertOfferRateToMarginRate, formatAmount } from '~/shared'
 import { useClientStore } from '~/stores/client'
 import type { Denom, GetOffer } from '~/types/components.interface'
-import { microDenomToDenom } from '~/utils/denom'
+import { microDenomToDisplay } from '~/utils/denom'
 
 const props = defineProps<{ offer: GetOffer }>()
 
@@ -42,7 +42,7 @@ onBeforeMount(async () => {
           <p class="limit">
             {{ formatAmount(offer.min_amount, true, 6) }} -
             {{ formatAmount(offer.max_amount, true, 6) }}
-            {{ microDenomToDenom(offer.denom.native) }}
+            {{ microDenomToDisplay(offer.denom.native, client.chainClient) }}
           </p>
         </div>
         <div class="divider" />
