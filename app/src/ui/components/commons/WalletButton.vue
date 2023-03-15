@@ -21,18 +21,20 @@ watch(userWallet, async (wallet) => {
 })
 
 function connectWallet() {
-  nextTick(async () => {
-    if (!client.applicationConnected) {
-      await client.connectWallet()
-    } else {
-      await client.disconnectWallet()
-    }
-  })
+  nextTick(async () => await client.connectWallet())
+}
+
+function disconnectWallet() {
+  nextTick(async () => await client.disconnectWallet())
 }
 
 const walletWidget = ref()
 function toggleWalletWidget() {
-  walletWidget.value.toggleWidget()
+  if (userWallet.value.isConnected) {
+    walletWidget.value.toggleWidget()
+  } else {
+    connectWallet()
+  }
 }
 
 onUnmounted(() => {
@@ -42,17 +44,19 @@ onUnmounted(() => {
 
 <template>
   <div class="wrap-wallet">
-    <button v-if="userWallet.isConnected" class="wallet" @click="toggleWalletWidget()">
-      <p>
-        {{ formatAddress(userWallet.address) }}
-      </p>
-      <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
+    <button class="wallet" @click="toggleWalletWidget()">
+      <slot v-if="userWallet.isConnected">
+        <p>
+          {{ formatAddress(userWallet.address) }}
+        </p>
+        <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
+      </slot>
+      <slot v-else>
+        <p>connect</p>
+        <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
+      </slot>
     </button>
-    <button v-else class="wallet" @click="connectWallet()">
-      <p>connect</p>
-      <img src="../../assets/ic_wallet.svg" alt="Connect your wallet" />
-    </button>
-    <WalletWidget v-if="userWallet.isConnected" ref="walletWidget" @connectWidget="connectWallet" />
+    <WalletWidget v-if="userWallet.isConnected" ref="walletWidget" @disconnect="disconnectWallet()" />
   </div>
 </template>
 
