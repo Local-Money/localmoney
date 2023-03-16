@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { OfferResponse } from '~/types/components.interface'
+import type { Addr, OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
 import { ExpandableItem } from '~/ui/components/util/ExpandableItem'
 import { checkValidOffer } from '~/utils/validations'
 import { OfferType } from '~/types/components.interface'
 
+const props = defineProps<{ maker: Addr }>()
 const client = useClientStore()
-const route = useRoute()
 const offersResult = computed(() => client.makerOffers)
 const page = reactive({
   sellOffers: [] as ExpandableItem<OfferResponse>[],
@@ -14,19 +14,23 @@ const page = reactive({
 })
 client.$subscribe((mutation, state) => {
   if (state.makerOffers.isSuccess()) {
+    const sellOffers = [] as ExpandableItem<OfferResponse>[]
+    const buyOffers = [] as ExpandableItem<OfferResponse>[]
     state.makerOffers.data
       .filter((offerResponse) => checkValidOffer(offerResponse.offer, client.chainClient))
       .flatMap((offerResponse) => new ExpandableItem(offerResponse))
       .forEach((offerItem) => {
         switch (offerItem.data.offer.offer_type) {
           case OfferType.buy:
-            page.buyOffers.push(offerItem)
+            buyOffers.push(offerItem)
             break
           case OfferType.sell:
-            page.sellOffers.push(offerItem)
+            sellOffers.push(offerItem)
             break
         }
       })
+    page.buyOffers = buyOffers
+    page.sellOffers = sellOffers
   }
 })
 
@@ -52,8 +56,7 @@ async function updateFiatPrice() {
 onBeforeMount(async () => {})
 
 onMounted(async () => {
-  const maker = (route.params.addr as string) ?? ''
-  await client.fetchMakerOffers(maker)
+  await client.fetchMakerOffers(props.maker)
   await updateFiatPrice()
 })
 </script>

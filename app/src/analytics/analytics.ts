@@ -11,8 +11,8 @@ export function initAnalytics(token: string, config?: Partial<Config>) {
   mixpanel.init(token, config)
 }
 
-export function trackPage(page: Page) {
-  mixpanel.track(page)
+export function trackPage(page: Page, data?: AppData) {
+  mixpanel.track(page, data)
 }
 
 export function trackWalletConnection(events: WalletEvents, address?: string) {
