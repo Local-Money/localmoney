@@ -3,6 +3,7 @@ import mixpanel from 'mixpanel-browser'
 import type { GetOffer, PatchOffer, PostOffer, Trade } from '~/types/components.interface'
 import { denomToValue, microDenomToDisplay } from '~/utils/denom'
 import { CRYPTO_DECIMAL_PLACES } from '~/utils/constants'
+import type { ChainClient } from '~/network/Chain'
 
 const TRADE = 'trade'
 
@@ -44,6 +45,7 @@ export enum Page {
   my_trades = 'page_my_trades',
   disputes = 'page_disputes',
   trade_detail = 'page_trade_detail',
+  maker = 'page_maker',
 }
 
 export enum TradeEvents {
@@ -69,7 +71,7 @@ export interface TradeData {
   trade_taker: string
 }
 
-export function toTradeData(trade: Trade, offer: GetOffer): TradeData {
+export function toTradeData(trade: Trade, offer: GetOffer, chainClient: ChainClient): TradeData {
   let trade_maker: string
   let trade_taker: string
 
@@ -85,7 +87,7 @@ export function toTradeData(trade: Trade, offer: GetOffer): TradeData {
     trade_id: trade.id,
     offer_id: trade.offer_id,
     trade_amount: Number(trade.amount) / CRYPTO_DECIMAL_PLACES,
-    trade_denom: microDenomToDisplay(denomToValue(trade.denom)),
+    trade_denom: microDenomToDisplay(denomToValue(trade.denom), chainClient),
     trade_type: offer.offer_type,
     trade_state: trade.state,
     trade_maker,
@@ -110,8 +112,8 @@ export interface OfferData {
   offer_rate?: string
 }
 
-export function toOfferData(offerId: number, offer: PostOffer | PatchOffer): OfferData {
-  const offer_denom = 'denom' in offer ? microDenomToDisplay(denomToValue(offer.denom)) : undefined
+export function toOfferData(offerId: number, offer: PostOffer | PatchOffer, chainClient: ChainClient): OfferData {
+  const offer_denom = 'denom' in offer ? microDenomToDisplay(denomToValue(offer.denom), chainClient) : undefined
   return {
     offer_id: offerId,
     offer_max: Number(offer.max_amount) / CRYPTO_DECIMAL_PLACES,
