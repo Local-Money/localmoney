@@ -8,6 +8,7 @@ import type { Chain } from '~/network/Chain'
 import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/chain-error'
 import type { CosmosConfig, HubInfo } from '~/network/cosmos/config'
 import type {
+  Addr,
   Arbitrator,
   Denom,
   DenomFiatPrice,
@@ -167,6 +168,22 @@ export class CosmosChain implements Chain {
       }
     } else {
       throw new WalletNotConnected()
+    }
+  }
+
+  async fetchMakerOffers(maker: Addr): Promise<OfferResponse[]> {
+    if (!this.cwClient) {
+      await this.init()
+    }
+    try {
+      return (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.offer_addr, {
+        offers_by_owner: {
+          owner: maker,
+          limit: 1000,
+        },
+      })) as OfferResponse[]
+    } catch (e) {
+      throw DefaultError.fromError(e)
     }
   }
 

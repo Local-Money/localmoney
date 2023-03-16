@@ -8,6 +8,7 @@ import {
 } from './cosmos/config/kujira'
 import { DEV_CONFIG, DEV_HUB_INFO } from './cosmos/config/dev'
 import type {
+  Addr,
   Arbitrator,
   Denom,
   DenomFiatPrice,
@@ -41,6 +42,8 @@ export interface Chain {
   fetchOffer(offerId: string): Promise<OfferResponse>
 
   fetchOffers(args: FetchOffersArgs, limit: number, last?: number): Promise<OfferResponse[]>
+
+  fetchMakerOffers(maker: Addr): Promise<OfferResponse[]>
 
   fetchMyOffers(limit: number, last?: number): Promise<OfferResponse[]>
 
