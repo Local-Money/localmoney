@@ -7,6 +7,7 @@ import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
 import { WalletNotConnected } from '~/network/chain-error'
 import type {
+  Addr,
   Arbitrator,
   Denom,
   FetchOffersArgs,
@@ -43,6 +44,7 @@ export const useClientStore = defineStore({
       localBalance: <Coin>{},
       fiatPrices: new Map<String, Map<String, number>>(),
       offers: <ListResult<OfferResponse>>ListResult.loading(),
+      makerOffers: <ListResult<OfferResponse>>ListResult.loading(),
       myOffers: <ListResult<OfferResponse>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
       arbitrators: <ListResult<Arbitrator>>ListResult.loading(),
@@ -120,6 +122,19 @@ export const useClientStore = defineStore({
         throw new WalletNotConnected()
       }
       return userSecrets!
+    },
+    async fetchMakerOffers(maker: Addr) {
+      this.makerOffers = ListResult.loading()
+      try {
+        let offers = await this.client.fetchMakerOffers(maker)
+        offers = offers.filter(({ offer }) => offer.state === OfferState.active)
+        for (const { offer } of offers) {
+          await this.updateFiatPrice(offer.fiat_currency, offer.denom)
+        }
+        this.makerOffers = ListResult.success(offers)
+      } catch (e) {
+        this.makerOffers = ListResult.error(e as ChainError)
+      }
     },
     async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
