@@ -62,33 +62,31 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="page">
-    <section class="offers-list">
-      <ListContentResult :result="offersResult" emptyStateMsg="This user has no active offers">
-        <slot v-if="page.sellOffers.length > 0">
-          <p class="offers-section-title">Buy from this user</p>
-          <ul>
-            <li v-for="offer in page.sellOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
-              <!-- Collapsed Offer -->
-              <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
-              <!-- Expanded Offer Desktop -->
-              <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
-            </li>
-          </ul>
-        </slot>
-        <slot v-if="page.buyOffers.length > 0">
-          <p class="offers-section-title">Sell to this user</p>
-          <ul>
-            <li v-for="offer in page.buyOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
-              <!-- Collapsed Offer -->
-              <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
-              <!-- Expanded Offer Desktop -->
-              <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
-            </li>
-          </ul>
-        </slot>
-      </ListContentResult>
-    </section>
+  <section class="offers-list">
+    <ListContentResult :result="offersResult" emptyStateMsg="This user has no active offers">
+      <slot v-if="page.sellOffers.length > 0">
+        <p class="offers-section-title">Buy from this user</p>
+        <ul>
+          <li v-for="offer in page.sellOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
+            <!-- Collapsed Offer -->
+            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
+            <!-- Expanded Offer Desktop -->
+            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
+          </li>
+        </ul>
+      </slot>
+      <slot v-if="page.buyOffers.length > 0">
+        <p class="offers-section-title">Sell to this user</p>
+        <ul>
+          <li v-for="offer in page.buyOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
+            <!-- Collapsed Offer -->
+            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
+            <!-- Expanded Offer Desktop -->
+            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
+          </li>
+        </ul>
+      </slot>
+    </ListContentResult>
   </section>
 </template>
 
@@ -141,6 +139,13 @@ section {
 
     @media only screen and (max-width: $mobile) {
       margin: 16px 0 32px;
+    }
+  }
+
+  ul {
+    margin-bottom: 64px;
+    &:last-child {
+      margin-bottom: 0;
     }
   }
 
