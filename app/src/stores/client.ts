@@ -123,6 +123,9 @@ export const useClientStore = defineStore({
       }
       return userSecrets!
     },
+    async fetchMakerProfile(maker: Addr) {
+      return await this.client.fetchProfile(maker)
+    },
     async fetchMakerOffers(maker: Addr) {
       this.makerOffers = ListResult.loading()
       try {

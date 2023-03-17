@@ -77,19 +77,19 @@ export class CosmosChain implements Chain {
     return this.account ? this.account.address : 'undefined'
   }
 
-  async fetchProfile() {
-    if (this.cwClient instanceof SigningCosmWasmClient && this.signer) {
-      try {
-        const result = (await this.cwClient.queryContractSmart(this.hubInfo.hubConfig.profile_addr, {
-          profile: { addr: this.getWalletAddress() },
-        })) as Profile
-        console.log('Profile result >> ', result)
-        return result
-      } catch (e) {
-        throw DefaultError.fromError(e)
-      }
-    } else {
-      throw new WalletNotConnected()
+  async fetchProfile(profile_addr?: Addr) {
+    if (!this.cwClient) {
+      await this.init()
+    }
+    try {
+      const addr = profile_addr === undefined ? this.getWalletAddress() : profile_addr
+      const result = (await this.cwClient!.queryContractSmart(this.hubInfo.hubConfig.profile_addr, {
+        profile: { addr },
+      })) as Profile
+      console.log('Profile result >> ', result)
+      return result
+    } catch (e) {
+      throw DefaultError.fromError(e)
     }
   }
 

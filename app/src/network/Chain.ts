@@ -35,7 +35,7 @@ export interface Chain {
 
   getWalletAddress(): string
 
-  fetchProfile(): Promise<Profile>
+  fetchProfile(profile_addr?: Addr): Promise<Profile>
 
   fetchTokenBalance(denom: Denom): Promise<Coin>
 
