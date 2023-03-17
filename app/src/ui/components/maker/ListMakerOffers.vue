@@ -107,31 +107,11 @@ section {
   }
 }
 
-.filter {
-  display: inline-flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 216px;
-  margin-left: 24px;
-
-  @media only screen and (max-width: $mobile) {
-    max-width: none;
-    margin-left: 0;
-    margin-bottom: 16px;
-  }
-
-  label {
-    font-size: 12px;
-    color: $gray600;
-    margin-bottom: 8px;
-  }
-}
-
 .offers-section-title {
-  font-size: 24px;
+  font-size: 18px;
   margin-bottom: 40px;
   color: $gray900;
-  font-weight: 600;
+  font-weight: $semi-bold;
 
   @media only screen and (max-width: $mobile) {
     font-size: 18px;

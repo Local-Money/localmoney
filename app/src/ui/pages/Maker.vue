@@ -30,6 +30,18 @@ onMounted(() => {
 
 <template>
   <section class="page">
+    <div class="header">
+      <div class="wrap-profile">
+        <div class="pfp">
+          <div class="img-placeholder"></div>
+        </div>
+        <div class="inner-wrap">
+          <h2 class="maker">kujira17...epf22a</h2>
+          <p class="joined">Joined May 2022</p>
+        </div>
+      </div>
+    </div>
+
     <section>
       <div class="wrap-table-item">
         <div class="col-1">Profile address:</div>
@@ -58,6 +70,34 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 @import '../style/pages.scss';
+
+.header {
+  margin-top: 128px;
+  margin-bottom: 56px;
+  .wrap-profile {
+    display: flex;
+    gap: 24px;
+    .pfp {
+      .img-placeholder {
+        width: 56px;
+        height: 56px;
+        background-color: $surface;
+        border-radius: 200px;
+      }
+    }
+    .inner-wrap {
+      .maker {
+        font-size: 24px;
+        font-weight: $bold;
+        margin-bottom: 4px;
+      }
+      .joined {
+        font-size: 14px;
+        color: $gray700;
+      }
+    }
+  }
+}
 
 .wrap-table-item {
   display: flex;
