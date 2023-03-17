@@ -65,24 +65,28 @@ onMounted(async () => {
   <section class="page">
     <section class="offers-list">
       <ListContentResult :result="offersResult" emptyStateMsg="This user has no active offers">
-        <p class="offers-section-title">Buy from this maker</p>
-        <ul>
-          <li v-for="offer in page.sellOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
-            <!-- Collapsed Offer -->
-            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
-            <!-- Expanded Offer Desktop -->
-            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
-          </li>
-        </ul>
-        <p class="offers-section-title">Sell from this maker</p>
-        <ul>
-          <li v-for="offer in page.buyOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
-            <!-- Collapsed Offer -->
-            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
-            <!-- Expanded Offer Desktop -->
-            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
-          </li>
-        </ul>
+        <slot v-if="page.sellOffers.length > 0">
+          <p class="offers-section-title">Buy from this user</p>
+          <ul>
+            <li v-for="offer in page.sellOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
+              <!-- Collapsed Offer -->
+              <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
+              <!-- Expanded Offer Desktop -->
+              <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
+            </li>
+          </ul>
+        </slot>
+        <slot v-if="page.buyOffers.length > 0">
+          <p class="offers-section-title">Sell to this user</p>
+          <ul>
+            <li v-for="offer in page.buyOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
+              <!-- Collapsed Offer -->
+              <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
+              <!-- Expanded Offer Desktop -->
+              <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
+            </li>
+          </ul>
+        </slot>
       </ListContentResult>
     </section>
   </section>
