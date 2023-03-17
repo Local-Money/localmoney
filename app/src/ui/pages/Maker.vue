@@ -2,11 +2,15 @@
 import { useClientStore } from '~/stores/client'
 import { Page, trackPage } from '~/analytics/analytics'
 import type { Profile } from '~/types/components.interface'
-import { formatDate, timeSince } from '~/shared'
+import { formatAddress, formatDate, timeSince } from '~/shared'
 
 const client = useClientStore()
 const route = useRoute()
 const maker = computed(() => (route.params.addr as string) ?? '')
+const makerAddressFormatted = computed(() => {
+  const makerAddr = formatAddress(route.params.addr)
+  return makerAddr
+})
 const profile = ref<Profile | undefined>()
 const activeOffers = computed(() => profile.value?.active_offers_count ?? 0)
 const releasedTrades = computed(() => profile.value?.released_trades_count ?? 0)
@@ -35,17 +39,13 @@ onMounted(() => {
           <div class="img-placeholder"></div>
         </div>
         <div class="inner-wrap">
-          <h2 class="maker">kujira17...epf22a</h2>
-          <p class="joined">Joined May 2022</p>
+          <h2 class="maker">{{ makerAddressFormatted }}</h2>
+          <p class="joined">Joined {{ createdAt }}</p>
         </div>
       </div>
     </div>
 
     <section>
-      <div class="wrap-table-item">
-        <div class="col-1">Profile address:</div>
-        <div class="col-2">{{ maker }}</div>
-      </div>
       <div class="wrap-table-item">
         <div class="col-1">Active Offers:</div>
         <div class="col-2">{{ activeOffers }}</div>
@@ -57,10 +57,6 @@ onMounted(() => {
       <div class="wrap-table-item">
         <div class="col-1">Last Trade:</div>
         <div class="col-2">{{ lastTrade }}</div>
-      </div>
-      <div class="wrap-table-item">
-        <div class="col-1">Joined:</div>
-        <div class="col-2">{{ createdAt }}</div>
       </div>
     </section>
     <ListMakerOffers :maker="maker" />
