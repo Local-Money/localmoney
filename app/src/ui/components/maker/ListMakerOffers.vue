@@ -107,16 +107,6 @@ section {
   }
 }
 
-.offers-filter {
-  display: flex;
-  margin-bottom: 56px;
-
-  @media only screen and (max-width: $mobile) {
-    display: block;
-    margin-bottom: 32px;
-  }
-}
-
 .filter {
   display: inline-flex;
   flex-direction: column;
