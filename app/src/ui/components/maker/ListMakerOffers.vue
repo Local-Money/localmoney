@@ -64,7 +64,7 @@ onMounted(async () => {
 <template>
   <section class="page">
     <section class="offers-list">
-      <ListContentResult :result="offersResult" emptyStateMsg="There are no offers available yet">
+      <ListContentResult :result="offersResult" emptyStateMsg="This user has no active offers">
         <p class="offers-section-title">Buy from this maker</p>
         <ul>
           <li v-for="offer in page.sellOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
