@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { formatDate } from '@vueuse/core'
 import { useClientStore } from '~/stores/client'
 import { Page, trackPage } from '~/analytics/analytics'
 import type { Profile } from '~/types/components.interface'
-import { timeSince } from '~/shared'
+import { formatDate, timeSince } from '~/shared'
 
 const client = useClientStore()
 const route = useRoute()
@@ -19,7 +18,7 @@ const lastTrade = computed(() => {
 const createdAt = computed(() => {
   const timestamp = profile.value?.created_at ?? 0
   const date = new Date(timestamp * 1000)
-  return profile.value ? `${date}` : 'loading...'
+  return profile.value ? `${formatDate(date, false, false)}` : 'loading...'
 })
 
 onMounted(() => {
@@ -48,7 +47,7 @@ onMounted(() => {
         <div class="col-2">{{ lastTrade }}</div>
       </div>
       <div class="wrap-table-item">
-        <div class="col-1">Created at:</div>
+        <div class="col-1">Joined:</div>
         <div class="col-2">{{ createdAt }}</div>
       </div>
     </section>

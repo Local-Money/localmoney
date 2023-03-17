@@ -90,19 +90,23 @@ export function convertMarginRateToOfferRate(margin, marginOffset) {
   return 100 + (margin === 'above' ? +marginOffset : -marginOffset)
 }
 
-export function formatDate(date, showTime = true) {
+export function formatDate(date, showTime = true, showDay = true) {
   const year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(date)
   const month = new Intl.DateTimeFormat('en', { month: 'short' }).format(date)
   const day = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(date)
+  let result = ''
+  if (showDay) {
+    result += `${day} `
+  }
+  result += `${month} ${year}`
   if (showTime) {
     const time = new Intl.DateTimeFormat('en', {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date)
-    return `${day} ${month} ${year} - ${time}`
-  } else {
-    return `${day} ${month} ${year}`
+    result += ` - ${time}`
   }
+  return result
 }
 
 /**
