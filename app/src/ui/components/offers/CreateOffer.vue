@@ -34,7 +34,7 @@ const description = ref('')
 const marginOffsetUnmasked = ref(0)
 const rate = ref(100)
 const selectedDenom = useLocalStorage<string>('selected_offer_denom', defaultMicroDenomAvailable(client.chainClient))
-const selectedFiat = useLocalStorage<FiatCurrency>('selected_offer_fiat', FiatCurrency.ARS)
+const selectedFiat = useLocalStorage<FiatCurrency>('selected_offer_fiat', FiatCurrency.USD)
 const selectedType = useLocalStorage<OfferType>('selected_offer_type', OfferType.sell)
 
 const valid = computed(() => maxAmount.value > minAmount.value && isTelegramHandleValid(ownerContact.value))
