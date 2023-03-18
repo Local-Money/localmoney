@@ -13,7 +13,7 @@ import {
 import { OfferType } from '~/types/components.interface'
 import type { OfferResponse } from '~/types/components.interface'
 import { useClientStore } from '~/stores/client'
-import { denomToValue, microDenomToDisplay } from '~/utils/denom'
+import { denomToValue, microDenomToDisplay, microDenomToIcon } from '~/utils/denom'
 import { formatTimeLimit } from '~/utils/formatters'
 import { CRYPTO_DECIMAL_PLACES, FIAT_DECIMAL_PLACES } from '~/utils/constants'
 
@@ -210,22 +210,9 @@ onUnmounted(() => {
 <template>
   <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded card">
     <div class="top">
-      <div class="owner">
-        <a class="wallet-addr" :href="`/maker/${offerResponse.offer.owner}`">
-          {{ formatAddress(offerResponse.offer.owner) }}
-        </a>
-        <div class="n-trades">
-          <svg v-show="tradeCountIcon" class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M20 6L9 17L4 12"
-              stroke="inherit"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <p>{{ formatTradesCountInfo(offerResponse.profile.released_trades_count) }}</p>
-        </div>
+      <div class="offer-token">
+        <img :src="microDenomToIcon(offerResponse.offer.denom.native, client.chainClient)" />
+        <p>{{ microDenomToDisplay(offerResponse.offer.denom.native, client.chainClient) }}</p>
       </div>
 
       <div class="inner-wrap">
@@ -346,57 +333,28 @@ onUnmounted(() => {
       flex-direction: column;
     }
 
-    .owner {
+    .offer-token {
       width: 20%;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+
+      img {
+        width: 32px;
+        height: 32px;
+      }
+
+      p {
+        font-size: 20px;
+        font-weight: $semi-bold;
+      }
 
       @include responsive(mobile) {
         width: 100%;
-        margin-bottom: 24px;
         flex-direction: row;
-      }
-      .wallet-addr {
-        font-size: 16px;
-        font-weight: 600;
-        color: $base-text;
-        &:hover {
-          color: $primary;
-        }
-      }
-
-      .n-trades {
-        display: flex;
-        align-items: center;
-        align-self: flex-start;
-        gap: 6px;
-        margin-top: 8px;
-
-        background-color: $border;
-        padding: 4px 8px;
-        border-radius: 8px;
-
-        @include responsive(mobile) {
-          margin-top: 0;
-        }
-
-        svg {
-          width: 16px;
-          height: 16px;
-          stroke: $primary;
-        }
-
-        p {
-          font-size: 12px;
-          color: $gray700;
-          padding-right: 4px;
-        }
-      }
-
-      @media only screen and (max-width: $mobile) {
-        display: flex;
         justify-content: space-between;
-        align-items: center;
+        margin-bottom: 24px;
       }
     }
 

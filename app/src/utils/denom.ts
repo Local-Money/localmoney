@@ -27,6 +27,11 @@ export function microDenomToDisplay(microDenom: string, chainClient: ChainClient
   return denoms.has(microDenom) ? denoms.get(microDenom)!.display : microDenom
 }
 
+export function microDenomToIcon(microDenom: string, chainClient: ChainClient): string {
+  const denoms = denomsAvailable(chainClient)
+  return denoms.has(microDenom) ? denoms.get(microDenom)!.icon : microDenom
+}
+
 export function displayToDenom(displayName: string, chainClient: ChainClient): string | undefined {
   const denoms = denomsAvailable(chainClient)
   const keys = Array.from(denoms.keys())

@@ -38,10 +38,10 @@ export interface OfferResponse {
 
 export interface Profile {
   addr: string
-  created_at: Date
+  created_at: number
   requested_trades_count: number
   released_trades_count: number
-  last_trade: Date
+  last_trade: number
   contact?: string
   encryption_key?: string
   active_offers_count: number

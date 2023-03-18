@@ -7,6 +7,7 @@ import { ChainClient, chainFactory } from '~/network/Chain'
 import type { ChainError } from '~/network/chain-error'
 import { WalletNotConnected } from '~/network/chain-error'
 import type {
+  Addr,
   Arbitrator,
   Denom,
   FetchOffersArgs,
@@ -43,6 +44,7 @@ export const useClientStore = defineStore({
       localBalance: <Coin>{},
       fiatPrices: new Map<String, Map<String, number>>(),
       offers: <ListResult<OfferResponse>>ListResult.loading(),
+      makerOffers: <ListResult<OfferResponse>>ListResult.loading(),
       myOffers: <ListResult<OfferResponse>>ListResult.loading(),
       trades: <ListResult<TradeInfo>>ListResult.loading(),
       arbitrators: <ListResult<Arbitrator>>ListResult.loading(),
@@ -121,6 +123,22 @@ export const useClientStore = defineStore({
       }
       return userSecrets!
     },
+    async fetchMakerProfile(maker: Addr) {
+      return await this.client.fetchProfile(maker)
+    },
+    async fetchMakerOffers(maker: Addr) {
+      this.makerOffers = ListResult.loading()
+      try {
+        let offers = await this.client.fetchMakerOffers(maker)
+        offers = offers.filter(({ offer }) => offer.state === OfferState.active)
+        for (const { offer } of offers) {
+          await this.updateFiatPrice(offer.fiat_currency, offer.denom)
+        }
+        this.makerOffers = ListResult.success(offers)
+      } catch (e) {
+        this.makerOffers = ListResult.error(e as ChainError)
+      }
+    },
     async fetchOffers(offersArgs: FetchOffersArgs) {
       this.offers = ListResult.loading()
       try {
@@ -183,7 +201,7 @@ export const useClientStore = defineStore({
           owner_encryption_key,
         } as PostOffer
         const offerId = await this.client.createOffer(postOffer)
-        trackOffer(OfferEvents.created, toOfferData(offerId, postOffer))
+        trackOffer(OfferEvents.created, toOfferData(offerId, postOffer, this.chainClient))
         await this.fetchProfile()
         await this.fetchMyOffers()
       } catch (e) {
@@ -196,7 +214,7 @@ export const useClientStore = defineStore({
       this.loadingState = LoadingState.show('Updating Offer...')
       try {
         await this.client.updateOffer(updateOffer)
-        trackOffer(OfferEvents.updated, toOfferData(updateOffer.id, updateOffer))
+        trackOffer(OfferEvents.updated, toOfferData(updateOffer.id, updateOffer, this.chainClient))
         await this.fetchMyOffers()
       } catch (e) {
         this.handle.error(e)
@@ -209,7 +227,7 @@ export const useClientStore = defineStore({
       try {
         updateOffer.state = OfferState.paused
         await this.client.updateOffer(updateOffer)
-        trackOffer(OfferEvents.unarchived, toOfferData(updateOffer.id, updateOffer))
+        trackOffer(OfferEvents.unarchived, toOfferData(updateOffer.id, updateOffer, this.chainClient))
         await this.fetchMyOffers()
       } catch (e) {
         this.handle.error(e)
@@ -233,7 +251,7 @@ export const useClientStore = defineStore({
         }
         const trade_id = await this.client.openTrade(newTrade)
         const tradeInfo = await this.fetchTradeDetail(trade_id)
-        trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.created, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.request_created })
         await this.fetchProfile()
         const route = isNaN(trade_id) ? { name: 'Trades' } : { name: 'TradeDetail', params: { id: trade_id } }
@@ -306,7 +324,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.acceptTradeRequest(tradeId, makerContact)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.accepted, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.accepted, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.request_accepted })
       } catch (e) {
         this.handle.error(e)
@@ -319,7 +337,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.cancelTradeRequest(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.canceled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.canceled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.request_canceled })
       } catch (e) {
         this.handle.error(e)
@@ -332,7 +350,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.fundEscrow(tradeInfo, makerContact)
         const trade = await this.fetchTradeDetail(tradeInfo.trade.id)
-        trackTrade(TradeEvents.funded, toTradeData(trade.trade, trade.offer.offer))
+        trackTrade(TradeEvents.funded, toTradeData(trade.trade, trade.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.escrow_funded })
       } catch (e) {
         this.handle.error(e)
@@ -345,7 +363,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.setFiatDeposited(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.paid, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.paid, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.fiat_deposited })
       } catch (e) {
         this.handle.error(e)
@@ -358,7 +376,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.releaseEscrow(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.released, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.released, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.escrow_released })
       } catch (e) {
         this.handle.error(e)
@@ -371,7 +389,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.refundEscrow(tradeId)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.refunded, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.refunded, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
       } catch (e) {
         this.handle.error(e)
       } finally {
@@ -383,7 +401,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.openDispute(tradeId, buyerContact, sellerContact)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.disputed, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.disputed, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.escrow_disputed })
       } catch (e) {
         this.handle.error(e)
@@ -396,7 +414,7 @@ export const useClientStore = defineStore({
       try {
         await this.client.settleDispute(tradeId, winner)
         const tradeInfo = await this.fetchTradeDetail(tradeId)
-        trackTrade(TradeEvents.dispute_settled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer))
+        trackTrade(TradeEvents.dispute_settled, toTradeData(tradeInfo.trade, tradeInfo.offer.offer, this.chainClient))
         this.notifyOnBot({ ...tradeInfo.trade, state: TradeState.settled_for_maker })
       } catch (e) {
         this.handle.error(e)
