@@ -69,9 +69,9 @@ onMounted(async () => {
         <ul>
           <li v-for="offer in page.sellOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
             <!-- Collapsed Offer -->
-            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
+            <CollapsedMakerOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
             <!-- Expanded Offer Desktop -->
-            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
+            <ExpandedMakerOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
           </li>
         </ul>
       </slot>
@@ -80,9 +80,9 @@ onMounted(async () => {
         <ul>
           <li v-for="offer in page.buyOffers" :key="offer.data.id" :class="offer.isExpanded ? 'card-active' : ''">
             <!-- Collapsed Offer -->
-            <CollapsedOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
+            <CollapsedMakerOffer v-if="!offer.isExpanded" :offerResponse="offer.data" @select="selectOffer(offer)" />
             <!-- Expanded Offer Desktop -->
-            <ExpandedOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
+            <ExpandedMakerOffer v-else :offerResponse="offer.data" @cancel="unselectOffer(offer)" />
           </li>
         </ul>
       </slot>
