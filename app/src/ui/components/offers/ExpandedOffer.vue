@@ -211,9 +211,9 @@ onUnmounted(() => {
   <div :key="`${offerResponse.offer.id}-expanded`" ref="expandedCard" class="offer expanded card">
     <div class="top">
       <div class="owner">
-        <p class="wallet-addr">
+        <a class="wallet-addr" :href="`/maker/${offerResponse.offer.owner}`">
           {{ formatAddress(offerResponse.offer.owner) }}
-        </p>
+        </a>
         <div class="n-trades">
           <svg v-show="tradeCountIcon" class="icon-24" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
@@ -360,6 +360,9 @@ onUnmounted(() => {
         font-size: 16px;
         font-weight: 600;
         color: $base-text;
+        &:hover {
+          color: $primary;
+        }
       }
 
       .n-trades {
